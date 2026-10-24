@@ -4,17 +4,33 @@
 // - Sol: luz direcional; a sombra cobre só a área perto do jogador.
 // - Neblina úmida da floresta: vai escondendo o que está longe
 //   (fica realista e o celular desenha menos).
-// (Ciclo de dia/noite chega na Fase 4.)
+// - Dia e noite: setTime(t) com t de 0 a 1 (0,25 = nascer do sol,
+//   0,5 = meio-dia, 0,75 = pôr do sol). À noite a lua ilumina azulado.
 // =============================================================
 import * as THREE from 'three';
-import { makeSkyMaterial } from './materials.js';
+import { makeSkyMaterial, sharedDay } from './materials.js';
 
 const HORIZON = new THREE.Color('#aebfb6'); // neblina úmida
 const ZENITH = new THREE.Color('#4d8cc4');
 const UNDERWATER = new THREE.Color('#2a4b3c');
 
-// Direção do sol (usada também pela água e pelas "fotos" das árvores).
+// Direção da luz principal (sol de dia, lua à noite). É o MESMO vetor
+// usado pela água e pelo céu: mudar aqui muda tudo junto.
 export const SUN_DIR = new THREE.Vector3(0.45, 0.8, 0.35).normalize();
+
+// Cores do céu ao longo do dia: [t, horizonte, zênite, cor da luz,
+// força da luz, céu do hemisfério, força do hemisfério, nuvens]
+const KEYS = [
+  [0.0, '#141c27', '#070c16', '#8ea6d8', 0.45, '#5a6e98', 0.42, 0.22],
+  [0.2, '#1c2430', '#0a1220', '#8ea6d8', 0.45, '#5a6e98', 0.42, 0.25],
+  [0.26, '#d79a72', '#4f6a96', '#ffb27a', 1.2, '#c7b4a0', 0.8, 0.85],
+  [0.34, '#b9c7bc', '#4d8cc4', '#fff0d0', 2.3, '#dbeee6', 1.15, 1.0],
+  [0.5, '#aebfb6', '#4d8cc4', '#fff0d0', 2.6, '#dbeee6', 1.25, 1.0],
+  [0.68, '#b9c4b4', '#5288bd', '#ffe6c0', 2.3, '#dbe8de', 1.15, 1.0],
+  [0.75, '#e08a5a', '#4a5f8c', '#ff9a5a', 1.1, '#c8a890', 0.8, 0.85],
+  [0.8, '#1c2430', '#0a1220', '#8ea6d8', 0.45, '#5a6e98', 0.42, 0.25],
+  [1.0, '#141c27', '#070c16', '#8ea6d8', 0.45, '#5a6e98', 0.42, 0.22],
+].map(([t, h, z, sc, si, hs, hi, cl]) => ({ t, h: new THREE.Color(h), z: new THREE.Color(z), sc: new THREE.Color(sc), si, hs: new THREE.Color(hs), hi, cl }));
 
 export class Sky {
   constructor(scene) {
@@ -47,6 +63,48 @@ export class Sky {
     this.dome.frustumCulled = false;
     this.dome.name = 'Ceu';
     scene.add(this.dome);
+    this.time = 0.35;
+    this.daylight = 1;
+    this._horizon = HORIZON.clone();
+  }
+
+  // Hora do dia (0 a 1). Atualiza sol/lua, cores do céu, luz e neblina.
+  setTime(t) {
+    t = ((t % 1) + 1) % 1;
+    this.time = t;
+    let i = 0;
+    while (i < KEYS.length - 2 && KEYS[i + 1].t <= t) i++;
+    const a = KEYS[i];
+    const b = KEYS[i + 1];
+    const f = Math.min(1, Math.max(0, (t - a.t) / Math.max(1e-6, b.t - a.t)));
+    const L = (x, y) => x + (y - x) * f;
+    this._horizon.copy(a.h).lerp(b.h, f);
+    const u = this.dome.material.uniforms;
+    u.uHorizon.value.copy(this._horizon);
+    u.uZenith.value.copy(a.z).lerp(b.z, f);
+    u.uCloud.value = L(a.cl, b.cl);
+    this.sun.color.copy(a.sc).lerp(b.sc, f);
+    this.sun.intensity = L(a.si, b.si);
+    this.hemi.color.copy(a.hs).lerp(b.hs, f);
+    this.hemi.intensity = L(a.hi, b.hi);
+    // sol gira em volta da ilha; à noite a luz vem da lua (oposta)
+    const ang = (t - 0.25) * Math.PI * 2;
+    const sun = new THREE.Vector3(Math.cos(ang) * 0.85, Math.sin(ang), 0.35).normalize();
+    const up = sun.y > -0.05 ? sun : sun.clone().negate();
+    if (up.y < 0.15) up.y = 0.15;
+    SUN_DIR.copy(up).normalize();
+    this.sunDir.copy(SUN_DIR);
+    u.uSunColor.value.copy(this.sun.color).multiplyScalar(sun.y > -0.05 ? 1 : 0.35);
+    this.daylight = Math.min(1, Math.max(0.18, (this.sun.intensity - 0.45) / 2.15 * 0.82 + 0.18));
+    sharedDay.value = this.daylight;
+    if (!this.underwater) {
+      this.scene.fog.color.copy(this._horizon);
+      this.scene.background.copy(this._horizon);
+    }
+  }
+
+  get isNight() {
+    return this.time < 0.22 || this.time > 0.79;
   }
 
   _setShadowRange(r) {
@@ -88,8 +146,8 @@ export class Sky {
       fog.density = 0.12;
       this.scene.background.copy(UNDERWATER);
     } else {
-      fog.color.copy(HORIZON);
-      this.scene.background.copy(HORIZON);
+      fog.color.copy(this._horizon);
+      this.scene.background.copy(this._horizon);
       this.setViewDistance(this.viewDistance);
     }
     this.dome.visible = !on;

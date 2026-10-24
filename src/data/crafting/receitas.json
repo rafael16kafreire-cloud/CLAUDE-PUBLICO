@@ -12,6 +12,12 @@
     { "id": "bandagem", "resultado": "bandagem", "quantidade": 1, "tempo": 1.5, "xp": 2, "categoria": "Cura",
       "ingredientes": { "fibra": 6 } },
     { "id": "unguento", "resultado": "unguento", "quantidade": 1, "tempo": 2.5, "xp": 4, "categoria": "Cura",
-      "ingredientes": { "baga_mejo": 10, "fruta_azul": 2, "fibra": 3 } }
+      "ingredientes": { "baga_mejo": 10, "fruta_azul": 2, "fibra": 3 } },
+    { "id": "tocha", "resultado": "tocha", "quantidade": 1, "tempo": 2, "xp": 3, "categoria": "Ferramentas",
+      "ingredientes": { "madeira": 1, "palha": 4, "silex": 1 } },
+    { "id": "fogueira", "resultado": "fogueira", "quantidade": 1, "tempo": 3, "xp": 8, "categoria": "Estruturas",
+      "ingredientes": { "pedra": 12, "madeira": 4, "palha": 8, "silex": 1 } },
+    { "id": "saco_dormir", "resultado": "saco_dormir", "quantidade": 1, "tempo": 4, "xp": 10, "categoria": "Estruturas",
+      "ingredientes": { "fibra": 15, "palha": 10, "couro": 3 } }
   ]
 }

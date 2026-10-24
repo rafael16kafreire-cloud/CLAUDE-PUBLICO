@@ -6,7 +6,7 @@
 import { settings, QUALITY_PRESETS } from '../core/settings.js';
 
 export class PauseMenu {
-  constructor(root, { onResume, onQuitToMenu, onCloseApp, species = [], onSpawnTest }) {
+  constructor(root, { onResume, onQuitToMenu, onCloseApp, species = [], onSpawnTest, onLeaveCoop }) {
     const el = document.createElement('div');
     el.className = 'overlay pause';
     el.hidden = true;
@@ -15,6 +15,10 @@ export class PauseMenu {
         <div class="pause-head">
           <h2 id="pause-title">Pausado</h2>
           <button type="button" class="btn btn-primary" id="pause-resume">Continuar</button>
+        </div>
+        <div class="pause-coop" id="pause-coop" hidden>
+          <span>Código do co-op:</span> <b id="pause-code"></b> <span id="pause-players"></span>
+          <button type="button" class="btn btn-small" id="pause-leave">Sair do co-op</button>
         </div>
         <form class="opts" id="pause-opts" autocomplete="off">
           <label for="opt-quality">Qualidade gráfica</label>
@@ -95,6 +99,8 @@ export class PauseMenu {
     $('pause-opts').addEventListener('submit', (e) => e.preventDefault());
     $('pause-spawn').addEventListener('click', () => onSpawnTest?.($('opt-spawn').value));
     $('pause-resume').addEventListener('click', () => onResume());
+    $('pause-leave').addEventListener('click', () => onLeaveCoop?.());
+    this.coopEls = { box: $('pause-coop'), code: $('pause-code'), players: $('pause-players') };
     $('pause-menu').addEventListener('click', () => onQuitToMenu());
     const closeBtn = $('pause-close');
     if (onCloseApp) {
@@ -147,6 +153,13 @@ export class PauseMenu {
     this.outs.sens.textContent = Number(v.sensitivity).toFixed(1);
     this.outs.opacity.textContent = `${Math.round(v.buttonOpacity * 100)}%`;
     this.outs.size.textContent = `${Math.round(v.buttonSize * 100)}%`;
+  }
+
+  setCoop(code, names = []) {
+    this.coopEls.box.hidden = !code;
+    if (!code) return;
+    this.coopEls.code.textContent = code;
+    this.coopEls.players.textContent = `(${names.join(', ')})`;
   }
 
   show() {

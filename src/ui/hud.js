@@ -53,12 +53,19 @@ export class Hud {
             <span class="ico">${ICONS.temperature}</span><b data-ref="tempval">26°</b>
           </span>
         </div>
+        <div class="hud-clock" data-ref="clock" title="Hora do dia"></div>
         ${BARS.map((b) => `
           <div class="stat stat-${b.key}" data-stat="${b.key}" title="${b.label}" ${b.key === 'oxygen' ? 'hidden' : ''}>
             <span class="ico">${ICONS[b.key]}</span>
             <div class="track"><i class="fill"></i></div>
             <b class="num">100</b>
           </div>`).join('')}
+      </div>
+
+      <div class="objective" data-ref="obj" hidden>
+        <span class="obj-label">Objetivo</span>
+        <span class="obj-text" data-ref="objtext"></span>
+        <b class="obj-prog" data-ref="objprog"></b>
       </div>
 
       <div class="hud-corner">
@@ -81,6 +88,7 @@ export class Hud {
         <p class="biome-desc" data-ref="bdesc"></p>
       </div>
 
+      <div class="coop-badge" data-ref="coop" hidden></div>
       <div class="crosshair" aria-hidden="true"></div>
       <div class="prompt" data-ref="prompt" hidden></div>
     `;
@@ -110,8 +118,28 @@ export class Hud {
     });
 
     events.on(EV.INTERACT_PROMPT, (p) => this._showPrompt(p?.text ?? null, p?.key));
+    events.on(EV.OBJECTIVE, ({ objective }) => this.setObjective(objective));
     events.on(EV.BIOME_ENTERED, (b) => this.showBiome(b.name, b.description));
     events.on(EV.PLAYER_HURT, () => this._hurt());
+  }
+
+  // Objetivo atual (null = acabou a lista).
+  setObjective(o) {
+    this._objective = o;
+    this.refs.obj.hidden = !o;
+    if (o) {
+      this.refs.objtext.textContent = o.texto;
+      this.refs.obj.classList.remove('flash');
+      void this.refs.obj.offsetWidth;
+      this.refs.obj.classList.add('flash');
+    }
+  }
+
+  // Co-op: código e quantos jogadores (null = sozinho).
+  setCoop(code, count) {
+    const b = this.refs.coop;
+    b.hidden = !code;
+    if (code) b.innerHTML = `Co-op <b>${code}</b> · ${count} ${count === 1 ? 'jogador' : 'jogadores'}`;
   }
 
   setCameraLabel(mode) {
@@ -208,6 +236,18 @@ export class Hud {
     const need = st.xpToNext();
     this.refs.xpfill.style.transform = `scaleX(${Math.min(1, st.xp / need).toFixed(3)})`;
     this.refs.xpfill.parentElement.title = `Experiência: ${Math.floor(st.xp)} / ${need}`;
+
+    // relógio do dia
+    const w = this.player.world;
+    if (w?.time !== undefined) {
+      const mins = Math.floor(w.time * 24 * 60);
+      const hh = String(Math.floor(mins / 60)).padStart(2, '0');
+      const mm = String(Math.floor((mins % 60) / 10) * 10).padStart(2, '0');
+      const night = w.sky.isNight;
+      this.refs.clock.textContent = `${night ? '☾' : '☀'} Dia ${w.day} · ${hh}:${mm}`;
+      this.refs.clock.classList.toggle('night', night);
+    }
+    if (this.objectiveProgress) this.refs.objprog.textContent = this.objectiveProgress();
 
     const t = st.temperature;
     const state = tempState(t);

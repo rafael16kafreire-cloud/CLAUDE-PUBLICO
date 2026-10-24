@@ -629,10 +629,14 @@ export function makeMossRock(low = false) {
   const g = blob(1, [0, 0, 0], [1, 0.72, 1], low ? [5, 4] : [10, 7], 0.42, 61);
   g.computeVertexNormals();
   g.translate(0, 0.28, 0);
-  return merge([paintFn(g, (c, x, y, z, nx, ny) => {
+  const m = merge([paintFn(g, (c, x, y, z, nx, ny) => {
     c.set(ny > 0.55 ? '#4a6430' : '#7a766c');
     c.multiplyScalar(0.85 + hash3(x, y, z, 2) * 0.25);
   })]);
+  // pedra usa o pedaço "liso" de baixo (sem casca de árvore)
+  const uv = m.attributes.uv;
+  for (let i = 0; i < uv.count; i++) uv.setXY(i, WHITE_UV[0], 0.55);
+  return m;
 }
 export const makeMossRockLow = () => makeMossRock(true);
 

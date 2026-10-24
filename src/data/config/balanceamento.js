@@ -130,6 +130,38 @@ export default {
   },
 
   // ---------------------------------------------------------
+  // Dia e noite
+  // ---------------------------------------------------------
+  dia: {
+    duracao_dia_min: 30,       // um dia inteiro (dia + noite) em minutos
+    hora_inicial: 0.3,         // 0 = meia-noite, 0.25 = amanhecer, 0.5 = meio-dia
+    frio_noite_c: -6,          // quanto esfria à noite
+  },
+
+  // ---------------------------------------------------------
+  // Dificuldade (para dar tempo de se preparar)
+  // ---------------------------------------------------------
+  dificuldade: {
+    zona_segura_m: 70,         // carnívoros não nascem perto das praias de renascer e dos sacos de dormir
+    inicio_tranquilo_min: 5,   // depois de nascer/renascer: poucos carnívoros e fracos
+    nivel_max_inicio: 6,       // nível máximo dos bichos nesse começo
+    peso_carnivoros: 0.6,      // 1 = normal; menor = menos carnívoros
+    max_carnivoros_perto: 4,   // nunca mais que isso de carnívoros vivos por perto
+    agro_noite: 1.25,          // à noite os predadores enxergam mais longe
+  },
+
+  // ---------------------------------------------------------
+  // Fogueira
+  // ---------------------------------------------------------
+  fogueira: {
+    madeira_por_acender: 2,    // madeira gasta para acender / pôr mais lenha
+    minutos_por_lenha: 5,      // quanto tempo fica acesa com cada lenha
+    segundos_por_carne: 6,     // tempo para assar cada carne
+    raio_m: 4,                 // perto assim a fogueira assa e esquenta
+    calor_c: 12,               // quanto esquenta perto
+  },
+
+  // ---------------------------------------------------------
   // Desempenho
   // ---------------------------------------------------------
   desempenho: {

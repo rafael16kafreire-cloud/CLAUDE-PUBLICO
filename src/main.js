@@ -26,6 +26,8 @@ import { Crafting } from './crafting/crafting.js';
 import { PlayerActions } from './player/player_actions.js';
 import { Hotbar } from './ui/hotbar.js';
 import { InventoryScreen } from './ui/inventory_screen.js';
+import { Objectives } from './player/objectives.js';
+import { Multiplayer } from './net/multiplayer.js';
 
 // Ponte com o app Android (existe só dentro do APK).
 const androidApp = typeof window !== 'undefined' ? window.IlhaAndroid : undefined;
@@ -77,7 +79,12 @@ function boot(hotData = {}) {
 
   let ctx = null; // tudo do jogo, criado depois de gerar a ilha
 
-  const start = new StartScreen(ui, { onPlay: () => play() });
+  const start = new StartScreen(ui, {
+    onPlay: () => play(),
+    onHost: (name) => hostCoop(name),
+    onJoin: (code, name) => joinCoop(code, name),
+    playerName: settings.get('playerName') || '',
+  });
   start.setLoading('Gerando a ilha…');
 
   function resize() {
@@ -126,6 +133,10 @@ function boot(hotData = {}) {
     const crafting = new Crafting(inventory, player.stats);
     const actions = new PlayerActions(player, world, inventory);
     player.actions = actions;
+    actions.forward = camCtl.forward;
+    world.localPlayer = player;
+    world.localInventory = inventory;
+    const objectives = new Objectives(inventory, player.stats);
     const interaction = new PlayerInteraction(player, world, camCtl, actions, inventory);
     const hud = new Hud(ui, player, (action) => onCornerButton(action));
     const messages = new Messages(ui);
@@ -135,7 +146,10 @@ function boot(hotData = {}) {
     const creatures = new CreatureManager(world, scene);
     world.creatures = creatures;
     const hands = new PlayerHands(camera);
-    player.onPunch = (kind) => hands.swing(kind);
+    player.onPunch = (kind) => {
+      hands.swing(kind);
+      ctx?.net.noteSwing();
+    };
     const hotbar = new Hotbar(ui, inventory, (i) => actions.pressHotbar(i));
     const invScreen = new InventoryScreen(ui, {
       inventory,
@@ -150,20 +164,33 @@ function boot(hotData = {}) {
       onCloseApp: androidApp?.exit ? () => androidApp.exit() : null,
       species: Object.values(SPECIES),
       onSpawnTest: (id) => spawnInFront(id),
+      onLeaveCoop: () => {
+        ctx.net.leave();
+        ctx.pause.setCoop(null);
+      },
     });
     game.world = world;
     game.player = player;
     ctx = {
       world, player, camCtl, interaction, hud, messages, touch, death, debug, pause, creatures, hands,
-      inventory, crafting, actions, hotbar, invScreen,
+      inventory, crafting, actions, hotbar, invScreen, objectives,
     };
+    hud.objectiveProgress = () => objectives.progress;
+    ctx.net = new Multiplayer({ world, player, creatures, inventory, actions, camCtl });
 
     // Voltando de uma atualização da página: restaura posição, barras e itens.
     if (hotData.player) {
       player.fromJSON(hotData.player);
       if (typeof hotData.yaw === 'number') camCtl.yaw = hotData.yaw;
       inventory.fromJSON(hotData.inventory);
+      if (hotData.world) {
+        world.time = hotData.world.time ?? world.time;
+        world.day = hotData.world.day ?? world.day;
+        for (const st of hotData.world.structures ?? []) world.addStructure(st);
+      }
+      objectives.fromJSON(hotData.objectives);
     }
+    events.emit(EV.OBJECTIVE, { objective: objectives.current });
 
     hud.setVisible(false);
     hotbar.setVisible(false);
@@ -181,6 +208,59 @@ function boot(hotData = {}) {
   }
 
   // ---------- Mudanças de estado ----------
+  // ---------- Co-op ----------
+  function coopError(err) {
+    const t = err?.type;
+    const msg = t === 'peer-unavailable' ? 'Partida não encontrada. Confira o código.'
+      : t === 'full' ? 'Essa partida já tem 4 jogadores.'
+        : t === 'timeout' ? 'Demorou demais para conectar. Tente de novo.'
+          : t === 'network' || t === 'server-error' || t === 'socket-error' ? 'Sem conexão com a internet (ou servidor fora do ar).'
+            : 'Não deu para conectar. Tente de novo.';
+    start.setStatus(msg, 'erro');
+    start.setCoopBusy(false);
+  }
+
+  function hostCoop(name) {
+    if (!ctx) return;
+    settings.set('playerName', name);
+    ctx.player.name = name;
+    start.setCoopBusy(true);
+    start.setStatus('Criando partida…');
+    ctx.net.host(name).then((code) => {
+      start.setStatus(`Partida criada: ${code}`, 'ok');
+      play();
+      events.emit(EV.MESSAGE, { text: `Código da partida: ${code} — passe para seus amigos (botão ❚❚ mostra de novo).`, kind: 'gain' });
+    }).catch(coopError);
+  }
+
+  function joinCoop(code, name) {
+    if (!ctx) return;
+    code = (code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (code.length !== 6) {
+      start.setStatus('O código tem 6 letras/números.', 'erro');
+      return;
+    }
+    settings.set('playerName', name);
+    ctx.player.name = name;
+    start.setCoopBusy(true);
+    start.setStatus('Conectando…');
+    ctx.net.join(code, name).then(() => {
+      const sp = ctx.net.welcomeSpawn;
+      if (sp) {
+        ctx.player.position.set(sp.x, ctx.world.heightAt(sp.x, sp.z), sp.z);
+        ctx.camCtl.yaw = sp.yaw;
+      }
+      start.setStatus('Conectado!', 'ok');
+      play();
+    }).catch(coopError);
+  }
+
+  events.on(EV.NET, () => {
+    if (!ctx) return;
+    const n = ctx.net;
+    ctx.hud.setCoop(n.active ? n.code : null, n.playerCount);
+  });
+
   function play() {
     if (!ctx) return;
     start.hide();
@@ -191,11 +271,13 @@ function boot(hotData = {}) {
     requestFullscreenLandscape();
     if (!game.isTouch) input.requestPointerLock();
     if (game.playTime < 1) {
-      events.emit(EV.MESSAGE, { text: 'Bata nas árvores para pegar madeira e palha. Abra o Inventário para criar ferramentas.', kind: 'info' });
+      events.emit(EV.MESSAGE, { text: 'Siga o objetivo no canto da tela. Abaixado (agachar) os predadores te veem menos.', kind: 'info' });
       events.emit(EV.MESSAGE, { text: 'Água doce: o pântano fica no meio da ilha.', kind: 'info' });
       // Já começa com alguns animais por perto.
-      for (let i = 0; i < 8; i++) ctx.creatures.trySpawnNear(ctx.player.position, 45, 110);
-      for (let i = 0; i < 3; i++) ctx.creatures.trySpawnNear(ctx.player.position, 20, 60, true);
+      if (!ctx.creatures.netClient) {
+        for (let i = 0; i < 8; i++) ctx.creatures.trySpawnNear(ctx.player.position, 45, 110);
+        for (let i = 0; i < 3; i++) ctx.creatures.trySpawnNear(ctx.player.position, 20, 60, true);
+      }
     }
   }
 
@@ -257,6 +339,7 @@ function boot(hotData = {}) {
     game.setState(STATE.PAUSED);
     input.clear();
     input.exitPointerLock();
+    ctx.pause.setCoop(ctx.net.active ? ctx.net.code : null, ctx.net.playerNames);
     ctx.pause.show();
   }
 
@@ -268,6 +351,7 @@ function boot(hotData = {}) {
   }
 
   function toMenu() {
+    if (ctx.net.active) ctx.net.leave();
     ctx.pause.hide();
     ctx.hud.setVisible(false);
     ctx.hotbar.setVisible(false);
@@ -436,6 +520,15 @@ function boot(hotData = {}) {
         camCtl.update(dt, player);
         creatures.update(dt, player, camera);
         break;
+      case STATE.PAUSED:
+        // No co-op o mundo não para (os outros continuam jogando).
+        if (ctx.net.active) {
+          player.update(dt, input, camCtl);
+          camCtl.update(dt, player);
+          creatures.update(dt, player, camera);
+          crafting.update(dt);
+        }
+        break;
       case STATE.MENU: {
         // Sobrevoo lento da ilha atrás da tela inicial
         // (perto o bastante para a neblina não esconder tudo).
@@ -450,8 +543,10 @@ function boot(hotData = {}) {
         break;
     }
 
+    if (game.state !== STATE.MENU) ctx.net.update(dt);
+
     // Pausado: desenha só de vez em quando (economiza bateria).
-    if (game.state === STATE.PAUSED) {
+    if (game.state === STATE.PAUSED && !ctx.net.active) {
       pausedSkip = (pausedSkip + 1) % 6;
       if (pausedSkip !== 0) {
         input.endFrame();
@@ -478,6 +573,14 @@ function boot(hotData = {}) {
       camera.lookAt(...photo.target);
     }
     const toolKind = actions.tool.tipo;
+    // luz da tocha na mão (mais forte à noite)
+    const torchOn = toolKind === 'tocha' && game.state === STATE.PLAYING && !player.dead;
+    if (torchOn) {
+      world.torchLight.position.copy(camera.position).addScaledVector(camCtl.forward, 0.8).add(new THREE.Vector3(0, 0.3, 0));
+      world.torchLight.intensity = (1.5 + (1 - world.sky.daylight) * 9) * (0.9 + Math.sin(now * 0.017) * 0.06);
+    } else {
+      world.torchLight.intensity = 0;
+    }
     if (hands.toolKind !== toolKind) hands.setTool(toolKind);
     hands.update(dt, {
       visible: !photo && game.state === STATE.PLAYING && camCtl.mode === 'primeira' && !player.dead,
@@ -509,7 +612,14 @@ function boot(hotData = {}) {
     settings,
     speciesIds: Object.keys(SPECIES),
     get ctx() { return ctx; },
-    snapshot: () => (ctx ? { player: ctx.player.toJSON(), yaw: ctx.camCtl.yaw, inventory: ctx.inventory.toJSON() } : {}),
+    get net() { return ctx?.net; },
+    snapshot: () => (ctx ? {
+      player: ctx.player.toJSON(),
+      yaw: ctx.camCtl.yaw,
+      inventory: ctx.inventory.toJSON(),
+      objectives: ctx.objectives.toJSON(),
+      world: { time: ctx.world.time, day: ctx.world.day, structures: ctx.world.structures.map((st) => st.toJSON()) },
+    } : {}),
   };
 }
 

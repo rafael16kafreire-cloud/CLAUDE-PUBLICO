@@ -411,6 +411,85 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   // devolve as plantas escondidas pelo teste
   await page.evaluate(() => { for (const r of window.__ilha.ctx.world.vegetation.recs) if (r._testHidden) { r.alive = true; delete r._testHidden; } });
 
+  // ---------- Sobrevivência ----------
+  const arm = await page.evaluate(() => ({ parts: window.__ilha.ctx.hands.root.children.length, leftShown: !!window.__ilha.ctx.hands.left.parent }));
+  check('Braço: só um braço na tela', arm.parts === 1 && !arm.leftShown, JSON.stringify(arm));
+  const early = await page.evaluate(() => {
+    const c = window.__ilha.ctx;
+    c.creatures.clear();
+    c.creatures.enabled = true;
+    c.player.aliveTime = 0;
+    const p = { x: -230, z: -200, y: 0 };
+    for (let i = 0; i < 40; i++) c.creatures.trySpawnNear(p, 55, 130);
+    const carn = c.creatures.list.filter((x) => x.species.temperamento === 'agressivo' && !x.species.ambiente);
+    const out = { carn: carn.length, maxLvl: Math.max(0, ...carn.map((x) => x.level)) };
+    c.creatures.clear();
+    c.creatures.enabled = false;
+    return out;
+  });
+  check('Começo tranquilo: poucos carnívoros e de nível baixo', early.carn <= 4 && early.maxLvl <= 6, JSON.stringify(early));
+  const fire = await page.evaluate(() => {
+    const c = window.__ilha.ctx;
+    const sul = c.world.respawnPoint('sul').position;
+    c.player.position.set(sul.x + 8, c.world.heightAt(sul.x + 8, sul.z - 3), sul.z - 3);
+    c.inventory.add('madeira', 4); c.inventory.add('carne_crua', 2); c.inventory.add('fogueira', 1);
+    const i = c.inventory.slots.findIndex((x) => x && x.id === 'fogueira');
+    c.camCtl.yaw = 0;
+    c.actions.place(i);
+    const f = c.world.structures.find((x) => x.type === 'fogueira');
+    return { placed: !!f, lit: f?.lit };
+  });
+  check('Fogueira: colocar no chão', fire.placed && fire.lit === false, JSON.stringify(fire));
+  await page.evaluate(() => {
+    const c = window.__ilha.ctx;
+    const f = c.world.structures.find((x) => x.type === 'fogueira');
+    const p = c.player.position;
+    c.camCtl.yaw = Math.atan2(p.x - f.position.x, p.z - f.position.z);
+    c.camCtl.pitch = -0.5;
+  });
+  await gameWait(page, 400);
+  const firePrompt = await page.evaluate(() => document.querySelector('.prompt:not([hidden])')?.textContent ?? '');
+  await page.keyboard.press('KeyE');
+  await gameWait(page, 13500);
+  const cooked = await page.evaluate(() => {
+    const c = window.__ilha.ctx;
+    const f = c.world.structures.find((x) => x.type === 'fogueira');
+    return { lit: f.lit, assada: c.inventory.count('carne_assada'), crua: c.inventory.count('carne_crua'), temp: Math.round(c.player.stats.temperature) };
+  });
+  check('Fogueira: acende com E e assa a carne', /Acender/.test(firePrompt) && cooked.lit && cooked.assada === 2 && cooked.crua === 0, `${firePrompt} → ${JSON.stringify(cooked)}`);
+  await page.screenshot({ path: `${SHOTS}/07d-pc-fogueira.png` });
+  const night = await page.evaluate(() => {
+    const w = window.__ilha.ctx.world;
+    w.time = 0.95;
+    return null;
+  });
+  await gameWait(page, 400);
+  const nightInfo = await page.evaluate(() => {
+    const w = window.__ilha.ctx.world;
+    return { night: w.sky.isNight, sun: +w.sky.sun.intensity.toFixed(2), fire: +w.fireLight.intensity.toFixed(2), clock: document.querySelector('.hud-clock').textContent };
+  });
+  await page.screenshot({ path: `${SHOTS}/07e-pc-noite.png` });
+  check('Noite: escurece, relógio mostra a lua e a fogueira ilumina', nightInfo.night && nightInfo.sun < 0.6 && nightInfo.fire > 2 && /☾/.test(nightInfo.clock), JSON.stringify(nightInfo));
+  const sleep = await page.evaluate(() => {
+    const c = window.__ilha.ctx;
+    c.inventory.add('saco_dormir', 1);
+    c.camCtl.yaw = Math.PI;
+    c.actions.place(c.inventory.slots.findIndex((x) => x && x.id === 'saco_dormir'));
+    const bag = c.world.structures.find((x) => x.type === 'saco_dormir');
+    const day0 = c.world.day;
+    const ok = bag.use({ player: c.player, inventory: c.inventory });
+    return { ok, morning: c.world.time > 0.25 && c.world.time < 0.3, day: c.world.day - day0, points: c.world.allRespawnPoints.length };
+  });
+  check('Saco de dormir: dorme até de manhã e vira ponto de renascer', sleep.ok && sleep.morning && sleep.day === 1 && sleep.points >= 7, JSON.stringify(sleep));
+  const obj = await page.evaluate(() => {
+    const c = window.__ilha.ctx;
+    c.objectives.index = 0;
+    c.objectives.check();
+    return { id: c.objectives.current?.id, text: document.querySelector('.objective .obj-text')?.textContent };
+  });
+  check('Objetivos: aparecem na tela e avançam', !!obj.text && obj.id !== 'palha', JSON.stringify(obj));
+  await page.evaluate(() => { const w = window.__ilha.ctx.world; for (const st of w.structures) st.remove(); w.time = 0.35; });
+
   // Morte por afogamento: itens vão para o saco de morte
   const before = await page.evaluate(() => window.__ilha.ctx.inventory.slots.filter(Boolean).length);
   await page.evaluate(() => {
@@ -437,7 +516,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   await page.screenshot({ path: `${SHOTS}/09-pc-tela-de-morte.png` });
 
   const pins = await page.evaluate(() => ({ pins: document.querySelectorAll('.map-pin').length, labels: [...document.querySelectorAll('.map-label')].map((l) => l.textContent) }));
-  check('Morte: mapa mostra os pontos de renascer e o Pântano', pins.pins >= 5 && pins.labels.includes('Pântano'), JSON.stringify(pins));
+  check('Morte: mapa mostra os pontos de renascer e o Pântano', pins.pins >= 6 && pins.labels.includes('Pântano'), JSON.stringify(pins));
   await page.click('#respawn-leste');
   await page.click('#respawn-confirm');
   await frames(page, 20);
@@ -831,6 +910,92 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   check('Android: "Fechar o app" chama o app', closed);
   check('Android: sem erros', errors.length === 0, errors.join(' / '));
   await context.close();
+}
+
+// ---------------------------------------------------------------
+// CO-OP: dois jogadores (servidor de conexão local, sem internet)
+// ---------------------------------------------------------------
+{
+  const { PeerServer } = require('peer');
+  const server = PeerServer({ port: 9123, path: '/', host: '127.0.0.1' });
+  await new Promise((r) => setTimeout(r, 400));
+  const coopBrowser = await chromium.launch({
+    args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--disable-features=WebRtcHideLocalIpsWithMdns'],
+  });
+  const curl = `${url}?servidor=127.0.0.1:9123`;
+  const errors = [];
+  const openP = async (label) => {
+    const c = await coopBrowser.newContext({ viewport: { width: 800, height: 450 } });
+    await c.addInitScript(() => localStorage.setItem('ilha-primordial:opcoes', JSON.stringify({ version: 3, autoQuality: false, quality: 'baixa' })));
+    const pg = await c.newPage();
+    pg.on('pageerror', (e) => errors.push(`${label}: ${e.message}`));
+    await pg.goto(curl);
+    await pg.waitForFunction(() => !document.querySelector('#btn-play').disabled, null, { timeout: 60000 });
+    return pg;
+  };
+  const A = await openP('A');
+  const B = await openP('B');
+  await A.fill('#coop-name', 'Rafa');
+  await A.click('#btn-host');
+  await A.waitForFunction(() => window.__ilha.net?.active, null, { timeout: 20000 }).catch(() => {});
+  const code = await A.evaluate(() => window.__ilha.net?.code ?? '');
+  check('Co-op: criar partida dá um código de 6 letras', /^[A-Z0-9]{6}$/.test(code), code);
+  await B.fill('#coop-name', 'Amigo');
+  await B.click('#btn-join-open');
+  await B.fill('#coop-code', code);
+  await B.click('#btn-join');
+  await B.waitForFunction(() => window.__ilha.net?.active, null, { timeout: 30000 }).catch(() => {});
+  await gameWait(A, 2500);
+  await gameWait(B, 1000);
+  const ia = await A.evaluate(() => ({ names: window.__ilha.net.playerNames, badge: document.querySelector('.coop-badge').textContent }));
+  const ib = await B.evaluate(() => ({ names: window.__ilha.net.playerNames, net: window.__ilha.ctx.creatures.list.filter((x) => x.netControlled).length, all: window.__ilha.ctx.creatures.list.length }));
+  check('Co-op: os dois entram e se veem', ia.names.includes('Amigo') && ib.names.includes('Rafa') && /2 jogadores/.test(ia.badge), JSON.stringify({ ia, ib }));
+  check('Co-op: animais do anfitrião aparecem no convidado', ib.net > 0 && ib.net === ib.all, JSON.stringify(ib));
+  await B.evaluate(() => { window.__ilha.ctx.player.position.x += 6; });
+  await gameWait(B, 800);
+  await gameWait(A, 800);
+  const seen = await A.evaluate(() => [...window.__ilha.net.remotes.values()][0].position.x);
+  const bx = await B.evaluate(() => window.__ilha.ctx.player.position.x);
+  check('Co-op: posição do amigo chega', Math.abs(seen - bx) < 1, `${seen.toFixed(2)} vs ${bx.toFixed(2)}`);
+  await A.evaluate(() => { const c = window.__ilha.ctx; c.inventory.add('fogueira', 1); c.actions.place(c.inventory.slots.findIndex((x) => x && x.id === 'fogueira')); });
+  await gameWait(A, 600);
+  await gameWait(B, 600);
+  const bst = await B.evaluate(() => window.__ilha.ctx.world.structures.map((x) => x.type));
+  check('Co-op: fogueira colocada aparece para o amigo', bst.includes('fogueira'), bst.join(','));
+  // convidado mata um dodô do anfitrião
+  const nid = await A.evaluate(() => {
+    const c = window.__ilha.ctx;
+    c.creatures.enabled = false;
+    const b = [...window.__ilha.net.remotes.values()][0];
+    const d = c.creatures.spawn('dodo', b.position.x, b.position.z - 3, 1);
+    d._setState('parado'); d.idleFor = 99;
+    window.__dodo = d;
+    return d.id;
+  });
+  await gameWait(A, 800);
+  await gameWait(B, 800);
+  const xp0 = await B.evaluate(() => window.__ilha.ctx.player.stats.xp + window.__ilha.ctx.player.stats.level * 1000);
+  await B.evaluate((n) => { const c = window.__ilha.ctx; const d = c.creatures.byNid(n); for (let i = 0; i < 6; i++) d?.takeDamage(12, c.player); }, nid);
+  await gameWait(B, 1200);
+  await gameWait(A, 600);
+  const kill = await A.evaluate(() => !window.__dodo.alive);
+  const xp1 = await B.evaluate(() => window.__ilha.ctx.player.stats.xp + window.__ilha.ctx.player.stats.level * 1000);
+  check('Co-op: convidado acerta animal do anfitrião e ganha XP', kill && xp1 > xp0, JSON.stringify({ kill, xp0, xp1 }));
+  // raptor do anfitrião ataca o convidado
+  await A.evaluate(() => { const c = window.__ilha.ctx; const b = [...window.__ilha.net.remotes.values()][0]; c.creatures.spawn('raptor', b.position.x + 6, b.position.z, 3); });
+  const h0 = await B.evaluate(() => window.__ilha.ctx.player.stats.health);
+  await gameWait(A, 4000);
+  await gameWait(B, 600);
+  const h1 = await B.evaluate(() => window.__ilha.ctx.player.stats.health);
+  check('Co-op: predador do anfitrião ataca o convidado', h1 < h0, `${h0} -> ${h1.toFixed(0)}`);
+  await B.screenshot({ path: `${SHOTS}/30-coop-convidado.png` });
+  await A.screenshot({ path: `${SHOTS}/31-coop-anfitriao.png` });
+  await A.evaluate(() => window.__ilha.net.leave());
+  await gameWait(B, 1500);
+  const after = await B.evaluate(() => ({ active: window.__ilha.net.active, client: window.__ilha.ctx.creatures.netClient, state: window.__ilha.game.state }));
+  check('Co-op: anfitrião sai e o amigo continua sozinho', !after.active && !after.client && after.state === 'playing', JSON.stringify(after));
+  check('Co-op: sem erros', errors.length === 0, errors.slice(0, 3).join(' / '));
+  await coopBrowser.close();
 }
 
 await browser.close();

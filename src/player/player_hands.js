@@ -1,34 +1,57 @@
 // =============================================================
-// MÃOS EM PRIMEIRA PESSOA
-// Braços presos à câmera: respiram parados, balançam ao andar,
+// BRAÇO EM PRIMEIRA PESSOA (só o direito, musculoso)
+// Preso à câmera: respiram parados, balançam ao andar,
 // dão soco, machadada/picaretada (de cima para baixo) e estocada
 // de lança. A ferramenta em uso aparece na mão direita.
 // =============================================================
 import * as THREE from 'three';
 
-const SKIN = new THREE.MeshLambertMaterial({ color: '#c99a6e' });
-const SLEEVE = new THREE.MeshLambertMaterial({ color: '#a85f31' });
+const SKIN = new THREE.MeshLambertMaterial({ color: '#b5784e' });
 const WOOD = new THREE.MeshLambertMaterial({ color: '#7a5a3a' });
 const STONE = new THREE.MeshLambertMaterial({ color: '#8a8a90' });
 const FLINT = new THREE.MeshLambertMaterial({ color: '#4c505a' });
 const ROPE = new THREE.MeshLambertMaterial({ color: '#a89058' });
 
-function arm(side) {
+// Peça "de carne": esfera esticada (músculos, mão).
+function lump(r, sx, sy, sz, x, y, z, mat = SKIN, seg = 14) {
+  const m = new THREE.Mesh(new THREE.SphereGeometry(r, seg, Math.round(seg * 0.75)), mat);
+  m.scale.set(sx, sy, sz);
+  m.position.set(x, y, z);
+  return m;
+}
+
+// Braço direito musculoso: bíceps, antebraço grosso com músculos
+// saltados, punho e mão fechada com os nós dos dedos.
+// (o braço aponta para -z, para frente da câmera)
+function muscularArm() {
   const g = new THREE.Group();
-  const sleeve = new THREE.Mesh(new THREE.CapsuleGeometry(0.055, 0.22, 4, 10), SLEEVE);
-  sleeve.rotation.x = Math.PI / 2;
-  sleeve.position.z = 0.1;
-  const forearm = new THREE.Mesh(new THREE.CapsuleGeometry(0.042, 0.18, 4, 10), SKIN);
-  forearm.rotation.x = Math.PI / 2;
-  forearm.position.z = -0.12;
-  const fist = new THREE.Mesh(new THREE.SphereGeometry(0.058, 12, 10), SKIN);
-  fist.scale.set(1, 0.9, 1.15);
-  fist.position.z = -0.26;
-  g.add(sleeve, forearm, fist);
-  g.userData.fist = fist;
-  g.scale.setScalar(0.72);
-  g.position.set(0.24 * side, -0.25, -0.34);
-  g.rotation.set(0.12, -0.18 * side, 0.15 * side);
+  // braço (perto da câmera) e bíceps
+  g.add(lump(0.07, 1.05, 1.0, 2.6, 0.0, 0.0, 0.26));
+  g.add(lump(0.06, 1.0, 1.05, 1.9, 0.0, 0.035, 0.22));
+  // cotovelo
+  g.add(lump(0.06, 1.0, 0.95, 1.1, 0.005, -0.008, 0.1));
+  // antebraço: mais grosso perto do cotovelo, afinando até o punho
+  g.add(lump(0.058, 1.12, 1.0, 2.4, 0.0, 0.0, -0.02));
+  g.add(lump(0.06, 0.95, 0.9, 2.0, 0.026, 0.026, 0.02));  // músculo de cima (saltado)
+  g.add(lump(0.046, 0.85, 0.8, 2.0, -0.028, -0.01, 0.02)); // músculo de baixo
+  g.add(lump(0.038, 1.15, 0.85, 2.0, 0.0, 0.0, -0.13));
+  // punho
+  g.add(lump(0.033, 1.25, 0.85, 1.0, 0.0, 0.0, -0.205));
+  // mão fechada
+  const hand = new THREE.Group();
+  hand.position.z = -0.26;
+  hand.add(lump(0.046, 1.15, 0.78, 1.0, 0.0, 0.0, 0.0));            // palma/costas da mão
+  for (let i = 0; i < 4; i++) {
+    const x = -0.033 + i * 0.022;
+    hand.add(lump(0.017, 1.0, 0.9, 1.0, x, 0.012, -0.04, SKIN, 10));     // nós dos dedos
+    hand.add(lump(0.016, 1.0, 1.35, 1.0, x, -0.012, -0.046, SKIN, 10));  // dedos dobrados
+  }
+  hand.add(lump(0.016, 1.0, 1.0, 2.0, -0.05, -0.014, -0.02, SKIN, 8)); // polegar
+  g.add(hand);
+  g.userData.fist = hand;
+  g.scale.setScalar(1.25);
+  g.position.set(0.2, -0.27, -0.27);
+  g.rotation.set(0.32, 0.2, 0.05);
   return g;
 }
 
@@ -63,6 +86,18 @@ function makeTool(kind) {
     const tip = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.16, 4), FLINT);
     tip.position.y = 1.2;
     g.add(tip);
+  } else if (kind === 'tocha') {
+    g.add(handle(0.5, 0.024));
+    const wrap = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.032, 0.12, 7), ROPE);
+    wrap.position.y = 0.42;
+    const fl = new THREE.MeshBasicMaterial({ color: '#ffa040', transparent: true, opacity: 0.85, depthWrite: false, blending: THREE.AdditiveBlending });
+    const core = new THREE.MeshBasicMaterial({ color: '#ffe680', transparent: true, opacity: 0.95, depthWrite: false, blending: THREE.AdditiveBlending });
+    const flame = new THREE.Mesh(new THREE.ConeGeometry(0.085, 0.32, 8, 1, true), fl);
+    flame.position.y = 0.64;
+    const inner = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.18, 6, 1, true), core);
+    inner.position.y = 0.58;
+    g.add(wrap, flame, inner);
+    g.userData.flame = flame;
   } else if (kind === 'clava') {
     g.add(handle(0.42, 0.025));
     const head = new THREE.Mesh(new THREE.SphereGeometry(0.075, 8, 6), WOOD);
@@ -76,11 +111,12 @@ function makeTool(kind) {
 export class PlayerHands {
   constructor(camera) {
     this.root = new THREE.Group();
-    this.right = arm(1);
-    this.left = arm(-1);
-    this.root.add(this.right, this.left);
+    // Só o braço direito aparece (o esquerdo fica fora da tela).
+    this.right = muscularArm();
+    this.left = new THREE.Group();
+    this.root.add(this.right);
     this.tools = {};
-    for (const k of ['machado', 'picareta', 'lanca', 'clava']) {
+    for (const k of ['machado', 'picareta', 'lanca', 'clava', 'tocha']) {
       const t = makeTool(k);
       t.visible = false;
       t.position.z = -0.26;
@@ -117,13 +153,15 @@ export class PlayerHands {
   swing(kind = this.toolKind) {
     this._swing = 1;
     this._kind = kind;
-    if (kind === 'mao') this._side = -this._side; // soco alterna as mãos
+    this._side = 1; // um braço só
   }
 
   update(dt, { visible, speed, swimming, running, onGround }) {
     this.root.visible = visible;
     if (!visible) return;
     this._t += dt;
+    const fl = this.tools.tocha?.userData.flame;
+    if (fl && this.toolKind === 'tocha') fl.scale.set(1, 0.85 + Math.sin(this._t * 17) * 0.12 + Math.sin(this._t * 41) * 0.06, 1);
     // aterrissagem: as mãos "afundam"
     if (onGround && !this._wasGround) this._land = 1;
     this._wasGround = onGround;

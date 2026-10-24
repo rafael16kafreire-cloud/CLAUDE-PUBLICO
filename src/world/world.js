@@ -16,6 +16,9 @@ import { Effects } from './effects.js';
 import { findRespawnPoints } from './respawn_points.js';
 import { DeathBag } from './death_bag.js';
 import { sharedTime } from './materials.js';
+import { createStructure } from './structures.js';
+import { events, EV } from '../core/event_bus.js';
+import * as THREE from 'three';
 
 export class World {
   constructor(scene, renderer) {
@@ -44,6 +47,19 @@ export class World {
     this.sky = new Sky(scene);
     this.effects = new Effects(scene);
     this.deathBags = [];
+    this.structures = [];   // fogueiras, sacos de dormir...
+    this.time = BALANCE.dia.hora_inicial;
+    this.day = 1;
+    this.timeFrozen = false;
+    this.sky.setTime(this.time);
+    // Luzes de fogo: SEMPRE na cena (ligar/desligar luz faz o celular
+    // recompilar tudo); a da fogueira vai para a fogueira acesa mais perto.
+    this.fireLight = new THREE.PointLight('#ff9a48', 0, 16, 1.6);
+    this.torchLight = new THREE.PointLight('#ffb060', 0, 14, 1.5);
+    scene.add(this.fireLight, this.torchLight);
+    this.localPlayer = null;     // definidos pelo main.js
+    this.localInventory = null;
+    this.multiplayer = null;
     this.generationMs = Math.round(performance.now() - t0);
     this._respawnTimer = 0;
   }
@@ -73,6 +89,8 @@ export class World {
   }
 
   respawnPoint(id) {
+    const extra = this.allRespawnPoints.find((p) => p.id === id);
+    if (extra) return extra;
     return this.respawnPoints.find((p) => p.id === id) ?? this.respawnPoints[0];
   }
 
@@ -81,11 +99,38 @@ export class World {
     let t = T.base_c - Math.max(0, pos.y) * T.queda_por_metro;
     t += this.biomeInfo(BIOME_KEYS[this.map.biomeAt(pos.x, pos.z)]).temperatura_c ?? 0;
     if (inWater) t += T.na_agua_c;
+    t += (1 - this.sky.daylight) / 0.82 * BALANCE.dia.frio_noite_c;
+    for (const s of this.structures) if (s.warmthAt) t += s.warmthAt(pos);
     return t;
   }
 
   get interactables() {
-    return this.deathBags;
+    return [...this.deathBags, ...this.structures];
+  }
+
+  // Pontos de renascer: praias + sacos de dormir colocados.
+  get allRespawnPoints() {
+    return [...this.respawnPoints, ...this.structures.filter((s) => s.respawnPoint && !s.removed).map((s) => s.respawnPoint)];
+  }
+
+  // Coloca uma estrutura (fogueira, saco de dormir). d = { type, x, y, z, rot, id? }
+  addStructure(d) {
+    if (d.id && this.structures.some((s) => s.id === d.id)) return null;
+    const s = createStructure(this, d);
+    if (s) this.structures.push(s);
+    return s;
+  }
+
+  structureById(id) {
+    return this.structures.find((s) => s.id === id);
+  }
+
+  // Dormir: pula para o amanhecer.
+  skipToMorning() {
+    if (this.time > 0.5) this.day += 1;
+    this.time = 0.26;
+    events.emit(EV.MESSAGE, { text: `Você dormiu. Dia ${this.day} amanheceu.`, kind: 'gain' });
+    events.emit(EV.DAWN, { day: this.day, slept: true });
   }
 
   resolveCollisions(pos, radius, feetY) {
@@ -135,6 +180,36 @@ export class World {
   // ---------- atualização por quadro ----------
   update(dt, camera, focus) {
     sharedTime.value += dt;
+    if (!this.timeFrozen) {
+      const prev = this.time;
+      this.time += dt / (BALANCE.dia.duracao_dia_min * 60);
+      if (this.time >= 1) {
+        this.time -= 1;
+        this.day += 1;
+      }
+      if (prev < 0.25 && this.time >= 0.25) events.emit(EV.DAWN, { day: this.day });
+      if (prev < 0.79 && this.time >= 0.79) events.emit(EV.DUSK, { day: this.day });
+    }
+    this.sky.setTime(this.time);
+    for (const s of this.structures) s.update?.(dt);
+    this.structures = this.structures.filter((s) => !s.removed);
+    // luz da fogueira acesa mais perto
+    let best = null;
+    let bd = 60;
+    for (const s of this.structures) {
+      if (!s.lit) continue;
+      const d = Math.hypot(s.position.x - focus.x, s.position.z - focus.z);
+      if (d < bd) {
+        bd = d;
+        best = s;
+      }
+    }
+    if (best) {
+      this.fireLight.position.copy(best.position).setY(best.position.y + 1.1);
+      this.fireLight.intensity = (2 + (1 - this.sky.daylight) * 10) * best.flicker;
+    } else {
+      this.fireLight.intensity = 0;
+    }
     this._updateAltitude(camera);
     this.sky.update(camera, focus);
     this.grass.update(focus);

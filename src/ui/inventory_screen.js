@@ -10,7 +10,7 @@ import { ITEMS, itemIcon, itemName } from '../items/items.js';
 import { HOTBAR } from '../inventory/inventory.js';
 import { RECIPES } from '../crafting/crafting.js';
 
-const TYPE_LABEL = { recurso: 'Recurso', comida: 'Comida', ferramenta: 'Ferramenta', consumivel: 'Cura' };
+const TYPE_LABEL = { recurso: 'Recurso', comida: 'Comida', ferramenta: 'Ferramenta', consumivel: 'Cura', estrutura: 'Estrutura' };
 
 export class InventoryScreen {
   constructor(root, { inventory, crafting, actions, onDrop, onClose }) {
@@ -214,12 +214,16 @@ export class InventoryScreen {
       <p class="facts">${facts.join('<br>')}</p>
       <div class="rd-actions">
         ${c ? '<button type="button" class="btn btn-primary" id="it-use">' + (def.tipo === 'consumivel' ? 'Usar' : 'Comer') + '</button>' : ''}
+        ${def.colocavel ? '<button type="button" class="btn btn-primary" id="it-place">Colocar no chão</button>' : ''}
         ${f ? `<button type="button" class="btn btn-primary" id="it-equip">${this.inv.selected === i ? 'Guardar' : 'Usar na mão'}</button>` : ''}
         ${i >= HOTBAR ? '<button type="button" class="btn" id="it-hot">Pôr na barra</button>' : ''}
         ${s.qty > 1 ? '<button type="button" class="btn" id="it-split">Dividir</button>' : ''}
         <button type="button" class="btn" id="it-drop">Largar</button>
       </div>`;
     d.querySelector('#it-use')?.addEventListener('click', () => this.actions.useSlot(i));
+    d.querySelector('#it-place')?.addEventListener('click', () => {
+      if (this.actions.place(i)) this.onClose();
+    });
     d.querySelector('#it-equip')?.addEventListener('click', () => {
       let slot = i;
       if (slot >= HOTBAR) {

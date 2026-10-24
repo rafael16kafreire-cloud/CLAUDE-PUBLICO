@@ -16,11 +16,12 @@
 // ao acabar some (ou vira arbusto sem bagas) e volta depois.
 // =============================================================
 import * as THREE from 'three';
+import { events, EV } from '../core/event_bus.js';
 import { BIOME_KEYS } from './island_generator.js';
 import { mulberry32 } from '../core/math.js';
 import { addWind, makeImpostorMaterial } from './materials.js';
 import { renderImpostor } from './impostor.js';
-import { foliageTexture } from './foliage_texture.js';
+import { foliageTexture, addPlantDetail } from './foliage_texture.js';
 import recursos from '../data/world/recursos.json';
 import * as P from './props.js';
 
@@ -113,14 +114,14 @@ export class Vegetation {
 
     // Um material com vento para todas as plantas. A textura de
     // folhagem dá as folhinhas recortadas das copas e arbustos.
-    this.material = addWind(new THREE.MeshLambertMaterial({
+    this.material = addPlantDetail(addWind(new THREE.MeshLambertMaterial({
       vertexColors: true,
       map: foliageTexture(),
       alphaTest: 0.42,
-    }), 0.012, 0.045);
+    }), 0.012, 0.045));
     // Modelos de média distância não têm recortes: material sem
     // "alphaTest" (a placa de vídeo descarta pixels escondidos antes).
-    this.materialSolid = addWind(new THREE.MeshLambertMaterial({ vertexColors: true, map: this.material.map }), 0.012, 0.045);
+    this.materialSolid = addPlantDetail(addWind(new THREE.MeshLambertMaterial({ vertexColors: true, map: this.material.map }), 0.012, 0.045));
 
     this._place(avoidPoints, seed);
     this._buildTypeMeshes(renderer);
@@ -464,9 +465,11 @@ export class Vegetation {
   }
 
   // Um golpe/colheita: diminui a capacidade; quando acaba, some ou esvazia.
-  consume(rec) {
+  // remote = true: veio de outro jogador no co-op (não avisa de volta)
+  consume(rec, remote = false) {
     const res = this.resourceOf(rec);
     if (!res) return;
+    events.emit(EV.VEG_CONSUMED, { rec, remote });
     rec.cap -= 1;
     if (rec.cap > 0) return;
     if (res.esvazia && TYPES[res.esvazia]) {
@@ -478,6 +481,12 @@ export class Vegetation {
     rec.respawnAt = performance.now() / 1000 + recursos.reaparece_min * 60;
     if (!this.depleted.includes(rec)) this.depleted.push(rec);
     this._last.t = -1;
+  }
+
+  // Esgota de vez (co-op: ao entrar numa partida em andamento).
+  consumeAll(rec) {
+    rec.cap = 1;
+    this.consume(rec, true);
   }
 
   // Recursos voltam depois de um tempo (se o jogador estiver longe).

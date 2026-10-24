@@ -74,6 +74,7 @@ export class Crafting {
       events.emit(EV.MESSAGE, { text: `Criado: ${itemName(r.resultado)}`, kind: 'gain', icon: r.resultado });
     }
     this.stats.addXP(r.xp ?? 1);
+    if (added > 0) events.emit(EV.CRAFTED, { id: r.resultado });
     events.emit(EV.CRAFT_QUEUE, { queue: this.queue });
   }
 }

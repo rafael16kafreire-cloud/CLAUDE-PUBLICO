@@ -131,6 +131,11 @@ export class PlayerInteraction {
       }
       return;
     }
+    if (target.kind === 'object' && target.obj.use) {
+      if (target.obj.use({ player: this.player, inventory: this.inv })) events.emit(EV.STRUCTURE_USED, { structure: target.obj });
+      this._timer = 0;
+      return;
+    }
     if (target.kind === 'object') {
       const items = target.obj.interact(this.player) ?? [];
       let lost = 0;

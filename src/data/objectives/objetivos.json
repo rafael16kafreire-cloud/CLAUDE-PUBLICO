@@ -1,0 +1,17 @@
+{
+  "_explicacao": "Objetivos mostrados na tela, em ordem. tipo: ter (ter itens no inventário), criar (item ficar pronto no crafting), colocar (estrutura no chão), comer, assar, amanhecer (sobreviver à noite), abater (animal; dieta carnivoro/herbivoro opcional). xp = recompensa.",
+  "objetivos": [
+    { "id": "palha", "texto": "Bata nas árvores com a mão: junte 10 de palha", "tipo": "ter", "itens": { "palha": 10 }, "xp": 10 },
+    { "id": "pedras", "texto": "Bata em pedras: junte 3 pedras e 1 sílex", "tipo": "ter", "itens": { "pedra": 3, "silex": 1 }, "xp": 10 },
+    { "id": "machado", "texto": "Abra o Inventário e crie um Machado de Pedra", "tipo": "criar", "item": "machado_pedra", "xp": 15 },
+    { "id": "madeira", "texto": "Com o machado na mão, junte 20 de madeira", "tipo": "ter", "itens": { "madeira": 20 }, "xp": 15 },
+    { "id": "fogueira", "texto": "Crie uma Fogueira e coloque no chão", "tipo": "colocar", "estrutura": "fogueira", "xp": 20 },
+    { "id": "comer", "texto": "Coma algo (bagas, frutas ou banana)", "tipo": "comer", "xp": 8 },
+    { "id": "carne", "texto": "Abata um animal e tire carne da carcaça", "tipo": "ter", "itens": { "carne_crua": 1 }, "xp": 20 },
+    { "id": "assar", "texto": "Acenda a fogueira e fique perto para assar a carne", "tipo": "assar", "xp": 20 },
+    { "id": "lanca", "texto": "Crie uma Lança para se defender", "tipo": "criar", "item": "lanca", "xp": 20 },
+    { "id": "saco", "texto": "Crie um Saco de Dormir e coloque no chão", "tipo": "colocar", "estrutura": "saco_dormir", "xp": 25 },
+    { "id": "noite", "texto": "Sobreviva até o próximo amanhecer", "tipo": "amanhecer", "xp": 40 },
+    { "id": "predador", "texto": "Abata um carnívoro", "tipo": "abater", "dieta": "carnivoro", "xp": 50 }
+  ]
+}

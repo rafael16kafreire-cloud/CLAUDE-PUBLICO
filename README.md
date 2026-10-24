@@ -1,10 +1,27 @@
 # Ilha Primordial
 
-Jogo 3D de sobrevivência com dinossauros, single player e offline.
+Jogo 3D de sobrevivência com dinossauros. Sozinho (offline) ou em **co-op online até 4 jogadores**.
 Roda no celular (Android como app ou no navegador) e no PC.
 Visual estilizado, feito para ser leve.
 
-**Versão 0.3** – floresta, coleta e crafting.
+**Versão 0.4** – sobrevivência, dia e noite e co-op.
+
+- **Co-op online**: um jogador toca em **Criar partida co-op** e recebe um código de 6
+  letras; os amigos tocam em **Entrar com código**. Precisa de internet nos dois aparelhos
+  (um servidor público e gratuito só ajuda os aparelhos a se acharem; depois a conexão é
+  direta). Quem criou a partida controla os animais e a hora do dia; se ele sair, os outros
+  continuam sozinhos.
+- **Sobreviver**: objetivos na tela guiam o começo (palha → pedras → machado → fogueira →
+  carne assada → lança → saco de dormir → sobreviver à noite → abater um predador).
+- **Dia e noite** (30 min o dia todo): à noite esfria, os predadores enxergam mais longe
+  e fica escuro — use **tocha** e **fogueira**.
+- **Fogueira**: coloque no chão, acenda com madeira; perto dela a carne crua vira
+  **carne assada** sozinha, e esquenta.
+- **Saco de dormir**: vira um ponto de renascer no mapa e deixa dormir até de manhã.
+- **Começo mais justo**: sem carnívoros perto das praias de renascer e dos sacos de dormir;
+  nos primeiros minutos depois de nascer, poucos predadores e fracos. Agachado eles te
+  veem menos.
+- Casca nas árvores, nervuras nas folhas; um braço só, musculoso, em primeira pessoa.
 
 - A ilha inteira é **Floresta Amazônica** fechada, com **pântano e igapó** no meio e
   uma faixa de praia. O nome do lugar aparece na tela ao entrar.
@@ -37,10 +54,10 @@ Visual estilizado, feito para ser leve.
 2. Toque no arquivo. Se aparecer "instalação bloqueada", toque em **Configurações**
    e ative **Permitir desta fonte** (para o app que você usou: Chrome, Arquivos...).
 3. Toque em **Instalar**. Se o Play Protect avisar "app desconhecido",
-   toque em **Mais detalhes → Instalar mesmo assim** (o app não pede nenhuma permissão).
+   toque em **Mais detalhes → Instalar mesmo assim** (a única permissão é internet, para o co-op).
 4. Abra **Ilha Primordial** pelo ícone. O jogo abre em tela cheia, na horizontal.
 
-Funciona no Android 7 ou mais novo. Não precisa de internet.
+Funciona no Android 7 ou mais novo. Sozinho não precisa de internet; o co-op precisa.
 O botão/gesto **voltar** pausa o jogo; no menu de pausa há **Fechar o app**.
 
 ### iPhone

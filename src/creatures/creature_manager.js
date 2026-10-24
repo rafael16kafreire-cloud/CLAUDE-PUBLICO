@@ -28,6 +28,9 @@ export class CreatureManager {
     this.rand = mulberry32((Date.now() & 0xffff) + 17);
     this.spawnTimer = 0;
     this.enabled = true;
+    this.remotePlayers = [];   // co-op: outros jogadores (no anfitrião)
+    this.net = null;           // co-op: conexão (definida pelo multiplayer)
+    this.netClient = false;    // true = convidado: criaturas vêm do anfitrião
     const C = BALANCE.criaturas;
     this.cfg = C;
   }
@@ -70,7 +73,8 @@ export class CreatureManager {
 
   // ---------------------------------------------------------
   update(dt, player, camera) {
-    const ctx = { player, world: this.world, camPos: camera.position };
+    const players = [player, ...this.remotePlayers];
+    const ctx = { player, players, world: this.world, camPos: camera.position };
     for (const c of this.list) {
       c.update(dt, ctx);
       // Sombra só para as que estão perto.
@@ -80,9 +84,16 @@ export class CreatureManager {
 
     // Remove mortas antigas e as que ficaram longe.
     const despawn = this.cfg.raio_despawn_m;
+    if (this.netClient) {
+      // convidado: some quando o anfitrião para de mandar
+      for (const c of [...this.list]) if (c.netControlled && c.netSeen > 2.5) this.remove(c);
+      game.activeCreatures = this.list.filter((c) => c.alive).length;
+      return;
+    }
     for (const c of [...this.list]) {
-      const d = Math.hypot(c.pos.x - player.position.x, c.pos.z - player.position.z);
-      const chasingPlayer = c.target === player;
+      let d = Infinity;
+      for (const p of players) d = Math.min(d, Math.hypot(c.pos.x - p.position.x, c.pos.z - p.position.z));
+      const chasingPlayer = players.includes(c.target);
       if ((c.state === CSTATE.DEAD && c.deadTime > this.cfg.corpo_dura_seg) || (d > despawn && !chasingPlayer)) {
         this.remove(c);
       }
@@ -94,8 +105,11 @@ export class CreatureManager {
     this.spawnTimer -= dt;
     if (this.spawnTimer <= 0) {
       this.spawnTimer = this.cfg.intervalo_spawn_seg;
-      this.trySpawnNear(player.position);
-      this.trySpawnNear(player.position, undefined, undefined, true);
+      // co-op: nasce em volta de um jogador sorteado
+      const alivePlayers = players.filter((p) => !p.dead);
+      const who = alivePlayers[Math.floor(this.rand() * alivePlayers.length)] ?? player;
+      this.trySpawnNear(who.position);
+      this.trySpawnNear(who.position, undefined, undefined, true);
     }
   }
 
@@ -115,18 +129,27 @@ export class CreatureManager {
       if (biome === 'mar') continue;
       const w = this.world.waterAt(x, z);
       const depth = w ? w.level - this.world.heightAt(x, z) : 0;
+      // Dificuldade: zonas seguras, começo tranquilo, limite de carnívoros
+      const D = BALANCE.dificuldade;
+      const isCarn = (s) => s.temperamento === 'agressivo' && !s.ambiente;
+      const safe = this.world.allRespawnPoints.some((p) => Math.hypot(p.position.x - x, p.position.z - z) < D.zona_segura_m);
+      const early = (game.player?.aliveTime ?? 999) < D.inicio_tranquilo_min * 60;
+      const carnAlive = this.list.filter((c) => c.alive && isCarn(c.species)).length;
+      const carnOk = !safe && carnAlive < D.max_carnivoros_perto;
+      const weight = (s) => (isCarn(s) ? s.peso_spawn * D.peso_carnivoros * (early ? 0.3 : 1) : s.peso_spawn);
       const options = Object.values(SPECIES).filter((s) => {
         if (!!s.ambiente !== ambient || !s.biomas.includes(biome)) return false;
+        if (isCarn(s) && !carnOk) return false;
         if (s.voa) return true;
         if (s.aquatico) return depth > 1.1;
         return depth < 0.3 || s.nada;
       });
       if (!options.length) continue;
-      const total = options.reduce((acc, s) => acc + s.peso_spawn, 0);
+      const total = options.reduce((acc, s) => acc + weight(s), 0);
       let pick = this.rand() * total;
       let species = options[0];
       for (const s of options) {
-        pick -= s.peso_spawn;
+        pick -= weight(s);
         if (pick <= 0) {
           species = s;
           break;
@@ -135,12 +158,15 @@ export class CreatureManager {
       // não lota de gigantes raros
       if (species.peso_spawn < 2 && this.list.filter((c) => c.species.id === species.id).length >= 2) continue;
       const [gmin, gmax] = species.grupo;
-      const size = Math.min(cap - alive, gmin + Math.floor(this.rand() * (gmax - gmin + 1)));
-      const level = 1 + Math.floor(Math.pow(this.rand(), 1.7) * 29);
+      let size = Math.min(cap - alive, gmin + Math.floor(this.rand() * (gmax - gmin + 1)));
+      if (isCarn(species)) size = Math.min(size, D.max_carnivoros_perto - carnAlive);
+      if (size <= 0) continue;
+      const maxLvl = early ? D.nivel_max_inicio : 30;
+      const level = 1 + Math.floor(Math.pow(this.rand(), 1.7) * (maxLvl - 1));
       for (let i = 0; i < size; i++) {
         const ox = x + (this.rand() - 0.5) * 8 * Math.max(1, species.raio);
         const oz = z + (this.rand() - 0.5) * 8 * Math.max(1, species.raio);
-        this.spawn(species.id, ox, oz, Math.max(1, Math.min(30, level + Math.floor((this.rand() - 0.5) * 6))));
+        this.spawn(species.id, ox, oz, Math.max(1, Math.min(maxLvl, level + Math.floor((this.rand() - 0.5) * 6))));
       }
       return true;
     }
@@ -171,6 +197,11 @@ export class CreatureManager {
 
   // Um golpe na carcaça: tira um pouco de cada coisa. Machado e lança tiram mais.
   harvestCorpse(c, mode) {
+    if (c.netControlled) {
+      // convidado: pede ao anfitrião (os itens chegam pela rede)
+      this.net?.requestLoot(c.nid, mode);
+      return {};
+    }
     const per = mode === 'machado' || mode === 'lanca' ? 3 : 1 + Math.floor(this.rand() * 2);
     const got = {};
     for (const [id, left] of Object.entries(c.lootLeft)) {
@@ -185,6 +216,57 @@ export class CreatureManager {
       c.deadTime = Math.max(c.deadTime, this.cfg.corpo_dura_seg - 1.5); // some logo
     }
     return got;
+  }
+
+  // ---------------------------------------------------------
+  // Co-op
+  // ---------------------------------------------------------
+  // Anfitrião: estado das criaturas perto de um ponto, para mandar.
+  snapshotNear(pos, radius = 220) {
+    const out = [];
+    for (const c of this.list) {
+      if (Math.hypot(c.pos.x - pos.x, c.pos.z - pos.z) > radius) continue;
+      out.push([
+        c.id, c.species.id, c.level, +c.scale.toFixed(3),
+        +c.pos.x.toFixed(2), +c.pos.y.toFixed(2), +c.pos.z.toFixed(2), +c.yaw.toFixed(3),
+        c.state, Math.ceil(c.health), c.attackAnim > 0.8 ? 1 : 0, c.lootLeft ? 1 : 0,
+      ]);
+    }
+    return out;
+  }
+
+  // Convidado: cria/atualiza as criaturas que o anfitrião mandou.
+  applySnapshot(list) {
+    const byNid = new Map(this.list.filter((c) => c.netControlled).map((c) => [c.nid, c]));
+    for (const [nid, sid, level, scale, x, y, z, yaw, st, hp, atk, loot] of list) {
+      let c = byNid.get(nid);
+      if (!c) {
+        c = this.spawn(sid, x, z, level);
+        if (!c) continue;
+        c.nid = nid;
+        c.netControlled = true;
+        c.scale = scale;
+        c.mesh.scale.setScalar(scale);
+      }
+      c.applyNet({ x, y, z, yaw, st, hp, atk, loot });
+    }
+  }
+
+  byNid(nid) {
+    return this.list.find((c) => (c.netControlled ? c.nid : c.id) === nid);
+  }
+
+  // Convidado bateu numa criatura: avisa o anfitrião.
+  onNetDamage(c, amount) {
+    this.net?.sendHit(c.nid, amount);
+  }
+
+  // Jogador saiu: ninguém mais persegue ele.
+  forgetTarget(p) {
+    for (const c of this.list) {
+      if (c.target === p) c.target = null;
+      if (c.threat === p) c.threat = null;
+    }
   }
 
   // Bando: os iguais por perto também atacam.
@@ -214,6 +296,10 @@ export class CreatureManager {
 
   // Uma criatura acertou alguém.
   hit(attacker, target, amount) {
+    if (target.isRemote) {
+      this.net?.sendDamage(target, amount, attacker.species.nome);
+      return;
+    }
     if (target === game.player) {
       const p = game.player;
       if (p.dead) return;
@@ -238,7 +324,9 @@ export class CreatureManager {
       if (n > 0) c.lootLeft[id] = Math.round(n * (1 + c.level * 0.02));
     }
     events.emit(EV.CREATURE_KILLED, { creature: c, byPlayer: attacker === game.player });
-    if (attacker === game.player) {
+    if (attacker?.isRemote) {
+      this.net?.sendKill(attacker, c, Math.round(c.species.xp * (1 + c.level * 0.05)));
+    } else if (attacker === game.player) {
       const xp = Math.round(c.species.xp * (1 + c.level * 0.05));
       game.player.stats.addXP(xp);
       events.emit(EV.MESSAGE, { text: `${c.species.nome} abatido! +${xp} XP`, kind: 'gain' });

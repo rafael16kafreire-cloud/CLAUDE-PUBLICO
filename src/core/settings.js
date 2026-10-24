@@ -39,6 +39,7 @@ const DEFAULTS = {
   touchControls: 'auto',   // auto | sempre | nunca
   cameraMode: 'primeira',  // primeira | terceira
   autoQuality: true,       // baixa a qualidade sozinho se ficar lento
+  playerName: '',          // nome no co-op
 };
 
 class Settings {

@@ -9,9 +9,10 @@ import { BALANCE } from '../core/balance.js';
 import { events, EV } from '../core/event_bus.js';
 import { ITEMS, itemName } from '../items/items.js';
 import { shakeAt } from '../world/materials.js';
+import * as THREE from 'three';
 
 const FIST = { tipo: 'mao', dano: null, alcance: null, intervalo: null };
-const INTERVAL = { mao: 0.45, machado: 0.6, picareta: 0.6, lanca: 0.7, clava: 0.62 };
+const INTERVAL = { mao: 0.45, machado: 0.6, picareta: 0.6, lanca: 0.7, clava: 0.62, tocha: 0.5 };
 
 function rnd([a, b]) {
   return a + Math.floor(Math.random() * (b - a + 1));
@@ -152,9 +153,38 @@ export class PlayerActions {
     if (c.vida > 0) st.health = Math.min(st.max.health, st.health + c.vida);
     if (c.vida < 0) st.damage(-c.vida, 'comida');
     this.inv.takeFrom(i, 1);
+    events.emit(EV.ATE, { id: s.id });
     const verb = def.tipo === 'consumivel' ? 'Usou' : 'Comeu';
     events.emit(EV.MESSAGE, { text: `${verb}: ${itemName(s.id)}`, kind: 'info' });
     if (s.id === 'baga_escura') events.emit(EV.MESSAGE, { text: 'Você ficou sonolento…', kind: 'warn' });
+    return true;
+  }
+
+  // Coloca uma estrutura (fogueira, saco de dormir) na frente do jogador.
+  place(i) {
+    const s = this.inv.slots[i];
+    const type = s && ITEMS[s.id]?.colocavel;
+    if (!type) return false;
+    const p = this.player;
+    const f = this.forward ?? { x: -Math.sin(p.facing), z: -Math.cos(p.facing) };
+    const len = Math.hypot(f.x, f.z) || 1;
+    const x = p.position.x + (f.x / len) * 2;
+    const z = p.position.z + (f.z / len) * 2;
+    const w = this.world;
+    if (w.waterAt(x, z) || p.swimming) {
+      events.emit(EV.MESSAGE, { text: 'Não dá para colocar na água.', kind: 'warn' });
+      return false;
+    }
+    const n = w.map.normalAt(x, z, new THREE.Vector3());
+    if (n.y < 0.8) {
+      events.emit(EV.MESSAGE, { text: 'Chão muito inclinado aqui.', kind: 'warn' });
+      return false;
+    }
+    const st = w.addStructure({ type, x, y: w.heightAt(x, z), z, rot: Math.atan2(f.x, f.z), owner: p.name ?? '' });
+    if (!st) return false;
+    this.inv.takeFrom(i, 1);
+    events.emit(EV.MESSAGE, { text: `Pronto: ${ITEMS[s.id].nome} no chão.`, kind: 'gain' });
+    events.emit(EV.PLACED, { type, structure: st });
     return true;
   }
 
@@ -173,6 +203,10 @@ export class PlayerActions {
     }
     if (ITEMS[s.id]?.comida) {
       this.useSlot(i);
+      return;
+    }
+    if (ITEMS[s.id]?.colocavel) {
+      this.place(i);
       return;
     }
     this.inv.selected = this.inv.selected === i ? -1 : i;

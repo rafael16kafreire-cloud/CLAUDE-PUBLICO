@@ -13,6 +13,9 @@ import * as THREE from 'three';
 // Tempo compartilhado pelos materiais animados.
 export const sharedTime = { value: 0 };
 // Árvore sendo atingida: (x, z, momento, força).
+// Claridade do dia (1 = meio-dia, ~0.2 = noite), para materiais
+// que não usam as luzes da cena (água, céu, árvores distantes).
+export const sharedDay = { value: 1 };
 export const sharedShake = { value: new THREE.Vector4(1e9, 1e9, -10, 0) };
 
 export function shakeAt(x, z, strength = 1) {
@@ -172,7 +175,7 @@ export function makeWaterMaterial({
       uFoam: { value: new THREE.Color(foam) },
       uSky: { value: new THREE.Color(sky) },
       uSunColor: { value: new THREE.Color('#fff2d6') },
-      uSunDir: { value: sunDir.clone() },
+      uSunDir: { value: sunDir },
       uLevel: { value: level },
       uMapSize: { value: map.size },
       uMapHalf: { value: map.half },
@@ -185,6 +188,7 @@ export function makeWaterMaterial({
     },
   ]);
   uniforms.uTime = sharedTime;
+  uniforms.uDay = sharedDay;
   uniforms.uHeight = { value: map.heightTexture() };
   uniforms.uNoise = { value: detailTexture() };
   return new THREE.ShaderMaterial({
@@ -211,7 +215,7 @@ export function makeWaterMaterial({
       #include <common>
       #include <fog_pars_fragment>
       uniform vec3 uShallow, uDeep, uFoam, uSky, uSunColor, uSunDir;
-      uniform float uLevel, uMapSize, uMapHalf, uOpS, uOpD, uDeepAt, uReflect, uTime, uFoamAmt;
+      uniform float uLevel, uMapSize, uMapHalf, uOpS, uOpD, uDeepAt, uReflect, uTime, uFoamAmt, uDay;
       uniform sampler2D uHeight;
       uniform sampler2D uNoise;
       varying vec3 vWorld;
@@ -237,17 +241,17 @@ export function makeWaterMaterial({
         vec3 V = normalize(cameraPosition - vWorld);
         float fres = pow(1.0 - clamp(abs(dot(n, V)), 0.0, 1.0), 4.0);
         float dk = smoothstep(0.0, uDeepAt, depth);
-        vec3 col = mix(uShallow, uDeep, dk);
-        col = mix(col, uSky, fres * uReflect);
+        vec3 col = mix(uShallow, uDeep, dk) * uDay;
+        col = mix(col, uSky * uDay, fres * uReflect);
         vec3 R = reflect(-uSunDir, n);
         float s = max(dot(R, V), 0.0);
-        col += uSunColor * (pow(s, 160.0) * 1.8 + pow(s, 20.0) * 0.1);
+        col += uSunColor * (pow(s, 160.0) * 1.8 + pow(s, 20.0) * 0.1) * max(uDay, 0.35);
 
         // espuma na beira
         float foamLine = 1.0 - smoothstep(0.0, 0.5, depth);
         float foamNoise = smoothstep(0.45, 0.7, nz(p * 0.35 + vec2(t * 0.03, 0.0)) + 0.25 * sin(depth * 18.0 - t * 2.0));
         float foam = foamLine * foamNoise * uFoamAmt;
-        col = mix(col, uFoam, clamp(foam, 0.0, 0.85));
+        col = mix(col, uFoam * uDay, clamp(foam, 0.0, 0.85));
 
         float alpha = mix(uOpS, uOpD, dk) + fres * 0.2 + foam * 0.5;
         if (!gl_FrontFacing) alpha = 0.85;
@@ -267,8 +271,9 @@ export function makeSkyMaterial({ horizon, zenith, sunDir }) {
     uniforms: {
       uHorizon: { value: horizon },
       uZenith: { value: zenith },
-      uSunDir: { value: sunDir.clone() },
+      uSunDir: { value: sunDir },
       uSunColor: { value: new THREE.Color('#fff4dc') },
+      uCloud: { value: 1 },
       uNoise: { value: detailTexture() },
       uTime: sharedTime,
     },
@@ -286,6 +291,7 @@ export function makeSkyMaterial({ horizon, zenith, sunDir }) {
       uniform vec3 uHorizon, uZenith, uSunDir, uSunColor;
       uniform sampler2D uNoise;
       uniform float uTime;
+      uniform float uCloud;
       varying vec3 vDir;
       void main() {
         vec3 d = normalize(vDir);
@@ -296,7 +302,7 @@ export function makeSkyMaterial({ horizon, zenith, sunDir }) {
           vec2 uv = d.xz / (y + 0.12) * 0.22 + vec2(uTime * 0.0025, uTime * 0.0012);
           float nn = texture2D(uNoise, uv).r * 0.65 + texture2D(uNoise, uv * 2.7 + 0.3).r * 0.35;
           float cl = smoothstep(0.48, 0.72, nn) * smoothstep(0.0, 0.22, y);
-          vec3 cloud = mix(vec3(0.78, 0.8, 0.82), vec3(1.0), smoothstep(0.5, 0.8, nn)) + uSunColor * pow(sd, 6.0) * 0.25;
+          vec3 cloud = (mix(vec3(0.78, 0.8, 0.82), vec3(1.0), smoothstep(0.5, 0.8, nn)) + uSunColor * pow(sd, 6.0) * 0.25) * uCloud;
           col = mix(col, cloud, cl * 0.9);
         }
         col += uSunColor * (pow(sd, 900.0) * 6.0 + pow(sd, 16.0) * 0.22);
@@ -315,6 +321,7 @@ export function makeImpostorMaterial(texture) {
   const uniforms = THREE.UniformsUtils.merge([THREE.UniformsLib.fog]);
   uniforms.map = { value: texture };
   uniforms.uTime = sharedTime;
+  uniforms.uDay = sharedDay;
   return new THREE.ShaderMaterial({
     uniforms,
     fog: true,
@@ -347,12 +354,13 @@ export function makeImpostorMaterial(texture) {
       #include <common>
       #include <fog_pars_fragment>
       uniform sampler2D map;
+      uniform float uDay;
       varying vec2 vUv;
       varying vec3 vTint;
       void main() {
         vec4 c = texture2D(map, vUv);
         if (c.a < 0.45) discard;
-        gl_FragColor = vec4(c.rgb * vTint, 1.0);
+        gl_FragColor = vec4(c.rgb * vTint * (0.12 + 0.88 * uDay), 1.0);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
         #include <fog_fragment>

@@ -24,6 +24,16 @@ export const EV = {
   INVENTORY_CHANGED: 'inventory_changed', // { inventory }
   CRAFT_QUEUE: 'craft_queue',             // { queue }
   ITEM_GAINED: 'item_gained',             // { id, amount }
+  CRAFTED: 'crafted',                     // { id }  item ficou pronto
+  STRUCTURE_USED: 'structure_used',       // { structure }  acendeu fogueira, dormiu...
+  PLACED: 'placed',                       // { type, structure }  fogueira, saco de dormir...
+  ATE: 'ate',                             // { id }
+  COOKED: 'cooked',                       // { id }
+  OBJECTIVE: 'objective',                 // { objective, done }  objetivo mudou
+  DAWN: 'dawn',                           // { day }  amanheceu
+  DUSK: 'dusk',                           // { day }  anoiteceu
+  VEG_CONSUMED: 'veg_consumed',           // { rec, remote }  planta coletada (co-op)
+  NET: 'net',                             // { status, ... }  co-op (conectado, saiu...)
 };
 
 class EventBus {

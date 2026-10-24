@@ -87,11 +87,11 @@ export class DeathScreen {
     }
 
     // pontos de renascer
-    for (const point of w.respawnPoints) {
+    for (const point of w.allRespawnPoints) {
       const p = worldToMapPercent(w, point.position.x, point.position.z);
       const b = document.createElement('button');
       b.type = 'button';
-      b.className = 'map-pin';
+      b.className = point.bag ? 'map-pin map-pin-bag' : 'map-pin';
       b.id = `respawn-${point.id}`;
       b.style.left = `${p.left}%`;
       b.style.top = `${p.top}%`;

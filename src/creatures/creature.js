@@ -103,6 +103,10 @@ export class Creature {
 
   // ---------------------------------------------------------
   update(dt, ctx) {
+    if (this.netControlled) {
+      this._netUpdate(dt, ctx);
+      return;
+    }
     this.time += dt;
     this.stateTime += dt;
     this.attackCooldown -= dt;
@@ -137,7 +141,19 @@ export class Creature {
   // ---------------------------------------------------------
   _think(ctx) {
     const sp = this.species;
-    const player = ctx.player;
+    // co-op: reage ao jogador vivo mais perto (deste aparelho ou de outro)
+    let player = ctx.player;
+    if (ctx.players && ctx.players.length > 1) {
+      let bd = Infinity;
+      for (const p of ctx.players) {
+        if (p.dead) continue;
+        const d = this._dist2D(p.position);
+        if (d < bd) {
+          bd = d;
+          player = p;
+        }
+      }
+    }
     const temp = sp.temperamento;
     const dPlayer = player.dead ? Infinity : this._dist2D(player.position);
     const perceived = player.crouching ? dPlayer * 1.6 : dPlayer;
@@ -164,7 +180,8 @@ export class Creature {
       this._flee(player);
       return;
     }
-    if (temp === 'agressivo' && perceived < (sp.alcance_agro ?? 20) && this._canReach(player, ctx)) {
+    const agro = (sp.alcance_agro ?? 20) * (ctx.world.sky?.isNight ? BALANCE.dificuldade.agro_noite : 1);
+    if (temp === 'agressivo' && perceived < agro && this._canReach(player, ctx)) {
       this._chase(player);
       this.manager.alertPack(this, player);
       return;
@@ -465,6 +482,12 @@ export class Creature {
   // ---------------------------------------------------------
   takeDamage(amount, attacker) {
     if (!this.alive) return;
+    if (this.netControlled) {
+      // co-op (convidado): quem decide o dano é o anfitrião
+      this.hurtAnim = 1;
+      this.manager.onNetDamage?.(this, amount);
+      return;
+    }
     this.health -= amount;
     this.hurtAnim = 1;
     if (this.health <= 0) {
@@ -645,6 +668,51 @@ export class Creature {
     }
     if (b.jaw) b.jaw.rotation.x = this.attackAnim > 0 ? -Math.sin(at * Math.PI) * 0.65 : -0.03 - Math.max(0, Math.sin(t * 0.7)) * 0.05;
     if (b.hips) b.hips.position.z = (b.hips.userData.rest.z) - lunge * 0.15 * legLen / this.scale;
+  }
+
+  // ---------------------------------------------------------
+  // Co-op (convidado): a criatura só segue o que o anfitrião manda.
+  // ---------------------------------------------------------
+  applyNet(e) {
+    // e = { x, y, z, yaw, st, hp, atk, loot }
+    if (!this.netGoal) {
+      this.pos.set(e.x, e.y, e.z);
+      this.yaw = e.yaw;
+      this.netGoal = new THREE.Vector3();
+    }
+    this.netGoal.set(e.x, e.y, e.z);
+    this.netYaw = e.yaw;
+    this.health = e.hp;
+    if (e.atk && this.attackAnim <= 0.05) this.attackAnim = 1;
+    if (e.st === CSTATE.DEAD && this.state !== CSTATE.DEAD) {
+      this.health = 0;
+      this._setState(CSTATE.DEAD);
+    } else if (e.st !== CSTATE.DEAD) {
+      this.state = e.st;
+    }
+    this.lootLeft = e.loot ? { remoto: 1 } : null;
+    this.netSeen = 0;
+  }
+
+  _netUpdate(dt, ctx) {
+    this.time += dt;
+    this.attackAnim = Math.max(0, this.attackAnim - dt * 2.2);
+    this.hurtAnim = Math.max(0, this.hurtAnim - dt * 3);
+    this.netSeen = (this.netSeen ?? 0) + dt;
+    const prevYaw = this.yaw;
+    if (this.state === CSTATE.DEAD) this.deadTime += dt;
+    if (this.netGoal) {
+      const before = this.pos.clone();
+      const k = Math.min(1, dt * 7);
+      this.pos.lerp(this.netGoal, k);
+      this.yaw += angleDelta(this.yaw, this.netYaw) * k;
+      const moved = Math.hypot(this.pos.x - before.x, this.pos.z - before.z) / Math.max(dt, 1e-3);
+      this.speed += (moved - this.speed) * Math.min(1, dt * 6);
+    }
+    if (this.state === CSTATE.DEAD) this.speed = 0;
+    const yawVel = angleDelta(prevYaw, this.yaw) / Math.max(dt, 1e-3);
+    this._animate(dt, ctx, yawVel);
+    this._sync(dt);
   }
 
   // Copia posição e rotação para a malha 3D.

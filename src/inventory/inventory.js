@@ -53,7 +53,7 @@ export class Inventory {
       }
     }
     // espaços vazios (ferramentas e comida preferem a barra rápida)
-    const preferHotbar = def.tipo === 'ferramenta' || def.tipo === 'comida' || def.tipo === 'consumivel';
+    const preferHotbar = ['ferramenta', 'comida', 'consumivel', 'estrutura'].includes(def.tipo);
     const order = [...this.slots.keys()];
     if (!preferHotbar) order.push(...order.splice(0, HOTBAR));
     for (const i of order) {

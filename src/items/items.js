@@ -70,6 +70,19 @@ const SHAPES = {
     <path d="M13 18 H35 L33 38 Q24 42 15 38 Z" fill="${b}"/>
     <ellipse cx="24" cy="18" rx="11" ry="4" fill="${a}"/>
     <path d="M17 26 Q24 29 31 26" stroke="#00000040" stroke-width="2" fill="none"/>`,
+  fogueira: (a, b) => `
+    <ellipse cx="24" cy="38" rx="17" ry="5" fill="${b}"/>
+    <path d="M12 38 L36 30 M12 30 L36 38" stroke="#6a4a2a" stroke-width="4" stroke-linecap="round"/>
+    <path d="M24 8 C30 16 34 22 30 30 C28 34 20 34 18 30 C14 22 20 18 24 8 Z" fill="${a}"/>
+    <path d="M24 18 C27 23 28 26 26 30 C24 32 22 31 21 29 C20 25 22 22 24 18 Z" fill="#f8d860"/>`,
+  saco: (a, b) => `
+    <rect x="6" y="18" width="36" height="16" rx="8" fill="${a}"/>
+    <rect x="30" y="16" width="12" height="20" rx="6" fill="${b}"/>
+    <path d="M10 22 H28 M10 30 H28" stroke="#00000030" stroke-width="2"/>`,
+  tocha: (a, b) => `
+    <path d="M17 42 L28 18" stroke="${a}" stroke-width="5" stroke-linecap="round"/>
+    <path d="M30 4 C36 10 38 16 33 21 C30 23 25 22 25 18 C24 13 28 10 30 4 Z" fill="${b}"/>
+    <path d="M30 11 C32 14 32 17 30 19 C28 19 27 17 28 15 Z" fill="#f8e070"/>`,
   machado: (a, b) => `
     <path d="M15 42 L31 10" stroke="${a}" stroke-width="4.5" stroke-linecap="round"/>
     <path d="M27 8 C34 4 42 8 42 16 C38 16 34 17 31 20 Z" fill="${b}"/>

@@ -126,3 +126,111 @@ export function foliageTexture() {
   texture.minFilter = THREE.LinearMipmapLinearFilter;
   return texture;
 }
+
+// =============================================================
+// CASCA DE ÁRVORE (128 x 256, repete sem emenda)
+// Veios verticais com rachaduras escuras. Usada pelos troncos e
+// galhos (r) e, em escala menor, como nervuras nas folhas (g).
+// =============================================================
+let bark = null;
+
+function tileNoise(cellsX, cellsY, seed) {
+  const R = rand(seed);
+  const g = Array.from({ length: cellsX * cellsY }, () => R());
+  const sm = (t) => t * t * (3 - 2 * t);
+  return (u, v) => {
+    const fx = u * cellsX;
+    const fy = v * cellsY;
+    const x0 = Math.floor(fx);
+    const y0 = Math.floor(fy);
+    const tx = sm(fx - x0);
+    const ty = sm(fy - y0);
+    const at = (x, y) => g[(((y % cellsY) + cellsY) % cellsY) * cellsX + (((x % cellsX) + cellsX) % cellsX)];
+    const a = at(x0, y0) * (1 - tx) + at(x0 + 1, y0) * tx;
+    const b = at(x0, y0 + 1) * (1 - tx) + at(x0 + 1, y0 + 1) * tx;
+    return a * (1 - ty) + b * ty;
+  };
+}
+
+export function barkTexture() {
+  if (bark) return bark;
+  const W = 128;
+  const H = 256;
+  const data = new Uint8Array(W * H * 4);
+  // casca: muito mais detalhe na horizontal (veios em pé)
+  const n1 = tileNoise(16, 4, 11);
+  const n2 = tileNoise(32, 10, 12);
+  const n3 = tileNoise(8, 3, 13);
+  // nervuras: linhas finas diagonais
+  const n4 = tileNoise(24, 24, 14);
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const u = x / W;
+      const v = y / H;
+      const warp = (n3(u, v) - 0.5) * 0.08;
+      const ridge = 1 - Math.abs(n1(u + warp, v) * 2 - 1); // 1 no meio do veio
+      const fine = n2(u + warp, v);
+      let b = 0.35 + ridge * 0.5 + (fine - 0.5) * 0.3;
+      if (ridge < 0.18) b *= 0.45; // rachadura funda
+      const vein = 0.75 + 0.25 * Math.abs(Math.sin((u * 6 + v * 3) * Math.PI * 2)) * (0.6 + n4(u, v) * 0.4);
+      const i = (y * W + x) * 4;
+      data[i] = Math.max(0, Math.min(255, Math.round(b * 255)));
+      data[i + 1] = Math.round(vein * 255);
+      data[i + 2] = 0;
+      data[i + 3] = 255;
+    }
+  }
+  bark = new THREE.DataTexture(data, W, H, THREE.RGBAFormat);
+  bark.wrapS = THREE.RepeatWrapping;
+  bark.wrapT = THREE.RepeatWrapping;
+  bark.magFilter = THREE.LinearFilter;
+  bark.minFilter = THREE.LinearMipmapLinearFilter;
+  bark.generateMipmaps = true;
+  bark.needsUpdate = true;
+  return bark;
+}
+
+// Acrescenta a casca (troncos) e nervuras (folhas grandes) ao material
+// das plantas. Só age nas partes que usam o pedaço branco da textura
+// de folhagem; aWind diz se é tronco (0) ou folha (> 0).
+export function addPlantDetail(material) {
+  const prev = material.onBeforeCompile;
+  material.onBeforeCompile = (shader, renderer) => {
+    prev?.(shader, renderer);
+    shader.uniforms.uBark = { value: barkTexture() };
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <begin_vertex>', `#include <begin_vertex>
+        vPlantP = position;
+        vPlantW = aWind;`)
+      .replace('#include <common>', `#include <common>
+        varying vec3 vPlantP;
+        varying float vPlantW;`);
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', `#include <common>
+        uniform sampler2D uBark;
+        varying vec3 vPlantP;
+        varying float vPlantW;`)
+      .replace('#include <map_fragment>', `#include <map_fragment>
+        #ifdef USE_MAP
+        if (vMapUv.x > 0.88) {
+          vec3 pp = vPlantP;
+          if (vMapUv.y < 0.6) {
+            // pedra: manchinhas
+            float st = texture2D(uBark, pp.xz * 0.9 + pp.y * 0.5).r;
+            diffuseColor.rgb *= mix(0.75, 1.12, st);
+          } else if (vPlantW < 0.2) {
+            // casca: 5 voltas da textura em volta do tronco
+            float ang = atan(pp.z, pp.x) / 6.28318;
+            float bk = texture2D(uBark, vec2(ang * 5.0, pp.y * 0.22)).r;
+            diffuseColor.rgb *= mix(0.42, 1.18, bk);
+          } else {
+            float vn = texture2D(uBark, pp.xz * 1.7 + pp.y * 0.3).g;
+            diffuseColor.rgb *= mix(0.78, 1.1, vn);
+          }
+        }
+        #endif`);
+  };
+  const key = material.customProgramCacheKey;
+  material.customProgramCacheKey = () => `${key ? key() : ''}-planta`;
+  return material;
+}

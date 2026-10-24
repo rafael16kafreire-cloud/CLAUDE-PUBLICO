@@ -32,6 +32,7 @@ export class Player {
     this.moving = false;
     this.headUnderwater = false;
     this.dead = false;
+    this.aliveTime = 0;             // segundos desde que nasceu/renasceu
     this.waterBody = null;          // corpo d'água onde está agora
     this.firstPerson = false;
 
@@ -76,6 +77,7 @@ export class Player {
       this._updateModel(dt);
       return;
     }
+    this.aliveTime = (this.aliveTime ?? 0) + dt;
 
     // ---------- Entrada: direção relativa à câmera ----------
     const mv = input.moveVector();
@@ -393,6 +395,7 @@ export class Player {
   respawn(point) {
     this.stats.resetForRespawn();
     this.dead = false;
+    this.aliveTime = 0;
     this.spawnAt(point);
     this._biome = null; // mostra o nome do bioma de novo
   }
