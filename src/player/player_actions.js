@@ -10,6 +10,7 @@ import { events, EV } from '../core/event_bus.js';
 import { ITEMS, itemName } from '../items/items.js';
 import { shakeAt } from '../world/materials.js';
 import * as THREE from 'three';
+import { sound } from '../audio/audio.js';
 
 const FIST = { tipo: 'mao', dano: null, alcance: null, intervalo: null };
 const INTERVAL = { mao: 0.45, machado: 0.6, picareta: 0.6, lanca: 0.7, clava: 0.62, tocha: 0.5 };
@@ -60,6 +61,7 @@ export class PlayerActions {
     const hit = creatures?.playerAttack(p, forward, t.dano, t.alcance);
     if (hit) {
       this.world.effects.burst(hit.center(), 'sangue', 6, 2.5);
+      sound.play('carne', hit.center());
       this._wear();
       return;
     }
@@ -69,6 +71,7 @@ export class PlayerActions {
       const got = creatures.harvestCorpse(corpse, t.tipo);
       this._give(got);
       this.world.effects.burst(corpse.center(), 'sangue', 5, 2);
+      sound.play('carne', corpse.center());
       this._wear();
       return;
     }
@@ -101,6 +104,7 @@ export class PlayerActions {
     fx.z += (rec.z - fx.z) * 0.8;
     fx.y = this.player.position.y + 1.2;
     this.world.effects.burst(fx, kind, kind === 'folha' ? 10 : 8, 2.6);
+    sound.play(kind === 'folha' ? 'folhas' : kind, fx);
     if (kind === 'madeira') {
       this.world.effects.burst(fx.clone().setY(fx.y + 3), 'folha', 6, 1.5);
       shakeAt(rec.x, rec.z, 1);

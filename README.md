@@ -4,6 +4,16 @@ Jogo 3D de sobrevivência com dinossauros. Sozinho (offline) ou em **co-op onlin
 Roda no celular (Android como app ou no navegador) e no PC.
 Visual estilizado, feito para ser leve.
 
+**Versão 0.5** – sons, dia de 7 min e noite de 3 min.
+
+- **Sons** (todos gerados por código): floresta de dia (vento, pássaros, insetos) e de
+  noite (grilos, sapos, coruja), passos (mato/areia/água), golpes, madeira, pedra, folhas,
+  fogueira estalando, água, comer, beber, dor, e a voz de cada animal (rugido, mugido,
+  pio, chiado...) vindo da direção dele. Volume no menu de pausa.
+- **Dia 7 minutos, noite 3 minutos** (mude em `balanceamento.js` → `dia`).
+- Sem a lista de objetivos e sem os botões "1ª pessoa" e "FPS" no canto
+  (câmera e FPS continuam no menu de pausa; no PC: V e F3).
+
 **Versão 0.4** – sobrevivência, dia e noite e co-op.
 
 - **Co-op online**: um jogador toca em **Criar partida co-op** e recebe um código de 6
@@ -11,9 +21,7 @@ Visual estilizado, feito para ser leve.
   (um servidor público e gratuito só ajuda os aparelhos a se acharem; depois a conexão é
   direta). Quem criou a partida controla os animais e a hora do dia; se ele sair, os outros
   continuam sozinhos.
-- **Sobreviver**: objetivos na tela guiam o começo (palha → pedras → machado → fogueira →
-  carne assada → lança → saco de dormir → sobreviver à noite → abater um predador).
-- **Dia e noite** (30 min o dia todo): à noite esfria, os predadores enxergam mais longe
+- **Dia e noite**: à noite esfria, os predadores enxergam mais longe
   e fica escuro — use **tocha** e **fogueira**.
 - **Fogueira**: coloque no chão, acenda com madeira; perto dela a carne crua vira
   **carne assada** sozinha, e esquenta.

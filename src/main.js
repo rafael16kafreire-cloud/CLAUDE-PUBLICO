@@ -26,8 +26,8 @@ import { Crafting } from './crafting/crafting.js';
 import { PlayerActions } from './player/player_actions.js';
 import { Hotbar } from './ui/hotbar.js';
 import { InventoryScreen } from './ui/inventory_screen.js';
-import { Objectives } from './player/objectives.js';
 import { Multiplayer } from './net/multiplayer.js';
+import { sound } from './audio/audio.js';
 
 // Ponte com o app Android (existe só dentro do APK).
 const androidApp = typeof window !== 'undefined' ? window.IlhaAndroid : undefined;
@@ -116,7 +116,6 @@ function boot(hotData = {}) {
     ctx.touch.applySettings(settings.get('buttonOpacity'), settings.get('buttonSize'));
     ctx.debug.setVisible(settings.get('showDebug'));
     ctx.camCtl.setMode(settings.get('cameraMode'));
-    ctx.hud.setCameraLabel(ctx.camCtl.mode);
   }
   events.on(EV.SETTINGS_CHANGED, applySettings);
 
@@ -136,7 +135,6 @@ function boot(hotData = {}) {
     actions.forward = camCtl.forward;
     world.localPlayer = player;
     world.localInventory = inventory;
-    const objectives = new Objectives(inventory, player.stats);
     const interaction = new PlayerInteraction(player, world, camCtl, actions, inventory);
     const hud = new Hud(ui, player, (action) => onCornerButton(action));
     const messages = new Messages(ui);
@@ -148,6 +146,7 @@ function boot(hotData = {}) {
     const hands = new PlayerHands(camera);
     player.onPunch = (kind) => {
       hands.swing(kind);
+      sound.play('golpe');
       ctx?.net.noteSwing();
     };
     const hotbar = new Hotbar(ui, inventory, (i) => actions.pressHotbar(i));
@@ -173,9 +172,8 @@ function boot(hotData = {}) {
     game.player = player;
     ctx = {
       world, player, camCtl, interaction, hud, messages, touch, death, debug, pause, creatures, hands,
-      inventory, crafting, actions, hotbar, invScreen, objectives,
+      inventory, crafting, actions, hotbar, invScreen,
     };
-    hud.objectiveProgress = () => objectives.progress;
     ctx.net = new Multiplayer({ world, player, creatures, inventory, actions, camCtl });
 
     // Voltando de uma atualização da página: restaura posição, barras e itens.
@@ -188,9 +186,7 @@ function boot(hotData = {}) {
         world.day = hotData.world.day ?? world.day;
         for (const st of hotData.world.structures ?? []) world.addStructure(st);
       }
-      objectives.fromJSON(hotData.objectives);
     }
-    events.emit(EV.OBJECTIVE, { objective: objectives.current });
 
     hud.setVisible(false);
     hotbar.setVisible(false);
@@ -222,6 +218,7 @@ function boot(hotData = {}) {
 
   function hostCoop(name) {
     if (!ctx) return;
+    sound.unlock();
     settings.set('playerName', name);
     ctx.player.name = name;
     start.setCoopBusy(true);
@@ -235,6 +232,7 @@ function boot(hotData = {}) {
 
   function joinCoop(code, name) {
     if (!ctx) return;
+    sound.unlock();
     code = (code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     if (code.length !== 6) {
       start.setStatus('O código tem 6 letras/números.', 'erro');
@@ -263,6 +261,8 @@ function boot(hotData = {}) {
 
   function play() {
     if (!ctx) return;
+    sound.unlock();
+    sound.setPaused(false);
     start.hide();
     ctx.hud.setVisible(true);
     ctx.hotbar.setVisible(true);
@@ -271,7 +271,7 @@ function boot(hotData = {}) {
     requestFullscreenLandscape();
     if (!game.isTouch) input.requestPointerLock();
     if (game.playTime < 1) {
-      events.emit(EV.MESSAGE, { text: 'Siga o objetivo no canto da tela. Abaixado (agachar) os predadores te veem menos.', kind: 'info' });
+      events.emit(EV.MESSAGE, { text: 'Bata nas árvores para pegar palha e madeira. Abaixado (agachar) os predadores te veem menos.', kind: 'info' });
       events.emit(EV.MESSAGE, { text: 'Água doce: o pântano fica no meio da ilha.', kind: 'info' });
       // Já começa com alguns animais por perto.
       if (!ctx.creatures.netClient) {
@@ -341,10 +341,12 @@ function boot(hotData = {}) {
     input.exitPointerLock();
     ctx.pause.setCoop(ctx.net.active ? ctx.net.code : null, ctx.net.playerNames);
     ctx.pause.show();
+    if (!ctx.net.active) sound.setPaused(true);
   }
 
   function resume() {
     if (game.state !== STATE.PAUSED) return;
+    sound.setPaused(false);
     ctx.pause.hide();
     game.setState(STATE.PLAYING);
     if (!game.isTouch) input.requestPointerLock();
@@ -483,6 +485,53 @@ function boot(hotData = {}) {
     });
   }
 
+  // ---------- Sons: eventos do jogo ----------
+  let lastPickup = 0;
+  events.on(EV.ITEM_GAINED, () => {
+    const now = performance.now();
+    if (now - lastPickup > 120) sound.play('pegar');
+    lastPickup = now;
+  });
+  events.on(EV.CRAFTED, () => sound.play('criar'));
+  events.on(EV.ATE, () => sound.play('comer'));
+  events.on(EV.WATER_DRUNK, () => sound.play('beber'));
+  events.on(EV.PLAYER_HURT, () => sound.play('dor'));
+  events.on(EV.PLAYER_DIED, () => sound.play('morte'));
+  events.on(EV.LEVEL_UP, () => sound.play('nivel'));
+  events.on(EV.PLACED, ({ structure }) => sound.play('colocar', structure.position));
+  events.on(EV.STRUCTURE_USED, ({ structure }) => structure.type === 'fogueira' && sound.play('acender', structure.position));
+  events.on(EV.SETTINGS_CHANGED, ({ key, value }) => key === 'volume' && sound.setVolume(value));
+  sound.setVolume(settings.get('volume'));
+  // qualquer toque destrava o som (regra dos navegadores)
+  window.addEventListener('pointerdown', () => sound.unlock(), { passive: true });
+  window.addEventListener('keydown', () => sound.unlock());
+
+  // Passos, pulo, queda e mergulho do jogador deste aparelho.
+  const steps = { dist: 0, lastPos: null, ground: true, swim: false, vy: 0 };
+  function updateFootsteps() {
+    const p = ctx.player;
+    if (!steps.lastPos) steps.lastPos = p.position.clone();
+    const moved = Math.hypot(p.position.x - steps.lastPos.x, p.position.z - steps.lastPos.z);
+    steps.lastPos.copy(p.position);
+    if (p.dead || moved > 3) return; // teleporte: ignora
+    if (p.onGround && !p.swimming) {
+      steps.dist += moved;
+      const stride = p.running ? 2.1 : p.crouching ? 1.1 : 1.6;
+      if (steps.dist > stride) {
+        steps.dist = 0;
+        const b = ctx.world.biomeKeyAt(p.position.x, p.position.z);
+        const wet = ctx.world.waterAt(p.position.x, p.position.z);
+        sound.play('passo', null, { surface: wet ? 'agua' : b === 'praia' ? 'areia' : 'mato', volume: p.crouching ? 0.4 : p.running ? 1.2 : 0.8 });
+      }
+    }
+    if (steps.ground && !p.onGround && p.velocity.y > 2 && !p.swimming) sound.play('pulo');
+    if (!steps.ground && p.onGround && steps.vy < -6) sound.play('queda');
+    if (!steps.swim && p.swimming) sound.play('splash', p.position);
+    steps.ground = p.onGround;
+    steps.swim = p.swimming;
+    steps.vy = p.velocity.y;
+  }
+
   // ---------- Loop principal ----------
   let last = performance.now();
   let menuAngle = 0;
@@ -572,6 +621,13 @@ function boot(hotData = {}) {
       camera.position.set(...photo.pos);
       camera.lookAt(...photo.target);
     }
+    // ---------- Sons ----------
+    if (game.state !== STATE.MENU) {
+      sound.update(dt, camera, world, player.position);
+      sound.setUnderwater(player.headUnderwater);
+      updateFootsteps(dt);
+    }
+
     const toolKind = actions.tool.tipo;
     // luz da tocha na mão (mais forte à noite)
     const torchOn = toolKind === 'tocha' && game.state === STATE.PLAYING && !player.dead;
@@ -613,11 +669,11 @@ function boot(hotData = {}) {
     speciesIds: Object.keys(SPECIES),
     get ctx() { return ctx; },
     get net() { return ctx?.net; },
+    sound,
     snapshot: () => (ctx ? {
       player: ctx.player.toJSON(),
       yaw: ctx.camCtl.yaw,
       inventory: ctx.inventory.toJSON(),
-      objectives: ctx.objectives.toJSON(),
       world: { time: ctx.world.time, day: ctx.world.day, structures: ctx.world.structures.map((st) => st.toJSON()) },
     } : {}),
   };

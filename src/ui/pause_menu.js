@@ -31,6 +31,9 @@ export class PauseMenu {
           <label for="opt-view">Distância de visão <output id="opt-view-out"></output></label>
           <input type="range" id="opt-view" min="100" max="320" step="10">
 
+          <label for="opt-vol">Volume do som <output id="opt-vol-out"></output></label>
+          <input type="range" id="opt-vol" min="0" max="1" step="0.05">
+
           <label for="opt-sens">Sensibilidade da câmera <output id="opt-sens-out"></output></label>
           <input type="range" id="opt-sens" min="0.3" max="2.5" step="0.1">
 
@@ -81,6 +84,7 @@ export class PauseMenu {
     this.fields = {
       quality: $('opt-quality'),
       view: $('opt-view'),
+      vol: $('opt-vol'),
       sens: $('opt-sens'),
       opacity: $('opt-opacity'),
       size: $('opt-size'),
@@ -91,6 +95,7 @@ export class PauseMenu {
     };
     this.outs = {
       view: $('opt-view-out'),
+      vol: $('opt-vol-out'),
       sens: $('opt-sens-out'),
       opacity: $('opt-opacity-out'),
       size: $('opt-size-out'),
@@ -118,6 +123,10 @@ export class PauseMenu {
       settings.set('viewDistance', Number(f.view.value));
       this.refresh();
     });
+    f.vol.addEventListener('input', () => {
+      settings.set('volume', Number(f.vol.value));
+      this.refresh();
+    });
     f.sens.addEventListener('input', () => {
       settings.set('sensitivity', Number(f.sens.value));
       this.refresh();
@@ -143,6 +152,8 @@ export class PauseMenu {
     f.quality.value = v.quality;
     f.view.value = String(v.viewDistance);
     f.sens.value = String(v.sensitivity);
+    f.vol.value = String(v.volume ?? 0.8);
+    this.outs.vol.textContent = `${Math.round((v.volume ?? 0.8) * 100)}%`;
     f.opacity.value = String(v.buttonOpacity);
     f.size.value = String(v.buttonSize);
     f.touch.value = v.touchControls;

@@ -11,7 +11,7 @@ import { buildTerrain } from './terrain.js';
 import { WaterSystem } from './water.js';
 import { Vegetation } from './vegetation.js';
 import { Grass } from './grass.js';
-import { Sky } from './sky.js';
+import { Sky, NIGHT_START, NIGHT_END } from './sky.js';
 import { Effects } from './effects.js';
 import { findRespawnPoints } from './respawn_points.js';
 import { DeathBag } from './death_bag.js';
@@ -178,18 +178,26 @@ export class World {
   }
 
   // ---------- atualização por quadro ----------
+  // Avança o relógio. De dia e de noite ele anda em velocidades
+  // diferentes: o dia claro dura duracao_dia_min e a noite duracao_noite_min.
+  advanceTime(dt) {
+    const prev = this.time;
+    const night = this.time < NIGHT_END || this.time > NIGHT_START;
+    const span = night ? 1 - (NIGHT_START - NIGHT_END) : NIGHT_START - NIGHT_END;
+    const mins = night ? BALANCE.dia.duracao_noite_min : BALANCE.dia.duracao_dia_min;
+    this.time += (dt / (mins * 60)) * span;
+    if (this.time >= 1) {
+      this.time -= 1;
+      this.day += 1;
+    }
+    if (prev < 0.25 && this.time >= 0.25) events.emit(EV.DAWN, { day: this.day });
+    if (prev < NIGHT_START && this.time >= NIGHT_START) events.emit(EV.DUSK, { day: this.day });
+    this.sky.setTime(this.time);
+  }
+
   update(dt, camera, focus) {
     sharedTime.value += dt;
-    if (!this.timeFrozen) {
-      const prev = this.time;
-      this.time += dt / (BALANCE.dia.duracao_dia_min * 60);
-      if (this.time >= 1) {
-        this.time -= 1;
-        this.day += 1;
-      }
-      if (prev < 0.25 && this.time >= 0.25) events.emit(EV.DAWN, { day: this.day });
-      if (prev < 0.79 && this.time >= 0.79) events.emit(EV.DUSK, { day: this.day });
-    }
+    if (!this.timeFrozen) this.advanceTime(dt);
     this.sky.setTime(this.time);
     for (const s of this.structures) s.update?.(dt);
     this.structures = this.structures.filter((s) => !s.removed);

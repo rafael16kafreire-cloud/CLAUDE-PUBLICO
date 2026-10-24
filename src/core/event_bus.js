@@ -29,7 +29,6 @@ export const EV = {
   PLACED: 'placed',                       // { type, structure }  fogueira, saco de dormir...
   ATE: 'ate',                             // { id }
   COOKED: 'cooked',                       // { id }
-  OBJECTIVE: 'objective',                 // { objective, done }  objetivo mudou
   DAWN: 'dawn',                           // { day }  amanheceu
   DUSK: 'dusk',                           // { day }  anoiteceu
   VEG_CONSUMED: 'veg_consumed',           // { rec, remote }  planta coletada (co-op)

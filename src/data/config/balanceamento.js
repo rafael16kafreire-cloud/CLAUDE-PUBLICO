@@ -133,7 +133,8 @@ export default {
   // Dia e noite
   // ---------------------------------------------------------
   dia: {
-    duracao_dia_min: 30,       // um dia inteiro (dia + noite) em minutos
+    duracao_dia_min: 7,        // minutos de dia claro (do amanhecer ao anoitecer)
+    duracao_noite_min: 3,      // minutos de noite
     hora_inicial: 0.3,         // 0 = meia-noite, 0.25 = amanhecer, 0.5 = meio-dia
     frio_noite_c: -6,          // quanto esfria à noite
   },

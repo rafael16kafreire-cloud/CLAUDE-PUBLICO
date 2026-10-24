@@ -831,26 +831,6 @@ body.is-touch .hb-key { display: none; }
 /* ---------------- Relógio e objetivo ---------------- */
 .hud-clock { font-size: 11px; font-weight: 700; color: #f3e2a8; letter-spacing: 0.03em; margin: 1px 0 2px; }
 .hud-clock.night { color: #a9c0ff; }
-.objective {
-  position: absolute;
-  left: calc(10px + var(--safe-l));
-  top: calc(118px + var(--safe-t));
-  max-width: min(300px, 40vw);
-  padding: 5px 9px 6px;
-  border-radius: 8px;
-  background: var(--panel);
-  border-left: 3px solid var(--c-xp);
-  font-size: 12.5px;
-  line-height: 1.25;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
-}
-.objective[hidden] { display: none; }
-.obj-label { display: block; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--c-xp); }
-.obj-text { font-weight: 600; }
-.obj-prog { display: block; margin-top: 2px; font-size: 11.5px; color: var(--bone-dim); }
-.objective.flash { animation: obj-flash 1.2s ease-out; }
-@keyframes obj-flash { 0% { background: rgba(185, 214, 90, 0.55); } 100% { background: var(--panel); } }
-@media (orientation: portrait) { .objective { top: calc(150px + var(--safe-t)); max-width: 60vw; } }
 
 /* ---------------- Co-op ---------------- */
 .coop-box {

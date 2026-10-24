@@ -11,6 +11,7 @@
 import * as THREE from 'three';
 import { angleDelta, clamp } from '../core/math.js';
 import { BALANCE } from '../core/balance.js';
+import { sound } from '../audio/audio.js';
 
 export const CSTATE = {
   WANDER: 'vagar',
@@ -122,6 +123,9 @@ export class Creature {
       return;
     }
 
+    // de vez em quando, um chamado à toa
+    if (this.rand() < dt * 0.025) sound.creature(this, this.state === CSTATE.CHASE ? 'rugido' : 'chamado');
+
     this.thinkTimer -= dt;
     if (this.thinkTimer <= 0) {
       this.thinkTimer = 0.25;
@@ -231,7 +235,10 @@ export class Creature {
 
   _chase(target) {
     this.target = target;
-    if (this.state !== CSTATE.CHASE && this.state !== CSTATE.ATTACK) this._setState(CSTATE.CHASE);
+    if (this.state !== CSTATE.CHASE && this.state !== CSTATE.ATTACK) {
+      this._setState(CSTATE.CHASE);
+      if (this.species.temperamento === 'agressivo' || this.species.revida) sound.creature(this, 'rugido');
+    }
   }
 
   // ---------------------------------------------------------
@@ -296,6 +303,7 @@ export class Creature {
           this.attackCooldown = sp.intervalo_ataque ?? 1.2;
           this.attackAnim = 1;
           this._pendingBite = 0.22; // o dano acontece no meio do bote
+          sound.creature(this, 'ataque');
         }
         break;
       }
@@ -493,10 +501,12 @@ export class Creature {
     if (this.health <= 0) {
       this.health = 0;
       this._setState(CSTATE.DEAD);
+      sound.creature(this, 'morte');
       this.manager.onDeath(this, attacker);
       return;
     }
     const sp = this.species;
+    sound.creature(this, 'dor');
     if (sp.temperamento === 'agressivo' || sp.revida) {
       this._chase(attacker);
       if (sp.temperamento === 'agressivo') this.manager.alertPack(this, attacker);
@@ -682,12 +692,20 @@ export class Creature {
     }
     this.netGoal.set(e.x, e.y, e.z);
     this.netYaw = e.yaw;
+    if (this._lastHp === undefined) this._lastHp = e.hp;
     this.health = e.hp;
-    if (e.atk && this.attackAnim <= 0.05) this.attackAnim = 1;
+    if (e.hp < this._lastHp && e.hp > 0) sound.creature(this, 'dor');
+    this._lastHp = e.hp;
+    if (e.atk && this.attackAnim <= 0.05) {
+      this.attackAnim = 1;
+      sound.creature(this, 'ataque');
+    }
     if (e.st === CSTATE.DEAD && this.state !== CSTATE.DEAD) {
       this.health = 0;
       this._setState(CSTATE.DEAD);
+      sound.creature(this, 'morte');
     } else if (e.st !== CSTATE.DEAD) {
+      if (e.st === CSTATE.CHASE && this.state !== CSTATE.CHASE && this.state !== CSTATE.ATTACK) sound.creature(this, 'rugido');
       this.state = e.st;
     }
     this.lootLeft = e.loot ? { remoto: 1 } : null;

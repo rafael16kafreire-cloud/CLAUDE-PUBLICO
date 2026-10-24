@@ -18,6 +18,10 @@ const UNDERWATER = new THREE.Color('#2a4b3c');
 // usado pela água e pelo céu: mudar aqui muda tudo junto.
 export const SUN_DIR = new THREE.Vector3(0.45, 0.8, 0.35).normalize();
 
+// Noite = antes de NIGHT_END ou depois de NIGHT_START (fração do ciclo).
+export const NIGHT_START = 0.79;
+export const NIGHT_END = 0.22;
+
 // Cores do céu ao longo do dia: [t, horizonte, zênite, cor da luz,
 // força da luz, céu do hemisfério, força do hemisfério, nuvens]
 const KEYS = [
@@ -104,7 +108,7 @@ export class Sky {
   }
 
   get isNight() {
-    return this.time < 0.22 || this.time > 0.79;
+    return this.time < NIGHT_END || this.time > NIGHT_START;
   }
 
   _setShadowRange(r) {

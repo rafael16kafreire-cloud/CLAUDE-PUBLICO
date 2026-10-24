@@ -62,18 +62,10 @@ export class Hud {
           </div>`).join('')}
       </div>
 
-      <div class="objective" data-ref="obj" hidden>
-        <span class="obj-label">Objetivo</span>
-        <span class="obj-text" data-ref="objtext"></span>
-        <b class="obj-prog" data-ref="objprog"></b>
-      </div>
-
       <div class="hud-corner">
         <button type="button" class="corner-btn touch-only" data-action="inventory">Inventário</button>
         <button type="button" class="corner-btn touch-only" data-action="build">Construir</button>
         <button type="button" class="corner-btn touch-only" data-action="mount">Montar</button>
-        <button type="button" class="corner-btn" data-action="camera" data-ref="cambtn">1ª pessoa</button>
-        <button type="button" class="corner-btn" data-action="debug">FPS</button>
         <button type="button" class="corner-btn icon-btn" data-action="pause" aria-label="Pausar">${ICONS.pause}</button>
       </div>
 
@@ -118,21 +110,8 @@ export class Hud {
     });
 
     events.on(EV.INTERACT_PROMPT, (p) => this._showPrompt(p?.text ?? null, p?.key));
-    events.on(EV.OBJECTIVE, ({ objective }) => this.setObjective(objective));
     events.on(EV.BIOME_ENTERED, (b) => this.showBiome(b.name, b.description));
     events.on(EV.PLAYER_HURT, () => this._hurt());
-  }
-
-  // Objetivo atual (null = acabou a lista).
-  setObjective(o) {
-    this._objective = o;
-    this.refs.obj.hidden = !o;
-    if (o) {
-      this.refs.objtext.textContent = o.texto;
-      this.refs.obj.classList.remove('flash');
-      void this.refs.obj.offsetWidth;
-      this.refs.obj.classList.add('flash');
-    }
   }
 
   // Co-op: código e quantos jogadores (null = sozinho).
@@ -140,10 +119,6 @@ export class Hud {
     const b = this.refs.coop;
     b.hidden = !code;
     if (code) b.innerHTML = `Co-op <b>${code}</b> · ${count} ${count === 1 ? 'jogador' : 'jogadores'}`;
-  }
-
-  setCameraLabel(mode) {
-    this.refs.cambtn.textContent = mode === 'primeira' ? '1ª pessoa' : '3ª pessoa';
   }
 
   setVisible(v) {
@@ -247,7 +222,6 @@ export class Hud {
       this.refs.clock.textContent = `${night ? '☾' : '☀'} Dia ${w.day} · ${hh}:${mm}`;
       this.refs.clock.classList.toggle('night', night);
     }
-    if (this.objectiveProgress) this.refs.objprog.textContent = this.objectiveProgress();
 
     const t = st.temperature;
     const state = tempState(t);

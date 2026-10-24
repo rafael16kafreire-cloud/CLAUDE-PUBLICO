@@ -40,6 +40,7 @@ const DEFAULTS = {
   cameraMode: 'primeira',  // primeira | terceira
   autoQuality: true,       // baixa a qualidade sozinho se ficar lento
   playerName: '',          // nome no co-op
+  volume: 0.8,             // som (0 = mudo)
 };
 
 class Settings {

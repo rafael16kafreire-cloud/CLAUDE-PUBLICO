@@ -481,13 +481,29 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     return { ok, morning: c.world.time > 0.25 && c.world.time < 0.3, day: c.world.day - day0, points: c.world.allRespawnPoints.length };
   });
   check('Saco de dormir: dorme até de manhã e vira ponto de renascer', sleep.ok && sleep.morning && sleep.day === 1 && sleep.points >= 7, JSON.stringify(sleep));
-  const obj = await page.evaluate(() => {
-    const c = window.__ilha.ctx;
-    c.objectives.index = 0;
-    c.objectives.check();
-    return { id: c.objectives.current?.id, text: document.querySelector('.objective .obj-text')?.textContent };
+  const cycle = await page.evaluate(() => {
+    const w = window.__ilha.ctx.world;
+    // simula 10 min de jogo e mede dia e noite
+    w.time = 0.22;
+    let dayS = 0;
+    let nightS = 0;
+    // avança só o relógio (sem desenhar), em passos de 0,5 s
+    for (let i = 0; i < 1200; i++) {
+      const night = w.sky.isNight;
+      w.advanceTime(0.5);
+      if (night) nightS += 0.5; else dayS += 0.5;
+    }
+    w.time = 0.35;
+    return { dia_min: +(dayS / 60).toFixed(2), noite_min: +(nightS / 60).toFixed(2) };
   });
-  check('Objetivos: aparecem na tela e avançam', !!obj.text && obj.id !== 'palha', JSON.stringify(obj));
+  check('Dia dura 7 min e noite 3 min', Math.abs(cycle.dia_min - 7) < 0.15 && Math.abs(cycle.noite_min - 3) < 0.15, JSON.stringify(cycle));
+  const ui = await page.evaluate(() => ({
+    corner: [...document.querySelectorAll('.hud-corner .corner-btn')].map((b) => b.textContent.trim()).filter(Boolean),
+    objective: !!document.querySelector('.objective'),
+    som: window.__ilha.sound?.ctx?.state ?? 'sem som',
+  }));
+  check('Tela: sem "1ª pessoa", "FPS" e sem objetivos', !ui.corner.some((t) => /pessoa|FPS/.test(t)) && !ui.objective, JSON.stringify(ui));
+  check('Som: ligado depois de jogar', ui.som === 'running', ui.som);
   await page.evaluate(() => { const w = window.__ilha.ctx.world; for (const st of w.structures) st.remove(); w.time = 0.35; });
 
   // Morte por afogamento: itens vão para o saco de morte
