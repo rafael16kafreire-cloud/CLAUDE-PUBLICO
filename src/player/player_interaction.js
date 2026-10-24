@@ -1,20 +1,24 @@
 // =============================================================
 // INTERAÇÃO – o que o jogador está mirando e o botão "Interagir"
-// Fase 1: beber água (doce mata a sede, do mar não) e recuperar o
-// saco de morte. Fase 2+: coletar, abrir baús, etc.
+// Interagir: recuperar saco, colher (bagas, bananas, fibra), beber.
+// Também mostra dicas do que dá para fazer com "Atacar"
+// (árvore = madeira e palha, pedra = pedra e sílex...).
 // =============================================================
 import * as THREE from 'three';
 import { BALANCE } from '../core/balance.js';
 import { events, EV } from '../core/event_bus.js';
+import { itemName } from '../items/items.js';
 
 const REACH = 3.4;        // alcance para objetos (m)
 const WATER_REACH = 4.5;  // alcance para beber (m)
 
 export class PlayerInteraction {
-  constructor(player, world, cameraCtl) {
+  constructor(player, world, cameraCtl, actions, inventory) {
     this.player = player;
     this.world = world;
     this.cameraCtl = cameraCtl;
+    this.actions = actions;
+    this.inv = inventory;
     this.target = null;
     this._timer = 0;
     this._lastPrompt = undefined;
@@ -27,15 +31,15 @@ export class PlayerInteraction {
       this._setPrompt(null);
       return;
     }
-    // Procurar alvo 10x por segundo é suficiente (economiza CPU).
     this._timer -= dt;
     if (this._timer <= 0) {
-      this._timer = 0.1;
+      this._timer = 0.12;
       this.target = this._findTarget();
-      this._setPrompt(this.target ? this.target.text : null);
+      this._setPrompt(this.target ? { text: this.target.text, key: this.target.key ?? 'interact' } : null);
     }
     if (input.wasPressed('interact')) {
-      this._interact(this._findTarget());
+      const t = this._findTarget();
+      if (t && t.key !== 'attack') this._interact(t);
     }
   }
 
@@ -44,7 +48,7 @@ export class PlayerInteraction {
     const camPos = this.cameraCtl.camera.position;
     const f = this.cameraCtl.forward;
 
-    // 1) Objetos (saco de morte...): perto e na mira, ou bem perto.
+    // 1) Sacos (de morte ou de itens)
     let best = null;
     let bestD = Infinity;
     for (const obj of this.world.interactables) {
@@ -62,11 +66,20 @@ export class PlayerInteraction {
     }
     if (best) return { kind: 'object', obj: best, text: best.promptText() };
 
-    // 2) Água onde o jogador está (com água pelo menos nas canelas).
+    // 2) Planta para colher (bagas, bananas, fibra)
+    const rec = this.actions.findHarvestable(f);
+    if (rec) {
+      const res = this.world.vegetation.resourceOf(rec);
+      const first = Object.keys(res.colher)[0];
+      const label = first === 'banana' ? 'Pegar bananas' : `Colher ${itemName(first)}`;
+      return { kind: 'plant', rec, text: label };
+    }
+
+    // 3) Água onde o jogador está
     const here = this.world.waterAt(p.x, p.z);
     if (here && here.level > p.y + 0.15) return this._waterTarget(here);
 
-    // 3) Água na mira.
+    // 4) Água na mira
     const camDist = camPos.distanceTo(p);
     for (let t = 0.3; t < camDist + WATER_REACH; t += 0.3) {
       const q = this._q.copy(camPos).addScaledVector(f, t);
@@ -79,26 +92,31 @@ export class PlayerInteraction {
       if (q.y < ground) break;
     }
 
-    // 4) Ajuda no celular: água doce bem ao lado do jogador.
-    for (const r of [1.4, 2.6]) {
-      for (let a = 0; a < Math.PI * 2; a += Math.PI / 4) {
-        const body = this.world.waterAt(p.x + Math.sin(a) * r, p.z + Math.cos(a) * r);
-        if (body && body.fresh && body.level > p.y - 1.2) return this._waterTarget(body);
-      }
+    // 5) Dica do que sai batendo (árvore, pedra, tronco, carcaça)
+    const corpse = this.world.creatures?.findCorpse(p, f, 3);
+    if (corpse) return { kind: 'hint', key: 'attack', text: `Bater: carne e couro (${corpse.species.nome})` };
+    const tool = this.actions.tool;
+    const hit = this.world.vegetation.findTarget(p.x, p.z, f.x, f.z, tool.alcance);
+    if (hit) {
+      const res = this.world.vegetation.resourceOf(hit);
+      const table = res[tool.tipo] ?? res.mao;
+      const names = Object.keys(table).slice(0, 2).map(itemName).join(' e ');
+      return { kind: 'hint', key: 'attack', text: `${res.nome}: ${names}` };
     }
     return null;
   }
 
   _waterTarget(body) {
-    return {
-      kind: 'water',
-      body,
-      text: body.fresh ? 'Beber água' : 'Água do mar (salgada)',
-    };
+    return { kind: 'water', body, text: body.fresh ? 'Beber água' : 'Água do mar (salgada)' };
   }
 
   _interact(target) {
     if (!target) return;
+    if (target.kind === 'plant') {
+      this.actions.colher(target.rec);
+      this._timer = 0;
+      return;
+    }
     if (target.kind === 'water') {
       if (!target.body.fresh) {
         events.emit(EV.MESSAGE, { text: 'Água salgada não mata a sede!', kind: 'warn' });
@@ -114,10 +132,15 @@ export class PlayerInteraction {
       return;
     }
     if (target.kind === 'object') {
-      const items = target.obj.interact(this.player);
-      const n = Array.isArray(items) ? items.length : 0;
+      const items = target.obj.interact(this.player) ?? [];
+      let lost = 0;
+      for (const s of items) {
+        const added = this.inv.add(s.id, s.qty, { dur: s.dur });
+        lost += s.qty - added;
+      }
+      const n = items.reduce((a, s) => a + s.qty, 0);
       events.emit(EV.MESSAGE, {
-        text: n > 0 ? `Saco recuperado: ${n} itens` : 'Saco de morte recuperado (vazio por enquanto)',
+        text: n > 0 ? `Recuperou ${n} itens${lost ? ` (${lost} não couberam)` : ''}` : 'Saco recuperado (vazio)',
         kind: 'gain',
       });
       this.target = null;
@@ -125,9 +148,10 @@ export class PlayerInteraction {
     }
   }
 
-  _setPrompt(text) {
-    if (text === this._lastPrompt) return;
-    this._lastPrompt = text;
-    events.emit(EV.INTERACT_PROMPT, text ? { text } : null);
+  _setPrompt(p) {
+    const key = p ? `${p.key}|${p.text}` : null;
+    if (key === this._lastPrompt) return;
+    this._lastPrompt = key;
+    events.emit(EV.INTERACT_PROMPT, p);
   }
 }

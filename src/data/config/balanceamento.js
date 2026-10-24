@@ -15,6 +15,7 @@ export default {
     fome_max: 100,       // barra de comida (cheia = sem fome)
     sede_max: 100,       // barra de água (cheia = sem sede)
     folego_max: 100,     // ar embaixo d'água
+    peso_max: 120,       // kg que carrega andando normal (até 150% anda devagar)
   },
 
   // ---------------------------------------------------------
@@ -124,7 +125,8 @@ export default {
     raio_spawn_max_m: 130,     // e no máximo a Y m
     raio_despawn_m: 190,       // somem quando ficam mais longe que isso
     intervalo_spawn_seg: 1.2,  // a cada quanto tempo tenta criar mais
-    corpo_dura_seg: 90,        // quanto tempo um corpo fica no chão
+    corpo_dura_seg: 120,       // quanto tempo um corpo fica no chão
+    max_ambiente: 6,           // araras e outros bichos de enfeite (fora do limite)
   },
 
   // ---------------------------------------------------------

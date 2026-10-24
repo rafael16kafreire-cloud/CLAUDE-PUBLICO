@@ -25,7 +25,7 @@ export class PauseMenu {
           </select>
 
           <label for="opt-view">Distância de visão <output id="opt-view-out"></output></label>
-          <input type="range" id="opt-view" min="120" max="400" step="10">
+          <input type="range" id="opt-view" min="100" max="320" step="10">
 
           <label for="opt-sens">Sensibilidade da câmera <output id="opt-sens-out"></output></label>
           <input type="range" id="opt-sens" min="0.3" max="2.5" step="0.1">
@@ -49,11 +49,14 @@ export class PauseMenu {
             <option value="primeira">Primeira pessoa</option>
           </select>
 
+          <label for="opt-auto">Baixar qualidade se ficar lento</label>
+          <input type="checkbox" id="opt-auto">
+
           <label for="opt-debug">Mostrar FPS e desempenho</label>
           <input type="checkbox" id="opt-debug">
         </form>
         <div class="pause-test">
-          <label for="opt-spawn">Teste: chamar dinossauro</label>
+          <label for="opt-spawn">Teste: chamar animal</label>
           <div class="pause-test-row">
             <select id="opt-spawn">
               ${species.map((sp) => `<option value="${sp.id}">${sp.nome}</option>`).join('')}
@@ -80,6 +83,7 @@ export class PauseMenu {
       touch: $('opt-touch'),
       camera: $('opt-camera'),
       debug: $('opt-debug'),
+      auto: $('opt-auto'),
     };
     this.outs = {
       view: $('opt-view-out'),
@@ -123,6 +127,7 @@ export class PauseMenu {
     f.touch.addEventListener('change', () => settings.set('touchControls', f.touch.value));
     f.camera.addEventListener('change', () => settings.set('cameraMode', f.camera.value));
     f.debug.addEventListener('change', () => settings.set('showDebug', f.debug.checked));
+    f.auto.addEventListener('change', () => settings.set('autoQuality', f.auto.checked));
   }
 
   // Copia as opções atuais para os campos.
@@ -137,6 +142,7 @@ export class PauseMenu {
     f.touch.value = v.touchControls;
     f.camera.value = v.cameraMode;
     f.debug.checked = !!v.showDebug;
+    f.auto.checked = !!v.autoQuality;
     this.outs.view.textContent = `${v.viewDistance} m`;
     this.outs.sens.textContent = Number(v.sensitivity).toFixed(1);
     this.outs.opacity.textContent = `${Math.round(v.buttonOpacity * 100)}%`;

@@ -115,7 +115,7 @@ export class Player {
     this._updateAttack(dt, input, cam);
 
     // ---------- Colisões e limite do mapa ----------
-    this.world.resolveCollisions(this.position, RADIUS);
+    this.world.resolveCollisions(this.position, RADIUS, this.position.y);
     this.world.creatures?.resolvePlayer(this.position, RADIUS);
     this._keepInsideWorld(dt);
     // Depois de empurrado, não pode ficar dentro do chão.
@@ -149,21 +149,28 @@ export class Player {
   }
 
   // Soco: gasta um pouco de stamina e acerta o que estiver na frente.
+  // Atacar: com comida selecionada, come; senão bate (soco ou ferramenta).
   _updateAttack(dt, input, cam) {
     const C = BALANCE.combate;
     this._attackTimer -= dt;
+    const actions = this.actions;
     if (input.wasPressed('attack') && this._attackTimer <= 0 && !this.swimming) {
-      if (this.stats.useStamina(C.soco_stamina)) {
-        this._attackTimer = C.soco_intervalo_seg;
-        this._pendingHit = 0.14; // o golpe acerta no meio da animação
+      if (actions?.selectedIsConsumable) {
+        actions.useSelected();
+        this._attackTimer = 0.4;
+      } else if (this.stats.useStamina(C.soco_stamina)) {
+        const tool = actions?.tool ?? { tipo: 'mao', intervalo: C.soco_intervalo_seg };
+        this._attackTimer = tool.intervalo;
+        this._pendingHit = tool.tipo === 'mao' ? 0.14 : 0.22; // acerta no meio da animação
         this.model.swing();
-        this.onPunch?.();
+        this.onPunch?.(tool.tipo);
       }
     }
     if (this._pendingHit >= 0) {
       this._pendingHit -= dt;
       if (this._pendingHit < 0) {
-        this.world.creatures?.playerAttack(this, cam.forward, C.soco_dano, C.soco_alcance_m);
+        if (actions) actions.onSwingHit(cam.forward);
+        else this.world.creatures?.playerAttack(this, cam.forward, C.soco_dano, C.soco_alcance_m);
       }
     }
   }
@@ -208,6 +215,10 @@ export class Player {
 
     let speed = this.crouching ? M.agachado : this.running ? M.correr : M.andar;
     if (waterDepth > 0.5) speed *= M.na_agua_rasa;
+    // carregando peso demais: anda devagar ou nem anda
+    const wf = this.actions ? this.actions.weightFactor() : 1;
+    speed *= wf;
+    if (wf < 1) this.running = false;
     speed *= mag;
 
     const len = Math.hypot(dirX, dirZ);

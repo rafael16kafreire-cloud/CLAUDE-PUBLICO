@@ -2,9 +2,11 @@
 // CRIATURA – comportamento (IA) e animação
 // Máquina de estados: vagar, parado, comer, fugir, perseguir,
 // atacar, voltar ao território e morto.
-// O jeito de cada espécie vem de data/creatures/criaturas.json
-// (temperamento, velocidade, dano...) e o formato de
-// creature_models.js.
+// Temperamentos (data/creatures/criaturas.json):
+//   agressivo  – carnívoros: caçam o jogador e outros animais
+//   passivo    – herbívoros: só reagem se apanharem
+//                (revida = ataca de volta; senão foge)
+//   medroso    – fogem quando alguém chega perto
 // =============================================================
 import * as THREE from 'three';
 import { angleDelta, clamp } from '../core/math.js';
@@ -36,7 +38,6 @@ export class Creature {
     this.rand = rand;
     this.level = level;
 
-    // Atributos que crescem com o nível.
     this.maxHealth = Math.round(species.vida * (1 + 0.06 * (level - 1)));
     this.health = this.maxHealth;
     this.damage = species.dano * (1 + 0.03 * (level - 1));
@@ -44,17 +45,19 @@ export class Creature {
 
     this.flies = !!species.voa;
     this.swims = !!species.nada;
+    this.aquatic = !!species.aquatico;
     this.pos = new THREE.Vector3(x, 0, z);
     this.home = new THREE.Vector2(x, z);
     this.yaw = rand() * TAU;
     this.speed = 0;
     this.state = CSTATE.WANDER;
     this.stateTime = 0;
-    this.target = null;       // quem está perseguindo
-    this.threat = null;       // de quem está fugindo
-    this.goal = null;         // ponto para onde está andando
+    this.target = null;
+    this.threat = null;
+    this.goal = null;
     this.attackCooldown = 0;
     this.attackAnim = 0;
+    this.hurtAnim = 0;
     this.blockedTime = 0;
     this.thinkTimer = rand() * 0.3;
     this.phase = rand();
@@ -62,8 +65,10 @@ export class Creature {
     this.deadTime = 0;
     this.pitch = 0;
     this.roll = 0;
-    this.lastHitByPlayer = 0;
+    this.climb = 0;
     this.turnRate = (this.flies ? 1.2 : 2.6) / Math.max(1, Math.sqrt(species.raio));
+    // animação suave
+    this.anim = { turn: 0, tail: [0, 0, 0], headYaw: 0, headPitch: 0, neck: 0, run: 0 };
 
     if (this.flies) {
       const [a, b] = species.altura_voo;
@@ -73,7 +78,7 @@ export class Creature {
       this.pos.y = this._groundY(x, z);
     }
     this.mesh.scale.setScalar(this.scale);
-    this._sync();
+    this._sync(0);
   }
 
   get alive() {
@@ -84,17 +89,16 @@ export class Creature {
     return this.species.raio * this.scale;
   }
 
-  get position() {
-    return this.pos;
-  }
-
   get height() {
     return this.species.altura * this.scale;
   }
 
-  // Centro do corpo (para mirar e para a barra de vida).
+  get position() {
+    return this.pos;
+  }
+
   center(out = new THREE.Vector3()) {
-    return out.copy(this.pos).setY(this.flies ? this.pos.y : this.pos.y + this.height * 0.5);
+    return out.copy(this.pos).setY((this.flies || this.aquatic) ? this.pos.y : this.pos.y + this.height * 0.5);
   }
 
   // ---------------------------------------------------------
@@ -102,13 +106,15 @@ export class Creature {
     this.time += dt;
     this.stateTime += dt;
     this.attackCooldown -= dt;
-    this.attackAnim = Math.max(0, this.attackAnim - dt * 2.5);
+    this.attackAnim = Math.max(0, this.attackAnim - dt * 2.2);
+    this.hurtAnim = Math.max(0, this.hurtAnim - dt * 3);
+    const prevYaw = this.yaw;
 
     if (this.state === CSTATE.DEAD) {
       this.deadTime += dt;
       this.speed = 0;
-      this._animate(dt, ctx);
-      this._sync();
+      this._animate(dt, ctx, 0);
+      this._sync(dt);
       return;
     }
 
@@ -121,8 +127,9 @@ export class Creature {
     if (this.flies) this._updateFlying(dt, ctx);
     else this._updateGround(dt, ctx);
 
-    this._animate(dt, ctx);
-    this._sync();
+    const yawVel = angleDelta(prevYaw, this.yaw) / Math.max(dt, 1e-3);
+    this._animate(dt, ctx, yawVel);
+    this._sync(dt);
   }
 
   // ---------------------------------------------------------
@@ -133,7 +140,6 @@ export class Creature {
     const player = ctx.player;
     const temp = sp.temperamento;
     const dPlayer = player.dead ? Infinity : this._dist2D(player.position);
-    // Agachado, o jogador é percebido mais de perto.
     const perceived = player.crouching ? dPlayer * 1.6 : dPlayer;
 
     if (this.state === CSTATE.FLEE) {
@@ -143,23 +149,19 @@ export class Creature {
 
     if (this.state === CSTATE.CHASE || this.state === CSTATE.ATTACK) {
       const t = this.target;
-      const gone = !t || (t.alive === false) || (t === player && player.dead);
+      const gone = !t || t.alive === false || (t === player && player.dead);
       const far = t && this._dist2D(t.position) > (sp.alcance_agro ?? 20) * 2.2;
-      const leash = this.home.distanceTo(new THREE.Vector2(this.pos.x, this.pos.z)) > 140;
-      if (gone || far || leash || this.blockedTime > 5) {
+      const leash = this.home.distanceTo(new THREE.Vector2(this.pos.x, this.pos.z)) > 150;
+      const unreachable = t && !this._canReach(t, ctx);
+      if (gone || far || leash || this.blockedTime > 5 || unreachable) {
         this.target = null;
         this._setState(leash ? CSTATE.RETURN : CSTATE.WANDER);
       }
       return;
     }
 
-    // Reações ao jogador por temperamento.
     if (temp === 'medroso' && perceived < 16) {
       this._flee(player);
-      return;
-    }
-    if (temp === 'territorial' && perceived < (sp.alcance_agro ?? 8)) {
-      this._chase(player);
       return;
     }
     if (temp === 'agressivo' && perceived < (sp.alcance_agro ?? 20) && this._canReach(player, ctx)) {
@@ -174,21 +176,26 @@ export class Creature {
       if (prey) this._chase(prey);
     }
 
-    // Longe demais de casa: volta.
     if (this.state !== CSTATE.RETURN && this.home.distanceTo(new THREE.Vector2(this.pos.x, this.pos.z)) > 110) {
       this._setState(CSTATE.RETURN);
     }
   }
 
-  // Animais da água só caçam quem está na água ou na beira.
+  // Dá para alcançar? (bichos da água só pegam quem está na água/beira)
   _canReach(target, ctx) {
+    const p = target.position;
+    if (this.aquatic) {
+      const w = ctx.world.waterAt(p.x, p.z);
+      return !!w && p.y < w.level - 0.2;
+    }
     if (this.species.perto_agua) {
-      const p = target.position;
       if (ctx.world.waterAt(p.x, p.z)) return true;
-      for (const [dx, dz] of [[6, 0], [-6, 0], [0, 6], [0, -6]]) {
-        if (ctx.world.waterAt(p.x + dx, p.z + dz)) return true;
-      }
-      return false;
+      return [[6, 0], [-6, 0], [0, 6], [0, -6]].some(([dx, dz]) => ctx.world.waterAt(p.x + dx, p.z + dz));
+    }
+    if (!this.swims && !this.flies) {
+      // bicho de terra não entra em água funda atrás de ninguém
+      const w = ctx.world.waterAt(p.x, p.z);
+      if (w && w.level - ctx.world.heightAt(p.x, p.z) > Math.max(1.2, this.height * 0.5)) return false;
     }
     return true;
   }
@@ -211,7 +218,7 @@ export class Creature {
   }
 
   // ---------------------------------------------------------
-  // Movimento no chão (e na água para quem nada)
+  // Movimento no chão / na água
   // ---------------------------------------------------------
   _updateGround(dt, ctx) {
     const sp = this.species;
@@ -219,7 +226,7 @@ export class Creature {
       case CSTATE.WANDER: {
         if (!this.goal || this.stateTime > 25) this.goal = this._pickWanderPoint(sp.raio > 2 ? 60 : 32);
         if (!this.goal || this._steer(dt, this.goal.x, this.goal.y, sp.vel_andar)) {
-          const herb = sp.dieta === 'herbivoro';
+          const herb = sp.dieta === 'herbivoro' && !this.aquatic;
           this._setState(herb && this.rand() < 0.6 ? CSTATE.EAT : CSTATE.IDLE);
           this.idleFor = 3 + this.rand() * 6;
         }
@@ -238,8 +245,8 @@ export class Creature {
       case CSTATE.FLEE: {
         const t = this.threat?.position ?? this.pos;
         if (!this.goal || this.stateTime % 1.5 < dt || this.blockedTime > 0.6) {
-          let ax = this.pos.x - t.x;
-          let az = this.pos.z - t.z;
+          const ax = this.pos.x - t.x;
+          const az = this.pos.z - t.z;
           const len = Math.hypot(ax, az) || 1;
           const turn = this.blockedTime > 0.6 ? (this.rand() - 0.5) * 2.5 : (this.rand() - 0.5) * 0.6;
           const a = Math.atan2(ax / len, az / len) + turn;
@@ -252,8 +259,7 @@ export class Creature {
       case CSTATE.CHASE: {
         const t = this.target;
         if (!t) break;
-        const reach = this._reach(t);
-        if (this._dist2D(t.position) < reach) {
+        if (this._dist2D(t.position) < this._reach(t)) {
           this._setState(CSTATE.ATTACK);
           break;
         }
@@ -265,28 +271,32 @@ export class Creature {
         if (!t) break;
         this._brake(dt);
         this._face(dt, t.position.x, t.position.z);
-        const d = this._dist2D(t.position);
-        if (d > this._reach(t) * 1.35) {
+        if (this._dist2D(t.position) > this._reach(t) * 1.35) {
           this._setState(CSTATE.CHASE);
           break;
         }
         if (this.attackCooldown <= 0) {
           this.attackCooldown = sp.intervalo_ataque ?? 1.2;
           this.attackAnim = 1;
-          this.manager.hit(this, t, this.damage);
+          this._pendingBite = 0.22; // o dano acontece no meio do bote
         }
         break;
       }
       default:
         break;
     }
+    if (this._pendingBite !== undefined && this._pendingBite >= 0) {
+      this._pendingBite -= dt;
+      if (this._pendingBite < 0 && this.target && this._dist2D(this.target.position) < this._reach(this.target) * 1.4) {
+        this.manager.hit(this, this.target, this.damage);
+      }
+    }
 
-    // Altura: chão, ou boiando na água para quem nada.
     const g = this._groundY(this.pos.x, this.pos.z);
     this.pos.y += (g - this.pos.y) * Math.min(1, dt * 10);
 
     // Inclina o corpo acompanhando o terreno.
-    if (this.spec.body !== 'biped') {
+    if (this.spec.body !== 'biped' && !this.aquatic) {
       const len = Math.max(1, this.radius * 2.2);
       const fx = -Math.sin(this.yaw);
       const fz = -Math.cos(this.yaw);
@@ -298,37 +308,52 @@ export class Creature {
     }
   }
 
-  // Voadores: planam em círculos acima do chão.
-  _updateFlying(dt, ctx) {
+  // Voadores: planam em círculos; os caçadores mergulham para atacar.
+  _updateFlying(dt) {
     const sp = this.species;
     const fleeing = this.state === CSTATE.FLEE;
-    if (this.state !== CSTATE.FLEE) this.state = CSTATE.WANDER;
+    const hunting = (this.state === CSTATE.CHASE || this.state === CSTATE.ATTACK) && this.target;
+    if (!fleeing && !hunting) this.state = CSTATE.WANDER;
     if (!this.goal || this.stateTime > 30 || this._dist2DXY(this.goal.x, this.goal.y) < 12) {
-      // sem ponto válido perto de casa: volta para o meio da ilha
       this.goal = this._pickWanderPoint(140, true) ?? new THREE.Vector2(this.rand() * 200 - 100, this.rand() * 200 - 100);
       this.stateTime = 0;
     }
+    const ground = Math.max(0, this.world.heightAt(this.pos.x, this.pos.z));
+    let wanted = ground + this.cruise + Math.sin(this.time * 0.3) * 4;
+    let speed = sp.vel_andar;
     if (fleeing && this.threat) {
       const ax = this.pos.x - this.threat.position.x;
       const az = this.pos.z - this.threat.position.z;
       const len = Math.hypot(ax, az) || 1;
       this.goal = new THREE.Vector2(this.pos.x + (ax / len) * 60, this.pos.z + (az / len) * 60);
+      wanted += 20;
+      speed = sp.vel_correr;
     }
-    const speed = fleeing ? sp.vel_correr : sp.vel_andar;
+    if (hunting) {
+      const t = this.target.position;
+      this.goal = new THREE.Vector2(t.x, t.z);
+      const d = this._dist2D(t);
+      speed = sp.vel_correr;
+      // mergulha quando pode atacar; sobe enquanto recarrega
+      if (d < 28 && this.attackCooldown <= 0) wanted = t.y + 1.4;
+      else if (this.attackCooldown > 0) wanted = ground + this.cruise * 0.6;
+      const reach = (sp.alcance_ataque ?? 2) * this.scale + 0.6;
+      if (d < reach && Math.abs(this.pos.y - (t.y + 1.2)) < 2.2 && this.attackCooldown <= 0) {
+        this.manager.hit(this, this.target, this.damage);
+        this.attackCooldown = (sp.intervalo_ataque ?? 1.5) * 2;
+        this.attackAnim = 1;
+      }
+    }
     const prevYaw = this.yaw;
     this._steer(dt, this.goal.x, this.goal.y, speed, true);
-    const ground = Math.max(0, this.world.heightAt(this.pos.x, this.pos.z));
-    const wanted = ground + this.cruise + (fleeing ? 20 : 0) + Math.sin(this.time * 0.3) * 4;
-    this.climb = clamp((wanted - this.pos.y) * 0.6, -4, 6);
+    this.climb = clamp((wanted - this.pos.y) * 0.8, -9, 7);
     this.pos.y += this.climb * dt;
-    if (this.pos.y < ground + 3) this.pos.y = ground + 3;
-    // Inclina nas curvas.
+    if (this.pos.y < ground + 1.2) this.pos.y = ground + 1.2;
     const turning = angleDelta(prevYaw, this.yaw) / Math.max(dt, 1e-3);
-    this.roll += (clamp(-turning * 0.6, -0.6, 0.6) - this.roll) * Math.min(1, dt * 2);
-    this.pitch += (clamp(this.climb * 0.06, -0.3, 0.3) - this.pitch) * Math.min(1, dt * 2);
+    this.roll += (clamp(-turning * 0.6, -0.7, 0.7) - this.roll) * Math.min(1, dt * 2);
+    this.pitch += (clamp(this.climb * 0.07, -0.45, 0.35) - this.pitch) * Math.min(1, dt * 2);
   }
 
-  // Anda na direção de um ponto. Devolve true ao chegar.
   _steer(dt, tx, tz, speed, flying = false) {
     const dx = tx - this.pos.x;
     const dz = tz - this.pos.z;
@@ -373,33 +398,37 @@ export class Creature {
     this.blockedTime = Math.max(0, this.blockedTime - dt);
     this.pos.x = nx;
     this.pos.z = nz;
+    // desvia de troncos e pedras (os gigantes passam por cima de tudo)
+    if (!flying && this.radius < 1.6) {
+      const bx = this.pos.x;
+      const bz = this.pos.z;
+      this.world.vegetation.resolveCollisions(this.pos, this.radius * 0.6, this.pos.y + this.height * 0.5);
+      if (Math.hypot(this.pos.x - bx, this.pos.z - bz) > this.speed * dt * 0.7) this.blockedTime += dt * 0.5;
+    }
     return true;
   }
 
-  // Pode ficar neste ponto? (água funda, borda do mapa, paredão)
   _canStand(x, z) {
     if (Math.hypot(x, z) > BALANCE.mundo.limite_raio_m - 20) return false;
     const ground = this.world.heightAt(x, z);
     const water = this.world.waterAt(x, z);
     const depth = water ? water.level - ground : 0;
+    if (this.aquatic) return depth > Math.max(0.8, this.height + 0.3);
     if (!this.swims && depth > Math.max(0.6, this.height * 0.45)) return false;
     if (this.species.perto_agua && !water) {
-      // crocodilo: não se afasta muito da água
       const near = [[10, 0], [-10, 0], [0, 10], [0, -10]].some(([dx, dz]) => this.world.waterAt(x + dx, z + dz));
       if (!near) return false;
     }
     const here = this.world.heightAt(this.pos.x, this.pos.z);
     const step = Math.hypot(x - this.pos.x, z - this.pos.z) || 0.01;
-    if ((ground - here) / step > 1.4) return false;
-    return true;
+    return (ground - here) / step <= 1.4;
   }
 
   _groundY(x, z) {
     const g = this.world.heightAt(x, z);
-    if (this.swims) {
-      const w = this.world.waterAt(x, z);
-      if (w) return Math.max(g, w.level - this.height * 0.75);
-    }
+    const w = this.world.waterAt(x, z);
+    if (this.aquatic && w) return Math.max(g + this.height, (w.level + g) * 0.5);
+    if (this.swims && w) return Math.max(g, w.level - this.height * 0.75);
     return g;
   }
 
@@ -411,7 +440,7 @@ export class Creature {
       const z = this.home.y + Math.cos(a) * r;
       if (flying) {
         if (Math.hypot(x, z) < BALANCE.mundo.limite_raio_m - 60) return new THREE.Vector2(x, z);
-      } else if (this._canStand(x, z) || (this.swims && this.world.waterAt(x, z))) {
+      } else if (this._canStand(x, z)) {
         return new THREE.Vector2(x, z);
       }
     }
@@ -445,8 +474,7 @@ export class Creature {
       return;
     }
     const sp = this.species;
-    const big = sp.dano > 0 && sp.raio >= 2;
-    if (sp.temperamento === 'agressivo' || sp.temperamento === 'territorial' || (big && !this.flies)) {
+    if (sp.temperamento === 'agressivo' || sp.revida) {
       this._chase(attacker);
       if (sp.temperamento === 'agressivo') this.manager.alertPack(this, attacker);
     } else {
@@ -457,50 +485,70 @@ export class Creature {
   // ---------------------------------------------------------
   // Animação (ossos)
   // ---------------------------------------------------------
-  _animate(dt, ctx) {
+  _animate(dt, ctx, yawVel) {
     const b = this.bones;
     const spec = this.spec;
     const t = this.time;
     const dead = this.state === CSTATE.DEAD;
-    // Longe da câmera: anima menos vezes (economiza).
+    const A = this.anim;
+    // longe da câmera: anima menos vezes
     const camDist = ctx.camPos.distanceTo(this.pos);
     this._animSkip = (this._animSkip ?? 0) + 1;
     if (camDist > 80 && this._animSkip % 3 !== 0) return;
+    const adt = camDist > 80 ? dt * 3 : dt;
+    const k = (rate) => Math.min(1, adt * rate);
 
-    const run = clamp(this.speed / Math.max(0.1, this.species.vel_correr), 0, 1);
-    const legLen = Math.max(0.3, this.height * 0.45);
-    this.phase += (dt * this.speed) / (legLen * 2.2) * (spec.body === 'snake' ? 0.6 : 1);
+    A.turn += (clamp(yawVel, -2, 2) - A.turn) * k(5);
+    A.run += (clamp(this.speed / Math.max(0.1, this.species.vel_correr), 0, 1) - A.run) * k(4);
+    const legLen = Math.max(0.25, this.height * 0.45);
+    const stride = legLen * (spec.body === 'spider' ? 1.2 : 2.2);
+    this.phase += (adt * this.speed) / stride;
     const amp = clamp(this.speed / (legLen * 3), 0, 0.75);
-    const swing = (p) => Math.sin((this.phase + p) * TAU);
 
+    // ---------- voadores ----------
     if (spec.body === 'flyer') {
-      const flapping = this.climb > 0.5 || this.state === CSTATE.FLEE || dead;
-      const f = flapping ? Math.sin(t * (this.species.raio > 1 ? 4 : 9)) : Math.sin(t * 1.3) * 0.15;
-      const a = dead ? 0 : f * 0.55 + 0.05;
+      const flapping = this.climb > 0.5 || this.state === CSTATE.FLEE || this.attackCooldown > 0;
+      const diving = this.climb < -2;
+      const f = flapping ? Math.sin(t * (this.species.raio > 1 ? 4 : this.species.raio < 0.4 ? 14 : 9)) : Math.sin(t * 1.3) * 0.12;
+      let a = dead ? 0.9 : f * 0.6 + 0.05;
+      if (diving && !dead) a = -0.35; // asas recolhidas no mergulho
       if (b.asaE) b.asaE.rotation.z = a;
       if (b.asaD) b.asaD.rotation.z = -a;
-      if (b.asaE_punho) b.asaE_punho.rotation.z = a * 0.5;
-      if (b.asaD_punho) b.asaD_punho.rotation.z = -a * 0.5;
-      if (b.head) b.head.rotation.y = Math.sin(t * 0.7) * 0.2;
+      if (b.asaE_punho) b.asaE_punho.rotation.z = flapping ? a * 0.5 : -0.1;
+      if (b.asaD_punho) b.asaD_punho.rotation.z = flapping ? -a * 0.5 : 0.1;
+      if (b.head) b.head.rotation.y = Math.sin(t * 0.7 + this.id) * 0.25;
+      if (b.neck) b.neck.rotation.x = -this.attackAnim * 0.5;
       return;
     }
 
+    // ---------- cobra ----------
     if (spec.body === 'snake') {
       const moving = this.speed > 0.2;
-      const a = moving ? 0.32 : 0.06;
+      const a = moving ? 0.34 : 0.07;
       for (let i = 0; i < 10; i++) {
         const bone = b[`b${i}`];
-        if (bone) bone.rotation.y = dead ? 0 : Math.sin(this.phase * TAU * 2 - i * 0.9 + t * (moving ? 0 : 0.8)) * a;
+        if (bone) bone.rotation.y = dead ? Math.sin(i) * 0.15 : Math.sin(this.phase * TAU * 2 - i * 0.9 + (moving ? 0 : t * 0.8)) * a;
       }
       if (b.head) {
+        // levanta a cabeça para dar o bote
         b.head.rotation.y = dead ? 0 : -Math.sin(this.phase * TAU * 2) * a * 0.5;
-        b.head.rotation.x = this.attackAnim * 0.6;
+        b.head.rotation.x = this.attackAnim > 0 ? Math.sin(this.attackAnim * Math.PI) * 0.7 : (this.state === CSTATE.CHASE ? 0.15 : 0);
       }
       return;
     }
 
-    // Pernas e braços
-    const inWater = this.swims && this.world.waterAt(this.pos.x, this.pos.z) && this.pos.y < this.world.waterAt(this.pos.x, this.pos.z).level - 0.2;
+    // ---------- peixe ----------
+    if (spec.body === 'fish') {
+      const s = dead ? 0 : Math.sin(t * (4 + A.run * 8));
+      if (b.tail1) b.tail1.rotation.y = s * 0.35;
+      if (b.tail2) b.tail2.rotation.y = s * 0.5;
+      if (b.head) b.head.rotation.y = -s * 0.1;
+      if (b.head) b.head.rotation.x = -this.attackAnim * 0.3;
+      return;
+    }
+
+    // ---------- pernas ----------
+    const inWater = this.swims && !!this.world.waterAt(this.pos.x, this.pos.z) && this.pos.y < this.world.waterAt(this.pos.x, this.pos.z).level - 0.2;
     for (const leg of spec.legs ?? []) {
       const thigh = b[leg.name];
       const knee = b[`${leg.name}_joelho`];
@@ -508,68 +556,115 @@ export class Creature {
       if (!thigh) continue;
       const isArm = leg.name.startsWith('braco');
       if (dead) {
-        thigh.rotation.x = 0.4;
-        if (knee) knee.rotation.x = -0.3;
+        // patas encolhidas/esticadas
+        thigh.rotation.x += (0.5 - thigh.rotation.x) * k(3);
+        if (knee) knee.rotation.x += (-0.7 - knee.rotation.x) * k(3);
         continue;
       }
       if (inWater) {
-        // nadando: patas recolhidas para trás
-        thigh.rotation.x = 0.9;
+        const paddle = Math.sin(t * 5 + leg.phase * TAU) * 0.4;
+        thigh.rotation.x = 0.6 + paddle;
         if (knee) knee.rotation.x = -0.4;
         continue;
       }
       if (isArm) {
-        thigh.rotation.x = 0.3 + swing(leg.phase) * amp * 0.3;
+        const reach = this.attackAnim > 0 ? -Math.sin(this.attackAnim * Math.PI) * 0.8 : 0;
+        thigh.rotation.x = 0.3 + Math.sin((this.phase + leg.phase) * TAU) * amp * 0.3 + reach;
         continue;
       }
-      const s = swing(leg.phase);
-      thigh.rotation.x = s * amp;
-      if (knee) knee.rotation.x = -Math.max(0, Math.sin((this.phase + leg.phase) * TAU + 1.3)) * amp * 1.1;
-      if (foot) foot.rotation.x = -thigh.rotation.x * 0.6 - (knee ? knee.rotation.x : 0) * 0.5;
+      const ph = (this.phase + leg.phase) * TAU;
+      const swing = Math.sin(ph);
+      const lift = Math.max(0, Math.cos(ph)); // perna indo para frente = levanta
+      if (spec.body === 'spider') {
+        // pernas de aranha: sobem e descem para os lados
+        thigh.rotation.z = (leg.name.endsWith('E') ? 1 : -1) * lift * amp * 0.6;
+        thigh.rotation.y = swing * amp * 0.5;
+        continue;
+      }
+      thigh.rotation.x = swing * amp * (1 + A.run * 0.3);
+      if (knee) knee.rotation.x = -lift * amp * 1.4;
+      if (foot) foot.rotation.x = -thigh.rotation.x * 0.6 + lift * amp * 0.5;
     }
 
-    // Quadril sobe e desce no passo.
+    // ---------- corpo ----------
     if (b.hips) {
       const rest = b.hips.userData.rest;
-      b.hips.position.y = rest.y + Math.abs(Math.sin(this.phase * TAU)) * amp * legLen * 0.08 / this.scale;
+      const bob = Math.abs(Math.sin(this.phase * TAU)) * amp * legLen * 0.09;
+      const breathe = Math.sin(t * 1.6) * 0.012 * legLen * (1 - A.run);
+      b.hips.position.y = rest.y + (bob + breathe) / this.scale;
+      // balanço lateral de quem anda em 2 pernas + inclinação nas curvas
+      const sway = spec.body === 'biped' ? Math.sin(this.phase * TAU) * amp * 0.06 : 0;
+      b.hips.rotation.z = sway - A.turn * 0.08 + this.hurtAnim * 0.15;
+      // correndo, o corpo inclina para frente
+      b.hips.rotation.x = -A.run * 0.06 * (spec.body === 'biped' ? 1 : 0.4) + (dead ? 0 : 0);
     }
+    if (b.chest) b.chest.rotation.y = A.turn * 0.12;
 
-    // Cauda balança (mais solta parado, mais firme correndo).
-    const tailAmp = inWater ? 0.35 : 0.1 * (1 - run * 0.6);
-    const tailSpeed = inWater ? 3 : 1.4;
+    // ---------- cauda (segue as curvas com atraso) ----------
+    const tailIdle = inWater ? 0.35 : 0.09 * (1 - A.run * 0.6);
+    const tailSpeed = inWater ? 3 : 1.3;
     ['tail1', 'tail2', 'tail3'].forEach((n, i) => {
-      if (b[n]) b[n].rotation.y = dead ? 0.2 : Math.sin(t * tailSpeed + i * 0.8) * tailAmp;
+      if (!b[n]) return;
+      const target = dead ? 0.15 : -A.turn * 0.12 * (i + 1) + Math.sin(t * tailSpeed - i * 0.9) * tailIdle;
+      A.tail[i] += (target - A.tail[i]) * k(4 - i);
+      b[n].rotation.y = A.tail[i];
+      // correndo, a cauda fica reta para trás
+      b[n].rotation.x = A.run * 0.05;
     });
 
-    // Pescoço e cabeça: comer (abaixa), olhar em volta, atacar (bote).
-    const eating = this.state === CSTATE.EAT;
-    const look = this.state === CSTATE.IDLE ? Math.sin(t * 0.6 + this.id) * 0.35 : Math.sin(t * 0.3) * 0.08;
-    const neckDown = eating ? -0.55 - Math.sin(t * 2) * 0.08 : 0;
-    if (b.neck) {
-      b.neck.rotation.x = dead ? -0.3 : neckDown - this.attackAnim * 0.45 + (this.hurtAnim ?? 0) * 0.2;
-      b.neck.rotation.y = look;
+    // ---------- pescoço e cabeça ----------
+    // olha para o alvo; parado, olha em volta; comendo, abaixa a cabeça
+    let wantYaw = 0;
+    let wantPitch = 0;
+    const tgt = this.target ?? (this.state === CSTATE.FLEE ? this.threat : null);
+    if (tgt && !dead) {
+      const dx = tgt.position.x - this.pos.x;
+      const dz = tgt.position.z - this.pos.z;
+      wantYaw = clamp(angleDelta(this.yaw, Math.atan2(-dx, -dz)), -0.8, 0.8);
+      wantPitch = clamp(((tgt.position.y + 1) - (this.pos.y + this.height)) / (Math.hypot(dx, dz) + 1), -0.4, 0.4);
+    } else if (this.state === CSTATE.IDLE) {
+      wantYaw = Math.sin(t * 0.5 + this.id) * 0.5;
+      wantPitch = Math.sin(t * 0.3 + this.id * 2) * 0.12;
     }
-    if (b.neck2) b.neck2.rotation.x = eating ? -0.35 : 0;
-    if (b.head) b.head.rotation.x = eating ? -0.3 : this.attackAnim * 0.25;
-    if (b.jaw) b.jaw.rotation.x = -this.attackAnim * 0.6;
-    this.hurtAnim = Math.max(0, (this.hurtAnim ?? 0) - dt * 3);
+    A.headYaw += (wantYaw - A.headYaw) * k(3);
+    A.headPitch += (wantPitch - A.headPitch) * k(3);
+    const eating = this.state === CSTATE.EAT;
+    const neckDown = eating ? -0.55 - Math.max(0, Math.sin(t * 2.2)) * 0.15 : 0;
+    A.neck += (neckDown - A.neck) * k(3);
+    // bote: recua (0..0.3) e avança (0.3..0.7)
+    const at = 1 - this.attackAnim;
+    const lunge = this.attackAnim > 0 ? (at < 0.3 ? at / 0.3 * 0.25 : -Math.sin(((at - 0.3) / 0.7) * Math.PI) * 0.6) : 0;
+    if (b.neck) {
+      b.neck.rotation.x = dead ? -0.35 : A.neck + lunge + A.headPitch * 0.5 + this.hurtAnim * 0.25;
+      b.neck.rotation.y = A.headYaw * 0.5;
+    }
+    if (b.neck2) b.neck2.rotation.x = eating ? -0.35 : A.headPitch * 0.3;
+    if (b.head) {
+      b.head.rotation.x = eating ? -0.3 : A.headPitch * 0.5 + lunge * 0.4;
+      b.head.rotation.y = A.headYaw * 0.5;
+    }
+    if (b.jaw) b.jaw.rotation.x = this.attackAnim > 0 ? -Math.sin(at * Math.PI) * 0.65 : -0.03 - Math.max(0, Math.sin(t * 0.7)) * 0.05;
+    if (b.hips) b.hips.position.z = (b.hips.userData.rest.z) - lunge * 0.15 * legLen / this.scale;
   }
 
   // Copia posição e rotação para a malha 3D.
-  _sync() {
+  _sync(dt) {
     const m = this.mesh;
-    m.position.copy(this.pos);
     if (this.state === CSTATE.DEAD) {
-      // tomba de lado aos poucos
-      const k = Math.min(1, this.deadTime * 1.5);
-      const side = this.spec.body === 'snake' || this.spec.body === 'croc' ? Math.PI : Math.PI / 2;
-      m.rotation.set(this.pitch, this.yaw, side * k, 'YXZ');
-      if (this.flies) {
+      // tomba de lado aos poucos (cobras e jacarés ficam de barriga para cima)
+      const k = Math.min(1, this.deadTime * 1.6);
+      const side = ['snake', 'croc', 'fish', 'spider'].includes(this.spec.body) ? Math.PI : Math.PI / 2;
+      if (this.flies || this.aquatic) {
         const g = this.world.heightAt(this.pos.x, this.pos.z);
-        this.pos.y = Math.max(g + 0.3, this.pos.y - 12 * (1 / 60));
+        const w = this.world.waterAt(this.pos.x, this.pos.z);
+        const floor = this.aquatic && w ? w.level - 0.1 : g + 0.3;
+        this.pos.y += (floor - this.pos.y) * Math.min(1, dt * 3);
       }
+      m.position.copy(this.pos);
+      m.rotation.set(this.pitch, this.yaw, side * (k * k * (3 - 2 * k)), 'YXZ');
       return;
     }
+    m.position.copy(this.pos);
     m.rotation.set(this.pitch, this.yaw, this.roll, 'YXZ');
   }
 }

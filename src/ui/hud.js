@@ -109,7 +109,7 @@ export class Hud {
       });
     });
 
-    events.on(EV.INTERACT_PROMPT, (p) => this._showPrompt(p?.text ?? null));
+    events.on(EV.INTERACT_PROMPT, (p) => this._showPrompt(p?.text ?? null, p?.key));
     events.on(EV.BIOME_ENTERED, (b) => this.showBiome(b.name, b.description));
     events.on(EV.PLAYER_HURT, () => this._hurt());
   }
@@ -164,13 +164,18 @@ export class Hud {
     t.hidden = false;
   }
 
-  _showPrompt(text) {
+  // keyKind: 'interact' (E / Interagir) ou 'attack' (clique / Atacar).
+  _showPrompt(text, keyKind = 'interact') {
     const p = this.refs.prompt;
     if (!text) {
       p.hidden = true;
       return;
     }
-    const key = game.isTouch ? '<span class="key key-touch">Interagir</span>' : '<span class="key">E</span>';
+    const attack = keyKind === 'attack';
+    const key = game.isTouch
+      ? `<span class="key key-touch">${attack ? 'Atacar' : 'Interagir'}</span>`
+      : `<span class="key">${attack ? 'Clique' : 'E'}</span>`;
+    p.classList.toggle('prompt-attack', attack);
     p.innerHTML = `${key}<span></span>`;
     p.lastElementChild.textContent = text;
     p.hidden = false;

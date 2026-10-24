@@ -14,18 +14,9 @@ const CAUSES = {
   fome: 'Você morreu de fome.',
 };
 
-// Nomes das regiões escritos no mapa.
-const LABELS = [
-  ['montanha', 'Montanha'],
-  ['deserto', 'Deserto'],
-  ['selva', 'Floresta Amazônica'],
-  ['pantano', 'Pântano'],
-  ['campina', 'Campina'],
-  ['lago', 'Lago'],
-];
-
 function causeText(cause) {
-  if (cause?.startsWith('criatura:')) return `Um ${cause.slice(9)} te matou.`;
+  if (cause?.startsWith('criatura:')) return `Morto por: ${cause.slice(9)}.`;
+  if (cause === 'comida') return 'Você comeu algo que fez mal.';
   return CAUSES[cause] ?? 'Você morreu.';
 }
 
@@ -72,14 +63,12 @@ export class DeathScreen {
     const pins = this.refs.pins;
     pins.innerHTML = '';
 
-    // nomes das regiões
-    for (const [key, name] of LABELS) {
-      const r = w.layout[key];
-      if (!r) continue;
+    // nomes das regiões (data/world/ilha.json → rotulos_mapa)
+    for (const r of w.layout.rotulos_mapa ?? []) {
       const p = worldToMapPercent(w, r.x, r.z);
       const label = document.createElement('span');
       label.className = 'map-label';
-      label.textContent = name;
+      label.textContent = r.nome;
       label.style.left = `${p.left}%`;
       label.style.top = `${p.top}%`;
       pins.appendChild(label);

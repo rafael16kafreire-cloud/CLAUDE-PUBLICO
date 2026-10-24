@@ -87,20 +87,23 @@ export class CreatureManager {
       }
     }
 
-    game.activeCreatures = this.list.filter((c) => c.alive).length;
+    game.activeCreatures = this.list.filter((c) => c.alive && !c.species.ambiente).length;
 
     if (!this.enabled || player.dead) return;
     this.spawnTimer -= dt;
     if (this.spawnTimer <= 0) {
       this.spawnTimer = this.cfg.intervalo_spawn_seg;
       this.trySpawnNear(player.position);
+      this.trySpawnNear(player.position, undefined, undefined, true);
     }
   }
 
   // Tenta criar um grupo num ponto aleatório em volta do jogador.
-  trySpawnNear(center, minR = this.cfg.raio_spawn_min_m, maxR = this.cfg.raio_spawn_max_m) {
-    const alive = this.list.filter((c) => c.alive).length;
-    if (alive >= this.maxActive) return false;
+  // ambient = true: só animais de enfeite (araras), com limite próprio.
+  trySpawnNear(center, minR = this.cfg.raio_spawn_min_m, maxR = this.cfg.raio_spawn_max_m, ambient = false) {
+    const alive = this.list.filter((c) => c.alive && !!c.species.ambiente === ambient).length;
+    const cap = ambient ? this.cfg.max_ambiente : this.maxActive;
+    if (alive >= cap) return false;
     for (let attempt = 0; attempt < 6; attempt++) {
       const a = this.rand() * Math.PI * 2;
       const r = minR + this.rand() * (maxR - minR);
@@ -109,9 +112,14 @@ export class CreatureManager {
       if (Math.hypot(x, z) > BALANCE.mundo.limite_raio_m - 40) continue;
       const biome = this.world.biomeKeyAt(x, z);
       if (biome === 'mar') continue;
-      const inWater = !!this.world.waterAt(x, z);
-      const options = Object.values(SPECIES).filter((s) =>
-        s.biomas.includes(biome) && (s.voa || !inWater || s.nada));
+      const w = this.world.waterAt(x, z);
+      const depth = w ? w.level - this.world.heightAt(x, z) : 0;
+      const options = Object.values(SPECIES).filter((s) => {
+        if (!!s.ambiente !== ambient || !s.biomas.includes(biome)) return false;
+        if (s.voa) return true;
+        if (s.aquatico) return depth > 1.1;
+        return depth < 0.3 || s.nada;
+      });
       if (!options.length) continue;
       const total = options.reduce((acc, s) => acc + s.peso_spawn, 0);
       let pick = this.rand() * total;
@@ -123,20 +131,59 @@ export class CreatureManager {
           break;
         }
       }
-      // Não lota de gigantes: no máximo 2 iguais raros por perto.
+      // não lota de gigantes raros
       if (species.peso_spawn < 2 && this.list.filter((c) => c.species.id === species.id).length >= 2) continue;
       const [gmin, gmax] = species.grupo;
-      const size = Math.min(this.maxActive - alive, gmin + Math.floor(this.rand() * (gmax - gmin + 1)));
+      const size = Math.min(cap - alive, gmin + Math.floor(this.rand() * (gmax - gmin + 1)));
       const level = 1 + Math.floor(Math.pow(this.rand(), 1.7) * 29);
       for (let i = 0; i < size; i++) {
         const ox = x + (this.rand() - 0.5) * 8 * Math.max(1, species.raio);
         const oz = z + (this.rand() - 0.5) * 8 * Math.max(1, species.raio);
-        // grupo com níveis parecidos
         this.spawn(species.id, ox, oz, Math.max(1, Math.min(30, level + Math.floor((this.rand() - 0.5) * 6))));
       }
       return true;
     }
     return false;
+  }
+
+  // ---------------------------------------------------------
+  // Carcaças: carne, couro e ossos
+  // ---------------------------------------------------------
+  findCorpse(pos, forward, reach) {
+    let best = null;
+    let bestD = Infinity;
+    for (const c of this.list) {
+      if (c.alive || !c.lootLeft) continue;
+      const dx = c.pos.x - pos.x;
+      const dz = c.pos.z - pos.z;
+      const d = Math.hypot(dx, dz) - c.radius;
+      if (d > reach) continue;
+      const facing = (dx * forward.x + dz * forward.z) / (Math.hypot(dx, dz) || 1);
+      if (facing < 0.2 && d > 0.5) continue;
+      if (d < bestD) {
+        best = c;
+        bestD = d;
+      }
+    }
+    return best;
+  }
+
+  // Um golpe na carcaça: tira um pouco de cada coisa. Machado e lança tiram mais.
+  harvestCorpse(c, mode) {
+    const per = mode === 'machado' || mode === 'lanca' ? 3 : 1 + Math.floor(this.rand() * 2);
+    const got = {};
+    for (const [id, left] of Object.entries(c.lootLeft)) {
+      const n = Math.min(left, per);
+      if (n > 0) {
+        got[id] = n;
+        c.lootLeft[id] -= n;
+      }
+    }
+    if (Object.values(c.lootLeft).every((v) => v <= 0)) {
+      c.lootLeft = null;
+      c.deadTime = Math.max(c.deadTime, this.cfg.corpo_dura_seg - 1.5); // some logo
+    }
+    return got;
   }
 
   // Bando: os iguais por perto também atacam.
@@ -183,6 +230,12 @@ export class CreatureManager {
   }
 
   onDeath(c, attacker) {
+    // o que dá para tirar da carcaça
+    c.lootLeft = {};
+    for (const [id, [a, b]] of Object.entries(c.species.loot ?? {})) {
+      const n = a + Math.floor(this.rand() * (b - a + 1));
+      if (n > 0) c.lootLeft[id] = Math.round(n * (1 + c.level * 0.02));
+    }
     events.emit(EV.CREATURE_KILLED, { creature: c, byPlayer: attacker === game.player });
     if (attacker === game.player) {
       const xp = Math.round(c.species.xp * (1 + c.level * 0.05));

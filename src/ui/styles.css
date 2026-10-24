@@ -634,3 +634,195 @@ body.is-touch .howto-desktop, body:not(.is-touch) .howto-touch { display: none; 
 @media (prefers-reduced-motion: reduce) {
   .msg, .stat .fill { animation: none; transition: none; }
 }
+
+/* ---------------- Barra rápida (8 espaços embaixo) ---------------- */
+.hotbar {
+  --hb: 50px;
+  position: absolute;
+  left: 50%;
+  bottom: calc(8px + var(--safe-b));
+  transform: translateX(-50%);
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 10px;
+  background: rgba(10, 14, 12, 0.42);
+  z-index: 4;
+  pointer-events: auto;
+}
+.hotbar[hidden] { display: none; }
+/* celular deitado: entre o joystick e os botões de ação */
+body.is-touch .hotbar {
+  --hb: clamp(28px, calc((100vw - 500px) / 8.6), 46px);
+  left: calc(var(--safe-l) + 172px);
+  transform: none;
+  bottom: calc(6px + var(--safe-b));
+}
+body.inv-open .hotbar { display: none; }
+.hb-slot {
+  position: relative;
+  width: var(--hb);
+  height: var(--hb);
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: rgba(16, 22, 19, 0.6);
+  color: var(--bone);
+  cursor: pointer;
+  touch-action: none;
+}
+.hb-slot.selected { border: 2px solid var(--ember); background: rgba(232, 135, 58, 0.25); }
+.hb-slot:active { transform: scale(0.94); }
+.hb-icon, .is-icon { position: absolute; inset: 9%; display: block; }
+.hb-icon svg, .is-icon svg, .recipe svg, .reqs svg, .rd-head svg, .cq-row svg, .msg-icon svg, .drag-ghost svg { width: 100%; height: 100%; display: block; }
+.hb-key {
+  position: absolute;
+  left: 3px;
+  top: 1px;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--bone-dim);
+  z-index: 1;
+}
+body.is-touch .hb-key { display: none; }
+.hb-qty, .is-qty {
+  position: absolute;
+  right: 3px;
+  bottom: 1px;
+  font-size: 11px;
+  font-weight: 700;
+  text-shadow: 0 1px 2px #000, 0 0 2px #000;
+}
+.hb-dur, .is-dur {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  bottom: 2px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--c-xp);
+  transform-origin: left center;
+}
+.hb-dur[hidden], .is-dur[hidden] { display: none; }
+
+/* Aviso de item ganho com ícone */
+.msg-item { display: flex; align-items: center; gap: 6px; padding-left: 5px; }
+.msg-icon { width: 22px; height: 22px; flex: none; }
+.prompt-attack .key-touch { background: var(--c-health); color: var(--bone); }
+
+/* ---------------- Inventário e crafting ---------------- */
+.inv { z-index: 15; background: rgba(6, 10, 8, 0.62); padding: calc(6px + var(--safe-t)) calc(8px + var(--safe-r)) calc(6px + var(--safe-b)) calc(8px + var(--safe-l)); }
+.inv[hidden] { display: none; }
+.inv-panel {
+  --slot: clamp(34px, min(8.6vh, 5.4vw), 56px);
+  display: flex;
+  gap: 10px;
+  max-width: 100%;
+  max-height: 100%;
+  box-sizing: border-box;
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(18, 24, 21, 0.94);
+  border: 1px solid var(--line);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+.inv-left { flex: none; display: flex; flex-direction: column; min-height: 0; }
+.inv-right { flex: 1 1 300px; min-width: 240px; max-width: 420px; display: flex; flex-direction: column; min-height: 0; }
+.inv-head { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+.inv-head h2, .rd-head h3 { margin: 0; font-family: var(--font-display); font-weight: 400; letter-spacing: 0.02em; }
+.inv-head h2 { font-size: 20px; }
+.inv-weight { margin-left: auto; font-size: 13px; font-weight: 600; color: var(--bone-dim); }
+.inv-weight.over { color: var(--c-health); }
+.inv-label { margin: 6px 0 3px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bone-dim); }
+.inv-grid { display: grid; grid-template-columns: repeat(8, var(--slot)); gap: 3px; }
+.inv-slot {
+  position: relative;
+  width: var(--slot);
+  height: var(--slot);
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.32);
+  color: var(--bone);
+  cursor: pointer;
+  touch-action: none;
+}
+.inv-hot .inv-slot { background: rgba(232, 135, 58, 0.08); }
+.inv-slot.selected { border-color: var(--bone); box-shadow: inset 0 0 0 1px var(--bone); }
+.inv-slot.equipped { border: 2px solid var(--ember); }
+.inv-slot:not(.empty):hover { background: rgba(255, 255, 255, 0.08); }
+.btn-small { min-height: 28px; padding: 0 10px; font-size: 13px; }
+.inv-tabs { display: flex; gap: 4px; align-items: center; margin-bottom: 6px; }
+.tab {
+  min-height: 30px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--bone-dim);
+  font: 600 14px var(--font-ui);
+  cursor: pointer;
+}
+.tab.active { background: var(--ember); border-color: var(--ember); color: var(--basalt); }
+.inv-close { margin-left: auto; }
+.tab-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-right: 2px; }
+.tab-body[hidden] { display: none; }
+.recipe-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 4px; }
+.recipe {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 5px 3px 4px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--bone-dim);
+  font: 600 11px/1.1 var(--font-ui);
+  cursor: pointer;
+  opacity: 0.6;
+}
+.recipe svg { width: 32px; height: 32px; }
+.recipe.can { opacity: 1; color: var(--bone); border-color: rgba(185, 214, 90, 0.55); }
+.recipe.selected { border: 2px solid var(--ember); opacity: 1; background: rgba(232, 135, 58, 0.15); }
+.recipe-detail, .item-detail { margin-top: 8px; }
+.rd-head { display: flex; gap: 10px; align-items: center; }
+.rd-head svg { width: 44px; height: 44px; flex: none; }
+.rd-head h3 { font-size: 18px; }
+.rd-head p { margin: 2px 0 0; font-size: 13px; color: var(--bone-dim); line-height: 1.25; }
+.reqs { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; }
+.reqs li { display: flex; align-items: center; gap: 8px; padding: 3px 8px 3px 4px; border-radius: 6px; background: rgba(0, 0, 0, 0.28); font-size: 14px; font-weight: 600; }
+.reqs li svg { width: 24px; height: 24px; flex: none; }
+.reqs li b { margin-left: auto; font-variant-numeric: tabular-nums; }
+.reqs li.ok b { color: var(--c-xp); }
+.reqs li.miss b { color: var(--c-health); }
+.rd-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; }
+.rd-actions .btn { min-height: 36px; padding: 0 14px; font-size: 15px; }
+.rd-time { font-size: 12px; color: var(--bone-dim); }
+.craft-queue { margin-top: 6px; }
+.cq-row { display: flex; align-items: center; gap: 8px; }
+.cq-row svg { width: 26px; height: 26px; flex: none; }
+.cq-bar { flex: 1; height: 6px; border-radius: 3px; background: var(--track); overflow: hidden; }
+.cq-bar i { display: block; height: 100%; background: var(--ember); transform-origin: left center; }
+.facts { margin: 8px 0 0; font-size: 14px; line-height: 1.4; }
+.muted { color: var(--bone-dim); font-size: 14px; }
+.drag-ghost { position: fixed; width: 48px; height: 48px; margin: -24px 0 0 -24px; pointer-events: none; z-index: 30; opacity: 0.9; filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.6)); }
+.drag-ghost[hidden] { display: none; }
+
+/* Telas baixas (celular deitado): inventário mais compacto */
+@media (max-height: 460px) {
+  .inv-panel { padding: 6px 8px; gap: 8px; --slot: clamp(30px, min(9.4vh, 5vw), 48px); }
+  .inv-head h2 { font-size: 17px; }
+  .inv-label { margin: 3px 0 2px; font-size: 10px; }
+  .rd-head svg { width: 36px; height: 36px; }
+  .rd-head h3 { font-size: 16px; }
+  .rd-head p { font-size: 12px; }
+  .reqs li { font-size: 13px; padding: 2px 6px 2px 3px; }
+}
+/* Celular em pé: inventário em coluna */
+@media (orientation: portrait) {
+  .inv-panel { flex-direction: column; overflow-y: auto; --slot: clamp(30px, 10.4vw, 48px); }
+  .inv-right { max-width: none; min-width: 0; }
+  .tab-body { overflow: visible; }
+  body.is-touch .hotbar { --hb: clamp(30px, 9.5vw, 44px); left: 50%; transform: translateX(-50%); bottom: calc(286px + var(--safe-b)); }
+}

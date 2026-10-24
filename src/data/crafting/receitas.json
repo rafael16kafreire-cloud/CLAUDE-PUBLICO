@@ -1,0 +1,17 @@
+{
+  "_explicacao": "Receitas. ingredientes: id do item e quantidade. tempo em segundos. xp ganho ao criar.",
+  "receitas": [
+    { "id": "machado_pedra", "resultado": "machado_pedra", "quantidade": 1, "tempo": 3, "xp": 6, "categoria": "Ferramentas",
+      "ingredientes": { "madeira": 2, "pedra": 2, "silex": 1 } },
+    { "id": "picareta_pedra", "resultado": "picareta_pedra", "quantidade": 1, "tempo": 3, "xp": 6, "categoria": "Ferramentas",
+      "ingredientes": { "madeira": 1, "pedra": 2, "palha": 10 } },
+    { "id": "lanca", "resultado": "lanca", "quantidade": 1, "tempo": 4, "xp": 8, "categoria": "Armas",
+      "ingredientes": { "madeira": 8, "silex": 2, "fibra": 12 } },
+    { "id": "clava", "resultado": "clava", "quantidade": 1, "tempo": 3, "xp": 6, "categoria": "Armas",
+      "ingredientes": { "madeira": 5, "fibra": 15 } },
+    { "id": "bandagem", "resultado": "bandagem", "quantidade": 1, "tempo": 1.5, "xp": 2, "categoria": "Cura",
+      "ingredientes": { "fibra": 6 } },
+    { "id": "unguento", "resultado": "unguento", "quantidade": 1, "tempo": 2.5, "xp": 4, "categoria": "Cura",
+      "ingredientes": { "baga_mejo": 10, "fruta_azul": 2, "fibra": 3 } }
+  ]
+}

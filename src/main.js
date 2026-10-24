@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { events, EV } from './core/event_bus.js';
 import { game, STATE } from './core/game_manager.js';
-import { settings } from './core/settings.js';
+import { settings, QUALITY_PRESETS } from './core/settings.js';
 import { input } from './core/input.js';
 import { World } from './world/world.js';
 import { Player } from './player/player.js';
@@ -21,6 +21,11 @@ import { PauseMenu } from './ui/pause_menu.js';
 import { StartScreen } from './ui/start_screen.js';
 import { PlayerHands } from './player/player_hands.js';
 import { CreatureManager, SPECIES } from './creatures/creature_manager.js';
+import { Inventory } from './inventory/inventory.js';
+import { Crafting } from './crafting/crafting.js';
+import { PlayerActions } from './player/player_actions.js';
+import { Hotbar } from './ui/hotbar.js';
+import { InventoryScreen } from './ui/inventory_screen.js';
 
 // Ponte com o app Android (existe só dentro do APK).
 const androidApp = typeof window !== 'undefined' ? window.IlhaAndroid : undefined;
@@ -35,7 +40,6 @@ function detectTouch() {
 
 // Mensagens para recursos que chegam nas próximas fases.
 const COMING_SOON = {
-  inventory: 'Inventário chega na Fase 2.',
   build: 'Construção chega na Fase 6.',
   mount: 'Montaria chega na Fase 9.',
 };
@@ -95,14 +99,13 @@ function boot(hotData = {}) {
     game.isTouch = detectTouch();
     document.body.classList.toggle('is-touch', game.isTouch);
     if (!ctx) return;
-    ctx.world.setShadows(q.shadows, q.shadowMap);
-    ctx.world.setGrass(!q.noGrass);
+    ctx.world.setQuality(q);
     const vd = settings.get('viewDistance');
     ctx.world.setViewDistance(vd);
     camera.far = vd + 40;
     camera.updateProjectionMatrix();
     const inGame = [STATE.PLAYING, STATE.PAUSED, STATE.DEAD].includes(game.state);
-    ctx.touch.setVisible(game.isTouch && inGame);
+    ctx.touch.setVisible(game.isTouch && inGame && !ctx.invScreen.visible);
     ctx.touch.applySettings(settings.get('buttonOpacity'), settings.get('buttonSize'));
     ctx.debug.setVisible(settings.get('showDebug'));
     ctx.camCtl.setMode(settings.get('cameraMode'));
@@ -112,13 +115,18 @@ function boot(hotData = {}) {
 
   // ---------- Criar o mundo (depois que a tela de carregando aparece) ----------
   function buildGame() {
-    const world = new World(scene);
+    const world = new World(scene, renderer);
     const player = new Player(world, scene);
     const spawn = world.respawnPoint('sul');
     player.spawnAt(spawn);
     const camCtl = new PlayerCamera(camera, world);
     camCtl.yaw = spawn.yaw;
-    const interaction = new PlayerInteraction(player, world, camCtl);
+    // Inventário, coleta e crafting
+    const inventory = new Inventory();
+    const crafting = new Crafting(inventory, player.stats);
+    const actions = new PlayerActions(player, world, inventory);
+    player.actions = actions;
+    const interaction = new PlayerInteraction(player, world, camCtl, actions, inventory);
     const hud = new Hud(ui, player, (action) => onCornerButton(action));
     const messages = new Messages(ui);
     const touch = new TouchControls(ui, input);
@@ -127,7 +135,15 @@ function boot(hotData = {}) {
     const creatures = new CreatureManager(world, scene);
     world.creatures = creatures;
     const hands = new PlayerHands(camera);
-    player.onPunch = () => hands.punch();
+    player.onPunch = (kind) => hands.swing(kind);
+    const hotbar = new Hotbar(ui, inventory, (i) => actions.pressHotbar(i));
+    const invScreen = new InventoryScreen(ui, {
+      inventory,
+      crafting,
+      actions,
+      onDrop: (stack) => dropStack(stack),
+      onClose: () => closeInventory(),
+    });
     const pause = new PauseMenu(ui, {
       onResume: () => resume(),
       onQuitToMenu: () => toMenu(),
@@ -137,16 +153,28 @@ function boot(hotData = {}) {
     });
     game.world = world;
     game.player = player;
-    ctx = { world, player, camCtl, interaction, hud, messages, touch, death, debug, pause, creatures, hands };
+    ctx = {
+      world, player, camCtl, interaction, hud, messages, touch, death, debug, pause, creatures, hands,
+      inventory, crafting, actions, hotbar, invScreen,
+    };
 
-    // Voltando de uma atualização da página: restaura posição e barras.
+    // Voltando de uma atualização da página: restaura posição, barras e itens.
     if (hotData.player) {
       player.fromJSON(hotData.player);
       if (typeof hotData.yaw === 'number') camCtl.yaw = hotData.yaw;
+      inventory.fromJSON(hotData.inventory);
     }
 
     hud.setVisible(false);
+    hotbar.setVisible(false);
     applySettings();
+    // Prepara (compila) os gráficos agora, na tela de carregamento,
+    // para o jogo não "engasgar" na primeira vez que vê cada coisa.
+    try {
+      renderer.compile(scene, camera);
+    } catch (err) {
+      console.warn('[Ilha] compile', err);
+    }
     start.setReady(hotData.player ? 'Continuar' : 'Jogar');
     game.setState(STATE.MENU);
     console.info(`[Ilha] ilha gerada em ${world.generationMs} ms`, world.vegetation.countByType());
@@ -157,14 +185,17 @@ function boot(hotData = {}) {
     if (!ctx) return;
     start.hide();
     ctx.hud.setVisible(true);
+    ctx.hotbar.setVisible(true);
     ctx.touch.setVisible(game.isTouch);
     game.setState(STATE.PLAYING);
     requestFullscreenLandscape();
     if (!game.isTouch) input.requestPointerLock();
     if (game.playTime < 1) {
-      events.emit(EV.MESSAGE, { text: 'Dica: o lago de água doce fica no meio da ilha.', kind: 'info' });
+      events.emit(EV.MESSAGE, { text: 'Bata nas árvores para pegar madeira e palha. Abra o Inventário para criar ferramentas.', kind: 'info' });
+      events.emit(EV.MESSAGE, { text: 'Água doce: o pântano fica no meio da ilha.', kind: 'info' });
       // Já começa com alguns animais por perto.
-      for (let i = 0; i < 10; i++) ctx.creatures.trySpawnNear(ctx.player.position, 35, 110);
+      for (let i = 0; i < 8; i++) ctx.creatures.trySpawnNear(ctx.player.position, 45, 110);
+      for (let i = 0; i < 3; i++) ctx.creatures.trySpawnNear(ctx.player.position, 20, 60, true);
     }
   }
 
@@ -186,8 +217,43 @@ function boot(hotData = {}) {
     resume();
   }
 
+  // ---------- Inventário ----------
+  function openInventory() {
+    if (game.state !== STATE.PLAYING || ctx.player.dead || ctx.invScreen.visible) return;
+    input.clear();
+    input.blocked = true;
+    ctx.invScreen.show();
+    ctx.touch.setVisible(false);
+    document.body.classList.add('inv-open');
+    input.exitPointerLock();
+  }
+
+  function closeInventory() {
+    if (!ctx.invScreen.visible) return;
+    ctx.invScreen.hide();
+    input.blocked = false;
+    input.clear();
+    document.body.classList.remove('inv-open');
+    ctx.touch.setVisible(game.isTouch && game.state === STATE.PLAYING);
+    if (!game.isTouch && game.state === STATE.PLAYING) input.requestPointerLock();
+  }
+
+  // Largar itens: vira uma bolsa no chão na frente do jogador.
+  function dropStack(stack) {
+    const p = ctx.player.position;
+    const f = ctx.camCtl.forward;
+    const len = Math.hypot(f.x, f.z) || 1;
+    const x = p.x + (f.x / len) * 1.4;
+    const z = p.z + (f.z / len) * 1.4;
+    const pos = new THREE.Vector3(x, Math.max(ctx.world.heightAt(x, z), p.y - 1.5), z);
+    const body = ctx.world.waterAt(x, z);
+    if (body) pos.y = Math.max(pos.y, body.level - 0.3);
+    ctx.world.spawnDeathBag(pos, [stack], 'bolsa');
+  }
+
   function pauseGame() {
     if (game.state !== STATE.PLAYING) return;
+    closeInventory();
     game.setState(STATE.PAUSED);
     input.clear();
     input.exitPointerLock();
@@ -204,6 +270,7 @@ function boot(hotData = {}) {
   function toMenu() {
     ctx.pause.hide();
     ctx.hud.setVisible(false);
+    ctx.hotbar.setVisible(false);
     ctx.touch.setVisible(false);
     start.setReady('Continuar');
     start.show();
@@ -214,6 +281,11 @@ function boot(hotData = {}) {
     if (action === 'pause') {
       if (game.state === STATE.PLAYING) pauseGame();
       else resume();
+      return;
+    }
+    if (action === 'inventory') {
+      if (ctx.invScreen.visible) closeInventory();
+      else openInventory();
       return;
     }
     input.tap(action);
@@ -234,8 +306,11 @@ function boot(hotData = {}) {
   }
 
   events.on(EV.PLAYER_DIED, ({ cause, position }) => {
+    closeInventory();
     game.setState(STATE.DEAD);
-    ctx.world.spawnDeathBag(position);
+    // Tudo o que tinha vai para o saco de morte.
+    ctx.crafting.cancelAll();
+    ctx.world.spawnDeathBag(position, ctx.inventory.takeAll());
     input.exitPointerLock();
     input.runToggle = false;
     ctx.death.show(cause, position);
@@ -257,7 +332,7 @@ function boot(hotData = {}) {
 
   // Mouse solto com Esc no PC = pausa.
   document.addEventListener('pointerlockchange', () => {
-    if (!document.pointerLockElement && game.state === STATE.PLAYING && !game.isTouch) pauseGame();
+    if (!document.pointerLockElement && game.state === STATE.PLAYING && !game.isTouch && !ctx?.invScreen.visible) pauseGame();
   });
 
   // App em segundo plano / aba escondida = pausa.
@@ -267,7 +342,8 @@ function boot(hotData = {}) {
 
   // Botão "voltar" do Android: pausa / continua.
   window.__ilhaBack = () => {
-    if (game.state === STATE.PLAYING) pauseGame();
+    if (ctx?.invScreen.visible) closeInventory();
+    else if (game.state === STATE.PLAYING) pauseGame();
     else if (game.state === STATE.PAUSED) resume();
   };
 
@@ -276,15 +352,51 @@ function boot(hotData = {}) {
     if (input.wasPressed('pause')) {
       // Evita pausar/despausar duas vezes quando o Esc também solta o mouse.
       const justUnlocked = performance.now() - input.lastUnlockTime < 300;
-      if (game.state === STATE.PLAYING) pauseGame();
+      if (ctx.invScreen.visible) closeInventory();
+      else if (game.state === STATE.PLAYING) pauseGame();
       else if (game.state === STATE.PAUSED && !justUnlocked) resume();
     }
     if (input.wasPressed('debug')) settings.set('showDebug', !settings.get('showDebug'));
     if (game.state !== STATE.PLAYING) return;
+    if (input.wasPressed('inventory')) {
+      if (ctx.invScreen.visible) closeInventory();
+      else openInventory();
+    }
     if (input.wasPressed('camera')) settings.set('cameraMode', ctx.camCtl.mode === 'primeira' ? 'terceira' : 'primeira');
-    for (const action of ['inventory', 'build', 'mount']) {
+    for (let i = 0; i < 8; i++) if (input.wasPressed(`slot${i + 1}`)) ctx.actions.pressHotbar(i);
+    for (const action of ['build', 'mount']) {
       if (input.wasPressed(action)) events.emit(EV.MESSAGE, { text: COMING_SOON[action], kind: 'info' });
     }
+  }
+
+  // ---------- Qualidade automática ----------
+  // Se o aparelho ficar lento (menos de 22 quadros por segundo por
+  // alguns segundos), baixa um nível de qualidade e avisa.
+  const perf = { time: 0, frames: 0, warmup: 6 };
+  function autoQuality(dt) {
+    if (!settings.get('autoQuality') || game.state !== STATE.PLAYING) return;
+    if (perf.warmup > 0) {
+      perf.warmup -= dt;
+      return;
+    }
+    perf.time += dt;
+    perf.frames += 1;
+    if (perf.time < 4) return;
+    const fps = perf.frames / perf.time;
+    perf.time = 0;
+    perf.frames = 0;
+    if (fps >= 22) return;
+    const order = ['alta', 'media', 'baixa'];
+    const i = order.indexOf(settings.get('quality'));
+    if (i < 0 || i >= order.length - 1) return;
+    const next = order[i + 1];
+    settings.set('quality', next);
+    settings.set('viewDistance', QUALITY_PRESETS[next].viewDistance);
+    perf.warmup = 4;
+    events.emit(EV.MESSAGE, {
+      text: `Jogo lento (${Math.round(fps)} FPS): qualidade ajustada para ${next === 'baixa' ? 'Baixa' : 'Média'}. Dá para mudar no menu de pausa.`,
+      kind: 'warn',
+    });
   }
 
   // ---------- Loop principal ----------
@@ -302,7 +414,8 @@ function boot(hotData = {}) {
     if (!ctx) return;
 
     handleActions();
-    const { world, player, camCtl, interaction, hud, touch, debug, creatures, hands } = ctx;
+    autoQuality(dt);
+    const { world, player, camCtl, interaction, hud, touch, debug, creatures, hands, crafting, invScreen, actions } = ctx;
     const look = input.consumeLook();
     const sens = settings.get('sensitivity');
 
@@ -314,6 +427,8 @@ function boot(hotData = {}) {
         camCtl.update(dt, player);
         interaction.update(dt, input);
         creatures.update(dt, player, camera);
+        crafting.update(dt);
+        if (invScreen.visible) invScreen.tick();
         break;
       case STATE.DEAD:
         camCtl.applyLook(look, sens, player);
@@ -362,10 +477,14 @@ function boot(hotData = {}) {
       camera.position.set(...photo.pos);
       camera.lookAt(...photo.target);
     }
+    const toolKind = actions.tool.tipo;
+    if (hands.toolKind !== toolKind) hands.setTool(toolKind);
     hands.update(dt, {
       visible: !photo && game.state === STATE.PLAYING && camCtl.mode === 'primeira' && !player.dead,
       speed: Math.hypot(player.velocity.x, player.velocity.z),
       swimming: player.swimming,
+      running: player.running,
+      onGround: player.onGround,
     });
     renderer.render(scene, camera);
     debug.frame(dt);
@@ -388,8 +507,9 @@ function boot(hotData = {}) {
     photo: null,
     game,
     settings,
+    speciesIds: Object.keys(SPECIES),
     get ctx() { return ctx; },
-    snapshot: () => (ctx ? { player: ctx.player.toJSON(), yaw: ctx.camCtl.yaw } : {}),
+    snapshot: () => (ctx ? { player: ctx.player.toJSON(), yaw: ctx.camCtl.yaw, inventory: ctx.inventory.toJSON() } : {}),
   };
 }
 

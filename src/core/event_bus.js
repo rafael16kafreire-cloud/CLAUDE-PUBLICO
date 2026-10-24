@@ -21,6 +21,9 @@ export const EV = {
   PLAYER_HURT: 'player_hurt',             // { amount, source }
   CREATURE_KILLED: 'creature_killed',     // { creature, byPlayer }
   BIOME_ENTERED: 'biome_entered',         // { key, name, description }
+  INVENTORY_CHANGED: 'inventory_changed', // { inventory }
+  CRAFT_QUEUE: 'craft_queue',             // { queue }
+  ITEM_GAINED: 'item_gained',             // { id, amount }
 };
 
 class EventBus {

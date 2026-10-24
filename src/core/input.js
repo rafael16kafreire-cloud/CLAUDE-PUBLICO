@@ -22,7 +22,13 @@ const KEYMAP = {
   Tab: 'inventory',
   KeyB: 'build',
   KeyF: 'mount',
+  KeyI: 'inventory',
+  Digit1: 'slot1', Digit2: 'slot2', Digit3: 'slot3', Digit4: 'slot4',
+  Digit5: 'slot5', Digit6: 'slot6', Digit7: 'slot7', Digit8: 'slot8',
 };
+
+// Ações que continuam valendo com uma tela aberta (inventário).
+const ALWAYS = new Set(['inventory', 'pause', 'debug']);
 
 // Teclas que o navegador usaria para outra coisa (rolar página etc.)
 const PREVENT = new Set(['Space', 'Tab', 'F3', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
@@ -42,6 +48,7 @@ class Input {
     this.lastUnlockTime = 0;
     this._canvas = null;
     this._mouseDragging = false;
+    this.blocked = false; // true com o inventário aberto (personagem parado)
   }
 
   attach(canvas) {
@@ -51,6 +58,7 @@ class Input {
       const action = KEYMAP[e.code];
       if (!action) return;
       if (PREVENT.has(e.code)) e.preventDefault();
+      if (this.blocked && !ALWAYS.has(action)) return;
       if (!e.repeat) this.pressed.add(action);
       this.held.add(action);
     });
@@ -79,6 +87,9 @@ class Input {
       // Com o mouse "travado" no jogo: movimento gira a câmera.
       // Sem trava (navegador não deixou): arrastar com o botão gira.
       if (this.pointerLocked || this._mouseDragging) {
+        // Alguns navegadores mandam um "salto" enorme ao prender o
+        // mouse ou ao clicar: ignora (senão a câmera gira sozinha).
+        if (Math.abs(e.movementX) > 250 || Math.abs(e.movementY) > 250) return;
         this.addLook(e.movementX * MOUSE_LOOK_FACTOR, e.movementY * MOUSE_LOOK_FACTOR);
       }
     });
@@ -113,6 +124,7 @@ class Input {
 
   // Usado pelos botões de toque.
   press(action) {
+    if (this.blocked && !ALWAYS.has(action)) return;
     this.pressed.add(action);
     this.held.add(action);
   }
@@ -126,6 +138,7 @@ class Input {
   }
 
   addLook(dx, dy) {
+    if (this.blocked) return;
     this.look.x += dx;
     this.look.y += dy;
   }
@@ -147,6 +160,7 @@ class Input {
 
   // Direção de movimento: x = lado (direita +), y = frente (+).
   moveVector() {
+    if (this.blocked) return { x: 0, y: 0 };
     let x = 0;
     let y = 0;
     if (this.held.has('up')) y += 1;

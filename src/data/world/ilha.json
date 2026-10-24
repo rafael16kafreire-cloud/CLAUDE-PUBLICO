@@ -1,59 +1,81 @@
 {
-  "_explicacao": "Formato da ilha. Distâncias em metros. Centro da ilha = x 0, z 0. Norte = z negativo, Sul = z positivo, Leste = x positivo, Oeste = x negativo.",
+  "_explicacao": "Formato da ilha. Distâncias em metros. Centro = x 0, z 0. Norte = z negativo, Sul = z positivo, Leste = x positivo, Oeste = x negativo. A ilha inteira é Floresta Amazônica, com pântanos no meio.",
   "tamanho_terreno_m": 1408,
   "tamanho_celula_m": 4,
   "tamanho_pedaco_celulas": 32,
   "raio_ilha_m": 470,
   "variacao_costa_m": 60,
-  "largura_praia_m": 38,
-  "altura_praia_m": 2.2,
-  "altura_planicie_m": 12,
-  "altura_colinas_m": 9,
+  "largura_praia_m": 24,
+  "altura_praia_m": 1.8,
+  "altura_planicie_m": 13,
+  "altura_colinas_m": 16,
   "profundidade_mar_m": 28,
 
-  "montanha": { "x": 20, "z": -300, "raio_m": 240, "altura_m": 135 },
-  "lago": { "x": 60, "z": 70, "raio_m": 52, "nivel_agua_m": 9, "profundidade_m": 6 },
-  "deserto": { "x": -300, "z": -30, "raio_m": 220, "altura_dunas_m": 7 },
-  "pantano": { "x": -130, "z": 200, "raio_m": 135, "nivel_agua_m": 3.4 },
-  "selva": { "x": 290, "z": 70, "raio_m": 230 },
-  "campina": { "x": 70, "z": 260, "raio_m": 150 },
-  "rocha_acima_m": 55,
-  "neve_acima_m": 100,
+  "pantano": {
+    "nivel_agua_m": 4.2,
+    "_partes": "Cada parte é um círculo de pântano; juntas formam o pântano do meio da ilha.",
+    "partes": [
+      { "x": 0, "z": 10, "raio_m": 150 },
+      { "x": -120, "z": -90, "raio_m": 95 },
+      { "x": 135, "z": 95, "raio_m": 90 },
+      { "x": 95, "z": -120, "raio_m": 70 },
+      { "x": -110, "z": 135, "raio_m": 75 }
+    ]
+  },
 
   "biomas": {
-    "praia": { "nome": "Praia", "descricao": "Areia, coqueiros e o mar sem fim.", "temperatura_c": 1 },
-    "campina": { "nome": "Campina", "descricao": "Campos abertos onde as manadas pastam.", "temperatura_c": 0 },
-    "floresta": { "nome": "Floresta", "descricao": "Árvores altas e sombra fresca.", "temperatura_c": -2 },
-    "selva": { "nome": "Floresta Amazônica", "descricao": "Mata fechada, úmida e cheia de predadores.", "temperatura_c": 3 },
-    "deserto": { "nome": "Deserto", "descricao": "Calor forte e nenhuma água. Vá preparado.", "temperatura_c": 12 },
-    "pantano": { "nome": "Pântano", "descricao": "Água parada, lama e coisas escondidas.", "temperatura_c": 2 },
-    "montanha": { "nome": "Montanha", "descricao": "Pedras, vento e ar frio.", "temperatura_c": 0 },
-    "neve": { "nome": "Pico Nevado", "descricao": "Frio intenso. Não fique muito tempo.", "temperatura_c": -6 },
-    "lago": { "nome": "Lago", "descricao": "Água doce e limpa.", "temperatura_c": 0 },
+    "praia": { "nome": "Praia", "descricao": "Uma faixa de areia entre a mata e o mar.", "temperatura_c": 1 },
+    "selva": { "nome": "Floresta Amazônica", "descricao": "Mata fechada e úmida. Nada aqui é seguro.", "temperatura_c": 3 },
+    "igapo": { "nome": "Igapó", "descricao": "Floresta alagada na beira do pântano.", "temperatura_c": 2 },
+    "pantano": { "nome": "Pântano", "descricao": "Água parada, lama e predadores escondidos.", "temperatura_c": 2 },
     "mar": { "nome": "Mar", "descricao": "Água salgada. Não beba.", "temperatura_c": 0 }
   },
 
+  "_rotulos_mapa": "Nomes escritos no mapa da tela de morte (posição em metros).",
+  "rotulos_mapa": [
+    { "nome": "Pântano", "x": 0, "z": 10 },
+    { "nome": "Floresta Amazônica", "x": -250, "z": -250 },
+    { "nome": "Floresta Amazônica", "x": 250, "z": 250 },
+    { "nome": "Igapó", "x": 175, "z": -20 }
+  ],
+
   "pontos_renascer": [
     { "id": "sul", "nome": "Praia Sul", "direcao": [0, 1] },
-    { "id": "sudeste", "nome": "Praia Sudeste", "direcao": [0.75, 0.66] },
+    { "id": "sudeste", "nome": "Praia Sudeste", "direcao": [0.72, 0.7] },
     { "id": "leste", "nome": "Praia Leste", "direcao": [1, 0.05] },
+    { "id": "norte", "nome": "Praia Norte", "direcao": [0.05, -1] },
     { "id": "oeste", "nome": "Praia Oeste", "direcao": [-1, 0.1] },
-    { "id": "sudoeste", "nome": "Praia Sudoeste", "direcao": [-0.6, 0.8] }
+    { "id": "sudoeste", "nome": "Praia Sudoeste", "direcao": [-0.65, 0.76] }
   ],
 
   "vegetacao": {
-    "passo_m": 6,
-    "tamanho_pedaco_m": 128,
-    "_chances": "Para cada ponto da grade: chance (0 a 1) de nascer cada coisa, por bioma.",
+    "passo_m": 5,
+    "_chances": "Para cada ponto da grade: chance (0 a 1) de nascer cada coisa, por bioma. A soma pode passar de 1 só até onde couber.",
     "biomas": {
-      "praia": { "palmeira": 0.04, "arbusto": 0.01, "pedra": 0.012 },
-      "campina": { "arvore": 0.035, "arbusto": 0.05, "pedra": 0.012 },
-      "floresta": { "arvore": 0.4, "pinheiro": 0.12, "arbusto": 0.1, "pedra": 0.02 },
-      "selva": { "arvore_gigante": 0.17, "arvore_selva": 0.3, "palmeira_selva": 0.07, "samambaia": 0.22 },
-      "deserto": { "cacto": 0.025, "arbusto_seco": 0.03, "pedra_deserto": 0.02 },
-      "pantano": { "arvore_mangue": 0.12, "arvore_morta": 0.05, "junco": 0.32 },
-      "montanha": { "pinheiro": 0.07, "pedra": 0.08 },
-      "neve": { "pedra": 0.03 }
+      "praia": { "coqueiro": 0.05, "arbusto_frutas": 0.012, "pedra_musgo": 0.01, "tronco_caido": 0.006 },
+      "selva": {
+        "sumauma": 0.045, "arvore_dossel": 0.17, "arvore_media": 0.12, "acai": 0.07,
+        "samambaia_gigante": 0.08, "bananeira": 0.035, "samambaia": 0.16,
+        "arbusto_mejo": 0.025, "arbusto_escura": 0.02, "arbusto_frutas": 0.015,
+        "tronco_caido": 0.025, "pedra_musgo": 0.022
+      },
+      "igapo": {
+        "arvore_dossel": 0.1, "acai": 0.12, "mangue": 0.1, "samambaia_gigante": 0.06,
+        "samambaia": 0.12, "bananeira": 0.03, "arbusto_mejo": 0.02, "tronco_caido": 0.03, "junco": 0.12
+      },
+      "pantano": {
+        "mangue": 0.09, "arvore_morta": 0.04, "junco": 0.22, "taboa": 0.12,
+        "vitoria_regia": 0.16, "tronco_caido": 0.02, "pedra_musgo": 0.01
+      }
+    },
+    "_sub_bosque": "Plantas baixas do chão da mata, numa grade mais fina (passo_m menor).",
+    "sub_bosque": {
+      "passo_m": 3,
+      "biomas": {
+        "selva": { "samambaia": 0.3, "arbusto": 0.06, "samambaia_gigante": 0.025, "arbusto_mejo": 0.008, "arbusto_escura": 0.006 },
+        "igapo": { "samambaia": 0.22, "junco": 0.1, "arbusto": 0.04 },
+        "praia": { "arbusto": 0.02 }
+      }
     }
   }
 }

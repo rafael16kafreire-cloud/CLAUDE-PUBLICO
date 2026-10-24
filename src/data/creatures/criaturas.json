@@ -1,87 +1,936 @@
 {
-  "_explicacao": "Dados de cada espécie. vida/dano são do nível 1 (sobem com o nível). Velocidades em m/s. temperamento: passivo (ignora, foge se apanhar), medroso (foge de perto), territorial (ataca se chegar perto ou apanhar), agressivo (caça o jogador). biomas: onde aparece. peso_spawn: quanto maior, mais comum. grupo: [mínimo, máximo] de animais juntos.",
-  "especies": [
-    {
-      "id": "dodo", "nome": "Dodô", "dieta": "herbivoro", "temperamento": "passivo",
-      "vida": 40, "dano": 0, "vel_andar": 1.4, "vel_correr": 4.0, "tamanho": 1,
-      "raio": 0.35, "altura": 0.8, "biomas": ["praia", "campina", "floresta"],
-      "peso_spawn": 10, "grupo": [1, 3], "xp": 6,
-      "pode_domar": true, "pode_montar": false, "carga": 20, "comida_preferida": "Fruta Dourada",
-      "loot": { "Carne Crua": [1, 2], "Couro": [0, 1] }
-    },
-    {
-      "id": "parassauro", "nome": "Parassauro", "dieta": "herbivoro", "temperamento": "medroso",
-      "vida": 260, "dano": 0, "vel_andar": 2.6, "vel_correr": 9.5, "tamanho": 1,
-      "raio": 1.0, "altura": 2.8, "biomas": ["campina", "floresta", "selva"],
-      "peso_spawn": 7, "grupo": [2, 4], "xp": 20,
-      "pode_domar": true, "pode_montar": true, "carga": 220, "comida_preferida": "Fruta Dourada",
-      "loot": { "Carne Crua": [3, 6], "Couro": [2, 4] }
-    },
-    {
-      "id": "paquicefalossauro", "nome": "Paquicefalossauro", "dieta": "herbivoro", "temperamento": "territorial",
-      "vida": 220, "dano": 14, "vel_andar": 2.3, "vel_correr": 8.0, "tamanho": 1,
-      "raio": 0.7, "altura": 1.8, "biomas": ["campina", "floresta", "montanha", "deserto"],
-      "peso_spawn": 5, "grupo": [1, 2], "xp": 22, "alcance_agro": 9,
-      "pode_domar": true, "pode_montar": false, "carga": 120, "comida_preferida": "Fruta Dourada",
-      "loot": { "Carne Crua": [2, 4], "Couro": [1, 3], "Ossos": [1, 2] }
-    },
-    {
-      "id": "braquiossauro", "nome": "Braquiossauro", "dieta": "herbivoro", "temperamento": "passivo",
-      "vida": 3500, "dano": 60, "vel_andar": 2.0, "vel_correr": 3.6, "tamanho": 1,
-      "raio": 3.2, "altura": 13, "biomas": ["campina", "selva"],
-      "peso_spawn": 1.6, "grupo": [1, 2], "xp": 120,
-      "pode_domar": true, "pode_montar": true, "carga": 1500, "comida_preferida": "Fruta Dourada",
-      "loot": { "Carne Crua": [20, 35], "Couro": [15, 25], "Ossos": [6, 10] }
-    },
-    {
-      "id": "raptor", "nome": "Raptor", "dieta": "carnivoro", "temperamento": "agressivo",
-      "vida": 170, "dano": 11, "vel_andar": 3.0, "vel_correr": 10.5, "tamanho": 1,
-      "raio": 0.55, "altura": 1.6, "biomas": ["floresta", "selva", "deserto"],
-      "peso_spawn": 4, "grupo": [2, 4], "xp": 30, "alcance_agro": 26, "alcance_ataque": 1.6, "intervalo_ataque": 0.9,
-      "pode_domar": true, "pode_montar": true, "carga": 140, "comida_preferida": "Carne Crua",
-      "loot": { "Carne Crua": [2, 4], "Couro": [2, 3] }
-    },
-    {
-      "id": "trex", "nome": "T-Rex", "dieta": "carnivoro", "temperamento": "agressivo",
-      "vida": 1600, "dano": 55, "vel_andar": 2.8, "vel_correr": 8.2, "tamanho": 1,
-      "raio": 1.8, "altura": 5.5, "biomas": ["selva", "floresta"],
-      "peso_spawn": 0.8, "grupo": [1, 1], "xp": 150, "alcance_agro": 40, "alcance_ataque": 3.2, "intervalo_ataque": 1.6,
-      "pode_domar": true, "pode_montar": true, "carga": 600, "comida_preferida": "Carne Crua",
-      "loot": { "Carne Crua": [15, 25], "Couro": [10, 16], "Ossos": [5, 8] }
-    },
-    {
-      "id": "titanoboa", "nome": "Titanoboa", "dieta": "carnivoro", "temperamento": "agressivo",
-      "vida": 700, "dano": 28, "vel_andar": 1.8, "vel_correr": 6.5, "tamanho": 1,
-      "raio": 0.9, "altura": 0.9, "biomas": ["pantano", "selva"],
-      "peso_spawn": 2.5, "grupo": [1, 1], "xp": 80, "alcance_agro": 18, "alcance_ataque": 2.6, "intervalo_ataque": 1.4,
-      "nada": true,
-      "pode_domar": false, "pode_montar": false, "carga": 0, "comida_preferida": "Carne Crua",
-      "loot": { "Carne Crua": [6, 10], "Couro": [6, 10] }
-    },
-    {
-      "id": "deinosuchus", "nome": "Deinosuchus", "dieta": "carnivoro", "temperamento": "agressivo",
-      "vida": 900, "dano": 40, "vel_andar": 1.6, "vel_correr": 5.5, "tamanho": 1,
-      "raio": 1.2, "altura": 1.0, "biomas": ["pantano", "lago"],
-      "peso_spawn": 2.5, "grupo": [1, 1], "xp": 90, "alcance_agro": 20, "alcance_ataque": 2.8, "intervalo_ataque": 1.5,
-      "nada": true, "perto_agua": true,
-      "pode_domar": true, "pode_montar": true, "carga": 400, "comida_preferida": "Carne Crua",
-      "loot": { "Carne Crua": [8, 14], "Couro": [6, 10], "Ossos": [2, 4] }
-    },
-    {
-      "id": "pterodactilo", "nome": "Pterodáctilo", "dieta": "carnivoro", "temperamento": "medroso",
-      "vida": 110, "dano": 8, "vel_andar": 6.0, "vel_correr": 13, "tamanho": 1,
-      "raio": 0.6, "altura": 0.8, "biomas": ["praia", "montanha", "selva", "deserto"],
-      "peso_spawn": 4, "grupo": [1, 3], "xp": 15, "voa": true, "altura_voo": [18, 40],
-      "pode_domar": true, "pode_montar": true, "carga": 60, "comida_preferida": "Carne Crua",
-      "loot": { "Carne Crua": [1, 2], "Couro": [1, 2] }
-    },
-    {
-      "id": "quetzalcoatlus", "nome": "Quetzalcoatlus", "dieta": "carnivoro", "temperamento": "passivo",
-      "vida": 1200, "dano": 30, "vel_andar": 7.0, "vel_correr": 12, "tamanho": 1,
-      "raio": 2.0, "altura": 3, "biomas": ["montanha", "campina", "deserto"],
-      "peso_spawn": 1.2, "grupo": [1, 1], "xp": 100, "voa": true, "altura_voo": [35, 70],
-      "pode_domar": true, "pode_montar": true, "carga": 500, "comida_preferida": "Carne Crua",
-      "loot": { "Carne Crua": [10, 16], "Couro": [8, 12] }
-    }
-  ]
+ "_explicacao": "Dados de cada espécie. vida/dano no nível 1 (sobem com o nível). Velocidades em m/s. temperamento: passivo (só reage se apanhar: revida=true ataca de volta, senão foge), medroso (foge de perto, nunca ataca), agressivo (carnívoros: caçam o jogador). biomas: praia, selva, igapo, pantano. peso_spawn: quanto maior, mais comum. grupo: [mínimo, máximo]. loot: o que sai da carcaça. ambiente: animais de enfeite (não contam no limite).",
+ "especies": [
+  {
+   "id": "dodo",
+   "nome": "Dodô",
+   "dieta": "herbivoro",
+   "temperamento": "passivo",
+   "vida": 40,
+   "dano": 0,
+   "vel_andar": 1.4,
+   "vel_correr": 4.0,
+   "tamanho": 1,
+   "raio": 0.35,
+   "altura": 0.8,
+   "biomas": [
+    "praia",
+    "selva",
+    "igapo"
+   ],
+   "peso_spawn": 7,
+   "grupo": [
+    1,
+    3
+   ],
+   "xp": 6,
+   "loot": {
+    "carne_crua": [
+     1,
+     2
+    ],
+    "couro": [
+     0,
+     1
+    ]
+   },
+   "pode_domar": true,
+   "comida_preferida": "baga_mejo",
+   "carga": 20
+  },
+  {
+   "id": "parassauro",
+   "nome": "Parassauro",
+   "dieta": "herbivoro",
+   "temperamento": "medroso",
+   "vida": 260,
+   "dano": 0,
+   "vel_andar": 2.6,
+   "vel_correr": 9.5,
+   "tamanho": 1,
+   "raio": 1.0,
+   "altura": 2.8,
+   "biomas": [
+    "selva",
+    "igapo"
+   ],
+   "peso_spawn": 5,
+   "grupo": [
+    2,
+    4
+   ],
+   "xp": 20,
+   "loot": {
+    "carne_crua": [
+     3,
+     6
+    ],
+    "couro": [
+     2,
+     4
+    ]
+   },
+   "pode_domar": true,
+   "comida_preferida": "baga_mejo",
+   "pode_montar": true,
+   "carga": 220
+  },
+  {
+   "id": "galimimo",
+   "nome": "Galimimo",
+   "dieta": "herbivoro",
+   "temperamento": "medroso",
+   "vida": 150,
+   "dano": 0,
+   "vel_andar": 3.0,
+   "vel_correr": 13,
+   "tamanho": 1,
+   "raio": 0.6,
+   "altura": 2.2,
+   "biomas": [
+    "selva",
+    "praia"
+   ],
+   "peso_spawn": 4,
+   "grupo": [
+    3,
+    5
+   ],
+   "xp": 15,
+   "loot": {
+    "carne_crua": [
+     2,
+     3
+    ],
+    "couro": [
+     1,
+     2
+    ]
+   },
+   "pode_domar": true,
+   "comida_preferida": "baga_mejo",
+   "pode_montar": true,
+   "carga": 120
+  },
+  {
+   "id": "capivara",
+   "nome": "Capivara",
+   "dieta": "herbivoro",
+   "temperamento": "medroso",
+   "vida": 80,
+   "dano": 0,
+   "vel_andar": 1.5,
+   "vel_correr": 6.0,
+   "tamanho": 1,
+   "raio": 0.5,
+   "altura": 0.7,
+   "biomas": [
+    "igapo",
+    "pantano"
+   ],
+   "peso_spawn": 6,
+   "grupo": [
+    2,
+    4
+   ],
+   "xp": 8,
+   "loot": {
+    "carne_crua": [
+     2,
+     3
+    ],
+    "couro": [
+     1,
+     2
+    ]
+   },
+   "pode_domar": true,
+   "comida_preferida": "baga_mejo",
+   "nada": true,
+   "carga": 30
+  },
+  {
+   "id": "paquicefalossauro",
+   "nome": "Paquicefalossauro",
+   "dieta": "herbivoro",
+   "temperamento": "passivo",
+   "vida": 220,
+   "dano": 14,
+   "vel_andar": 2.3,
+   "vel_correr": 8.0,
+   "tamanho": 1,
+   "raio": 0.7,
+   "altura": 1.8,
+   "biomas": [
+    "selva"
+   ],
+   "peso_spawn": 3.5,
+   "grupo": [
+    1,
+    2
+   ],
+   "xp": 22,
+   "loot": {
+    "carne_crua": [
+     2,
+     4
+    ],
+    "couro": [
+     1,
+     3
+    ],
+    "ossos": [
+     1,
+     2
+    ]
+   },
+   "pode_domar": true,
+   "comida_preferida": "baga_mejo",
+   "revida": true,
+   "alcance_ataque": 1.4,
+   "intervalo_ataque": 1.1,
+   "carga": 120
+  },
+  {
+   "id": "triceratops",
+   "nome": "Triceratops",
+   "dieta": "herbivoro",
+   "temperamento": "passivo",
+   "vida": 900,
+   "dano": 35,
+   "vel_andar": 2.2,
+   "vel_correr": 7.5,
+   "tamanho": 1,
+   "raio": 1.6,
+   "altura": 3.0,
+   "biomas": [
+    "selva",
+    "igapo"
+   ],
+   "peso_spawn": 3,
+   "grupo": [
+    1,
+    3
+   ],
+   "xp": 70,
+   "loot": {
+    "carne_crua": [
+     8,
+     14
+    ],
+    "couro": [
+     6,
+     10
+    ],
+    "ossos": [
+     2,
+     4
+    ]
+   },
+   "pode_domar": true,
+   "comida_preferida": "baga_mejo",
+   "revida": true,
+   "alcance_ataque": 2.4,
+   "intervalo_ataque": 1.4,
+   "pode_montar": true,
+   "carga": 500
+  },
+  {
+   "id": "estegossauro",
+   "nome": "Estegossauro",
+   "dieta": "herbivoro",
+   "temperamento": "passivo",
+   "vida": 1100,
+   "dano": 30,
+   "vel_andar": 1.8,
+   "vel_correr": 5.5,
+   "tamanho": 1,
+   "raio": 1.7,
+   "altura": 4.2,
+   "biomas": [
+    "selva"
+   ],
+   "peso_spawn": 2.5,
+   "grupo": [
+    1,
+    2
+   ],
+   "xp": 70,
+   "loot": {
+    "carne_crua": [
+     8,
+     14
+    ],
+    "couro": [
+     6,
+     10
+    ],
+    "ossos": [
+     2,
+     4
+    ]
+   },
+   "pode_domar": true,
+   "comida_preferida": "baga_mejo",
+   "revida": true,
+   "alcance_ataque": 3.0,
+   "intervalo_ataque": 1.6,
+   "pode_montar": true,
+   "carga": 500
+  },
+  {
+   "id": "anquilossauro",
+   "nome": "Anquilossauro",
+   "dieta": "herbivoro",
+   "temperamento": "passivo",
+   "vida": 1000,
+   "dano": 28,
+   "vel_andar": 1.6,
+   "vel_correr": 4.5,
+   "tamanho": 1,
+   "raio": 1.4,
+   "altura": 1.8,
+   "biomas": [
+    "selva",
+    "praia"
+   ],
+   "peso_spawn": 2.5,
+   "grupo": [
+    1,
+    2
+   ],
+   "xp": 60,
+   "loot": {
+    "carne_crua": [
+     6,
+     10
+    ],
+    "couro": [
+     4,
+     8
+    ],
+    "ossos": [
+     2,
+     4
+    ]
+   },
+   "pode_domar": true,
+   "comida_preferida": "baga_mejo",
+   "revida": true,
+   "alcance_ataque": 3.2,
+   "intervalo_ataque": 1.6,
+   "pode_montar": true,
+   "carga": 450
+  },
+  {
+   "id": "braquiossauro",
+   "nome": "Braquiossauro",
+   "dieta": "herbivoro",
+   "temperamento": "passivo",
+   "vida": 3500,
+   "dano": 60,
+   "vel_andar": 2.0,
+   "vel_correr": 3.6,
+   "tamanho": 1,
+   "raio": 3.2,
+   "altura": 13,
+   "biomas": [
+    "selva",
+    "igapo"
+   ],
+   "peso_spawn": 1.0,
+   "grupo": [
+    1,
+    2
+   ],
+   "xp": 120,
+   "loot": {
+    "carne_crua": [
+     20,
+     35
+    ],
+    "couro": [
+     15,
+     25
+    ],
+    "ossos": [
+     6,
+     10
+    ]
+   },
+   "pode_domar": true,
+   "comida_preferida": "baga_mejo",
+   "revida": true,
+   "alcance_ataque": 4.0,
+   "intervalo_ataque": 2.2,
+   "pode_montar": true,
+   "carga": 1500
+  },
+  {
+   "id": "compsognato",
+   "nome": "Compsognato",
+   "dieta": "carnivoro",
+   "temperamento": "agressivo",
+   "vida": 35,
+   "dano": 4,
+   "vel_andar": 2.5,
+   "vel_correr": 9.0,
+   "tamanho": 1,
+   "raio": 0.25,
+   "altura": 0.5,
+   "biomas": [
+    "selva",
+    "praia"
+   ],
+   "peso_spawn": 4,
+   "grupo": [
+    3,
+    6
+   ],
+   "xp": 5,
+   "loot": {
+    "carne_crua": [
+     1,
+     1
+    ],
+    "couro": [
+     0,
+     1
+    ]
+   },
+   "pode_domar": true,
+   "comida_preferida": "carne_crua",
+   "alcance_agro": 18,
+   "alcance_ataque": 0.9,
+   "intervalo_ataque": 0.7,
+   "carga": 10
+  },
+  {
+   "id": "dilofossauro",
+   "nome": "Dilofossauro",
+   "dieta": "carnivoro",
+   "temperamento": "agressivo",
+   "vida": 140,
+   "dano": 9,
+   "vel_andar": 2.6,
+   "vel_correr": 9.0,
+   "tamanho": 1,
+   "raio": 0.5,
+   "altura": 1.5,
+   "biomas": [
+    "selva"
+   ],
+   "peso_spawn": 4.5,
+   "grupo": [
+    1,
+    3
+   ],
+   "xp": 18,
+   "loot": {
+    "carne_crua": [
+     2,
+     3
+    ],
+    "couro": [
+     1,
+     2
+    ]
+   },
+   "pode_domar": true,
+   "comida_preferida": "carne_crua",
+   "alcance_agro": 22,
+   "alcance_ataque": 1.4,
+   "intervalo_ataque": 0.9,
+   "carga": 60
+  },
+  {
+   "id": "raptor",
+   "nome": "Raptor",
+   "dieta": "carnivoro",
+   "temperamento": "agressivo",
+   "vida": 170,
+   "dano": 11,
+   "vel_andar": 3.0,
+   "vel_correr": 10.5,
+   "tamanho": 1,
+   "raio": 0.55,
+   "altura": 1.6,
+   "biomas": [
+    "selva",
+    "igapo"
+   ],
+   "peso_spawn": 5,
+   "grupo": [
+    2,
+    4
+   ],
+   "xp": 30,
+   "loot": {
+    "carne_crua": [
+     2,
+     4
+    ],
+    "couro": [
+     2,
+     3
+    ]
+   },
+   "pode_domar": true,
+   "comida_preferida": "carne_crua",
+   "alcance_agro": 30,
+   "alcance_ataque": 1.6,
+   "intervalo_ataque": 0.9,
+   "pode_montar": true,
+   "carga": 140
+  },
+  {
+   "id": "onca",
+   "nome": "Onça-pintada",
+   "dieta": "carnivoro",
+   "temperamento": "agressivo",
+   "vida": 300,
+   "dano": 20,
+   "vel_andar": 2.5,
+   "vel_correr": 12,
+   "tamanho": 1,
+   "raio": 0.6,
+   "altura": 1.0,
+   "biomas": [
+    "selva",
+    "igapo"
+   ],
+   "peso_spawn": 3,
+   "grupo": [
+    1,
+    1
+   ],
+   "xp": 40,
+   "loot": {
+    "carne_crua": [
+     3,
+     5
+    ],
+    "couro": [
+     2,
+     4
+    ]
+   },
+   "pode_domar": true,
+   "comida_preferida": "carne_crua",
+   "alcance_agro": 26,
+   "alcance_ataque": 1.6,
+   "intervalo_ataque": 0.8,
+   "carga": 80
+  },
+  {
+   "id": "aranha",
+   "nome": "Aranha-gigante",
+   "dieta": "carnivoro",
+   "temperamento": "agressivo",
+   "vida": 180,
+   "dano": 13,
+   "vel_andar": 2.4,
+   "vel_correr": 8.0,
+   "tamanho": 1,
+   "raio": 0.9,
+   "altura": 1.0,
+   "biomas": [
+    "selva"
+   ],
+   "peso_spawn": 3,
+   "grupo": [
+    1,
+    2
+   ],
+   "xp": 30,
+   "loot": {
+    "couro": [
+     1,
+     3
+    ]
+   },
+   "pode_domar": true,
+   "comida_preferida": "carne_crua",
+   "alcance_agro": 20,
+   "alcance_ataque": 1.6,
+   "intervalo_ataque": 1.0,
+   "carga": 0
+  },
+  {
+   "id": "carnotauro",
+   "nome": "Carnotauro",
+   "dieta": "carnivoro",
+   "temperamento": "agressivo",
+   "vida": 600,
+   "dano": 30,
+   "vel_andar": 3.0,
+   "vel_correr": 10,
+   "tamanho": 1,
+   "raio": 1.0,
+   "altura": 3.0,
+   "biomas": [
+    "selva"
+   ],
+   "peso_spawn": 1.8,
+   "grupo": [
+    1,
+    2
+   ],
+   "xp": 70,
+   "loot": {
+    "carne_crua": [
+     6,
+     10
+    ],
+    "couro": [
+     4,
+     7
+    ],
+    "ossos": [
+     1,
+     3
+    ]
+   },
+   "pode_domar": true,
+   "comida_preferida": "carne_crua",
+   "alcance_agro": 32,
+   "alcance_ataque": 2.2,
+   "intervalo_ataque": 1.2,
+   "pode_montar": true,
+   "carga": 300
+  },
+  {
+   "id": "trex",
+   "nome": "T-Rex",
+   "dieta": "carnivoro",
+   "temperamento": "agressivo",
+   "vida": 1600,
+   "dano": 55,
+   "vel_andar": 2.8,
+   "vel_correr": 8.2,
+   "tamanho": 1,
+   "raio": 1.8,
+   "altura": 5.5,
+   "biomas": [
+    "selva"
+   ],
+   "peso_spawn": 0.9,
+   "grupo": [
+    1,
+    1
+   ],
+   "xp": 150,
+   "loot": {
+    "carne_crua": [
+     15,
+     25
+    ],
+    "couro": [
+     10,
+     16
+    ],
+    "ossos": [
+     5,
+     8
+    ]
+   },
+   "pode_domar": true,
+   "comida_preferida": "carne_crua",
+   "alcance_agro": 42,
+   "alcance_ataque": 3.2,
+   "intervalo_ataque": 1.6,
+   "pode_montar": true,
+   "carga": 600
+  },
+  {
+   "id": "titanoboa",
+   "nome": "Titanoboa",
+   "dieta": "carnivoro",
+   "temperamento": "agressivo",
+   "vida": 700,
+   "dano": 28,
+   "vel_andar": 1.8,
+   "vel_correr": 6.5,
+   "tamanho": 1,
+   "raio": 0.9,
+   "altura": 0.9,
+   "biomas": [
+    "pantano",
+    "igapo",
+    "selva"
+   ],
+   "peso_spawn": 2.2,
+   "grupo": [
+    1,
+    1
+   ],
+   "xp": 80,
+   "loot": {
+    "carne_crua": [
+     6,
+     10
+    ],
+    "couro": [
+     6,
+     10
+    ]
+   },
+   "nada": true,
+   "alcance_agro": 18,
+   "alcance_ataque": 2.6,
+   "intervalo_ataque": 1.4,
+   "carga": 0
+  },
+  {
+   "id": "deinosuchus",
+   "nome": "Deinosuchus",
+   "dieta": "carnivoro",
+   "temperamento": "agressivo",
+   "vida": 900,
+   "dano": 40,
+   "vel_andar": 1.6,
+   "vel_correr": 5.5,
+   "tamanho": 1,
+   "raio": 1.2,
+   "altura": 1.0,
+   "biomas": [
+    "pantano",
+    "igapo"
+   ],
+   "peso_spawn": 3,
+   "grupo": [
+    1,
+    1
+   ],
+   "xp": 90,
+   "loot": {
+    "carne_crua": [
+     8,
+     14
+    ],
+    "couro": [
+     6,
+     10
+    ],
+    "ossos": [
+     2,
+     4
+    ]
+   },
+   "pode_domar": true,
+   "comida_preferida": "carne_crua",
+   "nada": true,
+   "perto_agua": true,
+   "alcance_agro": 22,
+   "alcance_ataque": 2.8,
+   "intervalo_ataque": 1.5,
+   "pode_montar": true,
+   "carga": 400
+  },
+  {
+   "id": "espinossauro",
+   "nome": "Espinossauro",
+   "dieta": "carnivoro",
+   "temperamento": "agressivo",
+   "vida": 1800,
+   "dano": 50,
+   "vel_andar": 2.6,
+   "vel_correr": 8.0,
+   "tamanho": 1,
+   "raio": 1.6,
+   "altura": 5.0,
+   "biomas": [
+    "pantano",
+    "igapo"
+   ],
+   "peso_spawn": 1.1,
+   "grupo": [
+    1,
+    1
+   ],
+   "xp": 160,
+   "loot": {
+    "carne_crua": [
+     15,
+     25
+    ],
+    "couro": [
+     10,
+     16
+    ],
+    "ossos": [
+     5,
+     8
+    ]
+   },
+   "pode_domar": true,
+   "comida_preferida": "carne_crua",
+   "nada": true,
+   "alcance_agro": 36,
+   "alcance_ataque": 3.2,
+   "intervalo_ataque": 1.5,
+   "pode_montar": true,
+   "carga": 650
+  },
+  {
+   "id": "piranha",
+   "nome": "Piranha-gigante",
+   "dieta": "carnivoro",
+   "temperamento": "agressivo",
+   "vida": 60,
+   "dano": 8,
+   "vel_andar": 3.0,
+   "vel_correr": 8.0,
+   "tamanho": 1,
+   "raio": 0.35,
+   "altura": 0.5,
+   "biomas": [
+    "pantano"
+   ],
+   "peso_spawn": 5,
+   "grupo": [
+    3,
+    5
+   ],
+   "xp": 6,
+   "loot": {
+    "carne_crua": [
+     1,
+     1
+    ]
+   },
+   "aquatico": true,
+   "nada": true,
+   "alcance_agro": 14,
+   "alcance_ataque": 1.0,
+   "intervalo_ataque": 0.7,
+   "carga": 0
+  },
+  {
+   "id": "pterodactilo",
+   "nome": "Pterodáctilo",
+   "dieta": "carnivoro",
+   "temperamento": "agressivo",
+   "vida": 110,
+   "dano": 8,
+   "vel_andar": 6.0,
+   "vel_correr": 14,
+   "tamanho": 1,
+   "raio": 0.6,
+   "altura": 0.8,
+   "biomas": [
+    "praia",
+    "selva",
+    "pantano"
+   ],
+   "peso_spawn": 3.5,
+   "grupo": [
+    1,
+    3
+   ],
+   "xp": 15,
+   "loot": {
+    "carne_crua": [
+     1,
+     2
+    ],
+    "couro": [
+     1,
+     2
+    ]
+   },
+   "pode_domar": true,
+   "comida_preferida": "carne_crua",
+   "voa": true,
+   "altura_voo": [
+    14,
+    35
+   ],
+   "alcance_agro": 22,
+   "alcance_ataque": 1.8,
+   "intervalo_ataque": 1.4,
+   "pode_montar": true,
+   "carga": 60
+  },
+  {
+   "id": "quetzalcoatlus",
+   "nome": "Quetzalcoatlus",
+   "dieta": "carnivoro",
+   "temperamento": "agressivo",
+   "vida": 1200,
+   "dano": 30,
+   "vel_andar": 7.0,
+   "vel_correr": 12,
+   "tamanho": 1,
+   "raio": 2.0,
+   "altura": 3.0,
+   "biomas": [
+    "selva",
+    "praia"
+   ],
+   "peso_spawn": 0.7,
+   "grupo": [
+    1,
+    1
+   ],
+   "xp": 100,
+   "loot": {
+    "carne_crua": [
+     10,
+     16
+    ],
+    "couro": [
+     8,
+     12
+    ]
+   },
+   "pode_domar": true,
+   "comida_preferida": "carne_crua",
+   "voa": true,
+   "altura_voo": [
+    30,
+    60
+   ],
+   "alcance_agro": 16,
+   "alcance_ataque": 3.0,
+   "intervalo_ataque": 2.0,
+   "pode_montar": true,
+   "carga": 500
+  },
+  {
+   "id": "arara",
+   "nome": "Arara",
+   "dieta": "herbivoro",
+   "temperamento": "medroso",
+   "vida": 20,
+   "dano": 0,
+   "vel_andar": 5.0,
+   "vel_correr": 9.0,
+   "tamanho": 1,
+   "raio": 0.3,
+   "altura": 0.4,
+   "biomas": [
+    "selva"
+   ],
+   "peso_spawn": 6,
+   "grupo": [
+    3,
+    6
+   ],
+   "xp": 2,
+   "loot": {
+    "carne_crua": [
+     0,
+     1
+    ]
+   },
+   "voa": true,
+   "altura_voo": [
+    16,
+    30
+   ],
+   "ambiente": true,
+   "carga": 0
+  }
+ ]
 }

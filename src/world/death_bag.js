@@ -19,9 +19,10 @@ const BEAM_MAT = new THREE.MeshBasicMaterial({
 });
 
 export class DeathBag {
-  constructor(scene, position, items = []) {
+  constructor(scene, position, items = [], label = 'saco de morte') {
     this.scene = scene;
     this.items = items;
+    this.label = label;
     this.timeLeft = BALANCE.morte.saco_duracao_min * 60;
     this.removed = false;
     this.interactRange = 3.2;
@@ -48,11 +49,13 @@ export class DeathBag {
   promptText() {
     const m = Math.floor(this.timeLeft / 60);
     const s = Math.floor(this.timeLeft % 60).toString().padStart(2, '0');
-    return `Recuperar saco de morte (${m}:${s})`;
+    const n = this.items.reduce((a, it) => a + it.qty, 0);
+    return `Recuperar ${this.label}${n ? ` · ${n} itens` : ''} (${m}:${s})`;
   }
 
   // Devolve os itens e remove o saco.
   interact() {
+    if (this.removed) return [];
     const items = this.items;
     this.remove();
     return items;

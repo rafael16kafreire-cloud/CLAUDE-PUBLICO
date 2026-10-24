@@ -4,6 +4,7 @@
 //   events.emit(EV.MESSAGE, { text: '...', kind: 'gain' | 'warn' | 'info' })
 // =============================================================
 import { events, EV } from '../core/event_bus.js';
+import { itemIcon, itemName } from '../items/items.js';
 
 const MAX_ITEMS = 5;
 const LIFETIME_MS = 2800;
@@ -15,6 +16,26 @@ export class Messages {
     this.el.setAttribute('aria-live', 'polite');
     root.appendChild(this.el);
     events.on(EV.MESSAGE, (m) => m && this.push(m.text, m.kind));
+    events.on(EV.ITEM_GAINED, ({ id, amount }) => this.pushItem(id, amount));
+  }
+
+  // "+3 Madeira" com ícone; somando se pegar o mesmo item seguido.
+  pushItem(id, amount) {
+    let item = [...this.el.children].find((c) => c.dataset.item === id && !c.classList.contains('out'));
+    if (item) {
+      item.dataset.amount = String(Number(item.dataset.amount) + amount);
+      this.el.appendChild(item); // vai para o fim (mais recente)
+    } else {
+      item = document.createElement('div');
+      item.className = 'msg msg-gain msg-item';
+      item.dataset.item = id;
+      item.dataset.amount = String(amount);
+      item.innerHTML = `<span class="msg-icon">${itemIcon(id)}</span><span class="msg-text"></span>`;
+      this.el.appendChild(item);
+      while (this.el.children.length > MAX_ITEMS) this.el.firstElementChild.remove();
+    }
+    item.querySelector('.msg-text').textContent = `+${item.dataset.amount} ${itemName(id)}`;
+    this._schedule(item);
   }
 
   push(text, kind = 'info') {

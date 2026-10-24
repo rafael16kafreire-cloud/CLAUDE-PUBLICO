@@ -4,15 +4,25 @@ Jogo 3D de sobrevivência com dinossauros, single player e offline.
 Roda no celular (Android como app ou no navegador) e no PC.
 Visual estilizado, feito para ser leve.
 
-**Versão 0.2** – Fase 1 (mundo e jogador) + biomas e dinossauros adiantados.
+**Versão 0.3** – floresta, coleta e crafting.
 
-- Biomas: Praia, Campina, Floresta, Floresta Amazônica (bem densa), Deserto, Pântano,
-  Montanha e Pico Nevado. O nome aparece na tela ao entrar.
-- Dinossauros: Dodô, Parassauro, Paquicefalossauro, Braquiossauro, Raptor (em bando),
-  T-Rex, Titanoboa, Deinosuchus, Pterodáctilo e Quetzalcoatlus – com IA (vagar, comer,
-  fugir, caçar, atacar), níveis 1–30 e barra de vida ao mirar.
-- Câmera em primeira pessoa (troca para terceira no botão).
-- Ao morrer, escolha no mapa da ilha onde renascer.
+- A ilha inteira é **Floresta Amazônica** fechada, com **pântano e igapó** no meio e
+  uma faixa de praia. O nome do lugar aparece na tela ao entrar.
+- Floresta densa: sumaúmas gigantes, árvores do dossel com folhas recortadas,
+  açaí, bananeiras com cacho, **samambaias gigantes (~4 m)**, troncos caídos com musgo,
+  pedras, cipós, mato no chão. Tudo balança com o vento (e treme quando você bate).
+- **Coleta como nos jogos de sobrevivência**: bater em árvore dá palha (e madeira);
+  com **machado** dá muita madeira. Pedra dá pedra e sílex. Interagir colhe
+  **Baga-Mejo**, **Baga-Escura**, frutas, bananas e fibra. Carcaças dão carne, couro e ossos.
+- **Inventário + crafting**: toque no que quer criar e veja o que precisa
+  (verde = tem, vermelho = falta). Machado, picareta, lança, clava, bandagem e unguento.
+  Barra rápida com 8 espaços; peso máximo; largar itens vira uma bolsa no chão.
+- **23 animais**: carnívoros atacam quando te veem; herbívoros só revidam se apanharem
+  (ou fogem). Raptor em bando, onça, aranha gigante, T-Rex, carnotauro, espinossauro,
+  titanoboa, jacaré gigante e piranhas no pântano, pterossauros que mergulham, araras...
+- Ao morrer, tudo vai para o saco de morte e você escolhe no mapa onde renascer.
+- Qualidade automática: se o aparelho ficar lento, o jogo baixa a qualidade sozinho
+  (dá para desligar no menu de pausa).
 
 ## Como jogar
 
@@ -47,9 +57,11 @@ Para ter um ícone na tela inicial: **Compartilhar → Adicionar à Tela de Iní
 | Pular / subir nadando | Espaço | Pular |
 | Correr | Shift (segurar) | Correr (liga/desliga) |
 | Agachar / descer nadando | C | Agachar |
-| Interagir (beber água) | E | Interagir |
-| Atacar (soco) | clique | Atacar |
-| Inventário / Construir / Montar | Tab / B / F | botões no topo |
+| Interagir (colher, beber, pegar saco) | E | Interagir |
+| Atacar / coletar (soco ou ferramenta) | clique | Atacar |
+| Barra rápida (comer / pegar ferramenta) | 1 a 8 | tocar no espaço |
+| Inventário e crafting | Tab ou I | botão "Inventário" |
+| Construir / Montar | B / F | botões no topo (próximas fases) |
 | 1ª ou 3ª pessoa | V | botão "3ª pessoa" |
 | FPS e desempenho | F3 | botão "FPS" |
 | Pausa e opções | Esc | botão ❚❚ |
@@ -58,13 +70,19 @@ Para ter um ícone na tela inicial: **Compartilhar → Adicionar à Tela de Iní
 
 Todos os números ficam em **`src/data/config/balanceamento.js`**, com explicação em
 português ao lado de cada um (fome dura 25 min, sede 18 min, velocidade, dano, etc.).
-O formato da ilha (biomas, lago, praias, quantidade de árvores) fica em
-**`src/data/world/ilha.json`** e os dados de cada dinossauro (vida, dano, velocidade,
-onde aparece, comportamento) em **`src/data/creatures/criaturas.json`**.
+O formato da ilha (pântanos, praias, quantidade de cada planta) fica em
+**`src/data/world/ilha.json`**; o que cada planta/pedra dá em
+**`src/data/world/recursos.json`**; itens em **`src/data/items/itens.json`**;
+receitas de crafting em **`src/data/crafting/receitas.json`**; e os dados de cada animal
+(vida, dano, velocidade, onde aparece, comportamento, carne/couro) em
+**`src/data/creatures/criaturas.json`**.
 O formato e as cores de cada dinossauro ficam em `src/creatures/creature_models.js`.
 Depois de mudar, gere o jogo de novo (abaixo).
 
-No menu de pausa há **"Teste: chamar dinossauro"**, que cria a espécie escolhida na sua frente.
+No menu de pausa há **"Teste: chamar animal"**, que cria a espécie escolhida na sua frente.
+
+Os nomes "Baga-Mejo" e "Baga-Escura" são nossos (inspirados nas bagas pedidas);
+dá para trocar em `itens.json`.
 
 ## Gerar o jogo (para quem for mexer no código)
 
@@ -90,12 +108,15 @@ src/
   core/                "cérebros" globais: eventos, estado do jogo, opções, controles
   data/config/         balanceamento.js – TODOS os números
   data/world/          ilha.json – formato da ilha e biomas
-  data/creatures/      criaturas.json – dados de cada dinossauro
-  world/               ilha, terreno, água, vegetação, grama, céu, saco de morte
+  data/creatures/      criaturas.json – dados de cada animal
+  data/items/          itens.json – itens (recursos, comida, ferramentas)
+  data/crafting/       receitas.json – o que precisa para criar cada coisa
+  world/               ilha, terreno, água, vegetação (+ textura de folhas), céu, efeitos, sacos
   creatures/           dinossauros: modelos, esqueleto/animação, IA e quem nasce onde
-  player/              jogador, câmera, atributos, interação
-  ui/                  HUD, controles de toque, telas, estilo, fontes
-  items/ inventory/ crafting/ building/ taming/ save/ audio/   (próximas fases)
+  player/              jogador, câmera, atributos, interação, ações (bater, colher, comer)
+  items/ inventory/ crafting/   itens, inventário com peso e fila de crafting
+  ui/                  HUD, barra rápida, inventário, controles de toque, telas, fontes
+  building/ taming/ save/ audio/   (próximas fases)
 android/               app Android (tela cheia que abre o jogo) + script do APK
 tests/                 teste automático
 dist/                  arquivos prontos para jogar
