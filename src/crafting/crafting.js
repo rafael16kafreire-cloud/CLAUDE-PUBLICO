@@ -14,6 +14,13 @@ export class Crafting {
     this.inv = inventory;
     this.stats = stats;
     this.queue = []; // { recipe, time }
+    // estações perto (ex.: ['bancada']); main.js define
+    this.stationsNear = () => [];
+  }
+
+  // Precisa de uma estação (bancada) e não está perto dela?
+  missingStation(recipe) {
+    return recipe.estacao && !this.stationsNear().includes(recipe.estacao) ? recipe.estacao : null;
   }
 
   // Ingredientes de uma receita com quanto você tem.
@@ -33,6 +40,11 @@ export class Crafting {
   }
 
   craft(recipe, times = 1) {
+    const st = this.missingStation(recipe);
+    if (st) {
+      events.emit(EV.MESSAGE, { text: 'Precisa estar perto de uma Bancada de Trabalho.', kind: 'warn' });
+      return 0;
+    }
     const n = Math.min(times, this.maxTimes(recipe));
     if (n <= 0) {
       events.emit(EV.MESSAGE, { text: 'Faltam materiais.', kind: 'warn' });
@@ -42,6 +54,15 @@ export class Crafting {
     for (let i = 0; i < n; i++) this.queue.push({ recipe, time: recipe.tempo });
     events.emit(EV.CRAFT_QUEUE, { queue: this.queue });
     return n;
+  }
+
+  // Cancela um item da fila (devolve os ingredientes).
+  cancel(index) {
+    const q = this.queue[index];
+    if (!q) return;
+    for (const [id, need] of Object.entries(q.recipe.ingredientes)) this.inv.add(id, need);
+    this.queue.splice(index, 1);
+    events.emit(EV.CRAFT_QUEUE, { queue: this.queue });
   }
 
   // Cancela a fila e devolve os ingredientes (ex.: ao morrer,

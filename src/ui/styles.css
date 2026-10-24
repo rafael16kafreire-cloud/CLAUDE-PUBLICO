@@ -768,24 +768,67 @@ body.is-touch .hb-key { display: none; }
 .inv-close { margin-left: auto; }
 .tab-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-right: 2px; }
 .tab-body[hidden] { display: none; }
-.recipe-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 4px; }
-.recipe {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  padding: 5px 3px 4px;
+.craft-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+.cat-row { display: flex; gap: 4px; flex-wrap: wrap; }
+.cat {
+  min-height: 26px;
+  padding: 0 10px;
   border: 1px solid var(--line);
-  border-radius: 7px;
-  background: rgba(0, 0, 0, 0.3);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.25);
   color: var(--bone-dim);
-  font: 600 11px/1.1 var(--font-ui);
+  font: 600 12.5px var(--font-ui);
   cursor: pointer;
-  opacity: 0.6;
 }
-.recipe svg { width: 32px; height: 32px; }
-.recipe.can { opacity: 1; color: var(--bone); border-color: rgba(185, 214, 90, 0.55); }
-.recipe.selected { border: 2px solid var(--ember); opacity: 1; background: rgba(232, 135, 58, 0.15); }
+.cat.active { background: var(--bone); color: var(--basalt); border-color: var(--bone); }
+.station { font-size: 11.5px; font-weight: 700; color: var(--bone-dim); }
+.station.ok { color: var(--c-xp); }
+.recipe-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 5px; }
+.recipe {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 6px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.25));
+  color: var(--bone-dim);
+  font: 600 12px/1.15 var(--font-ui);
+  text-align: left;
+  cursor: pointer;
+}
+.recipe[hidden] { display: none; }
+.rc-icon { width: 34px; height: 34px; flex: none; padding: 2px; border-radius: 7px; background: rgba(0, 0, 0, 0.3); }
+.rc-icon svg { width: 100%; height: 100%; display: block; }
+.rc-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.rc-name { color: var(--bone); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rc-ings { display: flex; gap: 4px; flex-wrap: wrap; }
+.rc-ing { display: inline-flex; align-items: center; gap: 1px; font-size: 10.5px; color: var(--c-xp); }
+.rc-ing svg { width: 14px; height: 14px; display: block; }
+.rc-ing.miss { color: #f08070; }
+.rc-badge { position: absolute; top: 3px; right: 5px; font-size: 10.5px; font-weight: 700; color: var(--c-xp); }
+.recipe.locked .rc-badge { color: #e6c06a; }
+.recipe.can { border-color: rgba(185, 214, 90, 0.55); }
+.recipe.locked { opacity: 0.75; }
+.recipe.selected { border: 2px solid var(--ember); background: rgba(232, 135, 58, 0.16); }
+.rd-stats { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 0 !important; }
+.rd-stats span { padding: 1px 7px; border-radius: 999px; background: rgba(255, 255, 255, 0.08); font-size: 11.5px; color: var(--bone); }
+.rd-station { margin: 6px 0 0; padding: 5px 8px; border-radius: 7px; background: rgba(230, 192, 106, 0.15); color: #f0d08a; font-size: 13px; font-weight: 600; }
+.req-bar { flex: 1; max-width: 90px; height: 5px; border-radius: 3px; background: var(--track); overflow: hidden; margin-left: auto; }
+.req-bar i { display: block; height: 100%; background: var(--c-xp); transform-origin: left center; }
+.reqs li.miss .req-bar i { background: #e07060; }
+.reqs li b { margin-left: 8px !important; min-width: 52px; text-align: right; }
+.inv-wbar { position: relative; margin-left: auto; width: 150px; height: 18px; border-radius: 5px; background: var(--track); overflow: hidden; }
+.inv-wbar > i { position: absolute; inset: 0; background: linear-gradient(90deg, #5f8a3a, #b9d65a); transform-origin: left center; }
+.inv-wbar.over > i { background: linear-gradient(90deg, #a04030, #e07060); }
+.inv-wbar .inv-weight { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; color: var(--bone); font-size: 11.5px; text-shadow: 0 1px 2px #000; }
+.cq-list { display: flex; flex-direction: column; gap: 3px; }
+.cq-name { font-size: 12.5px; font-weight: 600; min-width: 70px; }
+.cq-wait { flex: 1; font-size: 11px; color: var(--bone-dim); }
+.cq-x { width: 24px; height: 24px; padding: 0; border: 1px solid var(--line); border-radius: 6px; background: rgba(0, 0, 0, 0.3); color: var(--bone-dim); cursor: pointer; }
+.inv-slot { background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(0, 0, 0, 0.35)) !important; }
+.inv-hot .inv-slot { box-shadow: inset 0 -2px 0 rgba(232, 135, 58, 0.35); }
 .recipe-detail, .item-detail { margin-top: 8px; }
 .rd-head { display: flex; gap: 10px; align-items: center; }
 .rd-head svg { width: 44px; height: 44px; flex: none; }
@@ -887,3 +930,22 @@ body.is-touch .hb-key { display: none; }
   .start .title { font-size: clamp(34px, 7vw, 54px); }
   .btn-play { min-height: 42px; font-size: 19px; }
 }
+
+/* ---------------- Embaixo d'água ---------------- */
+.uw-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s;
+  background:
+    radial-gradient(ellipse at 50% -10%, rgba(180, 235, 240, 0.28), rgba(0, 0, 0, 0) 55%),
+    radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 45%, rgba(0, 20, 28, 0.55) 100%);
+}
+body.underwater .uw-overlay { opacity: 1; animation: uw-wave 5s ease-in-out infinite; }
+body.underwater-swamp .uw-overlay {
+  background:
+    radial-gradient(ellipse at 50% -10%, rgba(200, 190, 120, 0.2), rgba(0, 0, 0, 0) 50%),
+    radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 35%, rgba(25, 22, 8, 0.7) 100%);
+}
+@keyframes uw-wave { 0%, 100% { transform: scale(1.02) translateY(0); } 50% { transform: scale(1.05) translateY(-1%); } }

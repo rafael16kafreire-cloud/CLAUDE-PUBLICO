@@ -70,6 +70,12 @@ const SHAPES = {
     <path d="M13 18 H35 L33 38 Q24 42 15 38 Z" fill="${b}"/>
     <ellipse cx="24" cy="18" rx="11" ry="4" fill="${a}"/>
     <path d="M17 26 Q24 29 31 26" stroke="#00000040" stroke-width="2" fill="none"/>`,
+  bancada: (a, b) => `
+    <rect x="6" y="16" width="36" height="7" rx="2" fill="${a}"/>
+    <rect x="9" y="23" width="5" height="18" fill="${a}"/><rect x="34" y="23" width="5" height="18" fill="${a}"/>
+    <rect x="9" y="31" width="30" height="3" fill="${a}" opacity=".8"/>
+    <path d="M14 14 L20 6 L24 9 L18 16 Z" fill="${b}"/>
+    <rect x="27" y="10" width="10" height="6" rx="1.5" fill="${b}"/>`,
   fogueira: (a, b) => `
     <ellipse cx="24" cy="38" rx="17" ry="5" fill="${b}"/>
     <path d="M12 38 L36 30 M12 30 L36 38" stroke="#6a4a2a" stroke-width="4" stroke-linecap="round"/>

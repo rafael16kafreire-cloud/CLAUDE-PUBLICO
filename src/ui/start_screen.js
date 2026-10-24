@@ -10,7 +10,7 @@ export class StartScreen {
     el.className = 'overlay start';
     el.innerHTML = `
       <div class="start-panel">
-        <p class="eyebrow">Protótipo · v0.5 · sobrevivência, sons e co-op</p>
+        <p class="eyebrow">Protótipo · v0.6 · sobrevivência, sons e co-op</p>
         <h1 class="title">Ilha<br>Primordial</h1>
         <p class="tagline">Você acordou na beira da mata sem nada. Pegue madeira, crie ferramentas e sobreviva aos predadores da floresta.</p>
         <button type="button" class="btn btn-primary btn-play" id="btn-play" disabled>Gerando a ilha…</button>

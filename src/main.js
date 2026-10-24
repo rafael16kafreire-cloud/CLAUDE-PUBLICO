@@ -69,6 +69,11 @@ function boot(hotData = {}) {
   game.renderer = renderer;
   game.camera = camera;
 
+  // camada "embaixo d'água" (entre o 3D e os botões)
+  const uwOverlay = document.createElement('div');
+  uwOverlay.className = 'uw-overlay';
+  app.appendChild(uwOverlay);
+
   const ui = document.createElement('div');
   ui.id = 'ui';
   app.appendChild(ui);
@@ -130,6 +135,10 @@ function boot(hotData = {}) {
     // Inventário, coleta e crafting
     const inventory = new Inventory();
     const crafting = new Crafting(inventory, player.stats);
+    // bancada a até 6 m libera as receitas avançadas
+    crafting.stationsNear = () => world.structures
+      .filter((st) => !st.removed && st.type === 'bancada' && st.position.distanceTo(player.position) < 6)
+      .map((st) => st.type);
     const actions = new PlayerActions(player, world, inventory);
     player.actions = actions;
     actions.forward = camCtl.forward;
@@ -485,6 +494,12 @@ function boot(hotData = {}) {
     });
   }
 
+  // Interagir com a bancada abre o crafting.
+  events.on(EV.OPEN_CRAFTING, () => {
+    openInventory();
+    ctx.invScreen.showTab('craft');
+  });
+
   // ---------- Sons: eventos do jogo ----------
   let lastPickup = 0;
   events.on(EV.ITEM_GAINED, () => {
@@ -500,8 +515,12 @@ function boot(hotData = {}) {
   events.on(EV.LEVEL_UP, () => sound.play('nivel'));
   events.on(EV.PLACED, ({ structure }) => sound.play('colocar', structure.position));
   events.on(EV.STRUCTURE_USED, ({ structure }) => structure.type === 'fogueira' && sound.play('acender', structure.position));
-  events.on(EV.SETTINGS_CHANGED, ({ key, value }) => key === 'volume' && sound.setVolume(value));
+  events.on(EV.SETTINGS_CHANGED, ({ key, value }) => {
+    if (key === 'volume') sound.setVolume(value);
+    if (key === 'music') sound.setMusicVolume(value);
+  });
   sound.setVolume(settings.get('volume'));
+  sound.setMusicVolume(settings.get('music'));
   // qualquer toque destrava o som (regra dos navegadores)
   window.addEventListener('pointerdown', () => sound.unlock(), { passive: true });
   window.addEventListener('keydown', () => sound.unlock());
@@ -624,7 +643,9 @@ function boot(hotData = {}) {
     // ---------- Sons ----------
     if (game.state !== STATE.MENU) {
       sound.update(dt, camera, world, player.position);
-      sound.setUnderwater(player.headUnderwater);
+      sound.setUnderwater(world.cameraUnderwater);
+      document.body.classList.toggle('underwater', !!world.cameraUnderwater);
+      document.body.classList.toggle('underwater-swamp', !!world.cameraUnderwater && world.waterAt(camera.position.x, camera.position.z)?.id === 'pantano');
       updateFootsteps(dt);
     }
 
@@ -645,7 +666,14 @@ function boot(hotData = {}) {
       running: player.running,
       onGround: player.onGround,
     });
+    // embaixo d'água a visão balança devagar; na superfície, as ondas
+    // inclinam um pouco a cabeça
+    let wob = 0;
+    if (world.cameraUnderwater) wob = Math.sin(now * 0.0011) * 0.02;
+    else if (player.swimming) wob = Math.sin(now * 0.0016) * 0.018;
+    camera.rotation.z += wob;
     renderer.render(scene, camera);
+    camera.rotation.z -= wob;
     debug.frame(dt);
     input.endFrame();
   }

@@ -302,7 +302,13 @@ export class Player {
   // Na água
   // ---------------------------------------------------------
   _swim(dt, input, cam, mv, mag, runRequest, body) {
+    // Física de nado (simples, mas com peso):
+    //  - empuxo: quanto mais do corpo está embaixo d'água, mais ele boia;
+    //  - arrasto: a água freia (mais forte quanto mais rápido);
+    //  - braçadas: o empurrão vem em "pulsos", não é velocidade fixa;
+    //  - ondas: a superfície sobe e desce e leva o corpo junto.
     const M = BALANCE.movimento;
+    const W = BALANCE.agua;
     const st = this.stats;
     const pos = this.position;
     const vel = this.velocity;
@@ -311,55 +317,68 @@ export class Player {
     this.running = false;
     this.onGround = false;
     this.swimFast = runRequest && this.moving && !tired;
+    this._strokeT = (this._strokeT ?? 0) + dt * (this.swimFast ? 2.4 : 1.6);
 
-    let speed = (this.swimFast ? M.nadar_rapido : M.nadar) * mag;
-    if (tired) speed *= 0.5;
-
-    // Frente 3D da câmera: olhar para baixo e ir para frente = mergulhar.
+    // direção desejada (frente 3D da câmera: olhar para baixo = mergulhar)
     const cp = Math.cos(cam.pitch);
     const sp = Math.sin(cam.pitch);
     const sinY = Math.sin(cam.yaw);
     const cosY = Math.cos(cam.yaw);
-    let tx = (-sinY * cp) * mv.y + cosY * mv.x;
-    let ty = sp * mv.y;
-    let tz = (-cosY * cp) * mv.y - sinY * mv.x;
-    const len = Math.hypot(tx, ty, tz);
-    if (len > 0.001) {
-      tx = (tx / len) * speed;
-      ty = (ty / len) * speed;
-      tz = (tz / len) * speed;
+    let dx = (-sinY * cp) * mv.y + cosY * mv.x;
+    let dy = sp * mv.y;
+    let dz = (-cosY * cp) * mv.y - sinY * mv.x;
+    const dl = Math.hypot(dx, dy, dz);
+    if (dl > 0.001) {
+      dx /= dl;
+      dy /= dl;
+      dz /= dl;
     }
-
-    // Botões: Pular = subir, Agachar = descer.
     const up = input.isHeld('jump');
     const down = input.isHeld('crouch');
-    if (up) ty = M.nadar;
-    if (down) ty = -M.nadar;
+    if (up) dy = 1;
+    if (down) dy = -1;
 
-    const surfaceFeet = body.level - FLOAT_DEPTH;
-    if (tired && !up) {
-      // Sem stamina: afunda devagar (cuidado com o fôlego!).
-      ty = Math.min(ty, -0.7);
-    } else if (!up && !down && Math.abs(ty) < 0.3) {
-      // Sem comando vertical: boia de volta para a superfície.
-      ty = Math.max(-2, Math.min(1.5, (surfaceFeet - pos.y) * 2));
+    // braçada: força em pulsos
+    const stroke = 0.55 + 0.45 * Math.max(0, Math.sin(this._strokeT * Math.PI * 2));
+    let thrust = (this.swimFast ? W.forca_bracada_rapida : W.forca_bracada) * stroke * Math.max(mag, up || down ? 1 : 0);
+    if (tired) thrust *= 0.45;
+    vel.x += dx * thrust * dt;
+    vel.z += dz * thrust * dt;
+    vel.y += dy * thrust * dt;
+
+    // empuxo e gravidade (com ondas na superfície)
+    const wave = this.world.waveHeightAt(pos.x, pos.z);
+    const surface = body.level + wave;
+    const bodyH = 1.75;
+    const submerged = Math.max(0, Math.min(1, (surface - pos.y) / bodyH));
+    const buoy = M.gravidade * W.empuxo * submerged * (tired ? 0.82 : 1);
+    vel.y += (buoy - M.gravidade) * dt;
+
+    // arrasto da água (linear + quadrático)
+    const sp3 = Math.hypot(vel.x, vel.y, vel.z);
+    const drag = Math.min(0.95, (W.arrasto + W.arrasto_rapido * sp3) * dt);
+    vel.x -= vel.x * drag;
+    vel.y -= vel.y * drag * 1.15;
+    vel.z -= vel.z * drag;
+    // limite de velocidade nadando
+    const vmax = (this.swimFast ? M.nadar_rapido : M.nadar) * 1.25;
+    const hs = Math.hypot(vel.x, vel.z);
+    if (hs > vmax) {
+      vel.x *= vmax / hs;
+      vel.z *= vmax / hs;
     }
-
-    const k = Math.min(1, 4 * dt);
-    vel.x += (tx - vel.x) * k;
-    vel.y += (ty - vel.y) * k;
-    vel.z += (tz - vel.z) * k;
 
     pos.x += vel.x * dt;
     pos.z += vel.z * dt;
     pos.y += vel.y * dt;
 
-    // Não "voa" para fora da água nadando.
-    if (pos.y > surfaceFeet + 0.05) {
-      pos.y = surfaceFeet + 0.05;
-      if (vel.y > 0) vel.y = 0;
+    // não "pula" para fora da água: a cabeça fica no máximo na superfície
+    const topFeet = surface - FLOAT_DEPTH + 0.35;
+    if (pos.y > topFeet) {
+      pos.y = topFeet;
+      if (vel.y > 0) vel.y *= 0.3;
     }
-    // Não atravessa o fundo.
+    // não atravessa o fundo
     const ground = this.world.heightAt(pos.x, pos.z);
     if (pos.y < ground) {
       pos.y = ground;

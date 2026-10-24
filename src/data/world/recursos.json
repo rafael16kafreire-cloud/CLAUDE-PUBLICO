@@ -1,5 +1,5 @@
 {
-  "_explicacao": "O que cada planta/pedra dá quando você bate (mao = sem ferramenta, machado, picareta, lanca, clava) ou colhe com Interagir (colher). Valores = [mínimo, máximo] por golpe. capacidade = quantos golpes até acabar. esvazia = vira outro tipo quando acaba (ex.: arbusto sem bagas). Recursos voltam depois de 'reaparece_min' minutos, se você não estiver perto.",
+  "_explicacao": "so_machado = só dá para tirar algo com machado (com a mão você se machuca). infinita = nunca acaba. O que cada planta/pedra dá quando você bate (mao = sem ferramenta, machado, picareta, lanca, clava) ou colhe com Interagir (colher). Valores = [mínimo, máximo] por golpe. capacidade = quantos golpes até acabar. esvazia = vira outro tipo quando acaba (ex.: arbusto sem bagas). Recursos voltam depois de 'reaparece_min' minutos, se você não estiver perto.",
   "reaparece_min": 8,
   "tipos": {
     "arvore": {
@@ -11,8 +11,8 @@
       "clava": { "palha": [1, 3] }
     },
     "arvore_gigante": {
-      "nome": "Sumaúma", "capacidade": 120, "xp": 1,
-      "mao": { "palha": [2, 3], "madeira": [0, 1] },
+      "nome": "Sumaúma", "capacidade": 120, "xp": 1, "so_machado": true, "infinita": true,
+      "mao": {},
       "machado": { "madeira": [6, 9], "palha": [0, 2] },
       "picareta": { "palha": [5, 8], "madeira": [0, 1] },
       "lanca": { "palha": [1, 2] },

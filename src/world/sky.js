@@ -141,14 +141,17 @@ export class Sky {
     }
   }
 
-  setUnderwater(on) {
-    if (on === this.underwater) return;
+  // info = { color, density } da água onde mergulhou (mar ou pântano)
+  setUnderwater(on, info = null) {
+    if (on === this.underwater && (!on || info === this._uwInfo)) return;
     this.underwater = on;
+    this._uwInfo = info;
     const fog = this.scene.fog;
     if (on) {
-      fog.color.copy(UNDERWATER);
-      fog.density = 0.12;
-      this.scene.background.copy(UNDERWATER);
+      const c = new THREE.Color(info?.color ?? UNDERWATER).multiplyScalar(0.35 + 0.65 * this.daylight);
+      fog.color.copy(c);
+      fog.density = info?.density ?? 0.12;
+      this.scene.background.copy(c);
     } else {
       fog.color.copy(this._horizon);
       this.scene.background.copy(this._horizon);

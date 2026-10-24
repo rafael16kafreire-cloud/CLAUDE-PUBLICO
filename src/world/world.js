@@ -13,6 +13,7 @@ import { Vegetation } from './vegetation.js';
 import { Grass } from './grass.js';
 import { Sky, NIGHT_START, NIGHT_END } from './sky.js';
 import { Effects } from './effects.js';
+import { Underwater } from './underwater.js';
 import { findRespawnPoints } from './respawn_points.js';
 import { DeathBag } from './death_bag.js';
 import { sharedTime } from './materials.js';
@@ -46,6 +47,7 @@ export class World {
     this.grass = new Grass(this.map, this.water, scene);
     this.sky = new Sky(scene);
     this.effects = new Effects(scene);
+    this.underwater = new Underwater(scene);
     this.deathBags = [];
     this.structures = [];   // fogueiras, sacos de dormir...
     this.time = BALANCE.dia.hora_inicial;
@@ -74,6 +76,11 @@ export class World {
   }
 
   // Chave do bioma ("selva", "pantano"...). Água conta como bioma.
+  // Altura da onda na superfície da água neste ponto.
+  waveHeightAt(x, z) {
+    return this.water.waveAt(this.water.bodyAt(x, z), x, z, sharedTime.value);
+  }
+
   biomeKeyAt(x, z) {
     const water = this.water.bodyAt(x, z);
     if (water) return water.id === 'mar' ? 'mar' : 'pantano';
@@ -225,7 +232,12 @@ export class World {
     this.effects.update(dt);
 
     const body = this.water.bodyAt(camera.position.x, camera.position.z);
-    this.sky.setUnderwater(!!body && camera.position.y < body.level - 0.05);
+    const surf = body ? body.level + this.water.waveAt(body, camera.position.x, camera.position.z, sharedTime.value) : 0;
+    const under = !!body && camera.position.y < surf - 0.05;
+    this.cameraUnderwater = under;
+    this.sky.setUnderwater(under, body?.under);
+    this.underwater.set(under, body?.under, surf);
+    this.underwater.update(dt, camera, this.sky.daylight);
 
     for (const bag of this.deathBags) bag.update(dt);
     this.deathBags = this.deathBags.filter((b) => !b.removed);

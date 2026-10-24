@@ -57,6 +57,8 @@ class Sound {
     this._fire = null;
     this._wind = null;
     this._muffled = false;
+    this.musicVolume = 0.35;
+    this._music = { next: 0, bar: 0, step: 0 };
   }
 
   // Precisa de um toque/clique do jogador para começar (regra dos navegadores).
@@ -81,14 +83,24 @@ class Sound {
         this.ambBus.connect(this.out);
         this.noise = this._makeNoise(2, 'white');
         this.brown = this._makeNoise(4, 'brown');
+        this.musicBus = c.createGain();
+        this.musicBus.gain.value = this.musicVolume;
+        this.musicBus.connect(this.master);
         this._startWind();
         this._startFire();
+        this._startCicadas();
       }
       if (this.ctx.state === 'suspended') this.ctx.resume();
     } catch (err) {
       console.warn('[som]', err);
       this.ctx = null;
     }
+  }
+
+  // Música (separada dos efeitos).
+  setMusicVolume(v) {
+    this.musicVolume = v;
+    if (this.musicBus) this.musicBus.gain.setTargetAtTime(v, this.ctx.currentTime, 0.2);
   }
 
   setVolume(v) {
@@ -497,6 +509,9 @@ class Sound {
     const night = world.sky.isNight;
     const a = this._amb;
     a.t += dt;
+    this._updateMusic(night);
+    // cigarras: zumbido contínuo de dia, some à noite
+    if (this._cicada) this._cicada.g.gain.setTargetAtTime(night ? 0 : 0.018 + 0.012 * Math.sin(a.t * 0.4), t, 1.5);
 
     // vento: sobe e desce devagar; mais forte no alto
     const alt = Math.max(0, camera.position.y - world.heightAt(camera.position.x, camera.position.z));
@@ -558,9 +573,43 @@ class Sound {
   }
 
   _bird(day) {
-    if (!this._voice(1.2)) return;
+    if (!this._voice(1.6)) return;
     const t = this.ctx.currentTime + 0.01;
     const out = this._ambOut(Math.random() * 1.6 - 0.8, 0.08 + Math.random() * 0.12 * day);
+    const kind = Math.random();
+    // tipos de pássaro da floresta (vozes inventadas, não gravadas)
+    if (kind < 0.18) {
+      // assobio longo que sobe e desce
+      const f0 = 1400 + Math.random() * 900;
+      this._osc('sine', f0, t, 0.45, out, 0.45, 0.04, f0 * 1.5);
+      this._osc('sine', f0 * 1.5, t + 0.5, 0.5, out, 0.4, 0.04, f0 * 0.9);
+      return;
+    }
+    if (kind < 0.32) {
+      // trinado rápido
+      const f0 = 2600 + Math.random() * 1500;
+      for (let i = 0; i < 9; i++) this._osc('sine', f0 * (1 + (i % 2) * 0.12), t + i * 0.045, 0.035, out, 0.35, 0.003);
+      return;
+    }
+    if (kind < 0.42) {
+      // "piu-piu" de duas notas
+      const f0 = 2000 + Math.random() * 800;
+      this._osc('triangle', f0, t, 0.12, out, 0.4, 0.01, f0 * 1.05);
+      this._osc('triangle', f0 * 0.8, t + 0.22, 0.18, out, 0.4, 0.01, f0 * 0.75);
+      return;
+    }
+    if (kind < 0.5) {
+      // grasnado de tucano/papagaio ao longe
+      const f0 = 500 + Math.random() * 300;
+      this._osc('sawtooth', f0, t, 0.18, out, 0.12, 0.01, f0 * 0.8);
+      this._osc('sawtooth', f0 * 1.1, t + 0.25, 0.16, out, 0.1, 0.01, f0 * 0.85);
+      return;
+    }
+    if (kind < 0.56) {
+      // pica-pau batendo
+      for (let i = 0; i < 6; i++) this._noise(t + i * 0.07, 0.015, out, { f: 1600, q: 3, peak: 0.6, attack: 0.001 });
+      return;
+    }
     const f = 1800 + Math.random() * 2500;
     const n = 2 + Math.floor(Math.random() * 4);
     const style = Math.random();
@@ -569,6 +618,102 @@ class Sound {
       if (style < 0.5) this._osc('sine', f, ti, 0.07, out, 0.5, 0.005, f * 1.4);
       else this._osc('sine', f * 1.3, ti, 0.1, out, 0.4, 0.01, f * 0.8);
     }
+  }
+
+  _startCicadas() {
+    const c = this.ctx;
+    const src = c.createBufferSource();
+    src.buffer = this.noise;
+    src.loop = true;
+    const bp = c.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = 6200;
+    bp.Q.value = 6;
+    // pulsação rápida das cigarras
+    const am = c.createGain();
+    am.gain.value = 0.6;
+    const lfo = c.createOscillator();
+    lfo.frequency.value = 38;
+    const lg = c.createGain();
+    lg.gain.value = 0.4;
+    lfo.connect(lg).connect(am.gain);
+    const g = c.createGain();
+    g.gain.value = 0;
+    src.connect(bp).connect(am).connect(g).connect(this.ambBus);
+    src.start();
+    lfo.start();
+    this._cicada = { g };
+  }
+
+  // ---------------------------------------------------------
+  // Musiquinha de fundo: acordes calmos + notas de "marimba".
+  // De noite fica mais lenta e mais escura. Tudo inventado aqui.
+  // ---------------------------------------------------------
+  _updateMusic(night) {
+    if (!this.musicBus || this.musicVolume <= 0.001) return;
+    const c = this.ctx;
+    const M = this._music;
+    const beat = night ? 0.95 : 0.75; // segundos por tempo
+    if (M.next < c.currentTime) M.next = c.currentTime + 0.2;
+    // agenda 1 compasso de cada vez, um pouco antes da hora
+    if (M.next - c.currentTime > 1.2) return;
+    const DAY = [[57, 60, 64], [53, 57, 60], [48, 52, 55], [55, 59, 62]];      // Lá m, Fá, Dó, Sol
+    const NIGHT = [[57, 60, 64], [50, 53, 57], [52, 55, 59], [57, 60, 64]];    // Lá m, Ré m, Mi m, Lá m
+    const prog = night ? NIGHT : DAY;
+    const chord = prog[M.bar % prog.length];
+    const hz = (n) => 440 * Math.pow(2, (n - 69) / 12);
+    const t0 = M.next;
+    const barLen = beat * 4;
+    // acorde (pad suave)
+    for (const n of chord) {
+      const o = c.createOscillator();
+      o.type = 'triangle';
+      o.frequency.value = hz(n - 12);
+      const lp = c.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = night ? 700 : 1100;
+      const g = c.createGain();
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.linearRampToValueAtTime(0.035, t0 + barLen * 0.35);
+      g.gain.linearRampToValueAtTime(0.0001, t0 + barLen * 1.05);
+      o.connect(lp).connect(g).connect(this.musicBus);
+      o.start(t0);
+      o.stop(t0 + barLen * 1.1);
+    }
+    // baixo
+    const b = c.createOscillator();
+    b.type = 'sine';
+    b.frequency.value = hz(chord[0] - 24);
+    const bg = c.createGain();
+    this._env(bg.gain, t0, 0.09, 0.05, barLen * 0.9);
+    b.connect(bg).connect(this.musicBus);
+    b.start(t0);
+    b.stop(t0 + barLen);
+    // melodia esparsa (pentatônica de Lá menor)
+    const scale = [57, 60, 62, 64, 67, 69, 72, 74, 76];
+    for (let i = 0; i < 8; i++) {
+      if (Math.random() < (night ? 0.72 : 0.55)) continue;
+      const n = scale[Math.floor(Math.random() * scale.length)] + (night ? -12 : 0);
+      const ti = t0 + i * (beat / 2);
+      const o = c.createOscillator();
+      o.type = 'sine';
+      o.frequency.value = hz(n);
+      const o2 = c.createOscillator();
+      o2.type = 'sine';
+      o2.frequency.value = hz(n) * 4; // brilho de marimba
+      const g = c.createGain();
+      this._env(g.gain, ti, 0.07, 0.005, 0.9);
+      const g2 = c.createGain();
+      this._env(g2.gain, ti, 0.015, 0.002, 0.15);
+      o.connect(g).connect(this.musicBus);
+      o2.connect(g2).connect(this.musicBus);
+      o.start(ti);
+      o2.start(ti);
+      o.stop(ti + 1);
+      o2.stop(ti + 0.2);
+    }
+    M.next = t0 + barLen;
+    M.bar++;
   }
 
   _insect() {

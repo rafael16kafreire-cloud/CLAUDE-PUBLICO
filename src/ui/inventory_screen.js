@@ -1,8 +1,10 @@
 // =============================================================
 // TELA DE INVENTÁRIO E CRAFTING (botão Inventário / Tab)
 // Esquerda: barra rápida + mochila (arraste para mover; toque para
-// ver o item). Direita: "Criar" – toque no que quer criar e veja o
-// que precisa (verde = tem, vermelho = falta).
+// ver o item) e a barra de peso.
+// Direita: "Criar" – categorias, cartões com o que cada receita
+// pede (verde = tem, vermelho = falta), aviso de bancada, botões
+// ×1 / ×5 / Máx e a fila (dá para cancelar).
 // =============================================================
 import { events, EV } from '../core/event_bus.js';
 import { BALANCE } from '../core/balance.js';
@@ -10,6 +12,8 @@ import { ITEMS, itemIcon, itemName } from '../items/items.js';
 import { HOTBAR } from '../inventory/inventory.js';
 import { RECIPES } from '../crafting/crafting.js';
 
+const CATS = ['Tudo', 'Ferramentas', 'Armas', 'Estruturas', 'Cura'];
+const STATION_NAME = { bancada: 'Bancada de Trabalho' };
 const TYPE_LABEL = { recurso: 'Recurso', comida: 'Comida', ferramenta: 'Ferramenta', consumivel: 'Cura', estrutura: 'Estrutura' };
 
 export class InventoryScreen {
@@ -21,6 +25,7 @@ export class InventoryScreen {
     this.onClose = onClose;
     this.selSlot = -1;
     this.selRecipe = RECIPES[0];
+    this.cat = 'Tudo';
 
     const el = document.createElement('div');
     el.className = 'overlay inv';
@@ -29,8 +34,8 @@ export class InventoryScreen {
       <div class="inv-panel" role="dialog" aria-label="Inventário">
         <section class="inv-left">
           <header class="inv-head">
-            <h2>Inventário</h2>
-            <span class="inv-weight" data-ref="weight"></span>
+            <h2>Mochila</h2>
+            <div class="inv-wbar" title="Peso"><i data-ref="wfill"></i><span class="inv-weight" data-ref="weight"></span></div>
             <button type="button" class="btn btn-small" id="inv-sort">Organizar</button>
           </header>
           <p class="inv-label">Barra rápida</p>
@@ -45,6 +50,10 @@ export class InventoryScreen {
             <button type="button" class="btn btn-small inv-close" id="inv-close" aria-label="Fechar">Fechar</button>
           </div>
           <div class="tab-body" data-tab-body="craft">
+            <div class="craft-top">
+              <div class="cat-row" data-ref="cats">${CATS.map((c) => `<button type="button" class="cat" data-cat="${c}">${c}</button>`).join('')}</div>
+              <span class="station" data-ref="station"></span>
+            </div>
             <div class="recipe-grid" data-ref="recipes"></div>
             <div class="recipe-detail" data-ref="rdetail"></div>
             <div class="craft-queue" data-ref="queue"></div>
@@ -81,7 +90,10 @@ export class InventoryScreen {
       b.className = 'recipe';
       b.dataset.id = r.id;
       b.id = `receita-${r.id}`;
-      b.innerHTML = `${itemIcon(r.resultado)}<span>${itemName(r.resultado)}</span>`;
+      b.innerHTML = `<span class="rc-icon">${itemIcon(r.resultado)}</span>
+        <span class="rc-body"><span class="rc-name">${itemName(r.resultado)}</span>
+        <span class="rc-ings">${Object.entries(r.ingredientes).map(([id, n]) => `<span class="rc-ing" data-ing="${id}" data-need="${n}">${itemIcon(id)}<b>${n}</b></span>`).join('')}</span></span>
+        <span class="rc-badge"></span>`;
       b.addEventListener('click', () => {
         this.selRecipe = r;
         this.refresh();
@@ -89,6 +101,10 @@ export class InventoryScreen {
       this.refs.recipes.appendChild(b);
     }
 
+    el.querySelectorAll('.cat').forEach((c) => c.addEventListener('click', () => {
+      this.cat = c.dataset.cat;
+      this.refresh();
+    }));
     el.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => this.showTab(t.dataset.tab)));
     el.querySelector('#inv-close').addEventListener('click', () => this.onClose());
     el.querySelector('#inv-sort').addEventListener('click', () => this.inv.sort());
@@ -125,6 +141,8 @@ export class InventoryScreen {
     const max = BALANCE.jogador.peso_max;
     this.refs.weight.textContent = `${w.toFixed(1)} / ${max} kg`;
     this.refs.weight.classList.toggle('over', w > max);
+    this.refs.wfill.style.transform = `scaleX(${Math.min(1, w / max).toFixed(3)})`;
+    this.refs.wfill.parentElement.classList.toggle('over', w > max);
 
     inv.slots.forEach((s, i) => {
       const b = this.slotEls[i];
@@ -140,11 +158,25 @@ export class InventoryScreen {
       b.title = s ? `${ITEMS[s.id].nome} ×${s.qty}` : '';
     });
 
-    // receitas: destaca as que dá para criar
+    // categorias e estação por perto
+    this.el.querySelectorAll('.cat').forEach((c) => c.classList.toggle('active', c.dataset.cat === this.cat));
+    const near = this.crafting.stationsNear();
+    this.refs.station.textContent = near.includes('bancada') ? '✓ Bancada por perto' : 'Sem bancada por perto';
+    this.refs.station.classList.toggle('ok', near.includes('bancada'));
+    // receitas: o que dá para criar, o que falta e o que precisa de bancada
     for (const b of this.refs.recipes.children) {
       const r = RECIPES.find((x) => x.id === b.dataset.id);
-      b.classList.toggle('can', this.crafting.maxTimes(r) > 0);
+      const n = this.crafting.maxTimes(r);
+      const st = this.crafting.missingStation(r);
+      b.hidden = this.cat !== 'Tudo' && r.categoria !== this.cat;
+      b.classList.toggle('can', n > 0 && !st);
+      b.classList.toggle('locked', !!st);
       b.classList.toggle('selected', r === this.selRecipe);
+      const badge = b.querySelector('.rc-badge');
+      badge.textContent = st ? '🔒 Bancada' : n > 0 ? `×${n}` : '';
+      for (const ing of b.querySelectorAll('.rc-ing')) {
+        ing.classList.toggle('miss', inv.count(ing.dataset.ing) < Number(ing.dataset.need));
+      }
     }
     this._renderRecipe();
     this._renderQueue();
@@ -160,20 +192,33 @@ export class InventoryScreen {
     }
     const def = ITEMS[r.resultado];
     const reqs = this.crafting.requirements(r);
-    const can = this.crafting.maxTimes(r);
+    const st = this.crafting.missingStation(r);
+    const can = st ? 0 : this.crafting.maxTimes(r);
+    const f = def.ferramenta;
+    const c = def.comida;
+    const stats = [];
+    if (f) stats.push(`Dano ${f.dano}`, `Durabilidade ${f.durabilidade}`, ...(f.rende > 1 ? [`Rende +${Math.round((f.rende - 1) * 100)}%`] : []));
+    if (c?.vida) stats.push(`Vida +${c.vida}`);
+    if (c?.fome) stats.push(`Fome +${c.fome}`);
+    stats.push(`${(def.peso ?? 0).toFixed(1)} kg`);
     d.innerHTML = `
-      <div class="rd-head">${itemIcon(r.resultado)}<div><h3>${def.nome}</h3><p>${def.descricao}</p></div></div>
+      <div class="rd-head">${itemIcon(r.resultado)}<div><h3>${def.nome}${r.quantidade > 1 ? ` ×${r.quantidade}` : ''}</h3><p>${def.descricao}</p>
+        <p class="rd-stats">${stats.map((x) => `<span>${x}</span>`).join('')}</p></div></div>
+      ${st ? `<p class="rd-station">🔒 Precisa estar perto de uma ${STATION_NAME[st] ?? st}.</p>` : ''}
       <p class="inv-label">Precisa de</p>
       <ul class="reqs">${reqs.map((q) => `
-        <li class="${q.have >= q.need ? 'ok' : 'miss'}">${itemIcon(q.id)}<span>${itemName(q.id)}</span><b>${q.have} / ${q.need}</b></li>`).join('')}
+        <li class="${q.have >= q.need ? 'ok' : 'miss'}">${itemIcon(q.id)}<span>${itemName(q.id)}</span>
+          <i class="req-bar"><i style="transform:scaleX(${Math.min(1, q.have / q.need).toFixed(3)})"></i></i><b>${q.have} / ${q.need}</b></li>`).join('')}
       </ul>
       <div class="rd-actions">
         <button type="button" class="btn btn-primary" id="craft-1" ${can < 1 ? 'disabled' : ''}>Criar</button>
-        <button type="button" class="btn" id="craft-5" ${can < 2 ? 'disabled' : ''}>Criar ${Math.min(5, Math.max(2, can))}</button>
-        <span class="rd-time">${r.tempo}s cada</span>
+        <button type="button" class="btn" id="craft-5" ${can < 2 ? 'disabled' : ''}>×${Math.min(5, Math.max(2, can))}</button>
+        <button type="button" class="btn" id="craft-max" ${can < 2 ? 'disabled' : ''}>Máx (${can})</button>
+        <span class="rd-time">⏱ ${r.tempo}s cada</span>
       </div>`;
     d.querySelector('#craft-1').addEventListener('click', () => this.crafting.craft(r, 1));
     d.querySelector('#craft-5').addEventListener('click', () => this.crafting.craft(r, Math.min(5, can)));
+    d.querySelector('#craft-max').addEventListener('click', () => this.crafting.craft(r, Math.min(20, can)));
   }
 
   _renderQueue() {
@@ -183,8 +228,13 @@ export class InventoryScreen {
       el.innerHTML = '';
       return;
     }
-    el.innerHTML = `<p class="inv-label">Criando (${q.length})</p>
-      <div class="cq-row">${itemIcon(q[0].recipe.resultado)}<div class="cq-bar"><i style="transform:scaleX(${this.crafting.progress.toFixed(3)})"></i></div></div>`;
+    el.innerHTML = `<p class="inv-label">Fila (${q.length})</p>
+      <div class="cq-list">${q.slice(0, 6).map((it, k) => `
+        <div class="cq-row">${itemIcon(it.recipe.resultado)}<span class="cq-name">${itemName(it.recipe.resultado)}</span>
+          ${k === 0 ? `<div class="cq-bar"><i style="transform:scaleX(${this.crafting.progress.toFixed(3)})"></i></div>` : '<div class="cq-wait">esperando</div>'}
+          <button type="button" class="cq-x" data-k="${k}" aria-label="Cancelar">✕</button></div>`).join('')}
+        ${q.length > 6 ? `<p class="muted">+${q.length - 6}…</p>` : ''}</div>`;
+    el.querySelectorAll('.cq-x').forEach((b) => b.addEventListener('click', () => this.crafting.cancel(Number(b.dataset.k))));
   }
 
   // atualiza só a barrinha da fila (chamado todo quadro com a tela aberta)

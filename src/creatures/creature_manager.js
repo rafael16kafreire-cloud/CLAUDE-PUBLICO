@@ -110,6 +110,11 @@ export class CreatureManager {
       const who = alivePlayers[Math.floor(this.rand() * alivePlayers.length)] ?? player;
       this.trySpawnNear(who.position);
       this.trySpawnNear(who.position, undefined, undefined, true);
+      this._swampT = (this._swampT ?? 0) - this.cfg.intervalo_spawn_seg;
+      if (this._swampT <= 0) {
+        this._swampT = 4;
+        for (const p of alivePlayers) this.ensureSwampResidents(p.position);
+      }
     }
   }
 
@@ -171,6 +176,39 @@ export class CreatureManager {
       return true;
     }
     return false;
+  }
+
+  // Moradores do pântano: perto do pântano sempre tem jacaré gigante
+  // (deinosuchus) e cobra gigante (titanoboa) na água.
+  ensureSwampResidents(center) {
+    const R = BALANCE.criaturas.moradores_pantano;
+    if (!R) return;
+    const parts = this.world.layout.pantano.partes;
+    const near = parts.some((p) => Math.hypot(p.x - center.x, p.z - center.z) < p.raio_m + 160);
+    if (!near) return;
+    const D = BALANCE.dificuldade;
+    const early = (game.player?.aliveTime ?? 999) < D.inicio_tranquilo_min * 60;
+    for (const [id, want] of Object.entries(R)) {
+      const have = this.list.filter((c) => c.alive && c.species.id === id
+        && Math.hypot(c.pos.x - center.x, c.pos.z - center.z) < 190).length;
+      if (have >= want) continue;
+      // ponto com água funda, a 50–150 m do jogador
+      for (let k = 0; k < 60; k++) {
+        const p = parts[Math.floor(this.rand() * parts.length)];
+        const a = this.rand() * Math.PI * 2;
+        const r = Math.sqrt(this.rand()) * p.raio_m * 0.9;
+        const x = p.x + Math.sin(a) * r;
+        const z = p.z + Math.cos(a) * r;
+        const d = Math.hypot(x - center.x, z - center.z);
+        if (d < 50 || d > 150) continue;
+        const w = this.world.waterAt(x, z);
+        if (!w || w.level - this.world.heightAt(x, z) < (k < 30 ? 0.7 : 0.3)) continue;
+        if (this.world.allRespawnPoints.some((q) => Math.hypot(q.position.x - x, q.position.z - z) < D.zona_segura_m)) continue;
+        const lvl = early ? 1 + Math.floor(this.rand() * D.nivel_max_inicio) : 1 + Math.floor(Math.pow(this.rand(), 1.6) * 29);
+        this.spawn(id, x, z, lvl);
+        break;
+      }
+    }
   }
 
   // ---------------------------------------------------------

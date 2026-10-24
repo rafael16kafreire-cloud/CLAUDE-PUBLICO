@@ -71,6 +71,19 @@ export default {
   },
 
   // ---------------------------------------------------------
+  // Física da água (nado)
+  // ---------------------------------------------------------
+  agua: {
+    empuxo: 1.26,              // >1 boia; <1 afunda (cansado afunda um pouco)
+    arrasto: 1.6,              // quanto a água freia
+    arrasto_rapido: 0.35,      // freio extra quando está rápido
+    forca_bracada: 12,         // empurrão de cada braçada
+    forca_bracada_rapida: 19,  // nadando rápido
+    altura_onda_mar_m: 0.25,   // ondas do mar sobem e descem
+    altura_onda_pantano_m: 0.05,
+  },
+
+  // ---------------------------------------------------------
   // Temperatura (Fase 1: só aparece no ícone; efeitos na Fase 4)
   // ---------------------------------------------------------
   temperatura: {
@@ -115,6 +128,7 @@ export default {
     soco_alcance_m: 2.4,       // distância do soco
     soco_intervalo_seg: 0.45,  // tempo entre socos
     soco_stamina: 4,           // stamina gasta por soco
+    dano_soco_arvore_gigante: 4, // socar uma sumaúma machuca a mão
   },
 
   // ---------------------------------------------------------
@@ -127,6 +141,8 @@ export default {
     intervalo_spawn_seg: 1.2,  // a cada quanto tempo tenta criar mais
     corpo_dura_seg: 120,       // quanto tempo um corpo fica no chão
     max_ambiente: 6,           // araras e outros bichos de enfeite (fora do limite)
+    // sempre tem estes bichos no pântano quando você está por perto
+    moradores_pantano: { deinosuchus: 2, titanoboa: 1 },
   },
 
   // ---------------------------------------------------------

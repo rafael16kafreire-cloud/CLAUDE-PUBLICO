@@ -469,6 +469,7 @@ export class Vegetation {
   consume(rec, remote = false) {
     const res = this.resourceOf(rec);
     if (!res) return;
+    if (res.infinita) return; // nunca acaba (ex.: sumaúma)
     events.emit(EV.VEG_CONSUMED, { rec, remote });
     rec.cap -= 1;
     if (rec.cap > 0) return;

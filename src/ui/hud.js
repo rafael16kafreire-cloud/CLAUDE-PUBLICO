@@ -110,7 +110,7 @@ export class Hud {
     });
 
     events.on(EV.INTERACT_PROMPT, (p) => this._showPrompt(p?.text ?? null, p?.key));
-    events.on(EV.BIOME_ENTERED, (b) => this.showBiome(b.name, b.description));
+    // (nome do bioma na tela: desligado a pedido; o evento continua existindo)
     events.on(EV.PLAYER_HURT, () => this._hurt());
   }
 

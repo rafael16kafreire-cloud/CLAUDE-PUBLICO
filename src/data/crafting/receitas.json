@@ -1,5 +1,5 @@
 {
-  "_explicacao": "Receitas. ingredientes: id do item e quantidade. tempo em segundos. xp ganho ao criar.",
+  "_explicacao": "Receitas. ingredientes: id do item e quantidade. tempo em segundos. xp ganho ao criar. estacao: precisa estar perto dessa estrutura (ex.: bancada).",
   "receitas": [
     { "id": "machado_pedra", "resultado": "machado_pedra", "quantidade": 1, "tempo": 3, "xp": 6, "categoria": "Ferramentas",
       "ingredientes": { "madeira": 2, "pedra": 2, "silex": 1 } },
@@ -18,6 +18,14 @@
     { "id": "fogueira", "resultado": "fogueira", "quantidade": 1, "tempo": 3, "xp": 8, "categoria": "Estruturas",
       "ingredientes": { "pedra": 12, "madeira": 4, "palha": 8, "silex": 1 } },
     { "id": "saco_dormir", "resultado": "saco_dormir", "quantidade": 1, "tempo": 4, "xp": 10, "categoria": "Estruturas",
-      "ingredientes": { "fibra": 15, "palha": 10, "couro": 3 } }
+      "ingredientes": { "fibra": 15, "palha": 10, "couro": 3 } },
+    { "id": "bancada", "resultado": "bancada", "quantidade": 1, "tempo": 5, "xp": 12, "categoria": "Estruturas",
+      "ingredientes": { "madeira": 20, "pedra": 10, "fibra": 12, "palha": 8 } },
+    { "id": "machado_silex", "resultado": "machado_silex", "quantidade": 1, "tempo": 5, "xp": 14, "categoria": "Ferramentas", "estacao": "bancada",
+      "ingredientes": { "madeira": 4, "silex": 6, "fibra": 10, "couro": 2 } },
+    { "id": "picareta_silex", "resultado": "picareta_silex", "quantidade": 1, "tempo": 5, "xp": 14, "categoria": "Ferramentas", "estacao": "bancada",
+      "ingredientes": { "madeira": 4, "silex": 6, "fibra": 10, "couro": 2 } },
+    { "id": "lanca_osso", "resultado": "lanca_osso", "quantidade": 1, "tempo": 6, "xp": 18, "categoria": "Armas", "estacao": "bancada",
+      "ingredientes": { "madeira": 6, "ossos": 8, "fibra": 12, "couro": 3 } }
   ]
 }

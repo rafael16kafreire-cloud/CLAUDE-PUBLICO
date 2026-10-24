@@ -26,6 +26,7 @@ export const EV = {
   ITEM_GAINED: 'item_gained',             // { id, amount }
   CRAFTED: 'crafted',                     // { id }  item ficou pronto
   STRUCTURE_USED: 'structure_used',       // { structure }  acendeu fogueira, dormiu...
+  OPEN_CRAFTING: 'open_crafting',         // { station }  abriu a bancada
   PLACED: 'placed',                       // { type, structure }  fogueira, saco de dormir...
   ATE: 'ate',                             // { id }
   COOKED: 'cooked',                       // { id }

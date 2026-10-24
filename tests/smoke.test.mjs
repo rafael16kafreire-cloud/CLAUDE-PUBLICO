@@ -393,6 +393,33 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   const invClosed = await page.evaluate(() => document.querySelector('.inv').hidden && !window.__ilha.ctx.touch.input.blocked);
   check('Inventário: Tab fecha de novo', invClosed);
 
+  // Árvore gigante: com a mão machuca e não dá nada
+  await page.evaluate(() => window.__t.faceRec('sumauma'));
+  await frames(page, 6);
+  const giant0 = await page.evaluate(() => ({ h: window.__ilha.ctx.player.stats.health, m: window.__t.count('madeira'), p: window.__t.count('palha'), sel: window.__ilha.ctx.inventory.selected }));
+  await page.evaluate(() => { window.__ilha.ctx.inventory.selected = -1; window.__ilha.ctx.player.stats.stamina = 100; });
+  await page.mouse.down();
+  await page.mouse.up();
+  await gameWait(page, 600);
+  const giant1 = await page.evaluate(() => ({ h: window.__ilha.ctx.player.stats.health, m: window.__t.count('madeira'), p: window.__t.count('palha') }));
+  check('Sumaúma: soco machuca e não dá madeira', giant1.h < giant0.h && giant1.m === giant0.m && giant1.p === giant0.p, JSON.stringify({ giant0, giant1 }));
+  await page.evaluate(() => { window.__ilha.ctx.player.stats.health = 100; });
+
+  // Bancada: libera receitas avançadas
+  const bench = await page.evaluate(() => {
+    const c = window.__ilha.ctx;
+    const r = window.__ilha.ctx.crafting;
+    const lancaOsso = { id: 'lanca_osso' };
+    const before = r.missingStation({ estacao: 'bancada' });
+    c.inventory.add('bancada', 1);
+    c.camCtl.yaw += 1.5;
+    const ok = c.actions.place(c.inventory.slots.findIndex((x) => x && x.id === 'bancada'));
+    const after = r.missingStation({ estacao: 'bancada' });
+    void lancaOsso;
+    return { before, ok, after };
+  });
+  check('Bancada: colocar libera as receitas avançadas', bench.before === 'bancada' && bench.ok && bench.after === null, JSON.stringify(bench));
+
   // Machado na mão: muito mais madeira
   const axeSlot = await page.evaluate(() => window.__ilha.ctx.inventory.slots.findIndex((s) => s && s.id === 'machado_pedra'));
   await page.keyboard.press(`Digit${axeSlot + 1}`);
@@ -594,9 +621,33 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     c.camCtl.yaw = 0; c.camCtl.pitch = 0;
   });
   await gameWait(page, 2600);
-  // (o aviso some sozinho depois de 4 s; aqui lemos o último nome mostrado)
-  const banner = await page.evaluate(() => document.querySelector('.biome-name')?.textContent || null);
-  check('Bioma: entrar no pântano mostra "Pântano"', !!banner && banner.includes('Pântano'), banner ?? 'nada');
+  const banner = await page.evaluate(() => document.querySelector('.biome-name')?.textContent || '');
+  check('Bioma: nome do bioma NÃO aparece mais na tela', banner === '', banner || 'nada (ok)');
+  // pântano: moradores (deinosuchus e titanoboa) e nado com física
+  const swamp = await page.evaluate(() => {
+    const c = window.__ilha.ctx;
+    c.creatures.clear();
+    for (let i = 0; i < 4; i++) c.creatures.ensureSwampResidents({ x: 0, y: 0, z: 10 + 100 });
+    const ids = c.creatures.list.map((x) => x.species.id);
+    c.creatures.clear();
+    return ids;
+  });
+  check('Pântano: tem deinosuchus e titanoboa', swamp.includes('deinosuchus') && swamp.includes('titanoboa'), swamp.join(','));
+  await page.evaluate(() => {
+    const c = window.__ilha.ctx;
+    c.player.position.set(0, -4, 540);
+    c.player.velocity.set(0, 0, 0);
+  });
+  await gameWait(page, 3000);
+  const floatY = await page.evaluate(() => ({ y: window.__ilha.ctx.player.position.y, sw: window.__ilha.ctx.player.swimming, cam: window.__ilha.ctx.world.cameraUnderwater }));
+  check('Água: o corpo boia sozinho até a superfície (empuxo)', floatY.sw && floatY.y > -2.2 && floatY.y < -0.6 && !floatY.cam, JSON.stringify(floatY));
+  await page.evaluate(() => { const c = window.__ilha.ctx; c.player.position.y = -9; c.player.velocity.set(0, 0, 0); });
+  await gameWait(page, 300);
+  const dive = await page.evaluate(() => ({ cam: window.__ilha.ctx.world.cameraUnderwater, cls: document.body.classList.contains('underwater'), dust: window.__ilha.ctx.world.underwater.dust.visible }));
+  check('Mergulho: visual embaixo d\'água (cor, partículas)', dive.cam && dive.cls && dive.dust, JSON.stringify(dive));
+  await page.screenshot({ path: `${SHOTS}/10b-pc-mergulho.png` });
+  await page.evaluate(() => { const c = window.__ilha.ctx; c.player.position.set(0, c.world.heightAt(0, 428), 428); c.player.stats.oxygen = 100; });
+  await gameWait(page, 300);
   await page.screenshot({ path: `${SHOTS}/10-pc-pantano.png` });
 
   const biomes = await page.evaluate(() => {

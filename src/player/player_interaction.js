@@ -99,6 +99,7 @@ export class PlayerInteraction {
     const hit = this.world.vegetation.findTarget(p.x, p.z, f.x, f.z, tool.alcance);
     if (hit) {
       const res = this.world.vegetation.resourceOf(hit);
+      if (res.so_machado && tool.tipo !== 'machado') return { kind: 'hint', key: 'attack', text: `${res.nome}: precisa de machado` };
       const table = res[tool.tipo] ?? res.mao;
       const names = Object.keys(table).slice(0, 2).map(itemName).join(' e ');
       return { kind: 'hint', key: 'attack', text: `${res.nome}: ${names}` };

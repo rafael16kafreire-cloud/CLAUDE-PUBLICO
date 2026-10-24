@@ -12,6 +12,7 @@ const CAUSES = {
   afogamento: 'Você se afogou.',
   sede: 'Você morreu de sede.',
   fome: 'Você morreu de fome.',
+  arvore: 'Você se machucou socando uma árvore gigante.',
 };
 
 function causeText(cause) {

@@ -326,7 +326,12 @@ export function buildSpeciesModel(spec) {
     usePattern(0.6);
     mb.segment(shoulder, wrist, wing.armR, wing.armR * 0.7, wb, limbColor, 6);
     mb.segment(wrist, tip, wing.armR * 0.7, wing.armR * 0.25, wr, limbColor, 5);
-    mb.curPat = [4, 3, 0.35, 3];
+    const wp = spec.wingPattern;
+    if (wp) {
+      const wc = new THREE.Color(wp.color);
+      mb.curPat = [PATTERN_TYPES[wp.type] ?? 4, wp.freq ?? 4, wp.strength ?? 0.5, 3];
+      mb.curPatCol = [wc.r, wc.g, wc.b, scalesPerM];
+    } else mb.curPat = [4, 3, 0.35, 3];
     mb.membrane(
       [shoulder, wrist, tip, mid, root],
       [[wb, wb], [wr, wr], [wr, wr], [wb, wr], [wb, wb]],

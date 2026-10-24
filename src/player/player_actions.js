@@ -32,7 +32,7 @@ export class PlayerActions {
     const f = s && ITEMS[s.id]?.ferramenta;
     const C = BALANCE.combate;
     if (!f) return { ...FIST, dano: C.soco_dano, alcance: C.soco_alcance_m, intervalo: C.soco_intervalo_seg };
-    return { tipo: f.tipo, dano: f.dano, alcance: f.alcance, intervalo: INTERVAL[f.tipo] ?? 0.6, id: s.id };
+    return { tipo: f.tipo, dano: f.dano, alcance: f.alcance, intervalo: INTERVAL[f.tipo] ?? 0.6, id: s.id, rende: f.rende ?? 1 };
   }
 
   // Item de comer/usar selecionado na barra?
@@ -86,11 +86,25 @@ export class PlayerActions {
     const veg = this.world.vegetation;
     const res = veg.resourceOf(rec);
     if (!res) return false;
+    // árvore gigante: só com machado; com a mão (ou outra coisa) machuca
+    if (res.so_machado && mode !== 'machado' && mode !== 'colher') {
+      if (mode === 'mao') {
+        this.player.stats.damage(BALANCE.combate.dano_soco_arvore_gigante ?? 4, 'arvore');
+        events.emit(EV.PLAYER_HURT, { amount: 4, source: 'árvore' });
+      }
+      events.emit(EV.MESSAGE, { text: `Ai! ${res.nome} é dura demais: precisa de um machado.`, kind: 'warn' });
+      sound.play('madeira', new THREE.Vector3(rec.x, this.player.position.y + 1.2, rec.z), { volume: 0.6 });
+      shakeAt(rec.x, rec.z, 0.4);
+      return false;
+    }
     const table = res[mode] ?? res.mao;
     if (!table) return false;
     const got = {};
     for (const [id, range] of Object.entries(table)) {
-      const n = rnd(range);
+      let n = rnd(range);
+      // ferramentas melhores rendem mais
+      const tool = this.tool;
+      if (tool.tipo === mode && tool.rende > 1) n = Math.round(n * tool.rende);
       if (n > 0) got[id] = n;
     }
     this._give(got);

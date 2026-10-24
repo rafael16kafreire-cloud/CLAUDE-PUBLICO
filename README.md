@@ -4,6 +4,25 @@ Jogo 3D de sobrevivência com dinossauros. Sozinho (offline) ou em **co-op onlin
 Roda no celular (Android como app ou no navegador) e no PC.
 Visual estilizado, feito para ser leve.
 
+**Versão 0.6** – água com física, bancada, música e animais mais reais.
+
+- **Nadar com física**: o corpo boia (empuxo), a água freia, cada braçada empurra e as
+  ondas do mar balançam. **Mergulho** com visual próprio: mar azul com raios de sol,
+  pântano turvo, partículas boiando, bolhas e a visão ondulando; som abafado.
+- **Bancada de Trabalho**: coloque no chão e use (Interagir) para abrir o crafting. Perto
+  dela liberam **Machado de Sílex**, **Picareta de Sílex** (rendem +50%) e **Lança de Osso**.
+- **Inventário/crafting novo**: categorias, cartões mostrando o que falta, barras de
+  quanto você tem, botões Criar / ×5 / Máx, fila com cancelar e barra de peso.
+- **Sumaúma (árvore gigante)**: só com machado; socar com a mão machuca e não dá nada.
+  Ela não acaba.
+- **Pântano**: sempre tem deinosuchus e titanoboa quando você chega perto (titanoboa só
+  vive lá).
+- **Animais em velocidade real** (mais lentos), **pterodáctilo e quetzalcoatlus maiores**,
+  voando mais baixo e com cores que dá para ver.
+- **Floresta mais densa**; o nome do bioma não aparece mais na tela.
+- **Música de fundo** calma (volume próprio no menu de pausa) e mais pássaros, cigarras,
+  tucanos e pica-paus na floresta.
+
 **Versão 0.5** – sons, dia de 7 min e noite de 3 min.
 
 - **Sons** (todos gerados por código): floresta de dia (vento, pássaros, insetos) e de

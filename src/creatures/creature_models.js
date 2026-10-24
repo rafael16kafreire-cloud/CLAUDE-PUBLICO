@@ -278,8 +278,9 @@ export const MODELS = {
   // -------------------------------------------------- Pterodáctilo
   pterodactilo: {
     body: 'flyer',
-    colors: { top: '#7a593c', belly: '#d2b68e', pattern: '#4a3422' },
+    colors: { top: '#9a6a3c', belly: '#f2e2c0', pattern: '#4a2e18' },
     skin: 'pelo', pattern: { type: 'dorsal', freq: 8, strength: 0.6 },
+    wingPattern: { type: 'manchas', freq: 14, color: '#7a3e1c', strength: 0.6 },
     spine: [
       [0, 0, 0.45, 0.03, 1, 'tail1'],
       [0, 0, 0.2, 0.1, 1, 'hips'],
@@ -289,20 +290,21 @@ export const MODELS = {
       [0, 0.13, -0.88, 0.025, 1, 'head'],
     ],
     wings: [
-      { name: 'asaE', points: [[0.1, 0.02, -0.12], [0.8, 0.06, -0.18], [1.55, 0, 0.12], [0.75, 0, 0.3], [0.08, 0, 0.28]], armR: 0.035, color: '#76563c' },
-      { name: 'asaD', points: [[-0.1, 0.02, -0.12], [-0.8, 0.06, -0.18], [-1.55, 0, 0.12], [-0.75, 0, 0.3], [-0.08, 0, 0.28]], armR: 0.035, color: '#76563c' },
+      { name: 'asaE', points: [[0.1, 0.02, -0.12], [0.8, 0.06, -0.18], [1.55, 0, 0.12], [0.75, 0, 0.3], [0.08, 0, 0.28]], armR: 0.035, color: '#d89a5c' },
+      { name: 'asaD', points: [[-0.1, 0.02, -0.12], [-0.8, 0.06, -0.18], [-1.55, 0, 0.12], [-0.75, 0, 0.3], [-0.08, 0, 0.28]], armR: 0.035, color: '#d89a5c' },
     ],
     extras: [
       ...eyes(0.06, 0.2, -0.52, 0.018),
-      { type: 'cone', bone: 'head', base: [0, 0.2, -0.45], tip: [0, 0.32, -0.2], r: 0.05, color: '#a8452c' },
+      { type: 'cone', bone: 'head', base: [0, 0.2, -0.45], tip: [0, 0.4, -0.12], r: 0.06, color: '#e0482a' },
     ],
   },
 
   // -------------------------------------------------- Quetzalcoatlus
   quetzalcoatlus: {
     body: 'flyer',
-    colors: { top: '#bdb4a2', belly: '#efe8d6', pattern: '#7e766a' },
-    skin: 'pelo', pattern: { type: 'mosqueado', freq: 4, strength: 0.4 },
+    colors: { top: '#d8cfbc', belly: '#fbf6ea', pattern: '#6e665a' },
+    skin: 'pelo', pattern: { type: 'mosqueado', freq: 4, strength: 0.45 },
+    wingPattern: { type: 'mosqueado', freq: 3, color: '#6a4426', strength: 0.55 },
     spine: [
       [0, 0, 1.0, 0.06, 1, 'tail1'],
       [0, 0, 0.5, 0.35, 1, 'hips'],
@@ -313,12 +315,12 @@ export const MODELS = {
       [0, 0.5, -3.9, 0.05, 1, 'head'],
     ],
     wings: [
-      { name: 'asaE', points: [[0.35, 0.05, -0.3], [2.8, 0.15, -0.45], [5.6, 0, 0.4], [2.6, 0, 0.95], [0.25, 0, 0.75]], armR: 0.12, color: '#9c7a58' },
-      { name: 'asaD', points: [[-0.35, 0.05, -0.3], [-2.8, 0.15, -0.45], [-5.6, 0, 0.4], [-2.6, 0, 0.95], [-0.25, 0, 0.75]], armR: 0.12, color: '#9c7a58' },
+      { name: 'asaE', points: [[0.35, 0.05, -0.3], [2.8, 0.15, -0.45], [5.6, 0, 0.4], [2.6, 0, 0.95], [0.25, 0, 0.75]], armR: 0.12, color: '#c89a68' },
+      { name: 'asaD', points: [[-0.35, 0.05, -0.3], [-2.8, 0.15, -0.45], [-5.6, 0, 0.4], [-2.6, 0, 0.95], [-0.25, 0, 0.75]], armR: 0.12, color: '#c89a68' },
     ],
     extras: [
       ...eyes(0.16, 0.74, -2.75, 0.04),
-      { type: 'tube', bone: 'head', points: [[0, 0.75, -2.55], [0, 1.05, -2.2], [0, 1.25, -1.7]], radii: [0.16, 0.12, 0.04], color: '#b8452c' },
+      { type: 'tube', bone: 'head', points: [[0, 0.75, -2.55], [0, 1.05, -2.2], [0, 1.25, -1.7]], radii: [0.2, 0.15, 0.05], color: '#e85030' },
     ],
   },
 

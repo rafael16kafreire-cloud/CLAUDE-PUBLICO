@@ -234,7 +234,66 @@ export class SleepingBag extends Structure {
   }
 }
 
+// ------------------------------------------------------------
+// Bancada de trabalho: perto dela liberam receitas melhores.
+// Interagir abre direto a tela de crafting.
+// ------------------------------------------------------------
+const PLANK_MAT = new THREE.MeshLambertMaterial({ color: '#8a6438' });
+const PLANK_DARK = new THREE.MeshLambertMaterial({ color: '#5e4226' });
+const TOOL_MAT = new THREE.MeshLambertMaterial({ color: '#6c6e74' });
+
+export class Workbench extends Structure {
+  constructor(world, position, rotY, id) {
+    super(world, 'bancada', position, rotY, id);
+    this.interactRadius = 1.6;
+    this.interactPoint = position.clone().add(new THREE.Vector3(0, 0.9, 0));
+    const top = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.12, 0.9), PLANK_MAT);
+    top.position.y = 0.92;
+    top.castShadow = true;
+    this.root.add(top);
+    // tábuas do tampo
+    for (let i = -2; i <= 2; i++) {
+      const line = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.005, 0.88), PLANK_DARK);
+      line.position.set(i * 0.38, 0.985, 0);
+      this.root.add(line);
+    }
+    for (const [x, z] of [[-0.85, -0.36], [0.85, -0.36], [-0.85, 0.36], [0.85, 0.36]]) {
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.9, 0.12), PLANK_DARK);
+      leg.position.set(x, 0.45, z);
+      leg.castShadow = true;
+      this.root.add(leg);
+    }
+    const shelf = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.06, 0.7), PLANK_MAT);
+    shelf.position.y = 0.3;
+    this.root.add(shelf);
+    // pedra de amolar, toras e uma ferramenta em cima
+    const whet = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.06, 12), TOOL_MAT);
+    whet.rotation.x = Math.PI / 2;
+    whet.position.set(0.55, 1.15, 0.05);
+    const hammer = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.05, 0.05), PLANK_DARK);
+    hammer.position.set(-0.4, 1.0, 0.15);
+    hammer.rotation.y = 0.4;
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.09, 0.16), TOOL_MAT);
+    head.position.set(-0.18, 1.02, 0.25);
+    head.rotation.y = 0.4;
+    const logs = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.8, 8), PLANK_DARK);
+    logs.rotation.z = Math.PI / 2;
+    logs.position.set(0, 0.42, 0.1);
+    this.root.add(whet, hammer, head, logs);
+  }
+
+  promptText() {
+    return 'Usar bancada (criar)';
+  }
+
+  use() {
+    events.emit(EV.OPEN_CRAFTING, { station: this });
+    return false;
+  }
+}
+
 export function createStructure(world, d) {
+  if (d.type === 'bancada') return new Workbench(world, new THREE.Vector3(d.x, d.y, d.z), d.rot, d.id);
   const pos = new THREE.Vector3(d.x, d.y, d.z);
   if (d.type === 'fogueira') {
     const s = new Campfire(world, pos, d.rot, d.id);
