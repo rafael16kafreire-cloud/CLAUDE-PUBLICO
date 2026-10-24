@@ -4,6 +4,19 @@ Jogo 3D de sobrevivência com dinossauros. Sozinho (offline) ou em **co-op onlin
 Roda no celular (Android como app ou no navegador) e no PC.
 Visual estilizado, feito para ser leve.
 
+**Versão 0.6.1** – espinossauro com modelo 3D de verdade (11 mil triângulos, escamas e
+relevo do modelo original, cor realista pintada por região, animado pelo jogo).
+
+## Trocar o modelo de um animal
+
+1. Coloque o arquivo `.usdz` (com esqueleto) numa pasta.
+2. `python tools/models/usd_extrair.py modelo.usdz cru.json 15` (15 = comprimento em metros;
+   precisa de `pip install usd-core numpy`).
+3. Diminua as texturas (cor em cinza 1024, relevo 512) e rode
+   `node tools/models/usd_para_jogo.mjs cru.json cor.jpg relevo.jpg src/creatures/imported/<id>.js 11000`.
+4. Em `src/creatures/imported_model.js` acrescente a espécie em `IMPORTED`.
+   (Os nomes dos ossos do modelo são ligados aos do jogo em `GROUPS`/`PIVOT` no conversor.)
+
 **Versão 0.6** – água com física, bancada, música e animais mais reais.
 
 - **Nadar com física**: o corpo boia (empuxo), a água freia, cada braçada empurra e as
@@ -169,5 +182,9 @@ dist/                  arquivos prontos para jogar
 ## Créditos
 
 Código, ilha, ícone e textos: originais deste projeto.
+Modelo 3D do espinossauro: **"Spinosaurus"** por **TheAquaticSpinosaurid**
+(https://sketchfab.com/3d-models/spinosaurus-9d206a9686d549ca9b99a432089091ca),
+licença **CC-BY 4.0** (https://creativecommons.org/licenses/by/4.0/). Mudanças: menos
+triângulos, esqueleto ligado às animações do jogo e cores pintadas por região.
 Motor 3D: [three.js](https://threejs.org) (licença MIT).
 Fontes: Lilita One e Barlow Semi Condensed (SIL Open Font License, em `src/ui/fonts`).

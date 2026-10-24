@@ -14,6 +14,7 @@ import { mulberry32 } from '../core/math.js';
 import { MODELS } from './creature_models.js';
 import { buildSpeciesModel, createSkinnedMesh } from './creature_builder.js';
 import { makeCreatureMaterial } from './creature_material.js';
+import { IMPORTED, buildImportedModel } from './imported_model.js';
 import { Creature, CSTATE } from './creature.js';
 
 export const SPECIES = Object.fromEntries(data.especies.map((s) => [s.id, s]));
@@ -40,7 +41,9 @@ export class CreatureManager {
   }
 
   _model(id) {
-    if (!this.models[id]) this.models[id] = buildSpeciesModel(MODELS[id]);
+    // espécies com modelo importado (ex.: espinossauro) usam ele;
+    // as outras são feitas por código
+    if (!this.models[id]) this.models[id] = IMPORTED[id] ? buildImportedModel(IMPORTED[id]) : buildSpeciesModel(MODELS[id]);
     return this.models[id];
   }
 
@@ -49,7 +52,7 @@ export class CreatureManager {
     const species = SPECIES[id];
     if (!species) return null;
     const model = this._model(id);
-    const { mesh, bones } = createSkinnedMesh(model, this.material);
+    const { mesh, bones } = createSkinnedMesh(model, model.material ?? this.material);
     mesh.name = species.nome;
     const lvl = level ?? 1 + Math.floor(Math.pow(this.rand(), 1.7) * 29);
     const c = new Creature({

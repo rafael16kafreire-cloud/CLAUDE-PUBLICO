@@ -949,3 +949,5 @@ body.underwater-swamp .uw-overlay {
     radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 35%, rgba(25, 22, 8, 0.7) 100%);
 }
 @keyframes uw-wave { 0%, 100% { transform: scale(1.02) translateY(0); } 50% { transform: scale(1.05) translateY(-1%); } }
+
+.credits { order: 99; margin: 4px 0 0; font-size: 11px; color: var(--bone-dim); opacity: 0.8; max-width: 44ch; }
