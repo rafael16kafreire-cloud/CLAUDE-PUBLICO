@@ -6,15 +6,39 @@
 // legs:  quadril, joelho, tornozelo, dedos e grossura de cada parte
 //        phase = em que momento do passo a perna se move (0 ou 0.5)
 // Troque as cores aqui para mudar a aparência.
+// skin:    pele – 'escamas', 'pelo', 'penas' ou 'lisa'
+// pattern: desenho do corpo – type: 'listras', 'manchas', 'rosetas',
+//          'mosqueado', 'aneis', 'dorsal'; count (quantas listras) ou
+//          freq (tamanho das manchas: maior = menores); strength; color
+// teeth:   dentes ao longo da boca (n por lado, tamanho em metros)
 // =============================================================
 
-const EYE = '#16130f';
+const EYE = '#120f0b';
 
-function eyes(x, y, z, r, bone = 'head') {
-  return [
-    { type: 'ellipsoid', bone, p: [x, y, z], r: [r, r, r], color: EYE, seg: [6, 5] },
-    { type: 'ellipsoid', bone, p: [-x, y, z], r: [r, r, r], color: EYE, seg: [6, 5] },
-  ];
+// Olho: íris colorida, pupila escura e um pontinho de brilho.
+function eyes(x, y, z, r, bone = 'head', iris = '#a57a2a') {
+  const out = [];
+  for (const s of [1, -1]) {
+    out.push({ type: 'ellipsoid', bone, p: [s * x, y, z], r: [r, r, r], color: iris, seg: [8, 6] });
+    out.push({ type: 'ellipsoid', bone, p: [s * (x + r * 0.35), y, z - r * 0.12], r: [r * 0.7, r * 0.78, r * 0.55], color: EYE, seg: [6, 5] });
+    out.push({ type: 'ellipsoid', bone, p: [s * (x + r * 0.62), y + r * 0.38, z - r * 0.3], r: [r * 0.2, r * 0.2, r * 0.2], color: '#fbf6e8', seg: [4, 3] });
+  }
+  return out;
+}
+
+// Penas (tufos alongados) ao longo de um osso.
+function feathers(bone, from, to, n, len, color, spread = 0.1) {
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const t = n > 1 ? i / (n - 1) : 0;
+    const x = from[0] + (to[0] - from[0]) * t;
+    const y = from[1] + (to[1] - from[1]) * t;
+    const z = from[2] + (to[2] - from[2]) * t;
+    for (const sd of [1, -1]) {
+      out.push({ type: 'ellipsoid', bone, p: [sd * (x + spread), y - len * 0.25, z + len * 0.35], r: [len * 0.08, len * 0.28, len * 0.55], color, seg: [5, 4], skin: 'penas' });
+    }
+  }
+  return out;
 }
 
 function pair(name, parent, hip, knee, ankle, toe, r, phase, color) {
@@ -29,7 +53,8 @@ export const MODELS = {
   // -------------------------------------------------- Dodô
   dodo: {
     body: 'biped',
-    colors: { top: '#6f6c66', belly: '#b9b2a3', pattern: '#5a5753', patternFreq: 0 },
+    colors: { top: '#6e6a66', belly: '#bdb5a6', pattern: '#55524d' },
+    skin: 'penas', pattern: { type: 'mosqueado', freq: 14, strength: 0.4 },
     spine: [
       [0, 0.62, 0.42, 0.04, 1, 'tail1'],
       [0, 0.56, 0.3, 0.17, 1, 'tail1'],
@@ -53,7 +78,8 @@ export const MODELS = {
   // -------------------------------------------------- Parassauro
   parassauro: {
     body: 'quad',
-    colors: { top: '#6c7a3c', belly: '#cbc194', pattern: '#4a5629', patternFreq: 9, patternStrength: 0.55 },
+    colors: { top: '#5d7838', belly: '#dccf9a', pattern: '#33461c' },
+    skin: 'escamas', pattern: { type: 'listras', count: 11, strength: 0.65 },
     spine: [
       [0, 1.9, 4.3, 0.05, 1, 'tail3'],
       [0, 2.0, 3.1, 0.22, 1, 'tail2'],
@@ -72,14 +98,15 @@ export const MODELS = {
     ],
     extras: [
       ...eyes(0.17, 3.3, -2.6, 0.045),
-      { type: 'tube', bone: 'head', points: [[0, 3.35, -2.55], [0, 3.65, -2.05], [0, 3.85, -1.35]], radii: [0.11, 0.09, 0.05], color: '#9a4a2c' },
+      { type: 'tube', bone: 'head', points: [[0, 3.35, -2.55], [0, 3.65, -2.05], [0, 3.85, -1.35]], radii: [0.11, 0.09, 0.05], color: '#c0602c', pele: { type: 'listras', freq: 22, color: '#5a2a14', strength: 0.5 } },
     ],
   },
 
   // -------------------------------------------------- Paquicefalossauro
   paquicefalossauro: {
     body: 'biped',
-    colors: { top: '#7a5a3a', belly: '#cdb894', pattern: '#563b25', patternFreq: 7, patternStrength: 0.5 },
+    colors: { top: '#7a5636', belly: '#d8c6a0', pattern: '#3f2a18' },
+    skin: 'escamas', pattern: { type: 'manchas', freq: 9, strength: 0.6 },
     spine: [
       [0, 1.3, 2.3, 0.04, 1, 'tail3'],
       [0, 1.32, 1.6, 0.16, 1, 'tail2'],
@@ -105,7 +132,8 @@ export const MODELS = {
   // -------------------------------------------------- Braquiossauro
   braquiossauro: {
     body: 'quad',
-    colors: { top: '#788282', belly: '#c3c1af', pattern: '#5c6666', patternFreq: 5, patternStrength: 0.35 },
+    colors: { top: '#6c7872', belly: '#c6c4b2', pattern: '#46524e' },
+    skin: 'escamas', pattern: { type: 'mosqueado', freq: 2.5, strength: 0.55 },
     ringsPerMeter: 2.5,
     spine: [
       [0, 4.6, 12.5, 0.15, 1, 'tail3'],
@@ -133,7 +161,8 @@ export const MODELS = {
   // -------------------------------------------------- Raptor
   raptor: {
     body: 'biped',
-    colors: { top: '#86562f', belly: '#d9c69c', pattern: '#3a281a', patternFreq: 14, patternStrength: 0.75 },
+    colors: { top: '#8c5630', belly: '#e2d0a6', pattern: '#341f10' },
+    skin: 'penas', pattern: { type: 'listras', count: 15, strength: 0.75 }, teeth: { n: 9, size: 0.035 },
     spine: [
       [0, 1.05, 2.05, 0.03, 1, 'tail3'],
       [0, 1.0, 1.35, 0.08, 1, 'tail2'],
@@ -150,7 +179,11 @@ export const MODELS = {
       ...pair('braco', 'chest', [0.18, 0.92, -0.5], [0.22, 0.72, -0.55], [0.22, 0.62, -0.75], [0.22, 0.6, -0.86], [0.05, 0.04, 0.03], 0),
     ],
     extras: [
-      ...eyes(0.09, 1.52, -1.02, 0.025),
+      ...eyes(0.09, 1.52, -1.02, 0.025, 'head', '#c89a2a'),
+      ...feathers('bracoE', [0.2, 0.86, -0.5], [0.22, 0.7, -0.62], 3, 0.22, '#4a2a14', 0.03).filter((f) => f.p[0] > 0),
+      ...feathers('bracoD', [0.2, 0.86, -0.5], [0.22, 0.7, -0.62], 3, 0.22, '#4a2a14', 0.03).filter((f) => f.p[0] < 0),
+      { type: 'ellipsoid', bone: 'tail3', p: [0, 1.06, 1.95], r: [0.12, 0.03, 0.3], color: '#3a2212', skin: 'penas' },
+      { type: 'ellipsoid', bone: 'head', p: [0, 1.62, -0.88], r: [0.03, 0.06, 0.16], color: '#7a2c18', skin: 'penas' },
       { type: 'cone', bone: 'pernaE_pe', base: [0.2, 0.06, 0.0], tip: [0.24, 0.16, -0.12], r: 0.025, color: '#2a2420' },
     ],
   },
@@ -158,7 +191,8 @@ export const MODELS = {
   // -------------------------------------------------- T-Rex
   trex: {
     body: 'biped',
-    colors: { top: '#56553a', belly: '#bcae88', pattern: '#3a3826', patternFreq: 8, patternStrength: 0.55 },
+    colors: { top: '#4c4836', belly: '#b9aa86', pattern: '#2a271d' },
+    skin: 'escamas', pattern: { type: 'mosqueado', freq: 4, strength: 0.65 }, teeth: { n: 11, size: 0.17 },
     ringsPerMeter: 4,
     bones: [{ name: 'jaw', parent: 'head', pos: [0, 3.85, -3.6] }],
     spine: [
@@ -189,7 +223,8 @@ export const MODELS = {
   titanoboa: {
     body: 'snake',
     root: 'head',
-    colors: { top: '#4b5532', belly: '#b6ad78', pattern: '#262c18', patternFreq: 16, patternStrength: 0.8 },
+    colors: { top: '#55602f', belly: '#c6b47c', pattern: '#1b2010' },
+    skin: 'escamas', scalesPerMeter: 16, pattern: { type: 'manchas', freq: 6, strength: 0.9 },
     ringsPerMeter: 4,
     spine: [
       [0, 0.25, 6.6, 0.05, 1, 'b9'],
@@ -212,7 +247,8 @@ export const MODELS = {
   // -------------------------------------------------- Deinosuchus
   deinosuchus: {
     body: 'croc',
-    colors: { top: '#3d452e', belly: '#a69e74', pattern: '#262b1c', patternFreq: 12, patternStrength: 0.7 },
+    colors: { top: '#3e4930', belly: '#b8ae82', pattern: '#1e2316' },
+    skin: 'escamas', pattern: { type: 'aneis', count: 15, strength: 0.55 }, teeth: { n: 12, size: 0.07 },
     ringsPerMeter: 4,
     spine: [
       [0, 0.55, 5.1, 0.06, 0.8, 'tail3'],
@@ -242,7 +278,8 @@ export const MODELS = {
   // -------------------------------------------------- Pterodáctilo
   pterodactilo: {
     body: 'flyer',
-    colors: { top: '#86664a', belly: '#d0b893', pattern: '#5a4330', patternFreq: 0 },
+    colors: { top: '#7a593c', belly: '#d2b68e', pattern: '#4a3422' },
+    skin: 'pelo', pattern: { type: 'dorsal', freq: 8, strength: 0.6 },
     spine: [
       [0, 0, 0.45, 0.03, 1, 'tail1'],
       [0, 0, 0.2, 0.1, 1, 'hips'],
@@ -264,7 +301,8 @@ export const MODELS = {
   // -------------------------------------------------- Quetzalcoatlus
   quetzalcoatlus: {
     body: 'flyer',
-    colors: { top: '#c4bcaa', belly: '#ede6d4', pattern: '#9a9282', patternFreq: 0 },
+    colors: { top: '#bdb4a2', belly: '#efe8d6', pattern: '#7e766a' },
+    skin: 'pelo', pattern: { type: 'mosqueado', freq: 4, strength: 0.4 },
     spine: [
       [0, 0, 1.0, 0.06, 1, 'tail1'],
       [0, 0, 0.5, 0.35, 1, 'hips'],
@@ -287,7 +325,8 @@ export const MODELS = {
   // -------------------------------------------------- Triceratops
   triceratops: {
     body: 'quad',
-    colors: { top: '#6b6b4a', belly: '#c2b48a', pattern: '#4a4a32', patternFreq: 7, patternStrength: 0.45 },
+    colors: { top: '#6a6046', belly: '#c8b68a', pattern: '#38331f' },
+    skin: 'escamas', pattern: { type: 'mosqueado', freq: 4, strength: 0.55 },
     ringsPerMeter: 4,
     spine: [
       [0, 1.6, 4.4, 0.08, 1, 'tail3'],
@@ -306,7 +345,7 @@ export const MODELS = {
     ],
     extras: [
       ...eyes(0.42, 2.0, -3.05, 0.06),
-      { type: 'ellipsoid', bone: 'head', p: [0, 2.45, -2.25], r: [1.25, 1.05, 0.18], color: '#7e5a3a' },
+      { type: 'ellipsoid', bone: 'head', p: [0, 2.45, -2.25], r: [1.25, 1.05, 0.18], color: '#8a6038', pele: { type: 'manchas', freq: 14, color: '#d4a048', strength: 0.8, skin: 'escamas' } },
       { type: 'cone', bone: 'head', base: [0.35, 2.25, -2.75], tip: [0.42, 2.95, -3.65], r: 0.1, color: '#e2d6b8' },
       { type: 'cone', bone: 'head', base: [-0.35, 2.25, -2.75], tip: [-0.42, 2.95, -3.65], r: 0.1, color: '#e2d6b8' },
       { type: 'cone', bone: 'head', base: [0, 1.72, -3.45], tip: [0, 2.12, -3.8], r: 0.09, color: '#e2d6b8' },
@@ -317,7 +356,8 @@ export const MODELS = {
   // -------------------------------------------------- Estegossauro
   estegossauro: {
     body: 'quad',
-    colors: { top: '#6f7552', belly: '#c9bf98', pattern: '#4f5538', patternFreq: 6, patternStrength: 0.4 },
+    colors: { top: '#687048', belly: '#cdc39a', pattern: '#3c4426' },
+    skin: 'escamas', pattern: { type: 'listras', count: 9, strength: 0.5 },
     ringsPerMeter: 4,
     spine: [
       [0, 2.2, 4.6, 0.1, 1, 'tail3'],
@@ -337,7 +377,7 @@ export const MODELS = {
       ...eyes(0.2, 1.68, -2.7, 0.04),
       ...[[3.1, 3.1, 0.05, 0.4, 0.35, 'tail2'], [3.75, 2.0, 0.06, 0.62, 0.5, 'tail1'], [4.15, 1.1, 0.06, 0.88, 0.7, 'hips'],
         [4.25, 0.2, 0.06, 0.95, 0.75, 'hips'], [3.75, -0.6, 0.06, 0.78, 0.6, 'chest'], [3.25, -1.3, 0.05, 0.56, 0.45, 'chest']]
-        .map(([y, z, rx, ry, rz, bone], i) => ({ type: 'ellipsoid', bone, p: [i % 2 ? 0.12 : -0.12, y, z], r: [rx, ry, rz], color: '#9a5a3a' })),
+        .map(([y, z, rx, ry, rz, bone], i) => ({ type: 'ellipsoid', bone, p: [i % 2 ? 0.12 : -0.12, y, z], r: [rx, ry, rz], color: '#a6542e', pele: { type: 'mosqueado', freq: 10, color: '#5e2a14', strength: 0.6, skin: 'escamas' } })),
       { type: 'cone', bone: 'tail3', base: [0.15, 2.3, 4.2], tip: [0.75, 2.65, 4.8], r: 0.07, color: '#d8ccb0' },
       { type: 'cone', bone: 'tail3', base: [-0.15, 2.3, 4.2], tip: [-0.75, 2.65, 4.8], r: 0.07, color: '#d8ccb0' },
       { type: 'cone', bone: 'tail3', base: [0.12, 2.15, 4.5], tip: [0.65, 2.45, 5.2], r: 0.06, color: '#d8ccb0' },
@@ -348,7 +388,8 @@ export const MODELS = {
   // -------------------------------------------------- Anquilossauro
   anquilossauro: {
     body: 'quad',
-    colors: { top: '#5e5c46', belly: '#a89c78', pattern: '#45432f', patternFreq: 0 },
+    colors: { top: '#5c5640', belly: '#ab9e7a', pattern: '#353224' },
+    skin: 'escamas', scalesPerMeter: 7, pattern: { type: 'mosqueado', freq: 6, strength: 0.6 },
     ringsPerMeter: 4,
     spine: [
       [0, 0.9, 3.6, 0.22, 1, 'tail3'],
@@ -379,7 +420,8 @@ export const MODELS = {
   // -------------------------------------------------- Galimimo
   galimimo: {
     body: 'biped',
-    colors: { top: '#8a7a5a', belly: '#d8cdb0', pattern: '#5a4a34', patternFreq: 0 },
+    colors: { top: '#8e7a54', belly: '#e6dabc', pattern: '#4a3a24' },
+    skin: 'penas', pattern: { type: 'dorsal', freq: 14, strength: 0.65 },
     spine: [
       [0, 1.5, 1.8, 0.04, 1, 'tail3'],
       [0, 1.45, 1.2, 0.12, 1, 'tail2'],
@@ -401,7 +443,8 @@ export const MODELS = {
   // -------------------------------------------------- Capivara
   capivara: {
     body: 'quad',
-    colors: { top: '#7a5a3c', belly: '#9a7a54', pattern: '#6a4a30', patternFreq: 0 },
+    colors: { top: '#7c5a38', belly: '#a07c56', pattern: '#5a3e24' },
+    skin: 'pelo', pattern: { type: 'mosqueado', freq: 12, strength: 0.3 },
     spine: [
       [0, 0.52, 0.64, 0.12, 1, 'hips'],
       [0, 0.55, 0.45, 0.33, 0.95, 'hips'],
@@ -424,7 +467,8 @@ export const MODELS = {
   // -------------------------------------------------- Espinossauro
   espinossauro: {
     body: 'biped',
-    colors: { top: '#4e5a48', belly: '#b8b08c', pattern: '#33402e', patternFreq: 9, patternStrength: 0.5 },
+    colors: { top: '#485860', belly: '#c4bc96', pattern: '#253238' },
+    skin: 'escamas', pattern: { type: 'listras', count: 13, strength: 0.5 }, teeth: { n: 14, size: 0.08 },
     ringsPerMeter: 3.5,
     bones: [{ name: 'jaw', parent: 'head', pos: [0, 4.45, -3.7] }],
     spine: [
@@ -444,9 +488,9 @@ export const MODELS = {
     ],
     extras: [
       ...eyes(0.32, 4.82, -3.85, 0.06),
-      { type: 'ellipsoid', bone: 'hips', p: [0, 5.7, 0.4], r: [0.08, 1.9, 1.6], color: '#8a4a3a' },
-      { type: 'ellipsoid', bone: 'chest', p: [0, 5.45, -1.3], r: [0.08, 1.6, 1.4], color: '#8a4a3a' },
-      { type: 'ellipsoid', bone: 'tail1', p: [0, 4.6, 2.4], r: [0.07, 1.0, 1.2], color: '#7a4232' },
+      { type: 'ellipsoid', bone: 'hips', p: [0, 5.7, 0.4], r: [0.08, 1.9, 1.6], color: '#a8482e', pele: { type: 'aneis', freq: 9, color: '#4a1c10', strength: 0.55, skin: 'escamas' } },
+      { type: 'ellipsoid', bone: 'chest', p: [0, 5.45, -1.3], r: [0.08, 1.6, 1.4], color: '#a8482e', pele: { type: 'aneis', freq: 9, color: '#4a1c10', strength: 0.55, skin: 'escamas' } },
+      { type: 'ellipsoid', bone: 'tail1', p: [0, 4.6, 2.4], r: [0.07, 1.0, 1.2], color: '#984030', pele: { type: 'aneis', freq: 9, color: '#4a1c10', strength: 0.55, skin: 'escamas' } },
       { type: 'ellipsoid', bone: 'jaw', p: [0, 4.15, -4.7], r: [0.25, 0.14, 1.0], color: '#8f8462' },
     ],
   },
@@ -454,7 +498,8 @@ export const MODELS = {
   // -------------------------------------------------- Dilofossauro
   dilofossauro: {
     body: 'biped',
-    colors: { top: '#5a6a3a', belly: '#d0c49a', pattern: '#2f3a1e', patternFreq: 12, patternStrength: 0.6 },
+    colors: { top: '#5c7436', belly: '#e2d6a2', pattern: '#233012' },
+    skin: 'escamas', pattern: { type: 'manchas', freq: 11, strength: 0.75 }, teeth: { n: 9, size: 0.05 },
     spine: [
       [0, 1.35, 2.7, 0.04, 1, 'tail3'],
       [0, 1.3, 1.8, 0.11, 1, 'tail2'],
@@ -472,15 +517,16 @@ export const MODELS = {
     ],
     extras: [
       ...eyes(0.1, 1.93, -1.3, 0.025),
-      { type: 'ellipsoid', bone: 'head', p: [0.07, 2.08, -1.42], r: [0.025, 0.14, 0.32], color: '#b04a2a' },
-      { type: 'ellipsoid', bone: 'head', p: [-0.07, 2.08, -1.42], r: [0.025, 0.14, 0.32], color: '#b04a2a' },
+      { type: 'ellipsoid', bone: 'head', p: [0.07, 2.08, -1.42], r: [0.025, 0.14, 0.32], color: '#d0522a', pele: { type: 'listras', freq: 30, color: '#f0c040', strength: 0.7 } },
+      { type: 'ellipsoid', bone: 'head', p: [-0.07, 2.08, -1.42], r: [0.025, 0.14, 0.32], color: '#d0522a', pele: { type: 'listras', freq: 30, color: '#f0c040', strength: 0.7 } },
     ],
   },
 
   // -------------------------------------------------- Compsognato
   compsognato: {
     body: 'biped',
-    colors: { top: '#6a7a4a', belly: '#d6caa0', pattern: '#3a4428', patternFreq: 10, patternStrength: 0.6 },
+    colors: { top: '#5e7a38', belly: '#e6d8a0', pattern: '#22320f' },
+    skin: 'escamas', pattern: { type: 'dorsal', freq: 6, strength: 0.75 }, teeth: { n: 6, size: 0.012 },
     radial: 8,
     spine: [
       [0, 0.42, 0.62, 0.015, 1, 'tail3'],
@@ -501,7 +547,8 @@ export const MODELS = {
   // -------------------------------------------------- Carnotauro
   carnotauro: {
     body: 'biped',
-    colors: { top: '#7a3e2c', belly: '#c8a882', pattern: '#4a2418', patternFreq: 8, patternStrength: 0.6 },
+    colors: { top: '#7e3826', belly: '#d4b088', pattern: '#331209' },
+    skin: 'escamas', pattern: { type: 'dorsal', freq: 22, strength: 0.7 }, teeth: { n: 10, size: 0.09 },
     ringsPerMeter: 5,
     bones: [{ name: 'jaw', parent: 'head', pos: [0, 2.85, -2.2] }],
     spine: [
@@ -530,7 +577,8 @@ export const MODELS = {
   // -------------------------------------------------- Onça-pintada
   onca: {
     body: 'quad',
-    colors: { top: '#c99236', belly: '#eadbb8', pattern: '#2a1e14', patternFreq: 24, patternStrength: 0.75 },
+    colors: { top: '#cc9238', belly: '#efe1c0', pattern: '#1a120c' },
+    skin: 'pelo', pattern: { type: 'rosetas', freq: 15, strength: 0.95 }, claws: false,
     spine: [
       [0, 0.78, 1.75, 0.035, 1, 'tail3'],
       [0, 0.62, 1.3, 0.055, 1, 'tail2'],
@@ -556,7 +604,8 @@ export const MODELS = {
   // -------------------------------------------------- Aranha-gigante
   aranha: {
     body: 'spider',
-    colors: { top: '#2a2420', belly: '#4a3a2a', pattern: '#7a5a2a', patternFreq: 8, patternStrength: 0.5 },
+    colors: { top: '#2a221c', belly: '#4a3a2a', pattern: '#9a7430', limbs: '#2e2620' },
+    skin: 'pelo', pattern: { type: 'listras', count: 6, strength: 0.55 }, claws: false,
     spine: [
       [0, 1.05, 1.35, 0.08, 1, 'tail1'],
       [0, 1.1, 0.95, 0.55, 0.85, 'tail1'],
@@ -582,7 +631,8 @@ export const MODELS = {
   piranha: {
     body: 'fish',
     root: 'chest',
-    colors: { top: '#62676c', belly: '#b8382a', pattern: '#43474c', patternFreq: 0 },
+    colors: { top: '#5c6268', belly: '#c4442e', pattern: '#a8b2b8' },
+    skin: 'escamas', scalesPerMeter: 40, pattern: { type: 'manchas', freq: 22, strength: 0.35 }, teeth: { n: 4, size: 0.02 },
     spine: [
       [0, 0, 0.55, 0.03, 1, 'tail2'],
       [0, 0, 0.35, 0.1, 1.2, 'tail1'],
@@ -604,7 +654,8 @@ export const MODELS = {
   // -------------------------------------------------- Arara
   arara: {
     body: 'flyer',
-    colors: { top: '#c4282a', belly: '#c4282a', pattern: '#c4282a', patternFreq: 0 },
+    colors: { top: '#c4282a', belly: '#c4282a', pattern: '#c4282a' },
+    skin: 'penas',
     radial: 8,
     spine: [
       [0, 0, 0.3, 0.02, 1, 'tail1'],

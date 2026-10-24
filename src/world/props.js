@@ -205,17 +205,58 @@ function merge(parts) {
 }
 
 // Raízes de apoio (sapopemas): placas curvas saindo do tronco.
-function buttress(angle, height, reach, trunkR, hex) {
-  const g = new THREE.BoxGeometry(0.22, 1, 1, 1, 4, 3);
+// Raiz grossa que sai do tronco e entra no chão (meio enterrada).
+function surfaceRoot(angle, height, reach, trunkR, hex, seed = 1, radial = 6) {
+  const bend = (hash3(seed, 4, 1, 7) - 0.5) * 0.5;
+  const P = (t, a) => [Math.cos(angle + a) * (trunkR * 0.7 + reach * t), height * Math.pow(1 - t, 1.8) - 0.2 * t, Math.sin(angle + a) * (trunkR * 0.7 + reach * t)];
+  const pts = [P(0, 0), P(0.35, bend * 0.5), P(0.7, bend), P(1, bend * 1.4)].map((p) => new THREE.Vector3(...p));
+  const curve = new THREE.CatmullRomCurve3(pts);
+  const g = new THREE.TubeGeometry(curve, 8, 1, radial, false);
+  // raio diminui do tronco para a ponta
   const pos = g.attributes.position;
+  const nor = g.attributes.normal;
+  const per = radial + 1;
   for (let i = 0; i < pos.count; i++) {
-    const t = pos.getY(i) + 0.5;               // 0 embaixo, 1 em cima
-    const o = pos.getZ(i) + 0.5;               // 0 no tronco, 1 na ponta
-    pos.setXYZ(i, pos.getX(i) * (1 - t * 0.6), t * height, trunkR * 0.8 + o * reach * Math.pow(1 - t, 1.6));
+    const ring = Math.floor(i / per);
+    const t = ring / 8;
+    const c = curve.getPoint(t);
+    const r = (0.42 - 0.34 * t) * (height / 2.4);
+    pos.setXYZ(i, c.x + nor.getX(i) * r, c.y + nor.getY(i) * r * 0.85, c.z + nor.getZ(i) * r);
   }
   g.computeVertexNormals();
-  g.rotateY(angle);
-  return paint(g, hex, 0.3);
+  const base = new THREE.Color(hex);
+  const moss = new THREE.Color('#4f5a2e');
+  return paintFn(g, (col, x, y) => {
+    col.copy(base).multiplyScalar(0.78).lerp(moss, Math.max(0, 0.5 - y * 0.4));
+  });
+}
+
+// Tronco com base alargada, casca com veios e um pouco de musgo embaixo.
+function trunk(rTop, rBase, h, flare, hex, radial = 9, hSeg = 6, seed = 1) {
+  const g = new THREE.CylinderGeometry(1, 1, h, radial, hSeg, true);
+  g.translate(0, h / 2, 0);
+  const pos = g.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const y = pos.getY(i);
+    const t = y / h;
+    let r = rBase + (rTop - rBase) * t + flare * Math.exp(-y / 1.6);
+    // veios da casca
+    const a = Math.atan2(pos.getZ(i), pos.getX(i));
+    r *= 1 + Math.sin(a * 7 + seed) * 0.035 + (hash3(Math.round(a * 4), Math.round(y), seed, 5) - 0.5) * 0.05;
+    pos.setX(i, pos.getX(i) * r);
+    pos.setZ(i, pos.getZ(i) * r);
+    pos.setY(i, y - 0.4); // começa um pouco enterrado
+  }
+  g.computeVertexNormals();
+  const base = new THREE.Color(hex);
+  const dark = base.clone().multiplyScalar(0.62);
+  const moss = new THREE.Color('#4a5a2c');
+  return paintFn(g, (c, x, y, z) => {
+    const a = Math.atan2(z, x);
+    const streak = 0.5 + 0.5 * Math.sin(a * 11 + y * 0.35 + seed);
+    c.copy(base).lerp(dark, streak * 0.35 + (y < 1 ? 0.25 : 0));
+    if (y < 2.2) c.lerp(moss, (2.2 - y) / 2.2 * 0.45);
+  });
 }
 
 const BARK_LIGHT = '#8a8070';
@@ -325,8 +366,11 @@ function lianas(points, length) {
 // Sumaúma: a gigante da floresta (≈ 28 m) com sapopemas e cipós
 // ------------------------------------------------------------
 export function makeSumauma() {
-  const parts = [paint(cyl(0.65, 1.25, 24, [0, 0, 0], 10, 4), BARK_LIGHT, 0.3)];
-  for (let i = 0; i < 5; i++) parts.push(buttress((i / 5) * Math.PI * 2 + 0.3, 5.5 + (i % 2), 3.4, 1.2, '#7c7262'));
+  const parts = [trunk(0.62, 1.05, 24.4, 0.55, BARK_LIGHT, 11, 8, 2)];
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2 + 0.3 + hash3(i, 3, 1, 1) * 0.4;
+    parts.push(surfaceRoot(a, 1.6 + hash3(i, 1, 2, 9) * 1.2, 2.2 + hash3(i, 7, 1, 2) * 1.8, 1.25, BARK_LIGHT, i + 1));
+  }
   const branches = [[6.5, 25.5, 2], [-6, 25, -3], [2.5, 26, -6.5], [-3, 25.5, 6]];
   for (const b of branches) parts.push(paint(limb([0, 20, 0], b, 0.38, 0.15), BARK_LIGHT));
   parts.push(...crown([[0, 28, 0, 4.4], [6.5, 26.8, 2, 3.6], [-6, 26.5, -3, 3.6], [2.5, 27.2, -6.5, 3.4], [-3, 26.8, 6, 3.4], [4.5, 28.4, -3, 3], [-4.5, 28.2, 2.5, 3]], [7, 5], [1.35, 0.42, 1.35], 3));
@@ -335,7 +379,9 @@ export function makeSumauma() {
 }
 export function makeSumaumaLow() {
   return merge([
-    paint(cyl(0.7, 1.3, 25, [0, 0, 0], 6), BARK_LIGHT),
+    trunk(0.65, 1.1, 24.4, 0.5, BARK_LIGHT, 7, 3, 2),
+    ...[0, 2, 4, 6].map((i) => surfaceRoot((i / 8) * Math.PI * 2 + 0.3, 2.0, 2.8, 1.25, BARK_LIGHT, i + 1, 4)),
+    ...[[6.5, 25.5, 2], [-6, 25, -3], [2.5, 26, -6.5], [-3, 25.5, 6]].map((b) => paint(limb([0, 20, 0], b, 0.36, 0.15, 4), BARK_LIGHT)),
     ...crownLow([[0, 28, 0, 4.4], [6.5, 26.8, 2, 3.6], [-6, 26.5, -3, 3.6], [2.5, 27.2, -6.5, 3.4], [-3, 26.8, 6, 3.4]], [1.35, 0.42, 1.35], 3),
   ]);
 }
@@ -344,7 +390,7 @@ export function makeSumaumaLow() {
 // Árvore do dossel (≈ 16 m) com bromélias
 // ------------------------------------------------------------
 export function makeCanopyTree() {
-  const parts = [paint(cyl(0.32, 0.58, 13, [0, 0, 0], 8, 2), BARK, 0.3)];
+  const parts = [trunk(0.3, 0.46, 13.4, 0.28, BARK, 8, 5, 4)];
   parts.push(paint(limb([0, 10, 0], [3.6, 14.4, 1], 0.22, 0.1), BARK));
   parts.push(paint(limb([0, 11, 0], [-3.2, 14.6, -1.8], 0.2, 0.09), BARK));
   parts.push(paint(limb([0, 11.5, 0], [0.6, 14.6, -3.6], 0.18, 0.08), BARK));
@@ -363,7 +409,8 @@ export function makeCanopyTree() {
 }
 export function makeCanopyTreeLow() {
   return merge([
-    paint(cyl(0.35, 0.55, 13, [0, 0, 0], 5), BARK),
+    trunk(0.32, 0.48, 13.4, 0.25, BARK, 5, 2, 4),
+    ...[[3.6, 14.4, 1], [-3.2, 14.6, -1.8], [0.6, 14.6, -3.6], [-1, 14.4, 3.3]].map((b, i) => paint(limb([0, 10 + i * 0.6, 0], b, 0.2, 0.09, 4), BARK)),
     ...crownLow([[0, 15.8, 0, 4.0], [3.6, 14.8, 1, 3.3], [-3.2, 15, -1.8, 3.3], [0.6, 15.1, -3.6, 3.0], [-1, 14.7, 3.3, 3.0]], [1.25, 0.62, 1.25], 7),
   ]);
 }
@@ -371,13 +418,15 @@ export function makeCanopyTreeLow() {
 // Árvore do sub-bosque (≈ 8 m), fina
 export function makeUnderstoryTree() {
   return merge([
-    paint(cyl(0.16, 0.26, 6.5, [0, 0, 0], 6, 2), BARK, 0.3),
+    trunk(0.15, 0.22, 6.9, 0.1, BARK, 6, 3, 6),
+    paint(limb([0, 5.6, 0], [0.9, 6.9, 0.5], 0.09, 0.05, 4), BARK),
+    paint(limb([0, 5.9, 0], [-0.8, 7.1, -0.6], 0.09, 0.05, 4), BARK),
     ...crown([[0, 7.6, 0, 1.7], [0.9, 6.9, 0.5, 1.3], [-0.8, 7.1, -0.6, 1.25]], [6, 5], [1.1, 0.75, 1.1], 12),
   ]);
 }
 export function makeUnderstoryTreeLow() {
   return merge([
-    paint(cyl(0.18, 0.26, 6.5, [0, 0, 0], 5), BARK),
+    trunk(0.16, 0.23, 6.9, 0.1, BARK, 5, 2, 6),
     ...crownLow([[0, 7.5, 0, 1.9]], [1.1, 0.75, 1.1], 12),
   ]);
 }

@@ -29,24 +29,25 @@ import * as P from './props.js';
 //   collider: raio de colisão (0 = atravessa; 'log' = tronco deitado)
 //   res: tipo de recurso (data/world/recursos.json)
 //   water: pode nascer em água rasa; surface: boia na água
+//   foot: raio da base (m) – em morro a planta afunda até o ponto mais baixo
 const TYPES = {
-  sumauma: { hi: P.makeSumauma, lo: P.makeSumaumaLow, imp: true, collider: 1.5, shadow: true, scale: [0.85, 1.2], res: 'arvore_gigante' },
-  arvore_dossel: { hi: P.makeCanopyTree, lo: P.makeCanopyTreeLow, imp: true, collider: 0.55, shadow: true, scale: [0.8, 1.25], res: 'arvore' },
-  arvore_media: { hi: P.makeUnderstoryTree, lo: P.makeUnderstoryTreeLow, imp: true, collider: 0.3, shadow: true, scale: [0.75, 1.3], res: 'arvore' },
-  acai: { hi: P.makeAcai, lo: P.makeAcaiLow, imp: true, collider: 0.22, shadow: true, scale: [0.8, 1.2], res: 'palmeira' },
-  coqueiro: { hi: P.makeCoconutPalm, lo: P.makeCoconutPalmLow, imp: true, collider: 0.3, shadow: true, scale: [0.85, 1.2], res: 'palmeira' },
-  samambaia_gigante: { hi: P.makeTreeFern, lo: P.makeTreeFernLow, imp: true, collider: 0.2, shadow: true, scale: [0.8, 1.3], res: 'samambaia_gigante' },
-  bananeira: { hi: P.makeBananaTree, lo: P.makeBananaTreeLow, collider: 0.22, shadow: false, scale: [0.85, 1.25], res: 'bananeira', maxDist: 110 },
-  bananeira_vazia: { hi: P.makeBananaTreeEmpty, lo: P.makeBananaTreeEmptyLow, collider: 0.22, shadow: false, scale: [0.85, 1.25], res: 'planta', maxDist: 110 },
+  sumauma: { foot: 2.6, hi: P.makeSumauma, lo: P.makeSumaumaLow, imp: true, collider: 1.5, shadow: true, scale: [0.85, 1.2], res: 'arvore_gigante' },
+  arvore_dossel: { foot: 0.75, hi: P.makeCanopyTree, lo: P.makeCanopyTreeLow, imp: true, collider: 0.55, shadow: true, scale: [0.8, 1.25], res: 'arvore' },
+  arvore_media: { foot: 0.3, hi: P.makeUnderstoryTree, lo: P.makeUnderstoryTreeLow, imp: true, collider: 0.3, shadow: true, scale: [0.75, 1.3], res: 'arvore' },
+  acai: { foot: 0.4, hi: P.makeAcai, lo: P.makeAcaiLow, imp: true, collider: 0.22, shadow: true, scale: [0.8, 1.2], res: 'palmeira' },
+  coqueiro: { foot: 0.3, hi: P.makeCoconutPalm, lo: P.makeCoconutPalmLow, imp: true, collider: 0.3, shadow: true, scale: [0.85, 1.2], res: 'palmeira' },
+  samambaia_gigante: { foot: 0.3, hi: P.makeTreeFern, lo: P.makeTreeFernLow, imp: true, collider: 0.2, shadow: true, scale: [0.8, 1.3], res: 'samambaia_gigante' },
+  bananeira: { foot: 0.45, hi: P.makeBananaTree, lo: P.makeBananaTreeLow, collider: 0.22, shadow: false, scale: [0.85, 1.25], res: 'bananeira', maxDist: 110 },
+  bananeira_vazia: { foot: 0.45, hi: P.makeBananaTreeEmpty, lo: P.makeBananaTreeEmptyLow, collider: 0.22, shadow: false, scale: [0.85, 1.25], res: 'planta', maxDist: 110 },
   samambaia: { hi: P.makeFern, collider: 0, shadow: false, scale: [0.8, 1.5], res: 'samambaia', maxDist: 55 },
   arbusto_mejo: { hi: P.makeMejoBush, collider: 0, shadow: false, scale: [0.8, 1.2], res: 'baga_mejo', maxDist: 75 },
   arbusto_escura: { hi: P.makeDarkBush, collider: 0, shadow: false, scale: [0.8, 1.2], res: 'baga_escura', maxDist: 75 },
   arbusto_frutas: { hi: P.makeFruitBush, collider: 0, shadow: false, scale: [0.8, 1.2], res: 'frutas', maxDist: 75 },
   arbusto: { hi: P.makeBushEmpty, collider: 0, shadow: false, scale: [0.8, 1.2], res: 'arbusto', maxDist: 75 },
   tronco_caido: { hi: P.makeFallenLog, lo: P.makeFallenLogLow, collider: 'log', shadow: true, scale: [0.8, 1.3], res: 'tronco', maxDist: 140 },
-  pedra_musgo: { hi: P.makeMossRock, lo: P.makeMossRockLow, collider: 1.0, shadow: false, scale: [0.6, 2.2], res: 'pedra', maxDist: 160 },
-  mangue: { hi: P.makeMangrove, lo: P.makeMangroveLow, imp: true, collider: 0.6, shadow: true, scale: [0.8, 1.2], res: 'arvore', water: true },
-  arvore_morta: { hi: P.makeDeadTree, collider: 0.3, shadow: true, scale: [0.8, 1.3], res: 'arvore', water: true, maxDist: 200 },
+  pedra_musgo: { foot: 0.85, hi: P.makeMossRock, lo: P.makeMossRockLow, collider: 1.0, shadow: false, scale: [0.6, 2.2], res: 'pedra', maxDist: 160 },
+  mangue: { foot: 1.2, hi: P.makeMangrove, lo: P.makeMangroveLow, imp: true, collider: 0.6, shadow: true, scale: [0.8, 1.2], res: 'arvore', water: true },
+  arvore_morta: { foot: 0.3, hi: P.makeDeadTree, collider: 0.3, shadow: true, scale: [0.8, 1.3], res: 'arvore', water: true, maxDist: 200 },
   junco: { hi: P.makeReeds, collider: 0, shadow: false, scale: [0.8, 1.3], res: 'junco', water: true, maxDist: 70 },
   taboa: { hi: P.makeCattail, collider: 0, shadow: false, scale: [0.8, 1.3], res: 'junco', water: true, maxDist: 70 },
   vitoria_regia: { hi: P.makeWaterLily, collider: 0, shadow: false, scale: [0.6, 1.7], res: null, surface: true, maxDist: 120 },
@@ -199,10 +200,27 @@ export class Vegetation {
         }
 
         const scale = def.scale[0] + r2 * (def.scale[1] - def.scale[0]);
-        const sink = type === 'pedra_musgo' ? 0.2 * scale : type === 'tronco_caido' ? 0.12 : 0.15;
-        const y = def.surface ? wb.level + 0.03 : h - sink;
         const rot = r3 * Math.PI * 2;
+        const sink = type === 'pedra_musgo' ? 0.2 * scale : type === 'tronco_caido' ? 0.12 : 0.15;
+        // Em morro: apoia no ponto MAIS BAIXO do chão embaixo da planta
+        // (senão um lado fica "flutuando").
+        let ground = h;
+        const foot = (def.foot ?? 0.4) * scale;
+        for (let k = 0; k < 6; k++) {
+          const a = (k / 6) * Math.PI * 2;
+          ground = Math.min(ground, map.heightAt(x + Math.cos(a) * foot, z + Math.sin(a) * foot));
+        }
+        let y = def.surface ? wb.level + 0.03 : ground - sink;
         q.setFromAxisAngle(up, rot);
+        if (def.collider === 'log') {
+          // tronco caído deita acompanhando a descida do morro
+          const hl = 4.3 * scale;
+          const hA = map.heightAt(x + Math.cos(rot) * hl, z - Math.sin(rot) * hl);
+          const hB = map.heightAt(x - Math.cos(rot) * hl, z + Math.sin(rot) * hl);
+          const tilt = Math.atan2(hA - hB, 2 * hl);
+          q.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), tilt));
+          y = Math.min((hA + hB) / 2, h) - sink;
+        }
         if (type === 'pedra_musgo') s.set(scale * (0.8 + r4 * 0.5), scale, scale * (1.3 - r4 * 0.5));
         else s.setScalar(scale);
         p.set(x, y, z);

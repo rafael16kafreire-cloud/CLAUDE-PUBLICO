@@ -13,6 +13,7 @@ import { game } from '../core/game_manager.js';
 import { mulberry32 } from '../core/math.js';
 import { MODELS } from './creature_models.js';
 import { buildSpeciesModel, createSkinnedMesh } from './creature_builder.js';
+import { makeCreatureMaterial } from './creature_material.js';
 import { Creature, CSTATE } from './creature.js';
 
 export const SPECIES = Object.fromEntries(data.especies.map((s) => [s.id, s]));
@@ -23,7 +24,7 @@ export class CreatureManager {
     this.scene = scene;
     this.list = [];
     this.models = {};
-    this.material = new THREE.MeshLambertMaterial({ vertexColors: true });
+    this.material = makeCreatureMaterial();
     this.rand = mulberry32((Date.now() & 0xffff) + 17);
     this.spawnTimer = 0;
     this.enabled = true;
