@@ -4,6 +4,13 @@ Jogo 3D de sobrevivência com dinossauros. Sozinho (offline) ou em **co-op onlin
 Roda no celular (Android como app ou no navegador) e no PC.
 Visual estilizado, feito para ser leve.
 
+**Versão 0.6.2** – bichos mais devagar (andar ~30% e correr ~35% mais lentos, passos
+mais compridos, descansam mais) e brigas entre animais: carnívoros com fome caçam
+herbívoros, os grandões comem carnívoros menores, rivais do mesmo porte brigam por
+território, herbívoros fortes (tricerátops, estego, anquilo…) encaram e revidam, os
+outros fogem. Tem sangue e som de mordida, e o vencedor fica comendo a carcaça.
+Números em `balanceamento.js` → `brigas`.
+
 **Versão 0.6.1** – espinossauro com modelo 3D de verdade (11 mil triângulos, escamas e
 relevo do modelo original, cor realista pintada por região, animado pelo jogo).
 

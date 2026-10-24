@@ -699,6 +699,24 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   check('Carnívoro: raptor ataca o jogador', hurt < 100, `vida ${hurt.toFixed(0)}`);
   await page.evaluate(() => window.__ilha.ctx.creatures.clear());
 
+  // Bichos brigam entre si: raptor caça e mata um dodô (longe do jogador)
+  await page.evaluate(() => {
+    const c = window.__ilha.ctx;
+    const x = -230; const z = -200;
+    c.player.position.set(x, c.world.heightAt(x, z), z);
+    c.player.stats.health = 100;
+    window.__kills0 = window.__ilha.game?.creatureKills ?? 0;
+    window.__pred = c.creatures.spawn('raptor', x + 60, z + 10, 10);
+    window.__prey = c.creatures.spawn('dodo', x + 68, z + 14, 1);
+  });
+  let fight = null;
+  for (let i = 0; i < 8 && !fight?.dead; i++) {
+    await gameWait(page, 4000);
+    fight = await page.evaluate(() => ({ dead: !window.__prey.alive, pred: window.__pred.state, prey: window.__prey.state, eating: window.__pred.state === 'comer' }));
+  }
+  check('Brigas: raptor caça e mata um dodô sozinho', fight.dead, JSON.stringify(fight));
+  await page.evaluate(() => window.__ilha.ctx.creatures.clear());
+
   // Herbívoro só revida se apanhar
   const herb = await page.evaluate(async () => {
     const c = window.__ilha.ctx;

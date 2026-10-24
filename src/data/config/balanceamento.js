@@ -146,6 +146,19 @@ export default {
   },
 
   // ---------------------------------------------------------
+  // Brigas entre bichos (cadeia alimentar)
+  // ---------------------------------------------------------
+  brigas: {
+    chance_caca_seg: 0.25,     // carnívoro com fome: chance por segundo de procurar presa
+    raio_busca_m: 45,          // até onde ele enxerga uma presa
+    presa_tamanho_max: 1.8,    // caça herbívoro até 1,8× o tamanho dele (em bando vai mais)
+    come_carnivoro_menor: 0.6, // grandões comem carnívoros com menos de 60% do tamanho
+    chance_rival: 0.35,        // chance de brigar com outro carnívoro parecido (território)
+    saciado_seg: 70,           // depois de comer, fica X s sem caçar
+    comendo_seg: 14,           // tempo comendo a carcaça
+  },
+
+  // ---------------------------------------------------------
   // Dia e noite
   // ---------------------------------------------------------
   dia: {

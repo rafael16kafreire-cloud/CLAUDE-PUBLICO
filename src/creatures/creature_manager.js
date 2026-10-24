@@ -16,6 +16,7 @@ import { buildSpeciesModel, createSkinnedMesh } from './creature_builder.js';
 import { makeCreatureMaterial } from './creature_material.js';
 import { IMPORTED, buildImportedModel } from './imported_model.js';
 import { Creature, CSTATE } from './creature.js';
+import { sound } from '../audio/audio.js';
 
 export const SPECIES = Object.fromEntries(data.especies.map((s) => [s.id, s]));
 
@@ -319,18 +320,36 @@ export class CreatureManager {
     }
   }
 
-  // Presa para carnívoros: herbívoro menor e por perto.
-  findPrey(hunter) {
-    let best = null;
-    let bestD = (hunter.species.alcance_agro ?? 20) * 0.8;
+  // Presa para carnívoros (cadeia alimentar):
+  //  - herbívoros até um certo tamanho (bando de raptor encara maiores)
+  //  - carnívoros bem menores (o T-rex come raptor)
+  //  - às vezes um rival carnívoro do mesmo porte (briga por território)
+  findPrey(hunter, ctx = null) {
+    const B = BALANCE.brigas;
+    const hr = hunter.radius;
+    let pack = 0;
     for (const o of this.list) {
-      if (!o.alive || o === hunter || o.flies || o.species.dieta !== 'herbivoro') continue;
-      if (o.species.raio > hunter.species.raio * 1.4) continue;
+      if (o !== hunter && o.alive && o.species.id === hunter.species.id && o.pos.distanceTo(hunter.pos) < 25) pack++;
+    }
+    const maxHerb = hr * B.presa_tamanho_max * (1 + Math.min(pack, 3) * 0.5);
+    const rival = this.rand() < B.chance_rival;
+    let best = null;
+    let bestD = B.raio_busca_m;
+    for (const o of this.list) {
+      if (!o.alive || o === hunter || o.flies || o.species.ambiente || o.netControlled) continue;
+      if (o.species.id === hunter.species.id) continue; // não ataca o próprio bando
+      if (o.aquatic !== hunter.aquatic && !hunter.swims) continue;
+      const or = o.radius;
+      let ok = false;
+      if (o.species.dieta === 'herbivoro') ok = or <= maxHerb;
+      else if (or <= hr * B.come_carnivoro_menor) ok = true;
+      else if (rival && or <= hr * 1.25 && or >= hr * 0.6) ok = true;
+      if (!ok) continue;
       const d = o.pos.distanceTo(hunter.pos);
-      if (d < bestD) {
-        best = o;
-        bestD = d;
-      }
+      if (d >= bestD) continue;
+      if (ctx && !hunter._canReach(o, ctx)) continue;
+      best = o;
+      bestD = d;
     }
     return best;
   }
@@ -353,6 +372,10 @@ export class CreatureManager {
       p.velocity.z += (dz / len) * Math.min(8, amount * 0.15);
       events.emit(EV.PLAYER_HURT, { amount, source: attacker.species.nome });
     } else if (target.takeDamage) {
+      // briga entre bichos: sangue e barulho de carne
+      const at = target.center ? target.center() : target.position;
+      this.world.effects?.burst(at, 'sangue', 7, 2.8);
+      sound.play('carne', at);
       target.takeDamage(amount, attacker);
     }
   }
@@ -375,7 +398,14 @@ export class CreatureManager {
       // predador come a presa
       attacker.target = null;
       attacker._setState(CSTATE.EAT);
-      attacker.idleFor = 10;
+      attacker.idleFor = BALANCE.brigas.comendo_seg;
+      attacker.fedUntil = attacker.time + BALANCE.brigas.saciado_seg;
+      attacker.health = Math.min(attacker.maxHealth, attacker.health + attacker.maxHealth * 0.15);
+      // come um pedaço da carcaça
+      for (const id of Object.keys(c.lootLeft)) {
+        if (/carne/.test(id)) c.lootLeft[id] = Math.max(1, Math.floor(c.lootLeft[id] * 0.6));
+      }
+      game.creatureKills = (game.creatureKills ?? 0) + 1;
     }
   }
 

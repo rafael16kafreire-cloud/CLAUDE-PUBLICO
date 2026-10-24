@@ -173,7 +173,8 @@ export class Creature {
       const far = t && this._dist2D(t.position) > (sp.alcance_agro ?? 20) * 2.2;
       const leash = this.home.distanceTo(new THREE.Vector2(this.pos.x, this.pos.z)) > 150;
       const unreachable = t && !this._canReach(t, ctx);
-      if (gone || far || leash || this.blockedTime > 5 || unreachable) {
+      const tired = t instanceof Creature && this.stateTime > 40; // desiste de caçada longa
+      if (gone || far || leash || this.blockedTime > 5 || unreachable || tired) {
         this.target = null;
         this._setState(leash ? CSTATE.RETURN : CSTATE.WANDER);
       }
@@ -191,10 +192,17 @@ export class Creature {
       return;
     }
 
-    // Carnívoros também caçam herbívoros menores (cadeia alimentar).
-    if (temp === 'agressivo' && this.state === CSTATE.WANDER && this.rand() < 0.04) {
-      const prey = this.manager.findPrey(this);
-      if (prey) this._chase(prey);
+    // Carnívoros com fome caçam outros bichos (cadeia alimentar) e
+    // às vezes brigam com rivais. Depois de comer ficam um tempo saciados.
+    const hungry = this.time > (this.fedUntil ?? 0);
+    if (temp === 'agressivo' && hungry && !sp.ambiente && (this.state === CSTATE.WANDER || this.state === CSTATE.IDLE)
+      && this.rand() < BALANCE.brigas.chance_caca_seg * 0.25) {
+      const prey = this.manager.findPrey(this, ctx);
+      if (prey) {
+        this._chase(prey);
+        this.manager.alertPack(this, prey);
+        return;
+      }
     }
 
     if (this.state !== CSTATE.RETURN && this.home.distanceTo(new THREE.Vector2(this.pos.x, this.pos.z)) > 110) {
@@ -238,7 +246,17 @@ export class Creature {
     if (this.state !== CSTATE.CHASE && this.state !== CSTATE.ATTACK) {
       this._setState(CSTATE.CHASE);
       if (this.species.temperamento === 'agressivo' || this.species.revida) sound.creature(this, 'rugido');
+      // a presa percebe quem vem atrás dela: briga ou foge
+      if (target instanceof Creature && target.alive && !target.netControlled) target._noticeAttacker(this);
     }
+  }
+
+  // Outro bicho veio pra cima: os fortes/bravos encaram, o resto foge.
+  _noticeAttacker(attacker) {
+    if (this.state === CSTATE.CHASE || this.state === CSTATE.ATTACK || this.state === CSTATE.FLEE) return;
+    const sp = this.species;
+    if (sp.temperamento === 'agressivo' || sp.revida) this._chase(attacker);
+    else this._flee(attacker);
   }
 
   // ---------------------------------------------------------
@@ -252,7 +270,7 @@ export class Creature {
         if (!this.goal || this._steer(dt, this.goal.x, this.goal.y, sp.vel_andar)) {
           const herb = sp.dieta === 'herbivoro' && !this.aquatic;
           this._setState(herb && this.rand() < 0.6 ? CSTATE.EAT : CSTATE.IDLE);
-          this.idleFor = 3 + this.rand() * 6;
+          this.idleFor = 5 + this.rand() * 10;
         }
         break;
       }
@@ -392,7 +410,7 @@ export class Creature {
     const turn = this.turnRate * dt * (speed > this.species.vel_andar * 1.5 ? 1.3 : 1);
     this.yaw += clamp(delta, -turn, turn);
     const target = speed * (Math.abs(delta) > 1.3 ? 0.35 : 1);
-    this.speed += (target - this.speed) * Math.min(1, dt * 2.5);
+    this.speed += (target - this.speed) * Math.min(1, dt * 1.6);
     this._advance(dt, flying);
     return false;
   }
@@ -534,7 +552,7 @@ export class Creature {
     A.turn += (clamp(yawVel, -2, 2) - A.turn) * k(5);
     A.run += (clamp(this.speed / Math.max(0.1, this.species.vel_correr), 0, 1) - A.run) * k(4);
     const legLen = Math.max(0.25, this.height * 0.45);
-    const stride = legLen * (spec.body === 'spider' ? 1.2 : 2.2);
+    const stride = legLen * (spec.body === 'spider' ? 1.4 : 2.6);
     this.phase += (adt * this.speed) / stride;
     const amp = clamp(this.speed / (legLen * 3), 0, 0.75);
 
