@@ -764,6 +764,25 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   check('Soco: mata um dodô, ganha XP e tira carne da carcaça', !punch.alive && punch.xp > xp0 && punch.carne > 0, JSON.stringify(punch));
   await page.evaluate(() => window.__ilha.ctx.creatures.clear());
 
+  // Golpe pega em qualquer parte do bicho (cabeça e cauda), não só no meio
+  const parts = await page.evaluate(() => {
+    const c = window.__ilha.ctx; const p0 = c.player.position.clone(); const out = {};
+    for (const id of ['trex', 'triceratops', 'raptor']) {
+      const cr = c.creatures.spawn(id, p0.x + 30, p0.z, 5);
+      const fx = -Math.sin(cr.yaw); const fz = -Math.cos(cr.yaw);
+      const f = cr.bodyFront * cr.scale + 1.5; const k = cr.bodyBack * cr.scale + 1.5;
+      c.player.position.set(cr.pos.x + fx * f, cr.pos.y, cr.pos.z + fz * f);
+      const head = c.creatures.playerAttack(c.player, { x: -fx, y: 0, z: -fz }, 1, 1.8) === cr;
+      c.player.position.set(cr.pos.x - fx * k, cr.pos.y, cr.pos.z - fz * k);
+      const tail = c.creatures.playerAttack(c.player, { x: fx, y: 0, z: fz }, 1, 1.8) === cr;
+      out[id] = head && tail;
+      c.creatures.clear();
+    }
+    c.player.position.copy(p0);
+    return out;
+  });
+  check('Golpe: acerta cabeça e cauda de bicho grande', Object.values(parts).every(Boolean), JSON.stringify(parts));
+
   // Mira numa criatura mostra nome, nível e vida
   await page.evaluate(() => {
     const c = window.__ilha.ctx;

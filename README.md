@@ -9,7 +9,8 @@ mais compridos, descansam mais) e brigas entre animais: carnívoros com fome ca�
 herbívoros, os grandões comem carnívoros menores, rivais do mesmo porte brigam por
 território, herbívoros fortes (tricerátops, estego, anquilo…) encaram e revidam, os
 outros fogem. Tem sangue e som de mordida, e o vencedor fica comendo a carcaça.
-Números em `balanceamento.js` → `brigas`.
+Números em `balanceamento.js` → `brigas`. Golpe do jogador agora acerta qualquer parte
+do bicho (cabeça, corpo ou cauda), não só o meio.
 
 **Versão 0.6.1** – espinossauro com modelo 3D de verdade (11 mil triângulos, escamas e
 relevo do modelo original, cor realista pintada por região, animado pelo jogo).

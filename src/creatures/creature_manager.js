@@ -414,17 +414,21 @@ export class CreatureManager {
     let best = null;
     let bestD = Infinity;
     const p = player.position;
+    const fl = Math.hypot(forward.x, forward.z) || 1;
+    const pt = new THREE.Vector3();
     for (const c of this.list) {
       if (!c.alive) continue;
-      const center = c.center();
-      const dx = center.x - p.x;
-      const dz = center.z - p.z;
-      const dy = center.y - (p.y + 1.2);
+      // mede até a parte do corpo mais perto (cabeça, barriga ou cauda)
+      c.closestBodyPoint(p.x, p.z, pt);
+      const dx = pt.x - p.x;
+      const dz = pt.z - p.z;
+      const dy = pt.y - (p.y + 1.2);
       const d = Math.hypot(dx, dz);
-      if (d - c.radius > reach || Math.abs(dy) > c.height * 0.8 + 1.5) continue;
+      const r = Math.min(c.radius, 1.2); // grossura do corpo
+      if (d - r > reach + 0.4 || Math.abs(dy) > c.height * 0.8 + 1.5) continue;
       // precisa estar mais ou menos na frente
-      const dot = (dx * forward.x + dz * forward.z) / (d || 1) / (Math.hypot(forward.x, forward.z) || 1);
-      if (d > c.radius + 0.6 && dot < 0.45) continue;
+      const dot = (dx * forward.x + dz * forward.z) / (d || 1) / fl;
+      if (d > r + 0.8 && dot < 0.3) continue;
       if (d < bestD) {
         best = c;
         bestD = d;

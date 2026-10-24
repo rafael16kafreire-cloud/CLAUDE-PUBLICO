@@ -79,7 +79,22 @@ export class Creature {
       this.pos.y = this._groundY(x, z);
     }
     this.mesh.scale.setScalar(this.scale);
+    // comprimento do corpo (da cauda ao focinho), para acertar golpes
+    // em qualquer parte do bicho e não só no meio dele
+    const geo = mesh.geometry;
+    if (!geo.boundingBox) geo.computeBoundingBox();
+    this.bodyFront = Math.max(0, -geo.boundingBox.min.z);
+    this.bodyBack = Math.max(0, geo.boundingBox.max.z);
     this._sync(0);
+  }
+
+  // Ponto do corpo (eixo cauda–focinho) mais perto de (x, z).
+  closestBodyPoint(x, z, out = new THREE.Vector3()) {
+    const fx = -Math.sin(this.yaw);
+    const fz = -Math.cos(this.yaw);
+    let s = (x - this.pos.x) * fx + (z - this.pos.z) * fz;
+    s = clamp(s, -this.bodyBack * this.scale, this.bodyFront * this.scale);
+    return this.center(out).set(this.pos.x + fx * s, out.y, this.pos.z + fz * s);
   }
 
   get alive() {
