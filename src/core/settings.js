@@ -7,23 +7,26 @@
 import { events, EV } from './event_bus.js';
 
 const STORAGE_KEY = 'ilha-primordial:opcoes';
+// Mude este número quando os padrões mudarem (atualiza opções antigas).
+const SETTINGS_VERSION = 2;
 
 // Predefinições de qualidade gráfica.
 export const QUALITY_PRESETS = {
-  baixa: { pixelRatio: 0.75, shadows: false, shadowMap: 512, viewDistance: 170 },
-  media: { pixelRatio: 1.0, shadows: true, shadowMap: 1024, viewDistance: 250 },
-  alta: { pixelRatio: 1.5, shadows: true, shadowMap: 2048, viewDistance: 360 },
+  baixa: { pixelRatio: 0.75, shadows: false, shadowMap: 512, viewDistance: 160, noGrass: true },
+  media: { pixelRatio: 1.0, shadows: true, shadowMap: 1024, viewDistance: 230 },
+  alta: { pixelRatio: 1.5, shadows: true, shadowMap: 2048, viewDistance: 340 },
 };
 
 const DEFAULTS = {
+  version: SETTINGS_VERSION,
   quality: 'media',        // baixa | media | alta
-  viewDistance: 250,       // metros
+  viewDistance: 230,       // metros
   sensitivity: 1.0,        // velocidade da câmera
   buttonOpacity: 0.7,      // 0.2 a 1.0
   buttonSize: 1.0,         // 0.7 a 1.4
   showDebug: false,        // overlay de FPS
   touchControls: 'auto',   // auto | sempre | nunca
-  cameraMode: 'terceira',  // terceira | primeira
+  cameraMode: 'primeira',  // primeira | terceira
 };
 
 class Settings {
@@ -49,7 +52,15 @@ class Settings {
   _load() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? JSON.parse(raw) : {};
+      const saved = raw ? JSON.parse(raw) : {};
+      // Opções de uma versão antiga: aplica os padrões novos
+      // (ex.: câmera agora começa em primeira pessoa).
+      if ((saved.version ?? 1) < SETTINGS_VERSION) {
+        delete saved.cameraMode;
+        delete saved.viewDistance;
+        saved.version = SETTINGS_VERSION;
+      }
+      return saved;
     } catch {
       return {};
     }

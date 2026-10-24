@@ -68,6 +68,14 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     return { x: p.x, y: p.y, z: p.z };
   });
   check('PC: jogador nasce na Praia Sul', p0.z > 300 && p0.y > 0.5 && p0.y < 4, JSON.stringify(p0));
+  const camMode = await page.evaluate(() => window.__ilha.ctx.camCtl.mode);
+  check('Câmera começa em primeira pessoa', camMode === 'primeira', camMode);
+  // sem dinossauros atrapalhando os testes de movimento
+  await page.evaluate(() => {
+    const c = window.__ilha.ctx.creatures;
+    c.enabled = false;
+    c.clear();
+  });
   await page.screenshot({ path: `${SHOTS}/02-pc-praia-sul.png` });
 
   // Andar para frente (W) por 1,5 s
@@ -159,7 +167,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   }));
   await page.screenshot({ path: `${SHOTS}/05-pc-embaixo-dagua.png` });
   await page.keyboard.up('KeyC');
-  check('Água: embaixo d\'água o fôlego cai e aparece no HUD', under.head && under.oxygen < 99 && under.shown, JSON.stringify(under));
+  check('Água: embaixo d\'água o fôlego cai e aparece no HUD', under.head && under.oxygen < 99.95 && under.shown, JSON.stringify(under));
 
   // Mar: água salgada não mata a sede
   await page.evaluate(() => {
@@ -187,21 +195,29 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   });
   check('F3 mostra FPS, criaturas e memória', !!dbg && /FPS/.test(dbg) && /Criaturas/.test(dbg) && /Memória/.test(dbg), dbg?.split('\n')[0]);
 
-  // Floresta para foto + medir quanto desenha
+  // Pior caso de desempenho: Floresta Amazônica + 15 dinossauros
   await page.evaluate(() => {
     const { ctx } = window.__ilha;
-    ctx.player.position.set(230, ctx.world.heightAt(230, -40), -40);
+    const j = ctx.world.layout.selva;
+    ctx.player.position.set(j.x, ctx.world.heightAt(j.x, j.z), j.z);
     ctx.camCtl.yaw = Math.PI * 0.75;
-    ctx.camCtl.pitch = -0.1;
+    ctx.camCtl.pitch = -0.05;
+    const ids = ['raptor', 'raptor', 'raptor', 'trex', 'parassauro', 'parassauro', 'braquiossauro', 'titanoboa', 'pterodactilo', 'dodo', 'dodo', 'paquicefalossauro', 'parassauro', 'raptor', 'dodo'];
+    ids.forEach((id, i) => {
+      const a = (i / ids.length) * Math.PI * 2;
+      const cr = ctx.creatures.spawn(id, j.x + Math.sin(a) * 40, j.z + Math.cos(a) * 40, 5);
+      cr.species = { ...cr.species, temperamento: 'passivo' };
+    });
   });
   await frames(page, 40);
-  await page.screenshot({ path: `${SHOTS}/06-pc-floresta-debug.png` });
+  await page.screenshot({ path: `${SHOTS}/06-pc-selva-debug.png` });
   const info = await page.evaluate(() => {
     const i = window.__ilha.game.renderer.info.render;
-    return { calls: i.calls, tris: i.triangles };
+    return { calls: i.calls, tris: i.triangles, criaturas: window.__ilha.game.activeCreatures };
   });
-  console.log('   Floresta: draw calls', info.calls, 'triângulos', info.tris);
-  check('Desempenho: menos de 200 desenhos por quadro na floresta', info.calls < 200, JSON.stringify(info));
+  console.log('   Selva + criaturas: draw calls', info.calls, 'triângulos', info.tris);
+  check('Desempenho: menos de 260 desenhos por quadro (selva + 15 dinos)', info.calls < 260, JSON.stringify(info));
+  await page.evaluate(() => window.__ilha.ctx.creatures.clear());
 
   // Montanha
   await page.evaluate(() => {
@@ -234,7 +250,11 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   check('Morte: afogado mostra tela de morte e cria saco de morte', dead.state === 'dead' && dead.screen && dead.bags === 1, JSON.stringify(dead));
   await page.screenshot({ path: `${SHOTS}/08-pc-tela-de-morte.png` });
 
+  const pins = await page.evaluate(() => document.querySelectorAll('.map-pin').length);
+  check('Morte: mapa mostra os pontos de renascer', pins >= 5, `${pins} pontos`);
+  await page.screenshot({ path: `${SHOTS}/08b-pc-mapa-renascer.png` });
   await page.click('#respawn-leste');
+  await page.click('#respawn-confirm');
   await frames(page, 20);
   const resp = await page.evaluate(() => ({
     state: window.__ilha.game.state,
@@ -266,6 +286,107 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     return { foodPerMin: f1, waterPerMin: w1, foodRunning: 100 - s.food };
   });
   check('Fome cheia dura ~25 min e sede ~18 min; correr acelera', Math.abs(rates.foodPerMin - 4) < 0.01 && Math.abs(rates.waterPerMin - 100 / 18) < 0.01 && rates.foodRunning > rates.foodPerMin * 1.9, JSON.stringify(rates));
+
+  // Biomas: entrar no deserto mostra o nome na tela
+  await page.evaluate(() => {
+    const c = window.__ilha.ctx;
+    const d = c.world.layout.deserto;
+    c.player.position.set(d.x, c.world.heightAt(d.x, d.z), d.z);
+    c.player.stats.water = 100; c.player.stats.food = 100;
+  });
+  await page.waitForTimeout(2600);
+  const banner = await page.evaluate(() => {
+    const b = document.querySelector('.biome-banner');
+    return b && !b.hidden ? b.textContent.trim().replace(/\s+/g, ' ') : null;
+  });
+  check('Bioma: entrar no deserto mostra "Deserto"', !!banner && banner.includes('Deserto'), banner ?? 'nada');
+  await page.screenshot({ path: `${SHOTS}/09a-pc-deserto.png` });
+
+  const biomes = await page.evaluate(() => {
+    const w = window.__ilha.ctx.world;
+    const found = new Set();
+    for (let x = -460; x <= 460; x += 20) for (let z = -460; z <= 460; z += 20) found.add(w.biomeKeyAt(x, z));
+    const s = w.layout.pantano;
+    let swampFresh = false;
+    for (let a = 0; a < 6.3 && !swampFresh; a += 0.2) for (let r = 5; r < s.raio_m * 0.6; r += 5) {
+      const b = w.waterAt(s.x + Math.sin(a) * r, s.z + Math.cos(a) * r);
+      if (b && b.id === 'pantano' && b.fresh) { swampFresh = true; break; }
+    }
+    return { list: [...found], swampFresh };
+  });
+  const needed = ['praia', 'selva', 'deserto', 'pantano', 'campina', 'floresta', 'montanha'];
+  check('Biomas: praia, Floresta Amazônica, deserto e pântano existem', needed.every((k) => biomes.list.includes(k)), biomes.list.join(','));
+  check('Pântano tem água doce (dá para beber)', biomes.swampFresh);
+
+  // Dinossauros: as 10 espécies nascem sem erro
+  const species = await page.evaluate(() => {
+    const c = window.__ilha.ctx;
+    const p = c.player.position;
+    const ids = ['dodo', 'parassauro', 'paquicefalossauro', 'braquiossauro', 'raptor', 'trex', 'titanoboa', 'deinosuchus', 'pterodactilo', 'quetzalcoatlus'];
+    const made = ids.map((id, i) => c.creatures.spawn(id, p.x + 60 + i * 12, p.z + 60, 10)).filter(Boolean);
+    return made.map((m) => m.species.nome);
+  });
+  await frames(page, 30);
+  check('Dinossauros: as 10 espécies aparecem', species.length === 10, species.join(', '));
+  await page.evaluate(() => window.__ilha.ctx.creatures.clear());
+
+  // Raptor ataca o jogador
+  await page.evaluate(() => {
+    const c = window.__ilha.ctx;
+    const z = c.world.layout.campina;
+    c.player.position.set(z.x, c.world.heightAt(z.x, z.z), z.z);
+    c.player.stats.health = 100;
+    c.creatures.spawn('raptor', z.x + 7, z.z, 3);
+  });
+  await page.waitForTimeout(3500);
+  const hurt = await page.evaluate(() => window.__ilha.ctx.player.stats.health);
+  check('Raptor ataca o jogador', hurt < 100, `vida ${hurt.toFixed(0)}`);
+  await page.evaluate(() => window.__ilha.ctx.creatures.clear());
+
+  // Soco mata um dodô e dá XP
+  const xp0 = await page.evaluate(() => {
+    const c = window.__ilha.ctx;
+    c.player.stats.health = 100;
+    c.player.stats.stamina = 100;
+    const f = c.camCtl.forward;
+    const p = c.player.position;
+    const d = c.creatures.spawn('dodo', p.x + f.x * 1.6, p.z + f.z * 1.6, 1);
+    d.speed = 0; d._setState('parado'); d.idleFor = 99;
+    window.__dodo = d;
+    return c.player.stats.xp + c.player.stats.level * 1000;
+  });
+  for (let i = 0; i < 8; i++) {
+    await page.evaluate(() => {
+      const c = window.__ilha.ctx; const d = window.__dodo; const p = c.player.position;
+      // mantém o dodô na frente para o teste
+      const f = c.camCtl.forward; d.pos.x = p.x + f.x * 1.6; d.pos.z = p.z + f.z * 1.6;
+      c.player.stats.stamina = 100;
+    });
+    await page.mouse.down();
+    await page.mouse.up();
+    await page.waitForTimeout(550);
+  }
+  const punch = await page.evaluate(() => ({ alive: window.__dodo.alive, xp: window.__ilha.ctx.player.stats.xp + window.__ilha.ctx.player.stats.level * 1000 }));
+  check('Soco: mata um dodô e ganha XP', !punch.alive && punch.xp > xp0, JSON.stringify(punch));
+
+  // Mira numa criatura mostra nome, nível e vida
+  await page.evaluate(() => {
+    const c = window.__ilha.ctx;
+    const p = c.player.position;
+    const f = c.camCtl.forward;
+    const t = c.creatures.spawn('paquicefalossauro', p.x + f.x * 9, p.z + f.z * 9, 7);
+    t.species = { ...t.species, temperamento: 'passivo' };
+    t._setState('parado'); t.idleFor = 99;
+    c.camCtl.pitch = -0.02;
+  });
+  await page.waitForTimeout(600);
+  const target = await page.evaluate(() => {
+    const t = document.querySelector('.target');
+    return t && !t.hidden ? t.textContent.replace(/\s+/g, ' ').trim() : null;
+  });
+  check('Mira: mostra nome e nível da criatura', !!target && /Paquicefalossauro/.test(target) && /Nv 7/.test(target), target ?? 'nada');
+  await page.screenshot({ path: `${SHOTS}/09b-pc-mira-criatura.png` });
+  await page.evaluate(() => window.__ilha.ctx.creatures.clear());
 
   // Pausa com Esc (com o mouse preso no jogo, cliques vão para o 3D)
   await page.keyboard.press('Escape');

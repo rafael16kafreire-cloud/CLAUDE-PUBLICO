@@ -12,10 +12,13 @@ const HORIZON = new THREE.Color('#c4dbe2');
 const ZENITH = new THREE.Color('#4f93cf');
 const UNDERWATER = new THREE.Color('#1f6680');
 
+// Direção do sol (usada também pela água para o brilho).
+export const SUN_DIR = new THREE.Vector3(0.45, 0.8, 0.35).normalize();
+
 export class Sky {
   constructor(scene) {
     this.scene = scene;
-    this.sunDir = new THREE.Vector3(0.45, 0.8, 0.35).normalize();
+    this.sunDir = SUN_DIR.clone();
     this.viewDistance = 250;
     this.underwater = false;
 

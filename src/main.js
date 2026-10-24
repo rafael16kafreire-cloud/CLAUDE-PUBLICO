@@ -19,6 +19,8 @@ import { DeathScreen } from './ui/death_screen.js';
 import { DebugOverlay } from './ui/debug_overlay.js';
 import { PauseMenu } from './ui/pause_menu.js';
 import { StartScreen } from './ui/start_screen.js';
+import { PlayerHands } from './player/player_hands.js';
+import { CreatureManager, SPECIES } from './creatures/creature_manager.js';
 
 // Ponte com o app Android (existe só dentro do APK).
 const androidApp = typeof window !== 'undefined' ? window.IlhaAndroid : undefined;
@@ -36,7 +38,6 @@ const COMING_SOON = {
   inventory: 'Inventário chega na Fase 2.',
   build: 'Construção chega na Fase 6.',
   mount: 'Montaria chega na Fase 9.',
-  attack: 'Atacar e coletar chegam na Fase 2.',
 };
 
 function boot(hotData = {}) {
@@ -53,8 +54,12 @@ function boot(hotData = {}) {
   });
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFShadowMap;
+  // Cores mais naturais (luz forte não "estoura").
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.15;
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(70, 1, 0.1, 300);
+  const camera = new THREE.PerspectiveCamera(72, 1, 0.08, 300);
+  scene.add(camera); // as mãos em 1ª pessoa ficam presas na câmera
   game.renderer = renderer;
   game.camera = camera;
 
@@ -91,6 +96,7 @@ function boot(hotData = {}) {
     document.body.classList.toggle('is-touch', game.isTouch);
     if (!ctx) return;
     ctx.world.setShadows(q.shadows, q.shadowMap);
+    ctx.world.setGrass(!q.noGrass);
     const vd = settings.get('viewDistance');
     ctx.world.setViewDistance(vd);
     camera.far = vd + 40;
@@ -118,14 +124,20 @@ function boot(hotData = {}) {
     const touch = new TouchControls(ui, input);
     const death = new DeathScreen(ui, world);
     const debug = new DebugOverlay(ui, renderer);
+    const creatures = new CreatureManager(world, scene);
+    world.creatures = creatures;
+    const hands = new PlayerHands(camera);
+    player.onPunch = () => hands.punch();
     const pause = new PauseMenu(ui, {
       onResume: () => resume(),
       onQuitToMenu: () => toMenu(),
       onCloseApp: androidApp?.exit ? () => androidApp.exit() : null,
+      species: Object.values(SPECIES),
+      onSpawnTest: (id) => spawnInFront(id),
     });
     game.world = world;
     game.player = player;
-    ctx = { world, player, camCtl, interaction, hud, messages, touch, death, debug, pause };
+    ctx = { world, player, camCtl, interaction, hud, messages, touch, death, debug, pause, creatures, hands };
 
     // Voltando de uma atualização da página: restaura posição e barras.
     if (hotData.player) {
@@ -151,7 +163,27 @@ function boot(hotData = {}) {
     if (!game.isTouch) input.requestPointerLock();
     if (game.playTime < 1) {
       events.emit(EV.MESSAGE, { text: 'Dica: o lago de água doce fica no meio da ilha.', kind: 'info' });
+      // Já começa com alguns animais por perto.
+      for (let i = 0; i < 10; i++) ctx.creatures.trySpawnNear(ctx.player.position, 35, 110);
     }
+  }
+
+  // Teste (menu de pausa): cria o dinossauro escolhido na frente do jogador.
+  function spawnInFront(id) {
+    const sp = SPECIES[id];
+    const f = ctx.camCtl.forward;
+    const len = Math.hypot(f.x, f.z) || 1;
+    const dist = 10 + sp.raio * 4;
+    let x = ctx.player.position.x + (f.x / len) * dist;
+    let z = ctx.player.position.z + (f.z / len) * dist;
+    const c = ctx.creatures.spawn(id, x, z, 10);
+    if (c && sp.temperamento !== 'passivo') {
+      // fica parado olhando para o jogador alguns segundos
+      c._setState('parado');
+      c.idleFor = 6;
+    }
+    events.emit(EV.MESSAGE, { text: `${sp.nome} criado na sua frente.`, kind: 'info' });
+    resume();
   }
 
   function pauseGame() {
@@ -206,7 +238,7 @@ function boot(hotData = {}) {
     ctx.world.spawnDeathBag(position);
     input.exitPointerLock();
     input.runToggle = false;
-    ctx.death.show(cause);
+    ctx.death.show(cause, position);
   });
 
   events.on(EV.RESPAWN_REQUESTED, ({ pointId }) => {
@@ -215,6 +247,8 @@ function boot(hotData = {}) {
     ctx.camCtl.yaw = point.yaw;
     ctx.camCtl.pitch = -0.12;
     ctx.death.hide();
+    // Predadores esquecem o jogador que renasceu.
+    for (const c of ctx.creatures.list) if (c.target === ctx.player) c.target = null;
     game.setState(STATE.PLAYING);
     if (!game.isTouch) input.requestPointerLock();
     events.emit(EV.MESSAGE, { text: `Você renasceu na ${point.name}.`, kind: 'info' });
@@ -238,7 +272,6 @@ function boot(hotData = {}) {
   };
 
   // ---------- Ações globais (teclas/botões que não são do jogador) ----------
-  let comingSoonShown = {};
   function handleActions() {
     if (input.wasPressed('pause')) {
       // Evita pausar/despausar duas vezes quando o Esc também solta o mouse.
@@ -249,12 +282,8 @@ function boot(hotData = {}) {
     if (input.wasPressed('debug')) settings.set('showDebug', !settings.get('showDebug'));
     if (game.state !== STATE.PLAYING) return;
     if (input.wasPressed('camera')) settings.set('cameraMode', ctx.camCtl.mode === 'primeira' ? 'terceira' : 'primeira');
-    if (input.wasPressed('attack')) ctx.player.model.swing();
-    for (const action of ['inventory', 'build', 'mount', 'attack']) {
-      if (input.wasPressed(action) && (action !== 'attack' || !comingSoonShown.attack)) {
-        comingSoonShown[action] = true;
-        events.emit(EV.MESSAGE, { text: COMING_SOON[action], kind: 'info' });
-      }
+    for (const action of ['inventory', 'build', 'mount']) {
+      if (input.wasPressed(action)) events.emit(EV.MESSAGE, { text: COMING_SOON[action], kind: 'info' });
     }
   }
 
@@ -262,6 +291,7 @@ function boot(hotData = {}) {
   let last = performance.now();
   let menuAngle = 0;
   let pausedSkip = 0;
+  let targetTimer = 0;
 
   function frame(now) {
     requestAnimationFrame(frame);
@@ -272,7 +302,7 @@ function boot(hotData = {}) {
     if (!ctx) return;
 
     handleActions();
-    const { world, player, camCtl, interaction, hud, touch, debug } = ctx;
+    const { world, player, camCtl, interaction, hud, touch, debug, creatures, hands } = ctx;
     const look = input.consumeLook();
     const sens = settings.get('sensitivity');
 
@@ -283,11 +313,13 @@ function boot(hotData = {}) {
         player.update(dt, input, camCtl);
         camCtl.update(dt, player);
         interaction.update(dt, input);
+        creatures.update(dt, player, camera);
         break;
       case STATE.DEAD:
         camCtl.applyLook(look, sens, player);
         player.update(dt, input, camCtl);
         camCtl.update(dt, player);
+        creatures.update(dt, player, camera);
         break;
       case STATE.MENU: {
         // Sobrevoo lento da ilha atrás da tela inicial
@@ -317,7 +349,24 @@ function boot(hotData = {}) {
     if (game.state !== STATE.MENU) {
       hud.update(dt);
       touch.updateStates(player);
+      // Criatura na mira: nome, nível e vida.
+      targetTimer -= dt;
+      if (targetTimer <= 0) {
+        targetTimer = 0.15;
+        hud.setTarget(game.state === STATE.PLAYING ? creatures.findAimed(camera.position, camCtl.forward, 45) : null);
+      }
     }
+    // Modo foto (só para testes automáticos): câmera fixa.
+    const photo = window.__ilha?.photo;
+    if (photo) {
+      camera.position.set(...photo.pos);
+      camera.lookAt(...photo.target);
+    }
+    hands.update(dt, {
+      visible: !photo && game.state === STATE.PLAYING && camCtl.mode === 'primeira' && !player.dead,
+      speed: Math.hypot(player.velocity.x, player.velocity.z),
+      swimming: player.swimming,
+    });
     renderer.render(scene, camera);
     debug.frame(dt);
     input.endFrame();
@@ -336,6 +385,7 @@ function boot(hotData = {}) {
 
   // Acesso para testes automáticos e depuração.
   window.__ilha = {
+    photo: null,
     game,
     settings,
     get ctx() { return ctx; },

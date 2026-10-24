@@ -45,6 +45,16 @@ export class Player {
     this._minNormalY = Math.cos((M.inclinacao_max_graus * Math.PI) / 180);
     this._normal = new THREE.Vector3();
     this._boundsMsgTimer = 0;
+    this._attackTimer = 0;
+    this._pendingHit = -1;
+    this._biome = null;
+    this._biomeCandidate = null;
+    this._biomeTimer = 0;
+    this.onPunch = null; // animação das mãos em 1ª pessoa (main.js define)
+  }
+
+  get radius() {
+    return RADIUS;
   }
 
   get eyeHeight() {
@@ -101,8 +111,12 @@ export class Player {
       this._walk(dt, input, dirX, dirZ, mag, runRequest, body ? depth : 0);
     }
 
+    // ---------- Soco (Atacar) ----------
+    this._updateAttack(dt, input, cam);
+
     // ---------- Colisões e limite do mapa ----------
     this.world.resolveCollisions(this.position, RADIUS);
+    this.world.creatures?.resolvePlayer(this.position, RADIUS);
     this._keepInsideWorld(dt);
     // Depois de empurrado, não pode ficar dentro do chão.
     const ground = this.world.heightAt(this.position.x, this.position.z);
@@ -130,7 +144,52 @@ export class Player {
       ambientTemp: this.world.temperatureAt(this.position, inWater),
     });
 
+    this._updateBiome(dt);
     this._updateModel(dt);
+  }
+
+  // Soco: gasta um pouco de stamina e acerta o que estiver na frente.
+  _updateAttack(dt, input, cam) {
+    const C = BALANCE.combate;
+    this._attackTimer -= dt;
+    if (input.wasPressed('attack') && this._attackTimer <= 0 && !this.swimming) {
+      if (this.stats.useStamina(C.soco_stamina)) {
+        this._attackTimer = C.soco_intervalo_seg;
+        this._pendingHit = 0.14; // o golpe acerta no meio da animação
+        this.model.swing();
+        this.onPunch?.();
+      }
+    }
+    if (this._pendingHit >= 0) {
+      this._pendingHit -= dt;
+      if (this._pendingHit < 0) {
+        this.world.creatures?.playerAttack(this, cam.forward, C.soco_dano, C.soco_alcance_m);
+      }
+    }
+  }
+
+  // Avisa quando o jogador entra num bioma novo (precisa ficar 1 s nele).
+  _updateBiome(dt) {
+    this._biomeTimer -= dt;
+    if (this._biomeTimer > 0) return;
+    this._biomeTimer = 0.5;
+    const key = this.world.biomeKeyAt(this.position.x, this.position.z);
+    if (key === 'mar' || key === 'lago') return; // água não conta
+    if (key === this._biome) {
+      this._biomeCandidate = null;
+      return;
+    }
+    if (key !== this._biomeCandidate) {
+      this._biomeCandidate = key;
+      this._biomeSince = 0;
+      return;
+    }
+    this._biomeSince += 0.5;
+    if (this._biomeSince >= 1) {
+      this._biome = key;
+      const info = this.world.biomeInfo(key);
+      events.emit(EV.BIOME_ENTERED, { key, name: info.nome, description: info.descricao });
+    }
   }
 
   // ---------------------------------------------------------
@@ -324,6 +383,7 @@ export class Player {
     this.stats.resetForRespawn();
     this.dead = false;
     this.spawnAt(point);
+    this._biome = null; // mostra o nome do bioma de novo
   }
 
   _updateModel(dt) {

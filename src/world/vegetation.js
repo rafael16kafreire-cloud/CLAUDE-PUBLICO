@@ -13,19 +13,35 @@
 // que será usado para coletar recursos.
 // =============================================================
 import * as THREE from 'three';
-import { BIOME } from './island_generator.js';
+import { BIOME_KEYS } from './island_generator.js';
 import { mulberry32 } from '../core/math.js';
-import { makeBroadleafTree, makePineTree, makePalmTree, makeRock, makeBush } from './props.js';
+import { addWind } from './materials.js';
+import * as P from './props.js';
 
-// Tipos de vegetação: geometria, raio de colisão e se faz sombra.
-// maxDist: coisas pequenas somem antes (economiza no celular).
+// Tipos de vegetação:
+//   make/low: modelo de perto e de longe
+//   collider: raio de colisão (0 = dá para atravessar)
+//   maxDist: some além dessa distância (coisas pequenas somem antes)
+//   water: pode nascer dentro de água rasa (pântano)
+//   scale: [mínimo, máximo] de tamanho
 const TYPES = {
-  arvore: { make: makeBroadleafTree, collider: 0.45, shadow: true, maxDist: Infinity },
-  pinheiro: { make: makePineTree, collider: 0.4, shadow: true, maxDist: Infinity },
-  palmeira: { make: makePalmTree, collider: 0.35, shadow: true, maxDist: Infinity },
-  pedra: { make: makeRock, collider: 0.95, shadow: false, maxDist: 170 },
-  arbusto: { make: makeBush, collider: 0, shadow: false, maxDist: 110 }, // dá para atravessar
+  arvore: { make: P.makeBroadleafTree, low: P.makeBroadleafTreeLow, collider: 0.45, shadow: true, maxDist: Infinity, scale: [0.8, 1.3] },
+  pinheiro: { make: P.makePineTree, low: P.makePineTreeLow, collider: 0.4, shadow: true, maxDist: Infinity, scale: [0.8, 1.35] },
+  palmeira: { make: P.makePalmTree, low: P.makePalmTreeLow, collider: 0.35, shadow: true, maxDist: Infinity, scale: [0.85, 1.25] },
+  arvore_gigante: { make: P.makeGiantTree, low: P.makeGiantTreeLow, collider: 1.1, shadow: true, maxDist: Infinity, scale: [0.8, 1.25] },
+  arvore_selva: { make: P.makeJungleTree, low: P.makeJungleTreeLow, collider: 0.5, shadow: false, maxDist: Infinity, scale: [0.8, 1.3] },
+  palmeira_selva: { make: P.makeJunglePalm, low: P.makeJunglePalmLow, collider: 0.3, shadow: false, maxDist: 160, scale: [0.8, 1.2] },
+  samambaia: { make: P.makeFern, collider: 0, shadow: false, maxDist: 45, scale: [0.8, 1.5] },
+  arvore_mangue: { make: P.makeMangrove, low: P.makeMangroveLow, collider: 0.6, shadow: true, maxDist: Infinity, scale: [0.8, 1.2], water: true },
+  arvore_morta: { make: P.makeDeadTree, collider: 0.35, shadow: true, maxDist: 220, scale: [0.8, 1.3], water: true },
+  junco: { make: P.makeReeds, collider: 0, shadow: false, maxDist: 80, scale: [0.8, 1.3], water: true },
+  cacto: { make: P.makeCactus, collider: 0.4, shadow: true, maxDist: 220, scale: [0.7, 1.3] },
+  arbusto_seco: { make: P.makeDryBush, collider: 0, shadow: false, maxDist: 110, scale: [0.7, 1.3] },
+  pedra: { make: P.makeRock, low: P.makeRockLow, collider: 0.95, shadow: false, maxDist: 180, scale: [0.6, 2.2] },
+  pedra_deserto: { make: P.makeDesertRock, low: P.makeDesertRockLow, collider: 0.95, shadow: false, maxDist: 200, scale: [0.7, 2.6] },
+  arbusto: { make: P.makeBush, collider: 0, shadow: false, maxDist: 110, scale: [0.8, 1.3] },
 };
+const LOD_DIST = 60; // até aqui usa o modelo detalhado
 
 // Grade espacial simples para achar obstáculos perto de um ponto.
 class SpatialHash {
@@ -76,16 +92,21 @@ export class Vegetation {
     this.instances = [];            // todos os registros (para a Fase 2)
     this.colliders = new SpatialHash(8);
     this.chunks = new Map();        // chave -> { center, meshes[] }
-    this.material = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
+    // Um material só para toda a vegetação, com vento leve nas copas.
+    this.material = addWind(new THREE.MeshLambertMaterial({ vertexColors: true }), 0.018);
     this.geometries = {};
-    for (const [name, t] of Object.entries(TYPES)) this.geometries[name] = t.make();
+    for (const [name, t] of Object.entries(TYPES)) {
+      const hi = t.make();
+      this.geometries[name] = { hi, lo: t.low ? t.low() : null };
+    }
 
     this._place(avoidPoints, seed);
     this._buildMeshes(seed);
   }
 
   // Decide o que nasce em cada ponto de uma grade com "tremida"
-  // aleatória (fica natural, mas sem amontoar).
+  // aleatória (fica natural, mas sem amontoar). As chances por bioma
+  // estão em data/world/ilha.json -> vegetacao.biomas.
   _place(avoidPoints, seed) {
     const map = this.map;
     const cfg = this.cfg;
@@ -93,6 +114,10 @@ export class Vegetation {
     const step = cfg.passo_m;
     const half = map.half - step;
     const normal = new THREE.Vector3();
+    const tables = {};
+    for (const [biome, table] of Object.entries(cfg.biomas)) {
+      tables[biome] = Object.entries(table).filter(([t]) => TYPES[t]);
+    }
 
     for (let gz = -half; gz < half; gz += step) {
       for (let gx = -half; gx < half; gx += step) {
@@ -102,85 +127,49 @@ export class Vegetation {
         const r2 = rand();
         const h = map.heightAt(x, z);
         if (h < 0.6) continue;
-        if (this.water.bodyAt(x, z)) continue;
         if (avoidPoints.some((p) => Math.hypot(p.x - x, p.z - z) < 10)) continue;
+        const table = tables[BIOME_KEYS[map.biomeAt(x, z)]];
+        if (!table) continue;
 
-        const biome = map.biomeAt(x, z);
-        const ny = map.normalAt(x, z, normal).y;
+        // Sorteia o tipo pelas chances do bioma.
+        let acc = 0;
         let type = null;
-
-        switch (biome) {
-          case BIOME.BEACH: {
-            const c = cfg.praia;
-            if (h > 0.9 && r < c.palmeira) type = 'palmeira';
-            else if (r < c.palmeira + c.arbusto) type = 'arbusto';
-            else if (r < c.palmeira + c.arbusto + c.pedra) type = 'pedra';
+        for (const [t, chance] of table) {
+          acc += chance;
+          if (r < acc) {
+            type = t;
             break;
           }
-          case BIOME.FOREST: {
-            const c = cfg.floresta;
-            const treeChance = c.arvore * map.forestDensity(x, z, h);
-            if (ny < 0.8) {
-              if (r < c.pedra * 3) type = 'pedra';
-            } else if (r < treeChance) {
-              type = h > 40 || r2 < 0.18 ? 'pinheiro' : 'arvore';
-            } else if (r < treeChance + c.arbusto) {
-              type = 'arbusto';
-            } else if (r < treeChance + c.arbusto + c.pedra) {
-              type = 'pedra';
-            }
-            break;
-          }
-          case BIOME.GRASS: {
-            const c = cfg.campina;
-            if (r < c.arvore) type = r2 < 0.3 ? 'pinheiro' : 'arvore';
-            else if (r < c.arvore + c.arbusto) type = 'arbusto';
-            else if (r < c.arvore + c.arbusto + c.pedra) type = 'pedra';
-            break;
-          }
-          case BIOME.FIELD: {
-            const c = cfg.campo;
-            if (r < c.arvore) type = 'arvore';
-            else if (r < c.arvore + c.arbusto) type = 'arbusto';
-            else if (r < c.arvore + c.arbusto + c.pedra) type = 'pedra';
-            break;
-          }
-          case BIOME.ROCK: {
-            const c = cfg.montanha;
-            if (r < c.pedra) type = 'pedra';
-            else if (h < 85 && ny > 0.75 && r < c.pedra + c.pinheiro) type = 'pinheiro';
-            break;
-          }
-          case BIOME.SNOW: {
-            if (r < cfg.neve.pedra) type = 'pedra';
-            break;
-          }
-          default:
-            break;
         }
         if (!type) continue;
+        const def = TYPES[type];
+        const water = this.water.bodyAt(x, z);
+        if (water && (!def.water || water.level - h > 0.9)) continue;
+        const ny = map.normalAt(x, z, normal).y;
+        if (ny < 0.78 && !type.startsWith('pedra')) continue;
 
-        const scale = type === 'pedra' ? 0.6 + rand() * 1.6 : 0.8 + rand() * 0.5;
+        const scale = def.scale[0] + r2 * (def.scale[1] - def.scale[0]);
+        const sinks = type.startsWith('pedra') ? 0.15 * scale : 0.1;
         const rec = {
           id: this.instances.length,
           type,
           x,
-          y: h - (type === 'pedra' ? 0.15 * scale : 0.1),
+          y: h - sinks,
           z,
           scale,
           rot: rand() * Math.PI * 2,
-          alive: true,   // Fase 2: vira false quando coletado
+          alive: true, // Fase 2: vira false quando coletado
           mesh: null,
           index: -1,
         };
         this.instances.push(rec);
-        const colliderR = TYPES[type].collider * (type === 'pedra' ? scale : 1);
+        const colliderR = def.collider * (type.startsWith('pedra') ? scale : Math.sqrt(scale));
         if (colliderR > 0) this.colliders.add({ x, z, r: colliderR, rec });
       }
     }
   }
 
-  // Cria um InstancedMesh por (pedaço da ilha × tipo).
+  // Cria InstancedMesh por (pedaço da ilha × tipo × perto/longe).
   _buildMeshes(seed) {
     const size = this.cfg.tamanho_pedaco_m;
     const byChunk = new Map();
@@ -203,53 +192,64 @@ export class Vegetation {
 
     for (const [key, entry] of byChunk) {
       const center = new THREE.Vector3((entry.cx + 0.5) * size, 0, (entry.cz + 0.5) * size);
-      const chunk = { key, center, meshes: [] };
+      const chunk = { key, center, groups: [] };
       for (const [type, list] of Object.entries(entry.byType)) {
-        const mesh = new THREE.InstancedMesh(this.geometries[type], this.material, list.length);
-        mesh.name = `${type}_${key}`;
-        mesh.castShadow = TYPES[type].shadow;
-        mesh.userData.castsShadow = TYPES[type].shadow;
-        mesh.userData.type = type;
-        list.forEach((rec, i) => {
+        const geoms = this.geometries[type];
+        // Matrizes e cores calculadas uma vez e usadas nas duas versões.
+        const mats = [];
+        const cols = [];
+        for (const rec of list) {
           q.setFromAxisAngle(up, rec.rot);
-          if (type === 'pedra') s.set(rec.scale * (0.8 + rand() * 0.5), rec.scale, rec.scale * (0.8 + rand() * 0.5));
+          if (type.startsWith('pedra')) s.set(rec.scale * (0.8 + rand() * 0.5), rec.scale, rec.scale * (0.8 + rand() * 0.5));
           else s.setScalar(rec.scale);
           p.set(rec.x, rec.y, rec.z);
-          m.compose(p, q, s);
-          mesh.setMatrixAt(i, m);
-          // Pequena variação de tom em cada instância.
-          const v = 0.86 + rand() * 0.26;
-          color.setRGB(v, v * (0.96 + rand() * 0.08), v);
-          mesh.setColorAt(i, color);
-          rec.mesh = mesh;
-          rec.index = i;
-        });
-        mesh.instanceMatrix.needsUpdate = true;
-        if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-        mesh.computeBoundingSphere();
-        this.group.add(mesh);
-        chunk.meshes.push(mesh);
+          mats.push(m.compose(p, q, s).clone());
+          const v = 0.84 + rand() * 0.28;
+          cols.push(new THREE.Color(v, v * (0.95 + rand() * 0.1), v * (0.94 + rand() * 0.08)));
+        }
+        const make = (geometry, lod) => {
+          const mesh = new THREE.InstancedMesh(geometry, this.material, list.length);
+          mesh.name = `${type}_${lod}_${key}`;
+          mesh.castShadow = TYPES[type].shadow && lod === 'hi';
+          mesh.userData.castsShadow = mesh.castShadow;
+          list.forEach((rec, i) => {
+            mesh.setMatrixAt(i, mats[i]);
+            mesh.setColorAt(i, cols[i]);
+            (rec.meshes ??= []).push({ mesh, index: i });
+          });
+          mesh.instanceMatrix.needsUpdate = true;
+          if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+          mesh.computeBoundingSphere();
+          this.group.add(mesh);
+          return mesh;
+        };
+        const hi = make(geoms.hi, 'hi');
+        const lo = geoms.lo ? make(geoms.lo, 'lo') : null;
+        chunk.groups.push({ type, hi, lo });
       }
       this.chunks.set(key, chunk);
     }
   }
 
-  // Esconde pedaços longe da câmera (economiza muito no celular).
+  // Esconde pedaços longe da câmera e usa o modelo simples de longe.
   updateVisibility(cameraPos, viewDistance) {
-    const margin = this.cfg.tamanho_pedaco_m * 0.75;
+    const margin = this.cfg.tamanho_pedaco_m * 0.72;
     for (const chunk of this.chunks.values()) {
       const dx = chunk.center.x - cameraPos.x;
       const dz = chunk.center.z - cameraPos.z;
-      const dist = Math.sqrt(dx * dx + dz * dz) - margin;
-      for (const mesh of chunk.meshes) {
-        mesh.visible = dist < Math.min(viewDistance, TYPES[mesh.userData.type].maxDist);
+      const dist = Math.max(0, Math.sqrt(dx * dx + dz * dz) - margin);
+      for (const g of chunk.groups) {
+        const visible = dist < Math.min(viewDistance, TYPES[g.type].maxDist);
+        const near = dist < LOD_DIST || !g.lo;
+        g.hi.visible = visible && near;
+        if (g.lo) g.lo.visible = visible && !near;
       }
     }
   }
 
   setShadows(enabled) {
     for (const chunk of this.chunks.values()) {
-      for (const mesh of chunk.meshes) mesh.castShadow = enabled && mesh.userData.castsShadow;
+      for (const g of chunk.groups) g.hi.castShadow = enabled && g.hi.userData.castsShadow;
     }
   }
 

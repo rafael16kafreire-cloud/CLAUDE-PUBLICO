@@ -18,6 +18,9 @@ export const EV = {
   LEVEL_UP: 'level_up',                   // { level, points }
   SETTINGS_CHANGED: 'settings_changed',   // { key, value, settings }
   CAMERA_MODE: 'camera_mode',             // { mode }
+  PLAYER_HURT: 'player_hurt',             // { amount, source }
+  CREATURE_KILLED: 'creature_killed',     // { creature, byPlayer }
+  BIOME_ENTERED: 'biome_entered',         // { key, name, description }
 };
 
 class EventBus {

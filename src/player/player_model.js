@@ -1,20 +1,21 @@
 // =============================================================
-// MODELO DO JOGADOR (placeholder low-poly com caixas)
+// MODELO DO JOGADOR (placeholder com formas arredondadas)
 // Tem animações simples feitas por código: andar, correr,
 // nadar, agachar, golpe e cair morto.
 // =============================================================
 import * as THREE from 'three';
 
-const mat = (hex) => new THREE.MeshLambertMaterial({ color: hex, flatShading: true });
+const mat = (hex) => new THREE.MeshLambertMaterial({ color: hex });
 
-const SKIN = mat('#d6a274');
-const SHIRT = mat('#c9703a');
-const PANTS = mat('#4f4434');
-const HAIR = mat('#3a281b');
+const SKIN = mat('#c99a6e');
+const SHIRT = mat('#a85f31');
+const PANTS = mat('#4a4033');
+const HAIR = mat('#33241a');
 const DARK = mat('#1f1a16');
+const BOOT = mat('#3b2e22');
 
-function box(w, h, d, material, y = 0) {
-  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
+function part(geometry, material, y = 0) {
+  const m = new THREE.Mesh(geometry, material);
   m.position.y = y;
   m.castShadow = true;
   return m;
@@ -28,34 +29,45 @@ export class PlayerModel {
     this.body = new THREE.Group();
     this.root.add(this.body);
 
-    this.torso = box(0.5, 0.66, 0.28, SHIRT, 1.16);
-    this.head = box(0.32, 0.32, 0.3, SKIN, 1.66);
-    const hair = box(0.34, 0.1, 0.32, HAIR, 0.17);
-    this.head.add(hair);
-    const eyeL = box(0.05, 0.05, 0.02, DARK, 0.02);
-    eyeL.position.set(-0.07, 0.02, -0.155);
+    // tronco (cápsula achatada) + quadril
+    this.torso = part(new THREE.CapsuleGeometry(0.2, 0.36, 6, 14), SHIRT, 1.2);
+    this.torso.scale.set(1.15, 1, 0.75);
+    const hips = part(new THREE.CapsuleGeometry(0.17, 0.12, 4, 12), PANTS, 0.9);
+    hips.scale.set(1.15, 1, 0.8);
+    const neck = part(new THREE.CylinderGeometry(0.06, 0.07, 0.12, 10), SKIN, 1.52);
+
+    // cabeça com cabelo, nariz e olhos
+    this.head = new THREE.Group();
+    this.head.position.y = 1.67;
+    const skull = part(new THREE.SphereGeometry(0.135, 16, 12), SKIN);
+    skull.scale.set(0.95, 1.08, 1);
+    const hair = part(new THREE.SphereGeometry(0.142, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.55), HAIR, 0.02);
+    hair.rotation.x = 0.25;
+    const nose = part(new THREE.SphereGeometry(0.025, 8, 6), SKIN, -0.01);
+    nose.position.z = -0.135;
+    const eyeL = part(new THREE.SphereGeometry(0.016, 8, 6), DARK, 0.025);
+    eyeL.position.set(-0.048, 0.025, -0.118);
     const eyeR = eyeL.clone();
-    eyeR.position.x = 0.07;
-    this.head.add(eyeL, eyeR);
-    this.head.position.y = 1.66;
+    eyeR.position.x = 0.048;
+    this.head.add(skull, hair, nose, eyeL, eyeR);
 
-    // Braços e pernas giram a partir do ombro/quadril.
-    this.armL = this._limb(-0.33, 1.44, 0.14, 0.6, SKIN, SHIRT);
-    this.armR = this._limb(0.33, 1.44, 0.14, 0.6, SKIN, SHIRT);
-    this.legL = this._limb(-0.13, 0.82, 0.19, 0.8, PANTS, PANTS);
-    this.legR = this._limb(0.13, 0.82, 0.19, 0.8, PANTS, PANTS);
+    // braços e pernas giram a partir do ombro/quadril
+    this.armL = this._limb(-0.27, 1.43, 0.055, 0.6, SHIRT, SKIN);
+    this.armR = this._limb(0.27, 1.43, 0.055, 0.6, SHIRT, SKIN);
+    this.legL = this._limb(-0.11, 0.86, 0.08, 0.82, PANTS, BOOT);
+    this.legR = this._limb(0.11, 0.86, 0.08, 0.82, PANTS, BOOT);
 
-    this.body.add(this.torso, this.head, this.armL, this.armR, this.legL, this.legR);
+    this.body.add(this.torso, hips, neck, this.head, this.armL, this.armR, this.legL, this.legR);
 
     this._phase = 0;
     this._swing = 0; // animação de golpe (0 = parado)
   }
 
-  _limb(x, y, w, len, endMat, topMat) {
+  _limb(x, y, r, len, topMat, endMat) {
     const pivot = new THREE.Group();
     pivot.position.set(x, y, 0);
-    const upper = box(w, len * 0.55, w, topMat, -len * 0.27);
-    const lower = box(w * 0.92, len * 0.5, w * 0.92, endMat, -len * 0.75);
+    const upper = part(new THREE.CapsuleGeometry(r, len * 0.38, 4, 10), topMat, -len * 0.25);
+    const lower = part(new THREE.CapsuleGeometry(r * 0.88, len * 0.36, 4, 10), endMat, -len * 0.7);
     pivot.add(upper, lower);
     return pivot;
   }

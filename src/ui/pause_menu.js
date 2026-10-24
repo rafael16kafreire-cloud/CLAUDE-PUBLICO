@@ -6,7 +6,7 @@
 import { settings, QUALITY_PRESETS } from '../core/settings.js';
 
 export class PauseMenu {
-  constructor(root, { onResume, onQuitToMenu, onCloseApp }) {
+  constructor(root, { onResume, onQuitToMenu, onCloseApp, species = [], onSpawnTest }) {
     const el = document.createElement('div');
     el.className = 'overlay pause';
     el.hidden = true;
@@ -52,6 +52,15 @@ export class PauseMenu {
           <label for="opt-debug">Mostrar FPS e desempenho</label>
           <input type="checkbox" id="opt-debug">
         </form>
+        <div class="pause-test">
+          <label for="opt-spawn">Teste: chamar dinossauro</label>
+          <div class="pause-test-row">
+            <select id="opt-spawn">
+              ${species.map((sp) => `<option value="${sp.id}">${sp.nome}</option>`).join('')}
+            </select>
+            <button type="button" class="btn" id="pause-spawn">Criar perto de mim</button>
+          </div>
+        </div>
         <div class="pause-foot">
           <button type="button" class="btn" id="pause-menu">Voltar à tela inicial</button>
           <button type="button" class="btn" id="pause-close" hidden>Fechar o app</button>
@@ -80,6 +89,7 @@ export class PauseMenu {
     };
 
     $('pause-opts').addEventListener('submit', (e) => e.preventDefault());
+    $('pause-spawn').addEventListener('click', () => onSpawnTest?.($('opt-spawn').value));
     $('pause-resume').addEventListener('click', () => onResume());
     $('pause-menu').addEventListener('click', () => onQuitToMenu());
     const closeBtn = $('pause-close');

@@ -2,18 +2,16 @@
 // TERRENO – transforma a grade de alturas em malhas 3D.
 // A ilha é dividida em "pedaços" (chunks): o celular só desenha
 // os pedaços que estão na frente da câmera e dentro da distância
-// de visão. Visual low-poly: cada triângulo com luz chapada.
+// de visão. Luz suave + textura de detalhe (materials.js).
 // =============================================================
 import * as THREE from 'three';
+import { makeTerrainMaterial } from './materials.js';
 
 export function buildTerrain(map, chunkCells) {
   const group = new THREE.Group();
   group.name = 'Terreno';
 
-  const material = new THREE.MeshLambertMaterial({
-    vertexColors: true,
-    flatShading: true,
-  });
+  const material = makeTerrainMaterial();
 
   const perSide = Math.ceil(map.cells / chunkCells);
   const chunks = [];

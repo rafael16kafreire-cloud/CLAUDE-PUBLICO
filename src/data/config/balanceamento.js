@@ -107,10 +107,31 @@ export default {
   },
 
   // ---------------------------------------------------------
+  // Combate (soco por enquanto; armas na Fase 3)
+  // ---------------------------------------------------------
+  combate: {
+    soco_dano: 10,             // dano de um soco
+    soco_alcance_m: 2.4,       // distância do soco
+    soco_intervalo_seg: 0.45,  // tempo entre socos
+    soco_stamina: 4,           // stamina gasta por soco
+  },
+
+  // ---------------------------------------------------------
+  // Criaturas (dados de cada espécie: data/creatures/criaturas.json)
+  // ---------------------------------------------------------
+  criaturas: {
+    raio_spawn_min_m: 55,      // nascem a pelo menos X m do jogador
+    raio_spawn_max_m: 130,     // e no máximo a Y m
+    raio_despawn_m: 190,       // somem quando ficam mais longe que isso
+    intervalo_spawn_seg: 1.2,  // a cada quanto tempo tenta criar mais
+    corpo_dura_seg: 90,        // quanto tempo um corpo fica no chão
+  },
+
+  // ---------------------------------------------------------
   // Desempenho
   // ---------------------------------------------------------
   desempenho: {
-    criaturas_max_ativas: 15,  // usado na Fase 7
+    criaturas_max_ativas: 15,  // máximo de criaturas vivas perto do jogador
   },
 
   // ---------------------------------------------------------

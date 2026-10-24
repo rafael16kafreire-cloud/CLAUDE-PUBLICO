@@ -1,9 +1,11 @@
 // =============================================================
-// ÁGUA – mar (salgado) e lago (doce)
+// ÁGUA – mar (salgado), lago e pântano (doces)
 // Cada "corpo d'água" sabe seu nível (altura da superfície) e se
 // é doce. A física (nadar) e o "beber" perguntam aqui.
 // =============================================================
 import * as THREE from 'three';
+import { makeWaterMaterial } from './materials.js';
+import { SUN_DIR } from './sky.js';
 
 export class WaterBody {
   constructor({ id, name, fresh, level, center = null, radius = null }) {
@@ -27,35 +29,29 @@ export class WaterSystem {
   constructor(map, scene) {
     this.map = map;
     const k = map.lake;
+    const s = map.swamp;
 
     this.lake = new WaterBody({
-      id: 'lago',
-      name: 'Lago',
-      fresh: true,
-      level: k.level,
-      center: { x: k.x, z: k.z },
-      radius: k.diskRadius,
+      id: 'lago', name: 'Lago', fresh: true, level: k.level,
+      center: { x: k.x, z: k.z }, radius: k.diskRadius,
+    });
+    this.swamp = new WaterBody({
+      id: 'pantano', name: 'Pântano', fresh: true, level: s.level,
+      center: { x: s.x, z: s.z }, radius: s.diskRadius,
     });
     this.sea = new WaterBody({ id: 'mar', name: 'Mar', fresh: false, level: 0 });
-    // O lago vem primeiro: ele tem prioridade sobre o mar.
-    this.bodies = [this.lake, this.sea];
+    // Lago e pântano primeiro: têm prioridade sobre o mar.
+    this.bodies = [this.lake, this.swamp, this.sea];
 
     // ----- Malhas -----
-    // Mar: um plano grande e semitransparente.
-    this.seaMaterial = new THREE.MeshLambertMaterial({
-      color: '#2a7fae',
-      transparent: true,
-      opacity: 0.82,
-      side: THREE.DoubleSide,
-    });
-    const seaMesh = new THREE.Mesh(new THREE.PlaneGeometry(6000, 6000), this.seaMaterial);
+    const seaMat = makeWaterMaterial({ shallow: '#3f9cb4', deep: '#1c5f7c', opacity: 0.8, waveHeight: 0.18, sunDir: SUN_DIR });
+    const seaMesh = new THREE.Mesh(new THREE.PlaneGeometry(6000, 6000, 60, 60), seaMat);
     seaMesh.rotation.x = -Math.PI / 2;
     seaMesh.position.y = this.sea.level;
     seaMesh.name = 'Mar';
     scene.add(seaMesh);
 
-    // Fundo escuro bem embaixo de tudo (para o mar não parecer vazio
-    // além da borda do terreno).
+    // Fundo escuro bem embaixo de tudo (o mar não parece vazio além da ilha).
     const floor = new THREE.Mesh(
       new THREE.PlaneGeometry(6000, 6000),
       new THREE.MeshBasicMaterial({ color: '#1d3f48' }),
@@ -65,21 +61,22 @@ export class WaterSystem {
     floor.name = 'FundoDoMar';
     scene.add(floor);
 
-    // Lago: um disco na altura do nível da água.
-    this.lakeMaterial = new THREE.MeshLambertMaterial({
-      color: '#3f9bb8',
-      transparent: true,
-      opacity: 0.85,
-      side: THREE.DoubleSide,
-    });
-    const lakeMesh = new THREE.Mesh(new THREE.CircleGeometry(k.diskRadius, 48), this.lakeMaterial);
+    const lakeMat = makeWaterMaterial({ shallow: '#4aa3b5', deep: '#246c80', opacity: 0.82, waveHeight: 0.04, sunDir: SUN_DIR });
+    const lakeMesh = new THREE.Mesh(new THREE.CircleGeometry(k.diskRadius, 48), lakeMat);
     lakeMesh.rotation.x = -Math.PI / 2;
     lakeMesh.position.set(k.x, k.level, k.z);
     lakeMesh.name = 'Lago';
     scene.add(lakeMesh);
 
-    this.meshes = [seaMesh, lakeMesh];
-    this._time = 0;
+    // Pântano: água turva, esverdeada.
+    const swampMat = makeWaterMaterial({ shallow: '#4f5d33', deep: '#33402a', opacity: 0.92, waveHeight: 0.02, sunDir: SUN_DIR, sky: '#7d8c6a', reflect: 0.35 });
+    const swampMesh = new THREE.Mesh(new THREE.CircleGeometry(s.diskRadius, 64), swampMat);
+    swampMesh.rotation.x = -Math.PI / 2;
+    swampMesh.position.set(s.x, s.level, s.z);
+    swampMesh.name = 'AguaPantano';
+    scene.add(swampMesh);
+
+    this.meshes = [seaMesh, lakeMesh, swampMesh];
   }
 
   // Corpo d'água no ponto (x, z), ou null se o chão está seco.
@@ -91,11 +88,7 @@ export class WaterSystem {
     return null;
   }
 
-  update(dt) {
-    // Leve "brilho" mudando com o tempo para a água não ficar parada.
-    this._time += dt;
-    const s = Math.sin(this._time * 0.8) * 0.03;
-    this.seaMaterial.opacity = 0.82 + s;
-    this.lakeMaterial.opacity = 0.85 + s;
+  update() {
+    // A animação das ondas usa o tempo compartilhado (materials.js).
   }
 }

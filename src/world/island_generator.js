@@ -1,9 +1,11 @@
 // =============================================================
 // GERADOR DA ILHA
-// Cria o relevo (altura de cada ponto), os biomas (praia, floresta,
-// campo, montanha, neve, lago) e as cores do chão.
-// Tudo vem de uma "semente": a mesma semente gera sempre a mesma
-// ilha, o que é importante para o save funcionar nas próximas fases.
+// Cria o relevo (altura de cada ponto), os biomas e as cores do
+// chão. Tudo vem de uma "semente": a mesma semente gera sempre a
+// mesma ilha (importante para o save nas próximas fases).
+//
+// Biomas: Praia, Campina, Floresta, Floresta Amazônica, Deserto,
+//         Pântano, Montanha, Pico Nevado, Lago, Mar.
 // =============================================================
 import * as THREE from 'three';
 import { createNoise2D, fbm } from '../core/noise.js';
@@ -12,29 +14,40 @@ import { clamp, lerp, smoothstep } from '../core/math.js';
 export const BIOME = {
   SEA: 0,
   BEACH: 1,
-  GRASS: 2,   // campina (grama comum)
-  FIELD: 3,   // campo aberto
-  FOREST: 4,
-  ROCK: 5,    // montanha / encosta de pedra
-  SNOW: 6,
-  LAKE: 7,
+  MEADOW: 2,    // campina
+  FOREST: 3,    // floresta
+  JUNGLE: 4,    // floresta amazônica
+  DESERT: 5,
+  SWAMP: 6,
+  MOUNTAIN: 7,
+  SNOW: 8,
+  LAKE: 9,
 };
 
-export const BIOME_NAMES = ['Mar', 'Praia', 'Campina', 'Campo aberto', 'Floresta', 'Montanha', 'Neve', 'Lago'];
+// Chave de cada bioma no arquivo data/world/ilha.json
+export const BIOME_KEYS = ['mar', 'praia', 'campina', 'floresta', 'selva', 'deserto', 'pantano', 'montanha', 'neve', 'lago'];
 
-// Cores do chão de cada bioma (estilo low-poly, cores chapadas).
+// Cores do chão (tons naturais, sem saturação exagerada).
+const C = (hex) => new THREE.Color(hex);
 const COLORS = {
-  sand: new THREE.Color('#e2cd8f'),
-  wetSand: new THREE.Color('#c9b277'),
-  seaShallow: new THREE.Color('#bfae7c'),
-  seaDeep: new THREE.Color('#4f6f68'),
-  grass: new THREE.Color('#77a847'),
-  field: new THREE.Color('#a8bd57'),
-  forest: new THREE.Color('#4a7a36'),
-  rock: new THREE.Color('#8b867a'),
-  darkRock: new THREE.Color('#6d6a62'),
-  snow: new THREE.Color('#eef1f3'),
-  lakeBed: new THREE.Color('#6f8660'),
+  sand: C('#d6c293'),
+  wetSand: C('#ad9a6c'),
+  seaShallow: C('#b3a274'),
+  seaDeep: C('#3d5b55'),
+  meadow: C('#7f9a47'),
+  meadowDry: C('#9fa25a'),
+  forest: C('#55703a'),
+  forestDark: C('#425c2e'),
+  jungle: C('#3a5a26'),
+  jungleMud: C('#4f4630'),
+  desert: C('#d4a466'),
+  desertDark: C('#b9844d'),
+  swampMud: C('#4a4630'),
+  swampMoss: C('#566a32'),
+  rock: C('#878177'),
+  darkRock: C('#5f5b54'),
+  snow: C('#eef1f4'),
+  lakeBed: C('#5b6a48'),
 };
 
 export class IslandMap {
@@ -47,29 +60,29 @@ export class IslandMap {
     this.verts = this.cells + 1;
     this.half = this.size / 2;
 
-    // Lago: o "disco" de água é um pouco maior que o lago em si;
-    // o terreno em volta é levantado para esconder a borda.
+    // Lago e pântano: o "disco" de água é um pouco maior que a área
+    // molhada; o terreno na borda do disco é levantado para esconder
+    // a borda da água.
     const lago = layout.lago;
     this.lake = {
-      x: lago.x,
-      z: lago.z,
-      radius: lago.raio_m,
-      level: lago.nivel_agua_m,
-      depth: lago.profundidade_m,
-      diskRadius: lago.raio_m + 14,
+      x: lago.x, z: lago.z, radius: lago.raio_m, level: lago.nivel_agua_m,
+      depth: lago.profundidade_m, diskRadius: lago.raio_m + 14,
     };
+    const p = layout.pantano;
+    this.swamp = { x: p.x, z: p.z, radius: p.raio_m, level: p.nivel_agua_m, diskRadius: p.raio_m };
 
-    // Cada camada de ruído tem sua própria semente.
     this.nCoast = createNoise2D(seed + 1);
     this.nHill = createNoise2D(seed + 2);
     this.nRidge = createNoise2D(seed + 3);
     this.nLake = createNoise2D(seed + 4);
     this.nForest = createNoise2D(seed + 5);
     this.nDetail = createNoise2D(seed + 6);
+    this.nRegion = createNoise2D(seed + 7);
+    this.nDune = createNoise2D(seed + 8);
 
     const n = this.verts * this.verts;
     this.heights = new Float32Array(n);
-    this.coast = new Float32Array(n);   // distância até a costa (m)
+    this.coast = new Float32Array(n);
     this.biomes = new Uint8Array(n);
     this.colors = new Float32Array(n * 3);
 
@@ -77,14 +90,18 @@ export class IslandMap {
   }
 
   // ----------------------------------------------------------
-  // Máscaras (0 a 1) que dizem "quanto" de cada região há num ponto
+  // Máscaras (0 a 1): "quanto" de cada região há num ponto
   // ----------------------------------------------------------
-
-  // Metros até a costa: positivo = terra, negativo = mar.
   coastDistance(x, z) {
     const dist = Math.hypot(x * 0.94, z * 1.06);
     const wobble = fbm(this.nCoast, x * 0.0032, z * 0.0032, 4) * this.L.variacao_costa_m;
     return this.L.raio_ilha_m + wobble - dist;
+  }
+
+  // Região com borda irregular (não um círculo perfeito).
+  _region(r, x, z) {
+    const wobble = fbm(this.nRegion, x * 0.006 + r.x * 0.01, z * 0.006 + r.z * 0.01, 3) * r.raio_m * 0.25;
+    return smoothstep(r.raio_m, r.raio_m * 0.5, Math.hypot(x - r.x, z - r.z) + wobble);
   }
 
   mountainMask(x, z) {
@@ -92,40 +109,45 @@ export class IslandMap {
     return smoothstep(m.raio_m, 0, Math.hypot(x - m.x, z - m.z));
   }
 
-  fieldMask(x, z) {
-    const c = this.L.campo;
-    return smoothstep(c.raio_m, c.raio_m * 0.45, Math.hypot(x - c.x, z - c.z));
+  desertMask(x, z) { return this._region(this.L.deserto, x, z); }
+  jungleMask(x, z) { return this._region(this.L.selva, x, z); }
+  meadowMask(x, z) { return this._region(this.L.campina, x, z); }
+  swampMask(x, z) {
+    const s = this.swamp;
+    return smoothstep(s.radius, s.radius * 0.55, Math.hypot(x - s.x, z - s.z));
   }
 
-  // Densidade da floresta (0 = sem árvores, 1 = mata fechada).
+  // Densidade de árvores na floresta comum (0 a 1).
   forestDensity(x, z, h) {
-    let f = 0.5 + fbm(this.nForest, x * 0.005 + 40, z * 0.005 - 20, 3) * 1.1;
-    f += 0.3 * smoothstep(-120, 260, x);          // leste mais fechado
-    f -= this.fieldMask(x, z) * 1.4;              // campo aberto quase sem árvores
-    f -= smoothstep(45, 80, h) * 0.6;             // rareia subindo a montanha
+    let f = 0.55 + fbm(this.nForest, x * 0.005 + 40, z * 0.005 - 20, 3) * 1.1;
+    f -= smoothstep(45, 80, h) * 0.6;
     return clamp(f, 0, 1);
   }
 
   // ----------------------------------------------------------
-  // Altura "ideal" de um ponto (antes de virar malha)
+  // Altura de um ponto
   // ----------------------------------------------------------
   rawHeight(x, z, coastD) {
     const L = this.L;
     const d = coastD;
+    const desert = this.desertMask(x, z);
+    const jungle = this.jungleMask(x, z);
     let h;
     if (d <= 0) {
-      // Fundo do mar: desce suavemente até a profundidade máxima.
       h = -Math.min(L.profundidade_mar_m, -d * 0.16);
       h += this.nDetail(x * 0.02, z * 0.02) * 0.6 * smoothstep(0, 40, -d);
     } else {
-      // Praia → planície → colinas
       const praia = L.altura_praia_m * smoothstep(0, L.largura_praia_m, d);
       const planicie = (L.altura_planicie_m - L.altura_praia_m) *
         smoothstep(L.largura_praia_m * 0.7, L.largura_praia_m + 130, d);
-      const fm = this.fieldMask(x, z);
-      const colinas = fbm(this.nHill, x * 0.0075, z * 0.0075, 4) * L.altura_colinas_m *
-        smoothstep(L.largura_praia_m, L.largura_praia_m + 160, d) * (1 - 0.75 * fm);
-      h = praia + planicie + colinas;
+      const inland = smoothstep(L.largura_praia_m, L.largura_praia_m + 160, d);
+      const flat = 1 - 0.7 * this.meadowMask(x, z);
+      let colinas = fbm(this.nHill, x * 0.0075, z * 0.0075, 4) * L.altura_colinas_m * inland * flat;
+      colinas *= 1 + jungle * 0.4;
+      // Deserto: no lugar de colinas, dunas com cristas.
+      const duneRidge = 1 - Math.abs(fbm(this.nDune, x * 0.012, z * 0.02, 3));
+      const dunas = duneRidge * duneRidge * L.deserto.altura_dunas_m * inland - 3 * inland;
+      h = praia + planicie + lerp(colinas, dunas, desert);
     }
 
     // Montanha ao norte (com cristas)
@@ -136,10 +158,11 @@ export class IslandMap {
       h += (Math.pow(mm, 1.7) * L.montanha.altura_m + ridge * ridge * 22 * mm) * fade;
     }
 
+    h = this._applySwamp(x, z, h);
     return this._applyLake(x, z, h);
   }
 
-  // Cava a bacia do lago e levanta a borda para a água não "vazar".
+  // Lago: cava a bacia e levanta a borda.
   _applyLake(x, z, h) {
     const k = this.lake;
     const dl = Math.hypot(x - k.x, z - k.z);
@@ -152,12 +175,21 @@ export class IslandMap {
     return out;
   }
 
-  // ----------------------------------------------------------
-  // Geração da grade
+  // Pântano: chão baixo e encharcado, cheio de poças e ilhotas.
+  _applySwamp(x, z, h) {
+    const s = this.swamp;
+    const ds = Math.hypot(x - s.x, z - s.z);
+    if (ds > s.diskRadius + 24) return h;
+    const rim = smoothstep(s.diskRadius + 24, s.diskRadius - 4, ds);
+    let out = lerp(h, Math.max(h, s.level + 0.8), rim);
+    const wet = s.level + fbm(this.nLake, x * 0.025 + 7, z * 0.025, 3) * 1.6 - 0.15;
+    out = lerp(out, wet, this.swampMask(x, z));
+    return out;
+  }
+
   // ----------------------------------------------------------
   _generate() {
     const v = this.verts;
-    // 1) alturas
     for (let j = 0; j < v; j++) {
       const z = j * this.cell - this.half;
       for (let i = 0; i < v; i++) {
@@ -168,7 +200,6 @@ export class IslandMap {
         this.heights[idx] = this.rawHeight(x, z, d);
       }
     }
-    // 2) biomas e cores (precisa das alturas vizinhas para a inclinação)
     const c = new THREE.Color();
     for (let j = 0; j < v; j++) {
       const z = j * this.cell - this.half;
@@ -176,14 +207,9 @@ export class IslandMap {
         const x = i * this.cell - this.half;
         const idx = j * v + i;
         const h = this.heights[idx];
-        const hx0 = this.heights[j * v + Math.max(0, i - 1)];
-        const hx1 = this.heights[j * v + Math.min(v - 1, i + 1)];
-        const hz0 = this.heights[Math.max(0, j - 1) * v + i];
-        const hz1 = this.heights[Math.min(v - 1, j + 1) * v + i];
-        const dx = (hx1 - hx0) / (2 * this.cell);
-        const dz = (hz1 - hz0) / (2 * this.cell);
+        const dx = (this.heights[j * v + Math.min(v - 1, i + 1)] - this.heights[j * v + Math.max(0, i - 1)]) / (2 * this.cell);
+        const dz = (this.heights[Math.min(v - 1, j + 1) * v + i] - this.heights[Math.max(0, j - 1) * v + i]) / (2 * this.cell);
         const normalY = 1 / Math.sqrt(dx * dx + dz * dz + 1);
-
         const biome = this._classify(x, z, h, normalY, this.coast[idx]);
         this.biomes[idx] = biome;
         this._colorFor(c, biome, x, z, h, normalY);
@@ -199,17 +225,22 @@ export class IslandMap {
     const k = this.lake;
     if (Math.hypot(x - k.x, z - k.z) < k.diskRadius && h < k.level + 0.3) return BIOME.LAKE;
     if (h < 0.2) return BIOME.SEA;
+    if (this.swampMask(x, z) > 0.35) return BIOME.SWAMP;
     if (h < 2.8 && coastD < L.largura_praia_m * 1.6) return BIOME.BEACH;
     const snowLine = L.neve_acima_m + this.nDetail(x * 0.03, z * 0.03) * 8;
     if (h > snowLine) return BIOME.SNOW;
-    if (h > L.rocha_acima_m || normalY < 0.72) return BIOME.ROCK;
-    if (this.fieldMask(x, z) > 0.5) return BIOME.FIELD;
-    if (this.forestDensity(x, z, h) > 0.45) return BIOME.FOREST;
-    return BIOME.GRASS;
+    if (h > L.rocha_acima_m || (normalY < 0.72 && this.desertMask(x, z) < 0.5)) return BIOME.MOUNTAIN;
+    if (this.desertMask(x, z) > 0.5) return BIOME.DESERT;
+    if (this.jungleMask(x, z) > 0.45) return BIOME.JUNGLE;
+    if (this.meadowMask(x, z) > 0.45) return BIOME.MEADOW;
+    if (this.forestDensity(x, z, h) > 0.4) return BIOME.FOREST;
+    return BIOME.MEADOW;
   }
 
   _colorFor(out, biome, x, z, h, normalY) {
-    const v = 1 + this.nDetail(x * 0.06, z * 0.06) * 0.07; // leve variação
+    const n1 = this.nDetail(x * 0.06, z * 0.06);
+    const n2 = this.nDetail(x * 0.013 + 50, z * 0.013);
+    const v = 1 + n1 * 0.06;
     switch (biome) {
       case BIOME.SEA:
         out.copy(COLORS.seaShallow).lerp(COLORS.seaDeep, smoothstep(0, 14, -h));
@@ -217,13 +248,22 @@ export class IslandMap {
       case BIOME.BEACH:
         out.copy(COLORS.wetSand).lerp(COLORS.sand, smoothstep(0.2, 1.4, h));
         break;
-      case BIOME.FIELD:
-        out.copy(COLORS.field);
+      case BIOME.MEADOW:
+        out.copy(COLORS.meadow).lerp(COLORS.meadowDry, clamp(n2 * 0.8 + 0.3, 0, 1));
         break;
       case BIOME.FOREST:
-        out.copy(COLORS.forest);
+        out.copy(COLORS.forest).lerp(COLORS.forestDark, clamp(n2 + 0.5, 0, 1));
         break;
-      case BIOME.ROCK:
+      case BIOME.JUNGLE:
+        out.copy(COLORS.jungle).lerp(COLORS.jungleMud, clamp(n2 * 0.9 - 0.1, 0, 0.6));
+        break;
+      case BIOME.DESERT:
+        out.copy(COLORS.desert).lerp(COLORS.desertDark, clamp(0.5 - n2 * 0.7, 0, 1) * smoothstep(0.98, 0.8, normalY + 0.1));
+        break;
+      case BIOME.SWAMP:
+        out.copy(COLORS.swampMoss).lerp(COLORS.swampMud, smoothstep(this.swamp.level + 0.8, this.swamp.level, h));
+        break;
+      case BIOME.MOUNTAIN:
         out.copy(COLORS.rock).lerp(COLORS.darkRock, smoothstep(0.8, 0.55, normalY));
         break;
       case BIOME.SNOW:
@@ -233,22 +273,18 @@ export class IslandMap {
         out.copy(COLORS.lakeBed);
         break;
       default:
-        out.copy(COLORS.grass);
+        out.copy(COLORS.meadow);
     }
     out.multiplyScalar(v);
   }
 
   // ----------------------------------------------------------
-  // Consultas usadas pela física e pelos outros sistemas
+  // Consultas
   // ----------------------------------------------------------
-
-  // Altura exata do chão em (x, z), igual à malha desenhada.
   heightAt(x, z) {
     const gx = (x + this.half) / this.cell;
     const gz = (z + this.half) / this.cell;
-    if (gx < 0 || gz < 0 || gx >= this.cells || gz >= this.cells) {
-      return -this.L.profundidade_mar_m;
-    }
+    if (gx < 0 || gz < 0 || gx >= this.cells || gz >= this.cells) return -this.L.profundidade_mar_m;
     const ix = Math.floor(gx);
     const iz = Math.floor(gz);
     const fx = gx - ix;
@@ -259,12 +295,10 @@ export class IslandMap {
     const h10 = H[iz * v + ix + 1];
     const h01 = H[(iz + 1) * v + ix];
     const h11 = H[(iz + 1) * v + ix + 1];
-    // Cada quadrado da grade tem 2 triângulos (diagonal 01–10).
     if (fx + fz <= 1) return h00 + (h10 - h00) * fx + (h01 - h00) * fz;
     return h11 + (h01 - h11) * (1 - fx) + (h10 - h11) * (1 - fz);
   }
 
-  // Direção "para cima" do chão (inclinação).
   normalAt(x, z, out = new THREE.Vector3()) {
     const e = 1.0;
     const dx = (this.heightAt(x + e, z) - this.heightAt(x - e, z)) / (2 * e);
@@ -277,5 +311,9 @@ export class IslandMap {
     const j = Math.round((z + this.half) / this.cell);
     if (i < 0 || j < 0 || i >= this.verts || j >= this.verts) return BIOME.SEA;
     return this.biomes[j * this.verts + i];
+  }
+
+  biomeKeyAt(x, z) {
+    return BIOME_KEYS[this.biomeAt(x, z)];
   }
 }
