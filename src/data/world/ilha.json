@@ -1,0 +1,34 @@
+{
+  "_explicacao": "Formato da ilha. Distâncias em metros. O centro da ilha é x=0, z=0. Norte = z negativo, Sul = z positivo, Leste = x positivo, Oeste = x negativo.",
+  "tamanho_terreno_m": 1408,
+  "tamanho_celula_m": 4,
+  "tamanho_pedaco_celulas": 32,
+  "raio_ilha_m": 470,
+  "variacao_costa_m": 70,
+  "largura_praia_m": 38,
+  "altura_praia_m": 2.2,
+  "altura_planicie_m": 12,
+  "altura_colinas_m": 9,
+  "profundidade_mar_m": 28,
+  "montanha": { "x": 40, "z": -300, "raio_m": 250, "altura_m": 135 },
+  "lago": { "x": 70, "z": 60, "raio_m": 62, "nivel_agua_m": 9, "profundidade_m": 6 },
+  "campo": { "x": -210, "z": 170, "raio_m": 210 },
+  "rocha_acima_m": 55,
+  "neve_acima_m": 100,
+  "pontos_renascer": [
+    { "id": "sul", "nome": "Praia Sul", "direcao": [0, 1] },
+    { "id": "leste", "nome": "Praia Leste", "direcao": [1, 0] },
+    { "id": "oeste", "nome": "Praia Oeste", "direcao": [-1, 0] }
+  ],
+  "vegetacao": {
+    "passo_m": 7,
+    "tamanho_pedaco_m": 128,
+    "_chances": "Chance (0 a 1) de cada ponto da grade ter algo, por bioma.",
+    "floresta": { "arvore": 0.6, "arbusto": 0.16, "pedra": 0.03 },
+    "campina": { "arvore": 0.05, "arbusto": 0.07, "pedra": 0.02 },
+    "campo": { "arvore": 0.012, "arbusto": 0.04, "pedra": 0.015 },
+    "praia": { "palmeira": 0.05, "arbusto": 0.015, "pedra": 0.015 },
+    "montanha": { "pinheiro": 0.06, "pedra": 0.09 },
+    "neve": { "pedra": 0.035 }
+  }
+}

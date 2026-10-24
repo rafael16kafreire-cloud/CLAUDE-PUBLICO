@@ -1,0 +1,5 @@
+node_modules/
+build/
+android/.tools/
+# gerado por "npm run build" (cópia de dist/ilha-primordial.html)
+android/app/src/main/assets/
