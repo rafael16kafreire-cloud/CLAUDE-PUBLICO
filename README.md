@@ -4,6 +4,15 @@ Jogo 3D de sobrevivência com dinossauros. Sozinho (offline) ou em **co-op onlin
 Roda no celular (Android como app ou no navegador) e no PC.
 Visual estilizado, feito para ser leve.
 
+**Versão 0.9.2** – texturas em alta resolução
+- Na qualidade gráfica **alta**: terra 1024 px, neve 2048 px (+ relevo), pedra nevada
+  2048 px com relevo (normal map), árvores da neve e espinossauro em 2048 px com relevo.
+  Baixa e média continuam leves. Trocou a qualidade? As texturas mudam ao abrir o jogo de
+  novo. Ferramenta: `tools/models/texturas_hd.py`. Jogo inteiro ≈ 11 MB.
+- Começo tranquilo volta a ter no máximo 4 carnívoros por perto (o limite maior só vale
+  depois dos primeiros minutos).
+- Jogo salvo só grava quando algo mudou.
+
 **Versão 0.9.1** – Grande Montanha e modelos da neve
 - **Mapa 1,5× maior** (≈ 3,4 km de norte a sul) e a Lapônia mais larga que a real, para
   caber a **Grande Montanha** (modelo *Great Mountain*): 1,8 km de largura e ~330 m de

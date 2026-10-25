@@ -19,9 +19,16 @@ export function loadGame() {
   }
 }
 
+let lastWritten = null;
+
 export function saveGame(data) {
   try {
-    localStorage.setItem(KEY, JSON.stringify({ ...data, version: VERSION, savedAt: Date.now() }));
+    // só grava se mudou algo desde a última vez (escrever igual à toa,
+    // várias vezes seguidas, já fez navegador perder o salvo)
+    const body = JSON.stringify({ ...data, version: VERSION });
+    if (body === lastWritten) return true;
+    localStorage.setItem(KEY, body);
+    lastWritten = body;
     return true;
   } catch {
     return false; // sem espaço / modo privado: segue sem salvar

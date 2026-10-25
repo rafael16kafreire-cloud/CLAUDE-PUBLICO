@@ -628,7 +628,8 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   const swamp = await page.evaluate(() => {
     const c = window.__ilha.ctx;
     c.creatures.clear();
-    for (let i = 0; i < 4; i++) c.creatures.ensureSwampResidents({ x: 0, y: 0, z: 10 + 100 });
+    const pz = c.world.layout.pantano.partes[0];
+    for (let i = 0; i < 4; i++) c.creatures.ensureSwampResidents({ x: pz.x, y: 0, z: pz.z + 100 });
     const ids = c.creatures.list.map((x) => x.species.id);
     c.creatures.clear();
     return ids;
@@ -654,7 +655,8 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   const biomes = await page.evaluate(() => {
     const w = window.__ilha.ctx.world;
     const count = {};
-    for (let x = -460; x <= 460; x += 10) for (let z = -460; z <= 460; z += 10) {
+    const H = w.map.half;
+    for (let x = -H; x <= H; x += 20) for (let z = -H; z <= H; z += 20) {
       const k = w.biomeKeyAt(x, z);
       count[k] = (count[k] ?? 0) + 1;
     }
@@ -1011,6 +1013,8 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     window.__ilha.save();
     return { lvl: c.player.stats.level, sticks: c.inventory.count('graveto'), builds: c.world.structures.filter((s) => s.isBuild).length, pets: c.creatures.tamedBy(c.player).length, day: c.world.day };
   });
+  // (o navegador de teste às vezes perde o que acabou de gravar se recarregar na hora)
+  await page.waitForTimeout(1500);
   await page.reload();
   await page.waitForFunction(() => { const b = document.querySelector('#btn-play'); return b && !b.disabled; }, null, { timeout: 120000 });
   const label = await page.evaluate(() => ({ play: document.querySelector('#btn-play').textContent, newShown: !document.querySelector('#btn-new').hidden }));
