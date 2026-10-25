@@ -904,6 +904,8 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   const ride0 = await page.evaluate(() => {
     const c = window.__ilha.ctx; const d = window.__pet;
     c.player.position.set(d.pos.x + d.radius + 1, d.pos.y, d.pos.z);
+    // espaço livre em volta (árvore/pedra na frente não conta como falha)
+    for (const r of c.world.vegetation.recs) if (Math.hypot(r.x - d.pos.x, r.z - d.pos.z) < 14) r.alive = false;
     window.__r0 = { x: d.pos.x, z: d.pos.z };
     return window.__r0;
   });

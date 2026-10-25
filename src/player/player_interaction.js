@@ -103,7 +103,9 @@ export class PlayerInteraction {
     // 3) Planta para colher (bagas, bananas, fibra) – se a água não
     //    estiver mais perto (na beira da água, beber ganha)
     const rec = this.actions.findHarvestable(f);
-    if (rec && !(water && waterD <= Math.hypot(rec.x - p.x, rec.z - p.z))) {
+    // olhando para baixo, para a água: beber (não a planta do lado)
+    const waterWins = water && (waterD <= Math.hypot(rec?.x - p.x, rec?.z - p.z) || f.y < -0.33);
+    if (rec && !waterWins) {
       const res = this.world.vegetation.resourceOf(rec);
       const first = Object.keys(res.colher)[0];
       const label = res.rotulo ?? (first === 'banana' ? 'Pegar bananas' : `Colher ${itemName(first)}`);
