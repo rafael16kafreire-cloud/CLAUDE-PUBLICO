@@ -68,11 +68,11 @@ def main(agar, bush, out):
     pb, ub, ib = p[rep], u[rep], t
     # folhas e cipós: só uma parte dos cartões
     p1, u1, i1 = mesh(d, ids('AgarwoodLeaf_1'))
-    p1, u1, i1 = sample_cards(p1, u1, i1, 0.05, 2.0, 1)
+    p1, u1, i1 = sample_cards(p1, u1, i1, 0.032, 2.4, 1)
     p2, u2, i2 = mesh(d, ids('AgarwoodLeaf_2'))
-    p2, u2, i2 = sample_cards(p2, u2, i2, 0.06, 2.0, 2)
+    p2, u2, i2 = sample_cards(p2, u2, i2, 0.04, 2.4, 2)
     pv, uv, iv = mesh(d, ids('AgarwoodVines'))
-    pv, uv, iv = sample_cards(pv, uv, iv, 0.12, 1.3, 3)
+    pv, uv, iv = sample_cards(pv, uv, iv, 0.06, 1.5, 3)
     M['arvore_agar'] = model([(pb, ub, ib, 'agar_casca'), (p1, u1, i1, 'agar_folha1'), (p2, u2, i2, 'agar_folha2'), (pv, uv, iv, 'agar_cipo')])
     T['agar_casca'] = img(f'{agar}/0/AgarwoodBark_diffuse_scale2.jpg', (512, 512), False)
     T['agar_folha1'] = img(f'{agar}/0/AgarwoodLeaf_1_diffuse_cutoff174.png', (256, 256), True)
