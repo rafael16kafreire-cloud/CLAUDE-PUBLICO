@@ -5,8 +5,9 @@
 // Fotos de tela vão para a pasta indicada em SHOTS (padrão: build/shots)
 // =============================================================
 import { createRequire } from 'node:module';
-import { mkdir } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { mkdir, mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const require = createRequire(import.meta.url);
@@ -1003,7 +1004,8 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   await page.click('#pause-resume');
   check('Pausa e continuar', paused === 'paused', paused);
 
-  // Jogo salvo: salva, recarrega a página e continua com tudo
+  // Jogo salvo: salva; fecha o navegador e abre de novo (perfil gravado em
+  // disco, como num celular) e o jogo continua com tudo
   const saved0 = await page.evaluate(() => {
     const c = window.__ilha.ctx; const p = c.player.position;
     c.creatures.clear();
@@ -1013,17 +1015,34 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     window.__ilha.save();
     return { lvl: c.player.stats.level, sticks: c.inventory.count('graveto'), builds: c.world.structures.filter((s) => s.isBuild).length, pets: c.creatures.tamedBy(c.player).length, day: c.world.day };
   });
-  // (o navegador de teste às vezes perde o que acabou de gravar se recarregar na hora)
-  await page.waitForTimeout(1500);
-  await page.reload();
-  await page.waitForFunction(() => { const b = document.querySelector('#btn-play'); return b && !b.disabled; }, null, { timeout: 120000 });
-  const label = await page.evaluate(() => ({ play: document.querySelector('#btn-play').textContent, newShown: !document.querySelector('#btn-new').hidden }));
-  const saved1 = await page.evaluate(() => {
+  const rawSave = await page.evaluate(() => localStorage.getItem('ilha-primordial:jogo'));
+  await page.evaluate(() => window.__ilha.clearSave());
+  const profile = await mkdtemp(join(tmpdir(), 'ilha-perfil-'));
+  const openProfile = async () => {
+    const pc = await chromium.launchPersistentContext(profile, {
+      args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'],
+      viewport: { width: 1280, height: 720 },
+    });
+    const pg = pc.pages()[0] ?? await pc.newPage();
+    pg.setDefaultTimeout(180000);
+    await pg.goto(url);
+    await pg.waitForFunction(() => { const b = document.querySelector('#btn-play'); return b && !b.disabled; });
+    return { pc, pg };
+  };
+  // 1ª vez: grava o salvo neste "aparelho" e fecha
+  let dev = await openProfile();
+  await dev.pg.evaluate((raw) => localStorage.setItem('ilha-primordial:jogo', raw), rawSave);
+  await dev.pc.close();
+  // abre de novo
+  dev = await openProfile();
+  const label = await dev.pg.evaluate(() => ({ play: document.querySelector('#btn-play').textContent, newShown: !document.querySelector('#btn-new').hidden }));
+  const saved1 = await dev.pg.evaluate(() => {
     const c = window.__ilha.ctx;
     return { lvl: c.player.stats.level, sticks: c.inventory.count('graveto'), builds: c.world.structures.filter((s) => s.isBuild).length, pets: c.creatures.tamedBy(c.player).length, day: c.world.day };
   });
-  check('Jogo salvo: recarregar continua com itens, casa e bichos domados', label.play === 'Continuar' && label.newShown && JSON.stringify(saved0) === JSON.stringify(saved1), JSON.stringify({ label, saved0, saved1 }));
-  await page.evaluate(() => window.__ilha.clearSave());
+  await dev.pc.close();
+  await rm(profile, { recursive: true, force: true });
+  check('Jogo salvo: fechar e abrir de novo continua com itens, casa e bichos domados', !!rawSave && label.play === 'Continuar' && label.newShown && JSON.stringify(saved0) === JSON.stringify(saved1), JSON.stringify({ label, saved0, saved1 }));
 
   check('PC: sem erros no console', errors.length === 0, errors.slice(0, 3).join(' / '));
   await context.close();
