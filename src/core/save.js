@@ -5,7 +5,8 @@
 // 30 s, ao pausar e ao sair/minimizar o jogo.
 // =============================================================
 const KEY = 'ilha-primordial:jogo';
-const VERSION = 1;
+// 2 = mapa da Finlândia (saves do mapa redondo não servem mais)
+const VERSION = 2;
 
 export function loadGame() {
   try {
