@@ -44,6 +44,22 @@
       "mao": { "graveto": [1, 2] },
       "colher": { "graveto": [2, 3] }
     },
+    "rochedo": {
+      "nome": "Rochedo", "capacidade": 80, "xp": 1, "infinita": true,
+      "mao": { "pedra": [1, 1] },
+      "machado": { "pedra": [2, 4], "silex": [0, 1] },
+      "picareta": { "pedra": [2, 3], "silex": [1, 3] },
+      "lanca": { "pedra": [0, 1] },
+      "clava": { "pedra": [1, 1] }
+    },
+    "ferro": {
+      "nome": "Minério de ferro", "capacidade": 30, "xp": 2,
+      "mao": { "pedra": [0, 1] },
+      "machado": { "pedra": [1, 2], "minerio_ferro": [0, 1] },
+      "picareta": { "minerio_ferro": [2, 3], "pedra": [0, 2] },
+      "lanca": { "pedra": [0, 1] },
+      "clava": { "pedra": [1, 1] }
+    },
     "pedra": {
       "nome": "Pedra", "capacidade": 35, "xp": 1,
       "mao": { "pedra": [1, 1] },

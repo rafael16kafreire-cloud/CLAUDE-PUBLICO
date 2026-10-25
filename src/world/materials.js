@@ -10,6 +10,7 @@
 // =============================================================
 import * as THREE from 'three';
 import { TERRA_COR, TERRA_RELEVO, TERRA_MEDIA } from './textures/terra.js';
+import { NEVE_COR, NEVE_RELEVO } from './textures/neve.js';
 
 // Tempo compartilhado pelos materiais animados.
 export const sharedTime = { value: 0 };
@@ -106,16 +107,21 @@ export function makeTerrainMaterial() {
   const dirtMap = loadTiled(TERRA_COR, true);
   const dirtNormal = loadTiled(TERRA_RELEVO, false);
   const avg = new THREE.Color().setRGB(...TERRA_MEDIA, THREE.SRGBColorSpace);
+  // neve (arquivo Snow Material) para a Lapônia
+  const snowMap = loadTiled(NEVE_COR, true);
+  const snowNormal = loadTiled(NEVE_RELEVO, false);
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.detailMap = { value: detailTexture() };
     shader.uniforms.dirtMap = { value: dirtMap };
     shader.uniforms.dirtNormal = { value: dirtNormal };
     shader.uniforms.dirtAvg = { value: new THREE.Vector3(avg.r, avg.g, avg.b) };
+    shader.uniforms.snowMap = { value: snowMap };
+    shader.uniforms.snowNormal = { value: snowNormal };
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nattribute float aDirt;\nvarying float vDirt;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvDirt = aDirt;');
+      .replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nattribute float aDirt;\nvarying float vDirt;\nattribute float aSnow;\nvarying float vSnow;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvDirt = aDirt;\nvSnow = aSnow;');
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nvarying float vDirt;\nuniform sampler2D detailMap;\nuniform sampler2D dirtMap;\nuniform sampler2D dirtNormal;\nuniform vec3 dirtAvg;')
+      .replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nvarying float vDirt;\nuniform sampler2D detailMap;\nuniform sampler2D dirtMap;\nuniform sampler2D dirtNormal;\nuniform vec3 dirtAvg;\nvarying float vSnow;\nuniform sampler2D snowMap;\nuniform sampler2D snowNormal;')
       .replace('#include <color_fragment>', `#include <color_fragment>
         float dNear = texture2D(detailMap, vWPos.xz * 0.23).r;
         float dFar = texture2D(detailMap, vWPos.xz * 0.019).r;
@@ -142,6 +148,34 @@ export function makeTerrainMaterial() {
           vec3 pattern = dc / dirtAvg;
           vec3 soil = lumB * pattern * mix(hueD, hueB, 0.45) * relief;
           diffuseColor.rgb = mix(diffuseColor.rgb, soil, clamp(vDirt, 0.0, 1.0) * 0.9);
+        }
+        if (vDirt < -0.01) {
+          // rocha da montanha: textura "por três lados" (funciona em paredão
+          // vertical), com camadas, rachaduras e lascas
+          vec3 fn = normalize(cross(dFdx(vWPos), dFdy(vWPos)));
+          vec3 bw = pow(abs(fn), vec3(4.0));
+          bw /= (bw.x + bw.y + bw.z);
+          float r1 = texture2D(detailMap, vWPos.zy * 0.09).r * bw.x + texture2D(detailMap, vWPos.xz * 0.09).r * bw.y + texture2D(detailMap, vWPos.xy * 0.09).r * bw.z;
+          float f1 = texture2D(detailMap, vWPos.zy * 0.55).r * bw.x + texture2D(detailMap, vWPos.xz * 0.55).r * bw.y + texture2D(detailMap, vWPos.xy * 0.55).r * bw.z;
+          float big = texture2D(detailMap, vWPos.xz * 0.012 + vec2(0.0, vWPos.y * 0.01)).r;
+          // camadas horizontais (estratos) bem marcadas nos paredões
+          float strata = smoothstep(0.35, 0.65, 0.5 + 0.5 * sin(vWPos.y * 0.9 + r1 * 4.0 + big * 6.0));
+          float vert = 1.0 - bw.y; // quanto é parede
+          float rockK = mix(0.55, 1.4, r1) * mix(0.8, 1.15, f1) * mix(0.75, 1.15, big) * mix(1.0, mix(0.72, 1.12, strata), vert);
+          diffuseColor.rgb *= rockK;
+          // líquen/ferrugem em manchas
+          diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(1.15, 1.0, 0.82), smoothstep(0.62, 0.8, f1) * 0.4);
+        }
+        if (vSnow > 0.01) {
+          // neve: textura do arquivo em duas escalas + relevo falso
+          vec2 su = vWPos.xz * 0.21;
+          vec3 sc = texture2D(snowMap, su).rgb * 0.6 + texture2D(snowMap, vWPos.zx * 0.047 + 0.5).rgb * 0.4;
+          vec3 sn = texture2D(snowNormal, su).xyz * 2.0 - 1.0;
+          float srel = 1.0 + dot(sn.xy, vec2(0.5, -0.4)) * 0.35;
+          vec3 snowCol = sc * 1.32 * srel;
+          // borda da neve mais suja, sem corte reto
+          float k = smoothstep(0.15, 0.75, vSnow + (dNear - 0.5) * 0.35);
+          diffuseColor.rgb = mix(diffuseColor.rgb, snowCol, k);
         }`);
   };
   return mat;

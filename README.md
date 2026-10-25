@@ -4,6 +4,21 @@ Jogo 3D de sobrevivência com dinossauros. Sozinho (offline) ou em **co-op onlin
 Roda no celular (Android como app ou no navegador) e no PC.
 Visual estilizado, feito para ser leve.
 
+**Versão 0.9.0** – mapa novo
+- **Formato da Finlândia** e bem maior (≈ 2,1 km de norte a sul): floresta com pântano e
+  lagos no sul/meio, e a **Lapônia** no norte (contorno em `ilha.json` → `contorno`).
+- **Lapônia:** montanhas gigantes (picos de ~170–200 m) com o relevo tirado do modelo
+  *Snow alps*, neve com a textura *Snow Material*, rocha aparecendo nos paredões (com
+  camadas e degraus, não fica lisa), rochedos enormes, pinheiros nevados e **minério de
+  ferro** (melhor com picareta). Lá a neblina é azulada e dá para ver longe.
+- **Frio:** na neve a temperatura cai muito (e mais ainda no alto). Abaixo de 6 °C a fome
+  cai mais rápido; abaixo de 0 °C você congela. Fogueira esquenta; faça o **Casaco de Pele**
+  (couro, fibra e ossos – Inventário → Criar → Roupas) e leve na mochila.
+- **Bichos:** 45 por perto em qualquer qualidade gráfica, e +20 na Lapônia. Vários bichos
+  agora também vivem na neve (até chegarem os bichos da neve de verdade).
+- Ferramenta `tools/models/alpes_relevo.py`: transforma um terreno `.usdz` em relevo +
+  máscara de neve para as montanhas.
+
 **Versão 0.8.2** – Quetzalcoatlus no tamanho real: 10–11 m de asa aberta e uns 5 m de
 altura em pé (do tamanho de uma girafa). Agora ele também pousa: de vez em quando desce
 planando, anda no chão de quatro (apoiado nas asas dobradas, com o pescoço em pé), caça

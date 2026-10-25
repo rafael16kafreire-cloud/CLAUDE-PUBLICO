@@ -640,6 +640,98 @@ export function makeMossRock(low = false) {
 }
 export const makeMossRockLow = () => makeMossRock(true);
 
+// ------------------------------------------------------------
+// Lapônia: pinheiro nevado, rochedo e minério de ferro
+// ------------------------------------------------------------
+const SNOW_HEX = '#e4eaee';
+
+// Pinheiro (abeto) com neve em cima dos galhos – ≈ 14 m
+export function makeSpruce(low = false) {
+  const parts = [paint(cyl(0.12, 0.32, 13, [0, 0, 0], low ? 5 : 7), '#4a3a2c', 0.2)];
+  const tiers = low ? 4 : 7;
+  for (let i = 0; i < tiers; i++) {
+    const k = i / (tiers - 1);
+    const r = 3.0 * (1 - k * 0.82);
+    const h = 3.4 - k * 1.4;
+    const y = 2.2 + k * 10.6;
+    const g = new THREE.ConeGeometry(r, h, low ? 7 : 11, 1, true);
+    g.translate(0, y + h / 2, 0);
+    // pontas dos galhos caídas e irregulares
+    const pos = g.attributes.position;
+    for (let v = 0; v < pos.count; v++) {
+      if (pos.getY(v) < y + 0.05) {
+        const a = Math.atan2(pos.getZ(v), pos.getX(v));
+        pos.setY(v, pos.getY(v) - 0.35 - Math.sin(a * 5 + i) * 0.25);
+      }
+    }
+    g.computeVertexNormals();
+    // neve só em cima de cada "andar" de galhos, em manchas
+    parts.push(paintFn(g, (c, px, py, pz) => {
+      const top = (py - y) / h;
+      const snowy = top > 0.62 || (top > 0.25 && hash3(Math.round(px * 3), Math.round(py * 3), Math.round(pz * 3), 7) > 0.62);
+      if (snowy) c.set(SNOW_HEX);
+      else c.set('#24382a').multiplyScalar(0.8 + hash3(px, py, pz, 5) * 0.35);
+    }, 0.25));
+  }
+  return merge(parts);
+}
+export const makeSpruceLow = () => makeSpruce(true);
+
+// Rochedo grande e quebrado (não liso), com neve em cima
+export function makeBoulder(seed = 3) {
+  const g = new THREE.IcosahedronGeometry(1, 2).toNonIndexed();
+  const pos = g.attributes.position;
+  // cada vértice vai para fora/dentro de um jeito diferente: facetas e lascas
+  const key = (x, y, z) => `${x.toFixed(3)},${y.toFixed(3)},${z.toFixed(3)}`;
+  const moved = new Map();
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i);
+    const y = pos.getY(i);
+    const z = pos.getZ(i);
+    const k = key(x, y, z);
+    if (!moved.has(k)) {
+      const f = 0.72 + hash3(x, y, z, seed) * 0.5;
+      moved.set(k, [x * f * 1.25, Math.max(-0.35, y * f * 0.8), z * f]);
+    }
+    const [nx, ny, nz] = moved.get(k);
+    pos.setXYZ(i, nx, ny, nz);
+  }
+  g.translate(0, 0.3, 0);
+  g.computeVertexNormals();
+  const m = merge([paintFn(g, (c, x, y, z, nx, ny) => {
+    c.set(ny > 0.62 ? SNOW_HEX : '#6c6862');
+    if (ny <= 0.62) c.multiplyScalar(0.72 + hash3(x, y, z, 9) * 0.4);
+  })]);
+  const uv = m.attributes.uv;
+  for (let i = 0; i < uv.count; i++) uv.setXY(i, WHITE_UV[0], 0.55);
+  return m;
+}
+export const makeBoulderLow = () => makeBoulder(3);
+
+// Veio de minério de ferro: rocha escura com manchas cor de ferrugem
+export function makeIronOre() {
+  const g = new THREE.IcosahedronGeometry(1, 1).toNonIndexed();
+  const pos = g.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i);
+    const y = pos.getY(i);
+    const z = pos.getZ(i);
+    const f = 0.8 + hash3(Math.round(x * 50), Math.round(y * 50), Math.round(z * 50), 4) * 0.35;
+    pos.setXYZ(i, x * f * 1.1, Math.max(-0.3, y * f * 0.75), z * f);
+  }
+  g.translate(0, 0.25, 0);
+  g.computeVertexNormals();
+  const m = merge([paintFn(g, (c, x, y, z, nx, ny) => {
+    const h = hash3(Math.round(x * 6), Math.round(y * 6), Math.round(z * 6), 2);
+    if (ny > 0.75) c.set(SNOW_HEX);
+    else if (h > 0.55) c.set(h > 0.8 ? '#b0662e' : '#8c4a26'); // ferrugem
+    else c.set('#3e3a36').multiplyScalar(0.85 + h * 0.4);
+  })]);
+  const uv = m.attributes.uv;
+  for (let i = 0; i < uv.count; i++) uv.setXY(i, WHITE_UV[0], 0.55);
+  return m;
+}
+
 // Pedrinhas soltas no chão (pega com Interagir)
 export function makePebbles() {
   const parts = [];

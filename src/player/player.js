@@ -147,11 +147,16 @@ export class Player {
       swimFast: this.swimFast,
       moving: this.moving,
       headUnderwater: this.headUnderwater,
-      ambientTemp: this.world.temperatureAt(this.position, inWater),
+      ambientTemp: this.world.temperatureAt(this.position, inWater) + this.clothingWarmth(),
     });
 
     this._updateBiome(dt);
     this._updateModel(dt);
+  }
+
+  // Roupa quente na mochila (Casaco de Pele) esquenta.
+  clothingWarmth() {
+    return this.actions?.inv?.count('casaco_pele') > 0 ? BALANCE.temperatura.casaco_c : 0;
   }
 
   // ---------------------------------------------------------
@@ -470,11 +475,10 @@ export class Player {
   // ---------------------------------------------------------
   _keepInsideWorld(dt) {
     this._boundsMsgTimer -= dt;
-    const limit = BALANCE.mundo.limite_raio_m;
-    const d = Math.hypot(this.position.x, this.position.z);
-    if (d > limit) {
-      this.position.x *= limit / d;
-      this.position.z *= limit / d;
+    const lim = this.world.map.half - 40;
+    if (Math.abs(this.position.x) > lim || Math.abs(this.position.z) > lim) {
+      this.position.x = Math.max(-lim, Math.min(lim, this.position.x));
+      this.position.z = Math.max(-lim, Math.min(lim, this.position.z));
       if (this._boundsMsgTimer <= 0) {
         events.emit(EV.MESSAGE, { text: 'Mar aberto: não dá para nadar mais longe.', kind: 'warn' });
         this._boundsMsgTimer = 4;

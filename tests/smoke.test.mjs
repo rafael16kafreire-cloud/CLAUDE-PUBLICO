@@ -235,7 +235,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   // Embaixo d'água (mar): fôlego cai
   await page.evaluate(() => {
     const { ctx } = window.__ilha;
-    ctx.player.position.set(0, ctx.world.heightAt(0, 600) + 0.1, 600);
+    ctx.player.position.set(0, ctx.world.heightAt(0, 1090) + 0.1, 1090);
     ctx.camCtl.pitch = -0.2;
   });
   await page.keyboard.down('KeyC'); // segurar C = descer
@@ -254,7 +254,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     const { ctx } = window.__ilha;
     const sul = ctx.world.respawnPoint('sul').position;
     let z = sul.z;
-    while (z < 700 && !ctx.world.waterAt(0, z)) z += 1;
+    while (z < sul.z + 300 && !ctx.world.waterAt(0, z)) z += 1;
     ctx.player.position.set(0, ctx.world.heightAt(0, z + 6), z + 6);
     ctx.camCtl.pitch = -0.3;
     ctx.player.stats.water = 40;
@@ -279,7 +279,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   // Pior caso de desempenho: mata fechada + 15 animais
   await page.evaluate(() => {
     const { ctx } = window.__ilha;
-    const j = { x: -230, z: -200 };
+    const j = { x: 100, z: -260 };
     ctx.player.position.set(j.x, ctx.world.heightAt(j.x, j.z), j.z);
     ctx.camCtl.yaw = Math.PI * 0.75;
     ctx.camCtl.pitch = -0.05;
@@ -447,7 +447,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     c.creatures.clear();
     c.creatures.enabled = true;
     c.player.aliveTime = 0;
-    const p = { x: -230, z: -200, y: 0 };
+    const p = { x: 100, z: -260, y: 0 };
     for (let i = 0; i < 40; i++) c.creatures.trySpawnNear(p, 55, 130);
     const carn = c.creatures.list.filter((x) => x.species.temperamento === 'agressivo' && !x.species.ambiente);
     const out = { carn: carn.length, maxLvl: Math.max(0, ...carn.map((x) => x.level)) };
@@ -538,7 +538,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   const before = await page.evaluate(() => window.__ilha.ctx.inventory.slots.filter(Boolean).length);
   await page.evaluate(() => {
     const { ctx } = window.__ilha;
-    ctx.player.position.set(0, ctx.world.heightAt(0, 600) + 0.1, 600);
+    ctx.player.position.set(0, ctx.world.heightAt(0, 1090) + 0.1, 1090);
     ctx.player.stats.oxygen = 0;
     ctx.player.stats.health = 3;
   });
@@ -636,7 +636,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   check('Pântano: tem deinosuchus e titanoboa', swamp.includes('deinosuchus') && swamp.includes('titanoboa'), swamp.join(','));
   await page.evaluate(() => {
     const c = window.__ilha.ctx;
-    c.player.position.set(0, -4, 540);
+    c.player.position.set(0, -4, 1060);
     c.player.velocity.set(0, 0, 0);
   });
   await gameWait(page, 3000);
@@ -647,7 +647,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   const dive = await page.evaluate(() => ({ cam: window.__ilha.ctx.world.cameraUnderwater, cls: document.body.classList.contains('underwater'), dust: window.__ilha.ctx.world.underwater.dust.visible }));
   check('Mergulho: visual embaixo d\'água (cor, partículas)', dive.cam && dive.cls && dive.dust, JSON.stringify(dive));
   await page.screenshot({ path: `${SHOTS}/10b-pc-mergulho.png` });
-  await page.evaluate(() => { const c = window.__ilha.ctx; c.player.position.set(0, c.world.heightAt(0, 428), 428); c.player.stats.oxygen = 100; });
+  await page.evaluate(() => { const c = window.__ilha.ctx; c.player.position.set(0, c.world.heightAt(0, 905), 905); c.player.stats.oxygen = 100; });
   await gameWait(page, 300);
   await page.screenshot({ path: `${SHOTS}/10-pc-pantano.png` });
 
@@ -661,7 +661,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     return count;
   });
   const land = (biomes.selva ?? 0) + (biomes.igapo ?? 0) + (biomes.pantano ?? 0) + (biomes.praia ?? 0);
-  check('Mapa: só floresta, igapó, pântano e praia', Object.keys(biomes).every((k) => ['mar', 'praia', 'selva', 'igapo', 'pantano'].includes(k)), JSON.stringify(biomes));
+  check('Mapa: floresta, igapó, pântano, praia e a neve da Lapônia', Object.keys(biomes).every((k) => ['mar', 'praia', 'selva', 'igapo', 'pantano', 'neve'].includes(k)) && biomes.neve > 0, JSON.stringify(biomes));
   check('Mapa: a maior parte da terra é Floresta Amazônica', biomes.selva / land > 0.5 && biomes.pantano > 0, `${Math.round((biomes.selva / land) * 100)}% floresta`);
   const plants = await page.evaluate(() => window.__ilha.ctx.world.vegetation.countByType());
   check('Floresta: samambaias gigantes, bananeiras, bagas e troncos caídos', ['samambaia_gigante', 'bananeira', 'arbusto_mejo', 'arbusto_escura', 'tronco_caido', 'sumauma'].every((k) => plants[k] > 20), JSON.stringify(plants));
@@ -670,18 +670,18 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   const species = await page.evaluate(() => {
     const c = window.__ilha.ctx;
     c.creatures.clear();
-    c.player.position.set(-120, c.world.heightAt(-120, -190), -190);
+    c.player.position.set(210, c.world.heightAt(210, -250), -250);
     const ids = window.__ilha.speciesIds;
-    const made = ids.map((id, i) => c.creatures.spawn(id, -200 + (i % 6) * 14, -230 + Math.floor(i / 6) * 14, 10)).filter(Boolean);
+    const made = ids.map((id, i) => c.creatures.spawn(id, 130 + (i % 6) * 14, -290 + Math.floor(i / 6) * 14, 10)).filter(Boolean);
     return { total: ids.length, made: made.map((m) => m.species.id) };
   });
   await frames(page, 30);
   check('Animais: todas as espécies aparecem (≥ 20)', species.total >= 20 && species.made.length === species.total, `${species.made.length}/${species.total}`);
   await page.evaluate(() => {
     const c = window.__ilha.ctx;
-    c.player.position.set(-165, c.world.heightAt(-165, -205), -205);
+    c.player.position.set(165, c.world.heightAt(165, -265), -265);
     for (const cr of c.creatures.list) { cr.species = { ...cr.species, temperamento: 'passivo' }; cr._setState?.('parado'); cr.idleFor = 99; }
-    window.__ilha.photo = { pos: [-150, c.world.heightAt(-150, -190) + 14, -175], target: [-170, c.world.heightAt(-170, -210) + 2, -205] };
+    window.__ilha.photo = { pos: [180, c.world.heightAt(180, -250) + 14, -235], target: [160, c.world.heightAt(160, -270) + 2, -265] };
   });
   await frames(page, 20);
   await page.screenshot({ path: `${SHOTS}/11-pc-animais.png` });
@@ -690,7 +690,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   // Carnívoro (raptor) ataca o jogador
   await page.evaluate(() => {
     const c = window.__ilha.ctx;
-    const x = -230; const z = -200;
+    const x = 100; const z = -260;
     c.player.position.set(x, c.world.heightAt(x, z), z);
     c.player.stats.health = 100;
     c.creatures.spawn('raptor', x + 7, z, 3);
@@ -703,7 +703,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   // Bichos brigam entre si: raptor caça e mata um dodô (longe do jogador)
   await page.evaluate(() => {
     const c = window.__ilha.ctx;
-    const x = -230; const z = -200;
+    const x = 100; const z = -260;
     c.player.position.set(x, c.world.heightAt(x, z), z);
     c.player.stats.health = 100;
     window.__kills0 = window.__ilha.game?.creatureKills ?? 0;

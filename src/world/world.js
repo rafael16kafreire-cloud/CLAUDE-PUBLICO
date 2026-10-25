@@ -192,10 +192,13 @@ export class World {
 
   // No alto (morro, menu, voando) a neblina abre e dá para ver longe:
   // a floresta distante vira "fotos" leves (impostores).
-  _updateAltitude(camera) {
+  _updateAltitude(camera, dt = 0.016) {
     const base = this.baseViewDistance ?? this.viewDistance;
     const alt = camera.position.y - Math.max(this.heightAt(camera.position.x, camera.position.z), 0);
-    const k = 1 + Math.min(2.2, Math.max(0, (alt - 14) / 45));
+    // Lapônia: o ar é limpo, dá para ver as montanhas de longe
+    const cold = this.map.snowRegion(camera.position.x, camera.position.z);
+    this.sky.cold = (this.sky.cold ?? 0) + (cold - (this.sky.cold ?? 0)) * Math.min(1, dt * 0.8);
+    const k = (1 + Math.min(2.2, Math.max(0, (alt - 14) / 45))) * (1 + this.sky.cold * 1.3);
     const want = Math.round(base * k);
     if (Math.abs(want - this.viewDistance) > base * 0.04) {
       this._applyViewDistance(want);
@@ -253,7 +256,7 @@ export class World {
     } else {
       this.fireLight.intensity = 0;
     }
-    this._updateAltitude(camera);
+    this._updateAltitude(camera, dt);
     this.sky.update(camera, focus);
     this.grass.update(focus);
     this.vegetation.update(dt, camera, this.viewDistance);

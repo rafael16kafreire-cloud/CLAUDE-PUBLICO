@@ -23,6 +23,10 @@ const SHAPES = {
     <path d="M10 21h22M12 27h20" stroke="${b}" stroke-width="1.6" stroke-linecap="round" opacity=".6"/>
     <ellipse cx="38" cy="24.5" rx="5" ry="7.5" fill="${b}"/>
     <ellipse cx="38" cy="24.5" rx="2.6" ry="4" fill="none" stroke="${a}" stroke-width="1.3"/>`,
+  casaco: (a, b) => `
+    <path d="M17 8 L24 12 L31 8 L41 14 L38 24 L34 22 L34 41 L14 41 L14 22 L10 24 L7 14 Z" fill="${a}"/>
+    <path d="M17 8 L24 12 L31 8 L29 14 L24 16 L19 14 Z" fill="${b}"/>
+    <path d="M24 16 V41" stroke="${b}" stroke-width="1.6" opacity=".7"/>`,
   piso: (a, b) => `
     <path d="M24 12 L44 22 L24 32 L4 22 Z" fill="${a}"/>
     <path d="M4 22 L24 32 L24 37 L4 27 Z M44 22 L24 32 L24 37 L44 27 Z" fill="${b}"/>

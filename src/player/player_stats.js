@@ -100,6 +100,14 @@ export class PlayerStats {
     if (typeof ctx.ambientTemp === 'number') {
       this.temperature += (ctx.ambientTemp - this.temperature) * Math.min(1, dt * 0.25);
     }
+    // ---- Frio: fome mais rápida; congelando perde vida
+    const TT = BALANCE.temperatura;
+    if (this.temperature < TT.fome_frio_abaixo_c) {
+      this.food = Math.max(0, this.food - perSecond(BALANCE.jogador.fome_max, S.fome_duracao_min) * (TT.fome_frio_mult - 1) * dt);
+    }
+    if (this.temperature < TT.congelando_c) {
+      this.damage(TT.dano_frio_seg * dt * (1 + (TT.congelando_c - this.temperature) / 10), 'frio');
+    }
   }
 
   // Gasta stamina se tiver o suficiente. Devolve true se gastou.

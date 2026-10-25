@@ -13,6 +13,7 @@ const CAUSES = {
   sede: 'Você morreu de sede.',
   fome: 'Você morreu de fome.',
   arvore: 'Você se machucou socando uma árvore gigante.',
+  frio: 'Você morreu congelado. Faça um Casaco de Pele e acenda fogueiras na neve.',
 };
 
 function causeText(cause) {

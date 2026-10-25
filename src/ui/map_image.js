@@ -21,6 +21,7 @@ export function renderMapImage(world) {
   const seaDeep = new THREE.Color('#163f55');
   const fresh = new THREE.Color('#3d8fa8');
   const swamp = new THREE.Color('#4f5e36');
+  const snowCol = new THREE.Color('#c9d3da');
   const L = new THREE.Vector3(-0.6, 0.7, -0.4).normalize();
   const H = map.heights;
 
@@ -37,6 +38,8 @@ export function renderMapImage(world) {
         c.copy(water.id === 'pantano' ? swamp : fresh);
       } else {
         c.setRGB(map.colors[idx * 3], map.colors[idx * 3 + 1], map.colors[idx * 3 + 2]);
+        // neve da Lapônia (no jogo ela é pintada pelo shader)
+        if (map.snow[idx] > 0) c.lerp(snowCol, map.snow[idx]);
         // sombra do relevo
         const hx = H[j * n + Math.min(n - 1, i + 1)] - H[j * n + Math.max(0, i - 1)];
         const hz = H[Math.min(n - 1, j + 1) * n + i] - H[Math.max(0, j - 1) * n + i];

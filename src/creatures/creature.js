@@ -785,7 +785,7 @@ export class Creature {
       this.speed *= 0.3;
       return false;
     }
-    if (flying && Math.hypot(nx, nz) > BALANCE.mundo.limite_raio_m) {
+    if (flying && !this.world.map.inside(nx, nz)) {
       this.goal = new THREE.Vector2(0, 0);
       return false;
     }
@@ -810,7 +810,7 @@ export class Creature {
   }
 
   _canStand(x, z) {
-    if (Math.hypot(x, z) > BALANCE.mundo.limite_raio_m - 20) return false;
+    if (!this.world.map.inside(x, z, 20)) return false;
     const ground = this.world.heightAt(x, z);
     const water = this.world.waterAt(x, z);
     const depth = water ? water.level - ground : 0;
@@ -841,7 +841,7 @@ export class Creature {
       const x = this.home.x + Math.sin(a) * r;
       const z = this.home.y + Math.cos(a) * r;
       if (flying) {
-        if (Math.hypot(x, z) < BALANCE.mundo.limite_raio_m - 60) return new THREE.Vector2(x, z);
+        if (this.world.map.inside(x, z, 60)) return new THREE.Vector2(x, z);
       } else if (this._canStand(x, z)) {
         return new THREE.Vector2(x, z);
       }

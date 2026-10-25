@@ -1,14 +1,50 @@
 // =============================================================
-// GERADOR DA ILHA
-// A ilha inteira é Floresta Amazônica (morros, grotas e mata
-// fechada), com um grande pântano no meio, igapó (mata alagada)
-// em volta dele e uma faixa de praia na costa.
+// GERADOR DO MAPA
+// Formato da Finlândia (contorno em ilha.json). Floresta (morros,
+// grotas e mata fechada) com pântano/lagos no sul, igapó em volta,
+// praia na costa e, no norte, a Lapônia: montanhas gigantes com
+// neve e rocha (relevo tirado do modelo "Snow alps").
 // Tudo vem de uma "semente": a mesma semente gera sempre a mesma
 // ilha (importante para o save nas próximas fases).
 // =============================================================
 import * as THREE from 'three';
 import { createNoise2D, fbm } from '../core/noise.js';
 import { clamp, lerp, smoothstep } from '../core/math.js';
+import { ALPES_N, ALPES_ALTURAS, ALPES_NEVE } from './textures/alpes.js';
+
+// relevo e máscara de neve dos Alpes (0..1), lidos uma vez
+function decodeAlps() {
+  const bin = atob(ALPES_ALTURAS);
+  const h = new Float32Array(ALPES_N * ALPES_N);
+  for (let i = 0; i < h.length; i++) h[i] = (bin.charCodeAt(i * 2) | (bin.charCodeAt(i * 2 + 1) << 8)) / 65535;
+  const sb = atob(ALPES_NEVE);
+  const s = new Float32Array(ALPES_N * ALPES_N);
+  for (let i = 0; i < s.length; i++) s[i] = sb.charCodeAt(i) / 255;
+  return { h, s };
+}
+
+// amostra com repetição espelhada (sem emendas) e interpolação
+function sampleMirror(arr, u, v) {
+  const n = ALPES_N;
+  const m = (t) => {
+    const f = ((t % 2) + 2) % 2;
+    return (f > 1 ? 2 - f : f) * (n - 1);
+  };
+  const x = m(u);
+  const y = m(v);
+  const x0 = Math.floor(x);
+  const y0 = Math.floor(y);
+  const x1 = Math.min(n - 1, x0 + 1);
+  const y1 = Math.min(n - 1, y0 + 1);
+  const fx = x - x0;
+  const fy = y - y0;
+  const a = arr[y0 * n + x0] * (1 - fx) + arr[y0 * n + x1] * fx;
+  const b = arr[y1 * n + x0] * (1 - fx) + arr[y1 * n + x1] * fx;
+  return a * (1 - fy) + b * fy;
+}
+
+// até onde dá para nadar: a borda do terreno menos esta folga (m)
+const BALANCE_MAR = 40;
 
 export const BIOME = {
   SEA: 0,
@@ -16,10 +52,11 @@ export const BIOME = {
   JUNGLE: 2,  // Floresta Amazônica
   IGAPO: 3,   // floresta alagada na beira do pântano
   SWAMP: 4,
+  SNOW: 5,    // Lapônia: neve, rocha, pinheiros
 };
 
 // Chave de cada bioma no arquivo data/world/ilha.json
-export const BIOME_KEYS = ['mar', 'praia', 'selva', 'igapo', 'pantano'];
+export const BIOME_KEYS = ['mar', 'praia', 'selva', 'igapo', 'pantano', 'neve'];
 
 const C = (hex) => new THREE.Color(hex);
 const COLORS = {
@@ -34,6 +71,9 @@ const COLORS = {
   mud: C('#3b3725'),
   swampMoss: C('#455327'),
   igapo: C('#3a3f25'),
+  rock: C('#5f6164'),
+  rockDark: C('#3e3f42'),
+  tundra: C('#6f6a5c'),
 };
 
 export class IslandMap {
@@ -65,21 +105,70 @@ export class IslandMap {
     this.nForest = createNoise2D(seed + 5);
     this.nDetail = createNoise2D(seed + 6);
     this.nRegion = createNoise2D(seed + 7);
+    this.nRock = createNoise2D(seed + 8);
+
+    // contorno da Finlândia em metros do jogo
+    const pr = layout.projecao;
+    this.poly = layout.contorno.map(([lon, lat]) => [(lon - pr.lon0) * pr.m_por_grau_lon, -(lat - pr.lat0) * pr.m_por_grau_lat]);
+    this.lap = layout.laponia;
+    this.alps = decodeAlps();
 
     const n = this.verts * this.verts;
     this.heights = new Float32Array(n);
     this.coast = new Float32Array(n);
     this.biomes = new Uint8Array(n);
     this.colors = new Float32Array(n * 3);
+    this.snow = new Float32Array(n); // 0 = sem neve, 1 = neve (Lapônia)
 
     this._generate();
   }
 
   // ----------------------------------------------------------
+  // Distância até a costa (positivo = em terra), pelo contorno da Finlândia.
   coastDistance(x, z) {
-    const dist = Math.hypot(x * 0.94, z * 1.06);
-    const wobble = fbm(this.nCoast, x * 0.0032, z * 0.0032, 4) * this.L.variacao_costa_m;
-    return this.L.raio_ilha_m + wobble - dist;
+    const P = this.poly;
+    let inside = false;
+    let best = Infinity;
+    for (let i = 0, j = P.length - 1; i < P.length; j = i++) {
+      const [xi, zi] = P[i];
+      const [xj, zj] = P[j];
+      if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) inside = !inside;
+      const ex = xj - xi;
+      const ez = zj - zi;
+      const t = clamp(((x - xi) * ex + (z - zi) * ez) / (ex * ex + ez * ez || 1), 0, 1);
+      const d = (x - xi - ex * t) ** 2 + (z - zi - ez * t) ** 2;
+      if (d < best) best = d;
+    }
+    const wobble = fbm(this.nCoast, x * 0.0045, z * 0.0045, 4) * this.L.variacao_costa_m;
+    return (inside ? Math.sqrt(best) : -Math.sqrt(best)) + wobble;
+  }
+
+  // Lapônia: 0 = sul, 1 = neve. Borda irregular.
+  snowRegion(x, z) {
+    const zs = this.lap.inicio_z + fbm(this.nRegion, x * 0.004 + 9, 3.1, 3) * 45;
+    return smoothstep(zs + 50, zs - 50, z);
+  }
+
+  // Montanhas gigantes: relevo dos Alpes, mais detalhes de rocha.
+  mountainHeight(x, z, coastD) {
+    const L = this.lap;
+    const zm = L.montanhas_z + fbm(this.nRegion, x * 0.003 - 4, 7.7, 3) * 60;
+    const m = smoothstep(zm + 70, zm - 90, z) * smoothstep(10, 110, coastD);
+    if (m <= 0) return 0;
+    const u = x / L.periodo_m + 0.37;
+    const v = z / L.periodo_m + 0.11;
+    const a = sampleMirror(this.alps.h, u, v);
+    // picos altos e afiados; vales continuam baixos
+    let h = Math.pow(a, 1.35) * L.altura_max_m;
+    // rocha quebrada (não fica "lisa"): cristas finas + calombos
+    const ridge = 1 - Math.abs(fbm(this.nRock, x * 0.028, z * 0.028, 3));
+    h += (Math.pow(ridge, 3) * 9 + fbm(this.nRock, x * 0.11 + 30, z * 0.11, 2) * 1.6) * smoothstep(0.08, 0.35, a);
+    // degraus de rocha (saliências) nas encostas: a montanha não fica lisa
+    const step = 7 + fbm(this.nRock, x * 0.01, z * 0.01, 2) * 3;
+    const q = h / step;
+    const terr = (Math.floor(q) + smoothstep(0.55, 1, q - Math.floor(q))) * step;
+    h = lerp(h, terr, 0.55 * smoothstep(0.12, 0.4, a));
+    return h * m;
   }
 
   // "Quanto dentro do pântano": > 0 dentro, < 0 fora (com borda irregular).
@@ -122,6 +211,7 @@ export class IslandMap {
       const ridge = 1 - Math.abs(fbm(this.nRidge, x * 0.009, z * 0.009, 3));
       const grotas = -Math.pow(ridge, 4) * 7;
       h = praia + planicie + (colinas + grotas) * inland;
+      h += this.mountainHeight(x, z, d);
     }
     return this._applySwamp(x, z, h);
   }
@@ -171,6 +261,7 @@ export class IslandMap {
         const normalY = 1 / Math.sqrt(dx * dx + dz * dz + 1);
         const biome = this._classify(x, z, h, this.coast[idx]);
         this.biomes[idx] = biome;
+        if (biome === BIOME.SNOW) this.snow[idx] = this._snowAmount(x, z, h, normalY);
         this._colorFor(c, biome, x, z, h, normalY);
         this.colors[idx * 3] = c.r;
         this.colors[idx * 3 + 1] = c.g;
@@ -181,11 +272,24 @@ export class IslandMap {
 
   _classify(x, z, h, coastD) {
     if (h < 0.2) return BIOME.SEA;
+    if (this.snowRegion(x, z) > 0.5) return BIOME.SNOW;
     if (h < 2.6 && coastD < this.L.largura_praia_m * 1.7) return BIOME.BEACH;
     const S = this.swampField(x, z);
     if (S > 0.08) return BIOME.SWAMP;
     if (S > -0.3 && h < this.swamp.level + 4) return BIOME.IGAPO;
     return BIOME.JUNGLE;
+  }
+
+  // Quanto de neve cobre o chão: pouca nas paredes íngremes (rocha
+  // exposta), a máscara dos Alpes risca a neve nas encostas.
+  _snowAmount(x, z, h, normalY) {
+    const L = this.lap;
+    const mask = sampleMirror(this.alps.s, x / L.periodo_m + 0.37, z / L.periodo_m + 0.11);
+    // paredão íngreme = rocha; no alto neva mais (só os paredões ficam de fora).
+    // A máscara dos Alpes risca a neve (rochas aparecendo em listras).
+    const high = smoothstep(30, 150, h);
+    const thr = 0.7 - 0.22 * high + (1 - mask) * 0.12 + fbm(this.nDetail, x * 0.04, z * 0.04, 2) * 0.08;
+    return clamp((normalY - thr) * 7 + 0.5, 0, 1);
   }
 
   _colorFor(out, biome, x, z, h, normalY) {
@@ -206,6 +310,13 @@ export class IslandMap {
         break;
       case BIOME.IGAPO:
         out.copy(COLORS.igapo).lerp(COLORS.litter, clamp(n2 * 0.6 + 0.2, 0, 0.6));
+        break;
+      case BIOME.SNOW:
+        // rocha (a neve é pintada por cima no shader do terreno)
+        out.copy(COLORS.rock).lerp(COLORS.rockDark, clamp(n2 * 0.8 + 0.4, 0, 1));
+        // camadas de rocha (estratos) nos paredões
+        out.multiplyScalar(0.82 + 0.3 * (0.5 + 0.5 * Math.sin(h * 0.55 + n1 * 3)));
+        out.lerp(COLORS.tundra, smoothstep(30, 8, h) * 0.6);
         break;
       case BIOME.SWAMP:
         out.copy(COLORS.swampMoss).lerp(COLORS.mud, smoothstep(this.swamp.level + 0.8, this.swamp.level, h));
@@ -233,6 +344,12 @@ export class IslandMap {
     const h11 = H[(iz + 1) * v + ix + 1];
     if (fx + fz <= 1) return h00 + (h10 - h00) * fx + (h01 - h00) * fz;
     return h11 + (h01 - h11) * (1 - fx) + (h10 - h11) * (1 - fz);
+  }
+
+  // Dentro da área do mapa (com folga de margin metros)?
+  inside(x, z, margin = 0) {
+    const lim = this.half - BALANCE_MAR - margin;
+    return Math.abs(x) < lim && Math.abs(z) < lim;
   }
 
   normalAt(x, z, out = new THREE.Vector3()) {

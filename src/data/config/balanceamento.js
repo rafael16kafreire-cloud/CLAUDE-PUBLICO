@@ -92,6 +92,13 @@ export default {
     na_agua_c: -4,             // dentro da água fica mais frio
     frio_abaixo_c: 12,
     calor_acima_c: 34,
+    // frio de verdade (Lapônia): abaixo disso a fome cai mais rápido…
+    fome_frio_abaixo_c: 6,
+    fome_frio_mult: 1.6,
+    // …e abaixo disso você congela (perde vida). Fogueira e casaco ajudam.
+    congelando_c: 0,
+    dano_frio_seg: 0.6,
+    casaco_c: 16,              // o Casaco de Pele (na mochila) esquenta isso
   },
 
   // ---------------------------------------------------------
@@ -130,7 +137,6 @@ export default {
   // ---------------------------------------------------------
   mundo: {
     semente: 1337,             // muda o formato da ilha (mesma semente = mesma ilha)
-    limite_raio_m: 640,        // até onde dá para nadar no mar a partir do centro
   },
 
   // ---------------------------------------------------------
@@ -240,7 +246,8 @@ export default {
   // Desempenho
   // ---------------------------------------------------------
   desempenho: {
-    criaturas_max_ativas: 20,  // padrão; o valor de verdade vem da qualidade (baixa 14, média 20, alta 45)
+    criaturas_max_ativas: 45,  // máximo de bichos vivos por perto
+    extra_na_neve: 20,         // na Lapônia (neve) cabem mais estes
   },
 
   // ---------------------------------------------------------

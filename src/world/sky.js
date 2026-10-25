@@ -103,7 +103,13 @@ export class Sky {
     sharedDay.value = this.daylight;
     if (!this.underwater) {
       this.scene.fog.color.copy(this._horizon);
-      this.scene.background.copy(this._horizon);
+      // Lapônia: ar frio e limpo, neblina azulada (cold = 0..1, vem do mundo)
+      if (this.cold > 0) {
+        this._coldTint = this._coldTint ?? new THREE.Color();
+        this._coldTint.setRGB(0.72, 0.8, 0.88).multiplyScalar(0.25 + this.daylight * 0.85);
+        this.scene.fog.color.lerp(this._coldTint, this.cold * 0.7);
+      }
+      this.scene.background.copy(this.scene.fog.color);
     }
   }
 

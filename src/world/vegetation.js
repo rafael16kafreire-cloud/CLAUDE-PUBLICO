@@ -48,6 +48,9 @@ const TYPES = {
   tronco_caido: { hi: P.makeFallenLog, lo: P.makeFallenLogLow, collider: 'log', shadow: true, scale: [0.8, 1.3], res: 'tronco', maxDist: 140 },
   pedrinhas: { foot: 0.05, hi: P.makePebbles, collider: 0, shadow: false, scale: [0.8, 1.3], res: 'pedrinhas', maxDist: 45 },
   gravetos: { foot: 0.05, hi: P.makeSticks, collider: 0, shadow: false, scale: [0.8, 1.3], res: 'gravetos', maxDist: 45 },
+  pinheiro: { foot: 0.4, hi: P.makeSpruce, lo: P.makeSpruceLow, imp: true, collider: 0.3, shadow: true, scale: [0.7, 1.3], res: 'arvore', cold: true },
+  rochedo: { foot: 1.6, hi: P.makeBoulder, lo: P.makeBoulderLow, collider: 1.0, shadow: true, scale: [1.8, 9], res: 'rochedo', maxDist: 320, rock: true },
+  minerio_ferro: { foot: 0.8, hi: P.makeIronOre, collider: 0.9, shadow: false, scale: [0.9, 1.6], res: 'ferro', maxDist: 140, rock: true },
   pedra_musgo: { foot: 0.85, hi: P.makeMossRock, lo: P.makeMossRockLow, collider: 1.0, shadow: false, scale: [0.6, 2.2], res: 'pedra', maxDist: 160 },
   mangue: { foot: 1.2, hi: P.makeMangrove, lo: P.makeMangroveLow, imp: true, collider: 0.6, shadow: true, scale: [0.8, 1.2], res: 'arvore', water: true },
   arvore_morta: { foot: 0.3, hi: P.makeDeadTree, collider: 0.3, shadow: true, scale: [0.8, 1.3], res: 'arvore', water: true, maxDist: 200 },
@@ -191,7 +194,12 @@ export class Vegetation {
         } else if (wb && (!def.water || depth > 0.9)) {
           continue;
         }
-        if (map.normalAt(x, z, normal).y < 0.78 && type !== 'pedra_musgo' && type !== 'tronco_caido') continue;
+        const ny = map.normalAt(x, z, normal).y;
+        if (ny < 0.78 && type !== 'pedra_musgo' && type !== 'tronco_caido' && !def.rock) continue;
+        // pinheiro não sobe nos picos (linha das árvores); minério só no alto
+        if (def.cold && h > 75) continue;
+        if (type === 'minerio_ferro' && h < 30) continue;
+        if (def.rock && ny < 0.3) continue;
         // sub-bosque: não nasce dentro de troncos e pedras
         if (layer.under) {
           let blocked = false;
@@ -204,7 +212,7 @@ export class Vegetation {
 
         const scale = def.scale[0] + r2 * (def.scale[1] - def.scale[0]);
         const rot = r3 * Math.PI * 2;
-        const sink = type === 'pedra_musgo' ? 0.2 * scale : type === 'tronco_caido' ? 0.12 : (type === 'gravetos' || type === 'pedrinhas') ? 0.02 : 0.15;
+        const sink = type === 'pedra_musgo' || def.rock ? 0.2 * scale : type === 'tronco_caido' ? 0.12 : (type === 'gravetos' || type === 'pedrinhas') ? 0.02 : 0.15;
         // Em morro: apoia no ponto MAIS BAIXO do chão embaixo da planta
         // (senão um lado fica "flutuando").
         let ground = h;
@@ -224,7 +232,7 @@ export class Vegetation {
           q.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), tilt));
           y = Math.min((hA + hB) / 2, h) - sink;
         }
-        if (type === 'pedra_musgo') s.set(scale * (0.8 + r4 * 0.5), scale, scale * (1.3 - r4 * 0.5));
+        if (type === 'pedra_musgo' || def.rock) s.set(scale * (0.8 + r4 * 0.5), scale * (0.75 + r4 * 0.4), scale * (1.3 - r4 * 0.5));
         else s.setScalar(scale);
         p.set(x, y, z);
         tmpM.compose(p, q, s);
@@ -242,8 +250,8 @@ export class Vegetation {
             r: 0.45 * scale, top: y + 0.75 * scale,
           };
         } else if (def.collider > 0) {
-          rec.r = def.collider * (type === 'pedra_musgo' ? scale : Math.sqrt(scale));
-          if (type === 'pedra_musgo') rec.top = y + 1.0 * scale;
+          rec.r = def.collider * (type === 'pedra_musgo' || def.rock ? scale : Math.sqrt(scale));
+          if (type === 'pedra_musgo' || def.rock) rec.top = y + 1.0 * scale;
         }
         this.recs.push(rec);
         if (rec.log) {

@@ -39,10 +39,13 @@ export class CreatureManager {
     this.cfg = C;
   }
 
-  // Limite de bichos por perto: vem da qualidade gráfica
-  // (baixa 14, média 20, alta 45 – configurações.js).
+  // Limite de bichos por perto (45 em qualquer qualidade); na neve
+  // (Lapônia) tem mais – balanceamento.js → desempenho.
   get maxActive() {
-    return settings.quality?.creatures ?? BALANCE.desempenho.criaturas_max_ativas;
+    const base = settings.quality?.creatures ?? BALANCE.desempenho.criaturas_max_ativas;
+    const p = game.player?.position;
+    const snow = p && this.world.biomeKeyAt(p.x, p.z) === 'neve';
+    return base + (snow ? BALANCE.desempenho.extra_na_neve : 0);
   }
 
   // Limite de carnívoros cresce junto com o de bichos (4 a cada 20).
@@ -149,7 +152,7 @@ export class CreatureManager {
       const r = minR + this.rand() * (maxR - minR);
       const x = center.x + Math.sin(a) * r;
       const z = center.z + Math.cos(a) * r;
-      if (Math.hypot(x, z) > BALANCE.mundo.limite_raio_m - 40) continue;
+      if (!this.world.map.inside(x, z, 40)) continue;
       const biome = this.world.biomeKeyAt(x, z);
       if (biome === 'mar') continue;
       const w = this.world.waterAt(x, z);

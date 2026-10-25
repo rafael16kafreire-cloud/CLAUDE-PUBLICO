@@ -21,6 +21,8 @@
       "ingredientes": { "fibra": 15, "palha": 10, "couro": 3 } },
     { "id": "bancada", "resultado": "bancada", "quantidade": 1, "tempo": 5, "xp": 12, "categoria": "Estruturas",
       "ingredientes": { "madeira": 20, "pedra": 10, "fibra": 12, "palha": 8 } },
+    { "id": "casaco_pele", "resultado": "casaco_pele", "quantidade": 1, "tempo": 5, "xp": 10, "categoria": "Roupas",
+      "ingredientes": { "couro": 6, "fibra": 15, "ossos": 2 } },
     { "id": "piso", "resultado": "piso", "quantidade": 1, "tempo": 3, "xp": 5, "categoria": "Construção",
       "ingredientes": { "madeira": 10, "fibra": 4 } },
     { "id": "parede", "resultado": "parede", "quantidade": 1, "tempo": 3, "xp": 5, "categoria": "Construção",

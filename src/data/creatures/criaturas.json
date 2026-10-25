@@ -55,7 +55,8 @@
    "altura": 2.8,
    "biomas": [
     "selva",
-    "igapo"
+    "igapo",
+    "neve"
    ],
    "peso_spawn": 5,
    "grupo": [
@@ -94,7 +95,8 @@
    "altura": 2.2,
    "biomas": [
     "selva",
-    "praia"
+    "praia",
+    "neve"
    ],
    "peso_spawn": 4,
    "grupo": [
@@ -171,7 +173,8 @@
    "raio": 0.7,
    "altura": 1.8,
    "biomas": [
-    "selva"
+    "selva",
+    "neve"
    ],
    "peso_spawn": 3.5,
    "grupo": [
@@ -216,7 +219,8 @@
    "altura": 3.0,
    "biomas": [
     "selva",
-    "igapo"
+    "igapo",
+    "neve"
    ],
    "peso_spawn": 3,
    "grupo": [
@@ -261,7 +265,8 @@
    "raio": 1.7,
    "altura": 4.2,
    "biomas": [
-    "selva"
+    "selva",
+    "neve"
    ],
    "peso_spawn": 2.5,
    "grupo": [
@@ -307,7 +312,8 @@
    "altura": 1.8,
    "biomas": [
     "selva",
-    "praia"
+    "praia",
+    "neve"
    ],
    "peso_spawn": 2.5,
    "grupo": [
@@ -399,7 +405,8 @@
    "altura": 0.5,
    "biomas": [
     "selva",
-    "praia"
+    "praia",
+    "neve"
    ],
    "peso_spawn": 4,
    "grupo": [
@@ -439,7 +446,8 @@
    "raio": 0.5,
    "altura": 1.5,
    "biomas": [
-    "selva"
+    "selva",
+    "neve"
    ],
    "peso_spawn": 4.5,
    "grupo": [
@@ -480,7 +488,8 @@
    "altura": 1.6,
    "biomas": [
     "selva",
-    "igapo"
+    "igapo",
+    "neve"
    ],
    "peso_spawn": 5,
    "grupo": [
@@ -597,7 +606,8 @@
    "raio": 1.0,
    "altura": 3.0,
    "biomas": [
-    "selva"
+    "selva",
+    "neve"
    ],
    "peso_spawn": 1.8,
    "grupo": [
@@ -642,7 +652,8 @@
    "raio": 1.8,
    "altura": 5.5,
    "biomas": [
-    "selva"
+    "selva",
+    "neve"
    ],
    "peso_spawn": 0.9,
    "grupo": [
@@ -858,7 +869,8 @@
    "biomas": [
     "praia",
     "selva",
-    "pantano"
+    "pantano",
+    "neve"
    ],
    "peso_spawn": 3.5,
    "grupo": [
@@ -904,7 +916,8 @@
    "altura": 3.0,
    "biomas": [
     "selva",
-    "praia"
+    "praia",
+    "neve"
    ],
    "peso_spawn": 0.7,
    "grupo": [
