@@ -317,8 +317,19 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     await page.mouse.up();
     await gameWait(page, 520);
   }
+  const noWood = await page.evaluate(() => ({ palha: window.__t.count('palha'), madeira: window.__t.count('madeira') }));
+  check('Coleta: árvore só com machado (soco não dá nada)', noWood.palha === 0 && noWood.madeira === 0, JSON.stringify(noWood));
+  // palha com a mão: folhas da palmeira (praia)
+  await page.evaluate(() => { const s = window.__ilha.ctx.world.respawnPoint('sul').position; window.__t.faceRec('coqueiro', { x: s.x, z: s.z }); });
+  await frames(page, 6);
+  for (let i = 0; i < 4; i++) {
+    await page.evaluate(() => { window.__ilha.ctx.player.stats.stamina = 100; window.__ilha.ctx.player.stats.health = 100; });
+    await page.mouse.down();
+    await page.mouse.up();
+    await gameWait(page, 520);
+  }
   const thatch = await page.evaluate(() => ({ palha: window.__t.count('palha'), madeira: window.__t.count('madeira') }));
-  check('Coleta: socar árvore dá palha', thatch.palha >= 4, `${JSON.stringify(tree)} ${JSON.stringify(thatch)}`);
+  check('Coleta: socar palmeira dá palha', thatch.palha >= 4, `${JSON.stringify(tree)} ${JSON.stringify(thatch)}`);
 
   // Pedra: soco dá pedra
   await page.evaluate(() => window.__t.faceRec('pedra_musgo'));

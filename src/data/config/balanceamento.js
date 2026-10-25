@@ -31,7 +31,8 @@ export default {
     regen_vida_seg: 0.6,       // vida recuperada por segundo
     regen_limite: 0.5,         // só regenera com fome E sede acima de 50%
     gole_agua: 12,             // quanto de sede cada "beber" recupera
-    satisfeito: 0.6,           // só come/bebe se faltar pelo menos 60% do que o item/gole dá
+    satisfeito: 0.6,           // só bebe se faltar pelo menos 60% de um gole
+    vida_comer_cheio: 0.8,     // com a fome 100% só come se a vida estiver abaixo de 80%
   },
 
   // ---------------------------------------------------------
@@ -146,7 +147,7 @@ export default {
   // Coleta: tempo mínimo entre uma coleta e outra (não fica rápido demais)
   coleta: {
     intervalo_bater_seg: 0.36, // bater em árvore/pedra/planta (Atacar)
-    intervalo_colher_seg: 0.9, // colher com a mão (Interagir: bagas, fibra...)
+    intervalo_colher_seg: 0.36, // colher com a mão (Interagir: bagas, fibra...)
   },
 
   combate: {

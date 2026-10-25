@@ -17,6 +17,9 @@ const PLANT_CREDITS = [
   ['Tamareiras e plantas da praia', 'Date palm and vegetation', 'borsh_and'],
   ['Árvores folhosas e capim', 'Low Poly Tree Scene Free', 'Nicholas-3D'],
   ['Folhagem do chão da floresta', 'Grass', 'Epic_Tree_Store'],
+  ['Árvore alta da mata', 'Agarwood', 'Valery.Li'],
+  ['Arbustos de bagas', 'Bush with Berries', 'ivanmm1'],
+  ['Aparência do jogador', 'Base Chibi Fantasy Blocky Head', 'UFRE Studio'],
 ];
 
 // Créditos dos modelos 3D (licença CC-BY pede o nome do autor)
@@ -39,7 +42,7 @@ export class StartScreen {
     el.className = 'overlay start';
     el.innerHTML = `
       <div class="start-panel">
-        <p class="eyebrow">Protótipo · v0.11.0 · sobreviver, domar e construir</p>
+        <p class="eyebrow">Protótipo · v0.12.0 · sobreviver, domar e construir</p>
         <h1 class="title">Ilha<br>Primordial</h1>
         <p class="tagline">Você acordou na beira da mata sem nada. Pegue madeira, crie ferramentas e sobreviva aos predadores da floresta.</p>
         <button type="button" class="btn btn-primary btn-play" id="btn-play" disabled>Gerando a ilha…</button>

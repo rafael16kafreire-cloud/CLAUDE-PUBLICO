@@ -3,8 +3,8 @@
   "reaparece_min": 8,
   "tipos": {
     "arvore": {
-      "nome": "Árvore", "capacidade": 45, "xp": 1,
-      "mao": { "palha": [2, 3], "madeira": [0, 1] },
+      "nome": "Árvore", "capacidade": 45, "xp": 1, "so_machado": true,
+      "mao": {},
       "machado": { "madeira": [4, 6], "palha": [0, 1] },
       "picareta": { "palha": [4, 6], "madeira": [0, 1] },
       "lanca": { "palha": [1, 2] },

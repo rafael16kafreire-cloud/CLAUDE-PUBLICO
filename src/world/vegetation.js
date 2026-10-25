@@ -27,6 +27,8 @@ import * as P from './props.js';
 import { snowTreeGeometry, snowTreeMaterial, snowRockGeometry, snowRockMaterial } from './snow_models.js';
 import { vegGeometry, vegMaterial } from './veg_models.js';
 
+const ROOTS = P.sumaumaRootColliders();
+
 // Tipos de planta:
 //   hi/lo: modelos de perto e médio; imp: vira "foto" de longe
 //   collider: raio de colisão (0 = atravessa; 'log' = tronco deitado)
@@ -34,7 +36,7 @@ import { vegGeometry, vegMaterial } from './veg_models.js';
 //   water: pode nascer em água rasa; surface: boia na água
 //   foot: raio da base (m) – em morro a planta afunda até o ponto mais baixo
 const TYPES = {
-  sumauma: { foot: 2.6, hi: P.makeSumauma, lo: P.makeSumaumaLow, imp: true, collider: 1.5, shadow: true, scale: [1.2, 1.6], res: 'arvore_gigante' },
+  sumauma: { roots: true, foot: 2.6, hi: P.makeSumauma, lo: P.makeSumaumaLow, imp: true, collider: 1.5, shadow: true, scale: [1.2, 1.6], res: 'arvore_gigante' },
   arvore_dossel: { foot: 0.75, hi: P.makeCanopyTree, lo: P.makeCanopyTreeLow, imp: true, collider: 0.55, shadow: true, scale: [1.0, 1.45], res: 'arvore' },
   arvore_media: { foot: 0.3, hi: P.makeUnderstoryTree, lo: P.makeUnderstoryTreeLow, imp: true, collider: 0.3, shadow: true, scale: [0.75, 1.3], res: 'arvore' },
   acai: { foot: 0.4, hi: P.makeAcai, lo: P.makeAcaiLow, imp: true, collider: 0.22, shadow: true, scale: [0.8, 1.2], res: 'palmeira' },
@@ -47,15 +49,17 @@ const TYPES = {
   // floresta (Low Poly Tree Scene Free): árvores folhosas e tufos de capim
   arvore_folhosa: { foot: 0.5, hi: () => vegGeometry('arvore_folhosa', 15), lo: P.makeCanopyTreeLow, mat: () => vegMaterial('arvore_folhosa'), collider: 0.45, shadow: true, scale: [0.8, 1.3], res: 'arvore', textured: true, maxDist: 320 },
   arvore_folhosa2: { foot: 0.35, hi: () => vegGeometry('arvore_folhosa2', 11), lo: P.makeUnderstoryTreeLow, mat: () => vegMaterial('arvore_folhosa2'), collider: 0.35, shadow: true, scale: [0.8, 1.3], res: 'arvore', textured: true, maxDist: 320 },
+  // árvore alta da mata (Agarwood): tronco liso, copa no alto e cipós
+  arvore_agar: { foot: 0.45, hi: () => vegGeometry('arvore_agar', 24), lo: P.makeCanopyTreeLow, mat: () => vegMaterial('arvore_agar'), collider: 0.45, shadow: true, scale: [0.8, 1.25], res: 'arvore', textured: true, maxDist: 320 },
   capim: { hi: () => vegGeometry('capim', 0.8), mat: () => vegMaterial('capim'), collider: 0, shadow: false, scale: [0.7, 1.5], res: null, maxDist: 55, textured: true },
   samambaia_gigante: { foot: 0.3, hi: P.makeTreeFern, lo: P.makeTreeFernLow, imp: true, collider: 0.2, shadow: true, scale: [0.8, 1.3], res: 'samambaia_gigante' },
   bananeira: { foot: 0.45, hi: P.makeBananaTree, lo: P.makeBananaTreeLow, collider: 0.22, shadow: false, scale: [0.85, 1.25], res: 'bananeira', maxDist: 110 },
   bananeira_vazia: { foot: 0.45, hi: P.makeBananaTreeEmpty, lo: P.makeBananaTreeEmptyLow, collider: 0.22, shadow: false, scale: [0.85, 1.25], res: 'planta', maxDist: 110 },
   samambaia: { hi: P.makeFern, collider: 0, shadow: false, scale: [0.8, 1.5], res: 'samambaia', maxDist: 55 },
-  arbusto_mejo: { hi: P.makeMejoBush, collider: 0, shadow: false, scale: [0.8, 1.2], res: 'baga_mejo', maxDist: 75 },
-  arbusto_escura: { hi: P.makeDarkBush, collider: 0, shadow: false, scale: [0.8, 1.2], res: 'baga_escura', maxDist: 75 },
-  arbusto_frutas: { hi: P.makeFruitBush, collider: 0, shadow: false, scale: [0.8, 1.2], res: 'frutas', maxDist: 75 },
-  arbusto: { hi: P.makeBushEmpty, collider: 0, shadow: false, scale: [0.8, 1.2], res: 'arbusto', maxDist: 75 },
+  arbusto_mejo: { hi: () => vegGeometry('arbusto_bagas', 1.3), mat: () => vegMaterial('arbusto_bagas', '#4b3a9a'), textured: true, collider: 0, shadow: false, scale: [0.8, 1.2], res: 'baga_mejo', maxDist: 75 },
+  arbusto_escura: { hi: () => vegGeometry('arbusto_bagas', 1.3), mat: () => vegMaterial('arbusto_bagas', '#1e1430'), textured: true, collider: 0, shadow: false, scale: [0.8, 1.2], res: 'baga_escura', maxDist: 75 },
+  arbusto_frutas: { hi: () => vegGeometry('arbusto_bagas', 1.3), mat: () => vegMaterial('arbusto_bagas', '#c0282a'), textured: true, collider: 0, shadow: false, scale: [0.8, 1.2], res: 'frutas', maxDist: 75 },
+  arbusto: { hi: () => vegGeometry('arbusto_bagas', 1.3), mat: () => vegMaterial('arbusto_bagas', null), textured: true, collider: 0, shadow: false, scale: [0.8, 1.2], res: 'arbusto', maxDist: 75 },
   tronco_caido: { hi: P.makeFallenLog, lo: P.makeFallenLogLow, collider: 'log', shadow: true, scale: [0.8, 1.3], res: 'tronco', maxDist: 140 },
   pedrinhas: { foot: 0.05, hi: P.makePebbles, collider: 0, shadow: false, scale: [0.8, 1.3], res: 'pedrinhas', maxDist: 45 },
   gravetos: { foot: 0.05, hi: P.makeSticks, collider: 0, shadow: false, scale: [0.8, 1.3], res: 'gravetos', maxDist: 45 },
@@ -267,6 +271,13 @@ export class Vegetation {
             bx: x - Math.cos(rot) * hl, bz: z + Math.sin(rot) * hl,
             r: 0.45 * scale, top: y + 0.75 * scale,
           };
+        } else if (def.roots) {
+          // árvore gigante: tronco + cada raiz com sua própria colisão
+          rec.r = 1.1 * scale;
+          const c = Math.cos(rot);
+          const sn = Math.sin(rot);
+          rec.parts = ROOTS.map((p) => ({ x: x + (p.x * c + p.z * sn) * scale, z: z + (-p.x * sn + p.z * c) * scale, r: p.r * scale, top: y + p.top * scale }));
+          this.maxCollider = Math.max(this.maxCollider ?? 0, 8 * scale);
         } else if (def.collider > 0) {
           rec.r = def.collider * (type === 'pedra_musgo' || def.rock ? scale : Math.sqrt(scale));
           if (type === 'pedra_musgo' || def.rock) {
@@ -432,6 +443,9 @@ export class Vegetation {
         const t = Math.max(0, Math.min(1, ((pos.x - L.ax) * abx + (pos.z - L.az) * abz) / (abx * abx + abz * abz)));
         this._push(pos, L.ax + abx * t, L.az + abz * t, radius + L.r);
       } else if (rec.r) {
+        if (rec.parts) {
+          for (const p of rec.parts) if (feetY < p.top - 0.2) this._push(pos, p.x, p.z, radius + p.r);
+        }
         if (rec.top !== undefined && feetY > rec.top - 0.2) return;
         this._push(pos, rec.x, rec.z, radius + rec.r);
       }

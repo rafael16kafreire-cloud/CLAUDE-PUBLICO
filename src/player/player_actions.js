@@ -61,6 +61,7 @@ export class PlayerActions {
     // 1) criatura viva
     const hit = creatures?.playerAttack(p, forward, t.dano * p.stats.damageMul, t.alcance);
     if (hit) {
+      p.onImpact?.(0.8);
       // soco e clava dão sono (torpor): dá para desmaiar e domar
       const T = BALANCE.domar.torpor_por_dano;
       hit.addTorpor?.(t.dano * p.stats.damageMul * (T[t.tipo] ?? T.outro), p);
@@ -72,6 +73,7 @@ export class PlayerActions {
     // 2) carcaça: tirar carne, couro e ossos
     const corpse = creatures?.findCorpse(p.position, forward, t.alcance + 0.5);
     if (corpse) {
+      p.onImpact?.(0.6);
       const got = creatures.harvestCorpse(corpse, t.tipo);
       this._give(got);
       this.world.effects.burst(corpse.center(), 'sangue', 5, 2);
@@ -82,7 +84,10 @@ export class PlayerActions {
     // 3) planta, tronco ou pedra
     const veg = this.world.vegetation;
     const rec = veg.findTarget(p.position.x, p.position.z, forward.x, forward.z, t.alcance);
-    if (rec) this.harvest(rec, t.tipo);
+    if (rec) {
+      p.onImpact?.(0.6);
+      this.harvest(rec, t.tipo);
+    }
   }
 
   // Coleta de uma planta/pedra com o modo dado (mao, machado, colher...).
@@ -97,6 +102,8 @@ export class PlayerActions {
         events.emit(EV.PLAYER_HURT, { amount: 4, source: 'árvore' });
       }
       events.emit(EV.MESSAGE, { text: `Ai! ${res.nome} é dura demais: precisa de um machado.`, kind: 'warn' });
+      const pp = this.player.position;
+      this.world.effects.burst(new THREE.Vector3(pp.x + (rec.x - pp.x) * 0.7, pp.y + 1.2, pp.z + (rec.z - pp.z) * 0.7), 'madeira', 3, 1.5);
       sound.play('madeira', new THREE.Vector3(rec.x, this.player.position.y + 1.2, rec.z), { volume: 0.6 });
       shakeAt(rec.x, rec.z, 0.4);
       return false;
@@ -132,6 +139,10 @@ export class PlayerActions {
     sound.play(kind === 'folha' ? 'folhas' : kind, fx);
     if (kind === 'madeira') {
       this.world.effects.burst(fx.clone().setY(fx.y + 3), 'folha', 6, 1.5);
+      // marca de corte na casca, do lado de quem bateu
+      if (['arvore', 'arvore_gigante', 'palmeira'].includes(res.key) && rec.r) {
+        this.world.effects.gouge(rec.x, rec.z, rec.r * 0.8, this.player.position.y + 1.25, this.player.position);
+      }
       shakeAt(rec.x, rec.z, 1);
     } else if (kind === 'folha') {
       shakeAt(rec.x, rec.z, 2);
@@ -172,12 +183,13 @@ export class PlayerActions {
     const c = def?.comida;
     if (!c) return false;
     const st = this.player.stats;
-    // não come mais do que precisa: tem que faltar boa parte do que o item dá
-    const lim = BALANCE.sobrevivencia.satisfeito;
-    const needFood = c.fome > 0 && st.max.food - st.food >= c.fome * lim;
-    const needWater = c.sede > 0 && st.max.water - st.water >= c.sede * lim;
-    if ((c.fome > 0 || c.sede > 0) && !c.vida && !needFood && !needWater) {
-      events.emit(EV.MESSAGE, { text: c.fome > 0 ? 'Você está satisfeito: guarde para depois.' : 'Você não está com sede.', kind: 'info' });
+    // fome cheia (100%): só come se a vida estiver baixa (abaixo de 80%)
+    const S = BALANCE.sobrevivencia;
+    const full = st.food >= st.max.food - 0.5;
+    const hurt = st.health < st.max.health * S.vida_comer_cheio;
+    const needWater = c.sede > 0 && st.max.water - st.water >= c.sede * S.satisfeito;
+    if (c.fome > 0 && full && !hurt && !needWater) {
+      events.emit(EV.MESSAGE, { text: 'Você está cheio: só come de novo com fome (ou com a vida abaixo de 80%).', kind: 'info' });
       return false;
     }
     st.food = Math.min(st.max.food, st.food + (c.fome ?? 0));

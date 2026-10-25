@@ -4,6 +4,25 @@ Jogo 3D de sobrevivência com dinossauros. Sozinho (offline) ou em **co-op onlin
 Roda no celular (Android como app ou no navegador) e no PC.
 Visual estilizado, feito para ser leve.
 
+**Versão 0.12.0** – mata mais viva, ataque com peso, mapa e córregos
+- **Soco e coleta a cada 360 ms.** **Árvores só com machado** (soco machuca e não dá nada;
+  palha com a mão vem das palmeiras e plantas). **Raízes da sumaúma** com colisão própria:
+  dá para entrar entre elas, mas não atravessar.
+- **Ataque:** tela treme um pouco, som de esforço ("huss"), lascas de madeira que caem e
+  quicam no chão, e **marcas de corte no tronco** onde você bateu.
+- **Mapa:** tecla **M** no PC ou toque no minimapa no celular. Pontos de renascer agora
+  são **prismas pequenos**.
+- **Fome:** com a barra cheia (100%) só come se a vida estiver abaixo de 80%.
+- **Velocidades** dos bichos revistas pelo tamanho e jeito de cada um (ex.: T-Rex 1,6 m/s
+  andando e 6,5 correndo; raptor 8; onça 9; braquiossauro 1,8/3,5).
+- **Córregos na mata:** nascem nos morros e descem até o pântano ou o mar, com leito
+  cavado e água doce em degraus (beber e nadar) – `ilha.json` → `corregos`.
+- **Modelos novos:** árvore *Agarwood* (mata), *Bush with Berries* (arbustos redondos de
+  Baga-Mejo azul, Baga-Escura e frutas vermelhas) e a **skin do jogador** *Base Chibi*.
+  Ferramentas: `tools/models/vegetacao_modelos2.py` e `tools/models/skin_jogador.py`.
+- Ícones provisórios do ARK: lugar pronto em `assets/icons/placeholder_ark/` (ver o
+  LEIA-ME); o download ficou bloqueado pela rede do ambiente de desenvolvimento.
+
 **Versão 0.11.0** – praia e floresta novas, bichos comendo, HUD novo
 - **Praia:** palmeira *Palm Tree Realistic*, tamareiras e plantinhas do *Date palm and
   vegetation*. **Floresta:** árvores folhosas e capim do *Low Poly Tree Scene Free* e
@@ -354,6 +373,10 @@ Plantas (CC-BY 4.0, adaptadas: menos detalhes e texturas reduzidas):
 - Tamareiras e plantas da praia: **"Date palm and vegetation"** por **borsh_and** – https://sketchfab.com/3d-models/date-palm-and-vegetation-734c4537ca8547209a54df49f134824a
 - Árvores folhosas e capim: **"Low Poly Tree Scene Free"** por **Nicholas-3D** – https://sketchfab.com/3d-models/low-poly-tree-scene-free-89daa5e21f0d4f08a59dba0d566e88bd
 - Folhagem do chão: **"Grass"** por **Epic_Tree_Store** – https://sketchfab.com/3d-models/grass-e58b89ba5b5047338210dbcf730f7b05
+
+- Árvore alta da mata: **"Agarwood"** por **Valery.Li** (CC-BY 4.0)
+- Arbustos de bagas: **"Bush with Berries"** por **ivanmm1** (CC-BY 4.0)
+- Aparência do jogador: **"Base Chibi Fantasy Blocky Head"** por **UFRE Studio** (CC-BY 4.0)
 
 Motor 3D: [three.js](https://threejs.org) (licença MIT).
 Fontes: Lilita One e Barlow Semi Condensed (SIL Open Font License, em `src/ui/fonts`).

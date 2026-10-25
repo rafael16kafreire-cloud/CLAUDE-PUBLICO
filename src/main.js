@@ -20,6 +20,7 @@ import { Messages } from './ui/messages.js';
 import { TouchControls } from './ui/touch_controls.js';
 import { DeathScreen } from './ui/death_screen.js';
 import { Minimap } from './ui/minimap.js';
+import { MapScreen } from './ui/map_screen.js';
 import { DebugOverlay } from './ui/debug_overlay.js';
 import { PauseMenu } from './ui/pause_menu.js';
 import { StartScreen } from './ui/start_screen.js';
@@ -167,13 +168,19 @@ function boot(hotData = {}) {
     const touch = new TouchControls(ui, input);
     const death = new DeathScreen(ui, world);
     const minimap = new Minimap(hud.el, world);
+    const mapScreen = new MapScreen(ui, world);
+    // celular: tocar no minimapa abre o mapa
+    minimap.el.addEventListener('click', () => mapScreen.toggle(player, camCtl.yaw));
     const debug = new DebugOverlay(ui, renderer);
     const creatures = new CreatureManager(world, scene);
     world.creatures = creatures;
     const hands = new PlayerHands(camera);
     player.onGather = () => hands.gather();
+    player.onImpact = (k = 0.7) => camCtl.shake(k);
     player.onPunch = (kind) => {
       hands.swing(kind);
+      camCtl.shake(0.3);
+      sound.play('esforco');
       sound.play('golpe');
       ctx?.net.noteSwing();
     };
@@ -208,7 +215,7 @@ function boot(hotData = {}) {
     game.world = world;
     game.player = player;
     ctx = {
-      world, player, camCtl, interaction, hud, minimap, inspect, buildGhost, messages, touch, death, debug, pause, creatures, hands,
+      world, player, camCtl, interaction, hud, minimap, mapScreen, inspect, buildGhost, messages, touch, death, debug, pause, creatures, hands,
       inventory, crafting, actions, hotbar, invScreen,
     };
     ctx.net = new Multiplayer({ world, player, creatures, inventory, actions, camCtl });
@@ -551,7 +558,8 @@ function boot(hotData = {}) {
     if (input.wasPressed('pause')) {
       // Evita pausar/despausar duas vezes quando o Esc também solta o mouse.
       const justUnlocked = performance.now() - input.lastUnlockTime < 300;
-      if (ctx.invScreen.visible) closeInventory();
+      if (ctx.mapScreen.visible) ctx.mapScreen.hide();
+      else if (ctx.invScreen.visible) closeInventory();
       else if (game.state === STATE.PLAYING) pauseGame();
       else if (game.state === STATE.PAUSED && !justUnlocked) resume();
     }
@@ -562,6 +570,8 @@ function boot(hotData = {}) {
       else openInventory();
     }
     if (input.wasPressed('inspect')) ctx.inspect.toggle();
+    if (input.wasPressed('map')) ctx.mapScreen.toggle(ctx.player, ctx.camCtl.yaw);
+    if (ctx.mapScreen.visible) ctx.mapScreen.update(ctx.player, ctx.camCtl.yaw);
     if (input.wasPressed('camera')) settings.set('cameraMode', ctx.camCtl.mode === 'primeira' ? 'terceira' : 'primeira');
     for (let i = 0; i < 8; i++) if (input.wasPressed(`slot${i + 1}`)) ctx.actions.pressHotbar(i);
     if (input.wasPressed('build')) events.emit(EV.MESSAGE, { text: COMING_SOON.build, kind: 'info' });

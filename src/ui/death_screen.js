@@ -98,7 +98,8 @@ export class DeathScreen {
       b.style.left = `${p.left}%`;
       b.style.top = `${p.top}%`;
       b.setAttribute('aria-label', point.name);
-      b.innerHTML = `<span class="pin-dot"></span><span class="pin-name"></span>`;
+      // ícone de prisma (cristal) pequeno
+      b.innerHTML = `<svg class="pin-dot" viewBox="0 0 20 24" aria-hidden="true"><path class="pr-l" d="M10 1 2 8l8 15Z"/><path class="pr-r" d="M10 1l8 7-8 15Z"/><path class="pr-t" d="M10 1 2 8h16Z"/></svg><span class="pin-name"></span>`;
       b.lastElementChild.textContent = point.name;
       b.addEventListener('click', () => this._select(point, b));
       pins.appendChild(b);

@@ -49,6 +49,7 @@ export class World {
     this.grass = new Grass(this.map, this.water, scene);
     this.sky = new Sky(scene);
     this.effects = new Effects(scene);
+    this.effects.groundAt = (x, z) => this.heightAt(x, z);
     this.underwater = new Underwater(scene);
     this.deathBags = [];
     this.structures = [];   // fogueiras, sacos de dormir...

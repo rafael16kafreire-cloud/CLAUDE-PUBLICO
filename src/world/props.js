@@ -377,6 +377,25 @@ export function makeSumauma() {
   parts.push(...lianas([[6.2, 25, 2], [-5.6, 24.6, -2.8], [-2.8, 25, 5.6]], 15));
   return merge(parts);
 }
+// Raízes da sumaúma para a colisão: círculos ao longo de cada raiz
+// (mesmos números do desenho acima). Dá para ficar entre as raízes,
+// mas não atravessar. Coordenadas do modelo (escala 1, sem girar).
+export function sumaumaRootColliders() {
+  const out = [];
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2 + 0.3 + hash3(i, 3, 1, 1) * 0.4;
+    const height = 1.6 + hash3(i, 1, 2, 9) * 1.2;
+    const reach = 2.2 + hash3(i, 7, 1, 2) * 1.8;
+    const bend = (hash3(i + 1, 4, 1, 7) - 0.5) * 0.5;
+    for (const t of [0.3, 0.55, 0.8, 0.97]) {
+      const ang = a + bend * t * 1.4;
+      const d = 1.25 * 0.7 + reach * t;
+      out.push({ x: Math.cos(ang) * d, z: Math.sin(ang) * d, r: (0.42 - 0.34 * t) * (height / 2.4) + 0.08, top: height * Math.pow(1 - t, 1.8) + 0.3 });
+    }
+  }
+  return out;
+}
+
 export function makeSumaumaLow() {
   return merge([
     trunk(0.65, 1.1, 24.4, 0.5, BARK_LIGHT, 7, 3, 2),

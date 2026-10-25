@@ -6,7 +6,11 @@
 // escalado pela vegetação. Modelo com tronco + folhas usa 2 materiais.
 // =============================================================
 import * as THREE from 'three';
-import { VEG_MODELOS, VEG_TEXTURAS } from './textures/veg_modelos.js';
+import { VEG_MODELOS as M1, VEG_TEXTURAS as T1, FOLHAGEM_COR } from './textures/veg_modelos.js';
+import { VEG_MODELOS2, VEG_TEXTURAS2 } from './textures/veg_modelos2.js';
+
+const VEG_MODELOS = { ...M1, ...VEG_MODELOS2 };
+const VEG_TEXTURAS = { ...T1, ...VEG_TEXTURAS2, folhagem_arbusto: FOLHAGEM_COR };
 import { addWind } from './materials.js';
 
 function bytes(b64) {
@@ -70,14 +74,23 @@ function texture(name) {
 }
 
 // Um material por parte (tronco opaco; folhas com recorte transparente).
-export function vegMaterial(key) {
+// berry = cor das bagas (arbusto com bagas); null = arbusto sem bagas.
+const OPAQUE = new Set(['bark', 'agar_casca', 'agar_cipo', 'folhagem_arbusto']);
+export function vegMaterial(key, berry) {
   const mats = VEG_MODELOS[key].map((part) => {
-    const opaque = part.tex === 'bark';
+    if (part.tex === 'baga') {
+      // bagas redondas e brilhantes da cor do tipo
+      const m = new THREE.MeshLambertMaterial({ color: berry ?? '#2a4a22', vertexColors: true, visible: berry !== null });
+      m.emissive.set(berry ?? '#000').multiplyScalar(0.12);
+      return addWind(m, 0.004, 0.01);
+    }
+    const opaque = OPAQUE.has(part.tex);
     const m = new THREE.MeshLambertMaterial({
       map: texture(part.tex),
       vertexColors: true,
       alphaTest: opaque ? 0 : 0.42,
-      side: opaque ? THREE.FrontSide : THREE.DoubleSide,
+      // cipós são cartões sem recorte: dos dois lados
+      side: opaque && part.tex !== 'agar_cipo' ? THREE.FrontSide : THREE.DoubleSide,
     });
     return addWind(m, opaque ? 0.004 : 0.01, opaque ? 0 : 0.03);
   });

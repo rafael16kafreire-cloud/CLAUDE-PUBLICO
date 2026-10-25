@@ -246,6 +246,15 @@ class Sound {
         }
         break;
       }
+      case 'esforco': { // "huss": expiração forte de quem bate (voz humana)
+        if (!this._voice(0.2)) return;
+        const out = this._dest(null, 0.32 * v);
+        const f0 = R(780, 1050);
+        this._noise(t, R(0.16, 0.22), out, { f: f0, fTo: f0 * 0.62, q: 1.3, attack: 0.012, peak: 0.55 });
+        this._noise(t, 0.12, out, { f: 2600, fTo: 1800, q: 0.9, attack: 0.008, peak: 0.18 }); // "ss" do ar nos dentes
+        this._osc('sawtooth', R(115, 150), t, 0.11, this._dest(null, 0.03 * v), 0.25, 0.01, R(90, 105)); // um pouco de voz
+        break;
+      }
       case 'golpe': { // golpe no ar
         if (!this._voice(0.25)) return;
         this._noise(t, 0.2, this._dest(null, 0.25 * v), { f: 400, fTo: 1800, q: 2, attack: 0.03, peak: 0.6 });

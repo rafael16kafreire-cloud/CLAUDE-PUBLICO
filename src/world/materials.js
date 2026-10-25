@@ -319,7 +319,7 @@ export function makeWaterMaterial({
         // profundidade: nível da água menos a altura do chão
         vec2 huv = (p + uMapHalf) / uMapSize;
         float ground = texture2D(uHeight, huv).r;
-        float depth = max(uLevel - ground, 0.0);
+        float depth = max((uLevel < -999.0 ? vWorld.y : uLevel) - ground, 0.0);
 
         // ondinhas: duas camadas de ruído andando em direções diferentes
         vec2 uv1 = p * 0.055 + vec2(t * 0.018, t * 0.011);

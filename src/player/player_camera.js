@@ -49,6 +49,11 @@ export class PlayerCamera {
     player.firstPerson = firstPerson;
   }
 
+  // Tremida da tela (0 a 1): golpe no ar ~0.3, acertou ~0.7.
+  shake(amount) {
+    this._shake = Math.max(this._shake ?? 0, amount);
+  }
+
   // 2º passo: posiciona a câmera onde o jogador está agora.
   update(dt, player) {
     const firstPerson = player.firstPerson;
@@ -56,6 +61,14 @@ export class PlayerCamera {
     this._forward.set(-Math.sin(this.yaw) * cp, Math.sin(this.pitch), -Math.cos(this.yaw) * cp);
     this._right.set(Math.cos(this.yaw), 0, -Math.sin(this.yaw));
     this.camera.rotation.set(this.pitch, this.yaw, 0);
+    // tremida (golpe): pequena e rápida
+    if (this._shake > 0.001) {
+      const k = this._shake;
+      this.camera.rotation.x += (Math.random() - 0.5) * 0.03 * k;
+      this.camera.rotation.y += (Math.random() - 0.5) * 0.03 * k;
+      this.camera.rotation.z += (Math.random() - 0.5) * 0.02 * k;
+      this._shake *= Math.exp(-dt * 14);
+    }
 
     const t = this._target.copy(player.position);
     t.y += player.eyeHeight - 0.05;

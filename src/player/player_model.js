@@ -4,6 +4,7 @@
 // nadar, agachar, golpe e cair morto.
 // =============================================================
 import * as THREE from 'three';
+import { SKIN_PARTES, SKIN_TEXTURA } from './skin_data.js';
 
 const mat = (hex) => new THREE.MeshLambertMaterial({ color: hex });
 
@@ -19,6 +20,34 @@ function part(geometry, material, y = 0) {
   m.position.y = y;
   m.castShadow = true;
   return m;
+}
+
+function bytes(b64) {
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out.buffer;
+}
+
+function skinGeometry(part) {
+  const q = new Uint16Array(bytes(part.pos));
+  const uq = new Uint16Array(bytes(part.uv));
+  const [x0, y0, z0, x1, y1, z1] = part.box;
+  const pos = new Float32Array(part.n * 3);
+  const uv = new Float32Array(part.n * 2);
+  for (let i = 0; i < part.n; i++) {
+    pos[i * 3] = x0 + (q[i * 3] / 65535) * (x1 - x0);
+    pos[i * 3 + 1] = y0 + (q[i * 3 + 1] / 65535) * (y1 - y0);
+    pos[i * 3 + 2] = z0 + (q[i * 3 + 2] / 65535) * (z1 - z0);
+    uv[i * 2] = uq[i * 2] / 65535;
+    uv[i * 2 + 1] = uq[i * 2 + 1] / 65535;
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  g.setIndex(new THREE.BufferAttribute(new Uint16Array(bytes(part.idx)), 1));
+  g.computeVertexNormals();
+  return g;
 }
 
 export class PlayerModel {
@@ -61,6 +90,26 @@ export class PlayerModel {
 
     this._phase = 0;
     this._swing = 0; // animação de golpe (0 = parado)
+    this._applySkin();
+  }
+
+  // Skin (modelo enviado pelo jogador): troca as formas simples pelos
+  // pedaços do modelo, cada um preso no seu ponto de giro.
+  _applySkin() {
+    this.body.traverse((o) => {
+      if (o.isMesh) o.visible = false;
+    });
+    const tex = new THREE.TextureLoader().load(SKIN_TEXTURA);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    const mat = new THREE.MeshLambertMaterial({ map: tex });
+    const holders = { head: this.head, torso: this.body, armL: this.armL, armR: this.armR, legL: this.legL, legR: this.legR };
+    for (const [name, part] of Object.entries(SKIN_PARTES)) {
+      const holder = holders[name];
+      if (name !== 'torso') holder.position.set(...part.pivot);
+      const m = new THREE.Mesh(skinGeometry(part), mat);
+      m.castShadow = true;
+      holder.add(m);
+    }
   }
 
   _limb(x, y, r, len, topMat, endMat) {

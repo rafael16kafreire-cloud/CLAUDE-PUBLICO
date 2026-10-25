@@ -3,6 +3,7 @@
 // (ícones) de cada um, feitos com formas simples em SVG.
 // =============================================================
 import data from '../data/items/itens.json';
+import PLACEHOLDER_ICONS from 'virtual:icones-provisorios';
 
 export const ITEMS = Object.fromEntries(data.itens.map((it) => [it.id, it]));
 
@@ -136,6 +137,11 @@ const SHAPES = {
 const iconCache = {};
 export function itemIcon(id) {
   if (iconCache[id]) return iconCache[id];
+  // ícone provisório (PNG da pasta assets/icons/placeholder_ark), se tiver
+  if (PLACEHOLDER_ICONS[id]) {
+    iconCache[id] = `<img class="item-png" src="${PLACEHOLDER_ICONS[id]}" alt="" draggable="false">`;
+    return iconCache[id];
+  }
   const it = ITEMS[id];
   const ic = it?.icone ?? { forma: 'pedra', cor: '#888', cor2: '#555' };
   const draw = SHAPES[ic.forma] ?? SHAPES.pedra;

@@ -9,7 +9,7 @@
 // =============================================================
 import * as THREE from 'three';
 import { createNoise2D, fbm } from '../core/noise.js';
-import { clamp, lerp, smoothstep } from '../core/math.js';
+import { clamp, lerp, smoothstep, mulberry32 } from '../core/math.js';
 import { ALPES_N, ALPES_ALTURAS } from './textures/alpes.js';
 import { MONTANHA_N, MONTANHA_ALTURAS, MONTANHA_NEVE } from './textures/montanha.js';
 
@@ -337,6 +337,7 @@ export class IslandMap {
         this.heights[idx] = this.rawHeight(x, z, d);
       }
     }
+    this._carveStreams();
     const c = new THREE.Color();
     for (let j = 0; j < v; j++) {
       const z = j * this.cell - this.half;
@@ -356,6 +357,123 @@ export class IslandMap {
         this.colors[idx * 3 + 2] = c.b;
       }
     }
+  }
+
+  // ----------------------------------------------------------
+  // CÓRREGOS: nascem nos morros da mata e descem pelo caminho mais baixo
+  // até o pântano, o mar ou uma baixada (vira um laguinho). O leito é
+  // cavado no chão e a água desce em degraus (pequenas quedas).
+  // Cada trecho guarda o seu nível de água: this.streams[].pts[].level
+  _carveStreams() {
+    const C = this.L.corregos;
+    this.streams = [];
+    if (!C) return;
+    const rand = mulberry32(this.seed * 7 + 11);
+    const v = this.verts;
+    const H = this.heights;
+    const hAt = (x, z) => {
+      const i = clamp(Math.round((x + this.half) / this.cell), 0, v - 1);
+      const j = clamp(Math.round((z + this.half) / this.cell), 0, v - 1);
+      return H[j * v + i];
+    };
+    const halfW = C.largura_m / 2;
+    let tries = 0;
+    while (this.streams.length < C.quantidade && tries++ < C.quantidade * 120) {
+      // nascente: morro da mata (longe do pântano, da costa e da neve)
+      const x0 = (rand() - 0.5) * this.size * 0.8;
+      const z0 = C.z_min + rand() * (C.z_max - C.z_min);
+      const d0 = this.coastDistance(x0, z0);
+      if (d0 < 150 || this.snowRegion(x0, z0) > 0.05 || this.swampField(x0, z0) > -0.25) continue;
+      const h0 = hAt(x0, z0);
+      if (h0 < C.altura_nascente_m) continue;
+      // desce: passos de 5 m para onde o chão é mais baixo (com curvas)
+      const pts = [{ x: x0, z: z0 }];
+      let x = x0;
+      let z = z0;
+      let dir = rand() * Math.PI * 2;
+      let flat = 0;
+      let end = null;
+      for (let s = 0; s < C.comprimento_max_m / 5; s++) {
+        const here = hAt(x, z);
+        let best = null;
+        let bestH = Infinity;
+        for (let k = -3; k <= 3; k++) {
+          const a = dir + k * 0.35;
+          const nx = x + Math.cos(a) * 5;
+          const nz = z + Math.sin(a) * 5;
+          // prefere seguir reto (curvas suaves) e descer
+          const hh = hAt(nx, nz) + Math.abs(k) * 0.12 + (rand() - 0.5) * 0.15;
+          if (hh < bestH) {
+            bestH = hh;
+            best = { x: nx, z: nz, a };
+          }
+        }
+        if (!best) break;
+        flat = bestH > here - 0.02 ? flat + 1 : 0;
+        dir = best.a;
+        x = best.x;
+        z = best.z;
+        pts.push({ x, z });
+        if (this.coastDistance(x, z) < 25 || hAt(x, z) < 1) { end = 'mar'; break; }
+        if (this.swampField(x, z) > -0.05) { end = 'pantano'; break; }
+        if (flat > 8) { end = 'lago'; break; }
+      }
+      if (pts.length * 5 < C.comprimento_min_m) continue;
+      // longe dos outros córregos
+      if (this.streams.some((st) => st.pts.some((p) => Math.hypot(p.x - x0, p.z - z0) < 120))) continue;
+      // nível da água: sempre descendo (leito "esculpido")
+      let lvl = Infinity;
+      for (const p of pts) {
+        lvl = Math.min(lvl, hAt(p.x, p.z) - C.profundidade_m * 0.45);
+        p.level = Math.max(lvl, 0.15);
+      }
+      this.streams.push({ pts, halfW, end });
+    }
+    // cava o leito: perto da linha do córrego o chão desce até o fundo
+    for (const st of this.streams) {
+      const R = halfW + C.margem_m;
+      let minX = Infinity; let maxX = -Infinity; let minZ = Infinity; let maxZ = -Infinity;
+      for (const p of st.pts) {
+        minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+        minZ = Math.min(minZ, p.z); maxZ = Math.max(maxZ, p.z);
+      }
+      const i0 = Math.max(0, Math.floor((minX - R + this.half) / this.cell));
+      const i1 = Math.min(v - 1, Math.ceil((maxX + R + this.half) / this.cell));
+      const j0 = Math.max(0, Math.floor((minZ - R + this.half) / this.cell));
+      const j1 = Math.min(v - 1, Math.ceil((maxZ + R + this.half) / this.cell));
+      for (let j = j0; j <= j1; j++) {
+        const zz = j * this.cell - this.half;
+        for (let i = i0; i <= i1; i++) {
+          const xx = i * this.cell - this.half;
+          const q = this._nearestStreamPoint(st, xx, zz);
+          if (q.d > R) continue;
+          const bed = q.level - C.profundidade_m * 0.6;
+          const k = smoothstep(R, halfW * 0.6, q.d); // 1 no meio, 0 na margem
+          const idx = j * v + i;
+          H[idx] = Math.min(H[idx], lerp(H[idx], bed, k));
+        }
+      }
+    }
+  }
+
+  // Ponto do córrego mais perto de (x, z): distância e nível da água ali.
+  _nearestStreamPoint(st, x, z) {
+    let best = Infinity;
+    let level = 0;
+    const P = st.pts;
+    for (let k = 0; k < P.length - 1; k++) {
+      const a = P[k];
+      const b = P[k + 1];
+      const ex = b.x - a.x;
+      const ez = b.z - a.z;
+      const t = clamp(((x - a.x) * ex + (z - a.z) * ez) / (ex * ex + ez * ez || 1), 0, 1);
+      const d = Math.hypot(x - a.x - ex * t, z - a.z - ez * t);
+      if (d < best) {
+        best = d;
+        level = t < 0.5 ? a.level : b.level;
+      }
+    }
+    return { d: best, level };
   }
 
   _classify(x, z, h, coastD) {

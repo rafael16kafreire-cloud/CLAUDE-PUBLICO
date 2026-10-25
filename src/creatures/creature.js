@@ -19,7 +19,7 @@ import { shakeAt } from '../world/materials.js';
 // comprido) come folha de árvore; os outros, arbustos e plantas baixas.
 const FOOD_LOW = new Set(['arbusto', 'arbusto_mejo', 'arbusto_escura', 'arbusto_frutas', 'samambaia', 'samambaia_gigante',
   'bananeira', 'bananeira_vazia', 'junco', 'taboa', 'arbusto_neve', 'planta_praia', 'capim']);
-const FOOD_HIGH = new Set(['arvore_dossel', 'arvore_media', 'acai', 'sumauma', 'pinheiro_neve', 'pinheiro', 'arvore_folhosa', 'arvore_folhosa2']);
+const FOOD_HIGH = new Set(['arvore_agar', 'arvore_dossel', 'arvore_media', 'acai', 'sumauma', 'pinheiro_neve', 'pinheiro', 'arvore_folhosa', 'arvore_folhosa2']);
 
 export const CSTATE = {
   WANDER: 'vagar',

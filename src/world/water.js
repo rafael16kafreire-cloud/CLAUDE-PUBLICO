@@ -71,6 +71,83 @@ export class WaterSystem {
     scene.add(swampMesh);
 
     this.meshes = [seaMesh, swampMesh];
+    this._buildStreams(map, scene);
+  }
+
+  // ----- Córregos: água doce e clara, descendo em degraus -----
+  // Cada trecho (~5 m) é um "corpo d'água" com o seu nível; a malha é
+  // uma fita que segue o córrego.
+  _buildStreams(map, scene) {
+    this.streamSegs = [];
+    this.streamGrid = new Map();
+    const streams = map.streams ?? [];
+    if (!streams.length) return;
+    const mat = makeWaterMaterial({
+      shallow: '#5f9a86', deep: '#24504a', foam: '#e8efe6', sky: '#a9c6c0', sunDir: SUN_DIR, map, level: -1000,
+      opacityShallow: 0.45, opacityDeep: 0.85, deepAt: 1.2, waveHeight: 0, reflect: 0.5, foamAmount: 0.6,
+    });
+    const pos = [];
+    const idx = [];
+    for (const st of streams) {
+      const P = st.pts;
+      const w = st.halfW + 1.5; // a fita entra um pouco no barranco
+      for (let k = 0; k < P.length - 1; k++) {
+        const a = P[k];
+        const b = P[k + 1];
+        const body = new WaterBody({ id: 'corrego', name: 'Córrego', fresh: true, level: a.level });
+        body.wave = 0;
+        body.under = { color: '#3d6a5e', density: 0.18, rays: false };
+        body.seg = { ax: a.x, az: a.z, bx: b.x, bz: b.z, r: st.halfW };
+        this.streamSegs.push(body);
+        // grade de 20 m para achar o trecho rápido
+        for (const p of [a, b]) {
+          const key = `${Math.floor(p.x / 20)},${Math.floor(p.z / 20)}`;
+          if (!this.streamGrid.has(key)) this.streamGrid.set(key, []);
+          this.streamGrid.get(key).push(body);
+        }
+        // pedaço da fita (um pouco mais comprido para emendar nas curvas)
+        const dx = b.x - a.x;
+        const dz = b.z - a.z;
+        const l = Math.hypot(dx, dz) || 1;
+        const nx = -dz / l * w;
+        const nz = dx / l * w;
+        const ex = dx / l * 0.8;
+        const ez = dz / l * 0.8;
+        const y = a.level;
+        const i0 = pos.length / 3;
+        pos.push(a.x - ex + nx, y, a.z - ez + nz, a.x - ex - nx, y, a.z - ez - nz, b.x + ex + nx, y, b.z + ez + nz, b.x + ex - nx, y, b.z + ez - nz);
+        idx.push(i0, i0 + 2, i0 + 1, i0 + 1, i0 + 2, i0 + 3);
+      }
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    g.setIndex(idx);
+    g.computeVertexNormals();
+    const mesh = new THREE.Mesh(g, mat);
+    mesh.name = 'Corregos';
+    mesh.renderOrder = 1;
+    mat.side = THREE.DoubleSide;
+    scene.add(mesh);
+    this.meshes.push(mesh);
+  }
+
+  _streamAt(x, z, ground) {
+    const list = this.streamGrid?.get(`${Math.floor(x / 20)},${Math.floor(z / 20)}`);
+    if (!list) return null;
+    let best = null;
+    let bestD = Infinity;
+    for (const b of list) {
+      const s = b.seg;
+      const ex = s.bx - s.ax;
+      const ez = s.bz - s.az;
+      const t = Math.max(0, Math.min(1, ((x - s.ax) * ex + (z - s.az) * ez) / (ex * ex + ez * ez || 1)));
+      const d = Math.hypot(x - s.ax - ex * t, z - s.az - ez * t);
+      if (d < s.r + 1.5 && d < bestD && ground < b.level) {
+        best = b;
+        bestD = d;
+      }
+    }
+    return best;
   }
 
   // Corpo d'água no ponto (x, z), ou null se o chão está seco.
@@ -85,7 +162,7 @@ export class WaterSystem {
     for (const b of this.bodies) {
       if (b.contains(x, z) && ground < b.level) return b;
     }
-    return null;
+    return this._streamAt(x, z, ground);
   }
 
   update() {}

@@ -11,7 +11,28 @@ import { dirname } from 'node:path';
 
 const pkg = JSON.parse(await readFile('package.json', 'utf8'));
 
+// Ícones provisórios (assets/icons/placeholder_ark): só os .png que existirem
+// entram no jogo; sem eles, ficam os ícones desenhados pelo jogo.
+const placeholderIcons = {
+  name: 'icones-provisorios',
+  setup(build) {
+    build.onResolve({ filter: /^virtual:icones-provisorios$/ }, () => ({ path: 'icones', namespace: 'icones' }));
+    build.onLoad({ filter: /.*/, namespace: 'icones' }, async () => {
+      const dir = 'assets/icons/placeholder_ark';
+      const map = JSON.parse(await readFile(`${dir}/mapa.json`, 'utf8').catch(() => '{}'));
+      const out = {};
+      for (const [id, file] of Object.entries(map)) {
+        if (id.startsWith('_')) continue;
+        const data = await readFile(`${dir}/${file}`).catch(() => null);
+        if (data) out[id] = `data:image/png;base64,${data.toString('base64')}`;
+      }
+      return { contents: `export default ${JSON.stringify(out)};`, loader: 'js' };
+    });
+  },
+};
+
 const js = await esbuild.build({
+  plugins: [placeholderIcons],
   entryPoints: ['src/main.js'],
   bundle: true,
   minify: true,
