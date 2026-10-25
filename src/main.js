@@ -471,9 +471,8 @@ function boot(hotData = {}) {
     }
     const c = ctx.creatures.findMountable(p, p.position, 5);
     if (c) p.mount(c);
-    else {
-      const any = ctx.creatures.tamedBy(p).length;
-      events.emit(EV.MESSAGE, { text: any ? 'Chegue perto de um bicho domado que dá para montar.' : 'Você ainda não domou nenhum bicho. Desmaie um com soco/clava e dê comida.', kind: 'info' });
+    else if (ctx.creatures.tamedBy(p).length) {
+      events.emit(EV.MESSAGE, { text: 'Chegue perto de um bicho domado que dá para montar.', kind: 'info' });
     }
   }
 

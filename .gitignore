@@ -6,3 +6,4 @@ android/app/src/main/assets/
 
 # pacotes zip gerados para enviar ao usuário
 *.zip
+__pycache__/

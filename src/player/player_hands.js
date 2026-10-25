@@ -1,10 +1,12 @@
 // =============================================================
-// BRAÇO EM PRIMEIRA PESSOA (só o direito, musculoso)
+// BRAÇO EM PRIMEIRA PESSOA (só o direito, o mesmo do boneco/skin)
 // Preso à câmera: respiram parados, balançam ao andar,
 // dão soco, machadada/picaretada (de cima para baixo) e estocada
 // de lança. A ferramenta em uso aparece na mão direita.
 // =============================================================
 import * as THREE from 'three';
+import { SKIN_PARTES, SKIN_TEXTURA } from './skin_data.js';
+import { skinGeometry } from './player_model.js';
 
 const SKIN = new THREE.MeshLambertMaterial({ color: '#b5784e' });
 const WOOD = new THREE.MeshLambertMaterial({ color: '#7a5a3a' });
@@ -51,6 +53,31 @@ function muscularArm() {
   g.userData.fist = hand;
   g.scale.setScalar(1.25);
   g.position.set(0.2, -0.27, -0.27);
+  g.rotation.set(0.32, 0.2, 0.05);
+  return g;
+}
+
+// Braço direito do boneco (mesma skin do modelo em 3ª pessoa).
+// A peça da skin pende para baixo a partir do ombro; aqui ela é
+// deitada para apontar para frente (-z) e a mão fica onde as
+// ferramentas encaixam.
+function skinArm() {
+  const g = new THREE.Group();
+  const tex = new THREE.TextureLoader().load(SKIN_TEXTURA);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const arm = new THREE.Mesh(skinGeometry(SKIN_PARTES.armR), new THREE.MeshLambertMaterial({ map: tex }));
+  const s = 0.42;
+  const len = 0.86 * s;
+  arm.scale.setScalar(s);
+  arm.rotation.set(Math.PI / 2, Math.PI / 2, 0); // costas da mão para cima
+  arm.position.set(-0.07 * s, 0, len - 0.3);
+  g.add(arm);
+  const hand = new THREE.Group();
+  hand.position.z = -0.26;
+  g.add(hand);
+  g.userData.fist = hand;
+  g.scale.setScalar(1.25);
+  g.position.set(0.22, -0.27, -0.27);
   g.rotation.set(0.32, 0.2, 0.05);
   return g;
 }
@@ -112,7 +139,7 @@ export class PlayerHands {
   constructor(camera) {
     this.root = new THREE.Group();
     // Só o braço direito aparece (o esquerdo fica fora da tela).
-    this.right = muscularArm();
+    this.right = SKIN_PARTES?.armR ? skinArm() : muscularArm();
     this.left = new THREE.Group();
     this.root.add(this.right);
     this.tools = {};

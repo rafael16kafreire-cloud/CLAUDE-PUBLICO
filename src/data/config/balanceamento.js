@@ -156,7 +156,7 @@ export default {
     soco_alcance_m: 2.4,       // distância do soco
     soco_intervalo_seg: 0.36,  // tempo entre socos (360 ms)
     soco_stamina: 4,           // stamina gasta por soco
-    dano_soco_arvore_gigante: 4, // socar uma sumaúma machuca a mão
+    soco_arvore_dura_vida: 0.1,  // socar árvore dura tira 10% da vida máxima
   },
 
   // ---------------------------------------------------------

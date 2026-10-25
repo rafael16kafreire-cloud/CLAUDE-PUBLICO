@@ -119,6 +119,14 @@ for (let k = 0; k < n * 3; k++) qnor[k] = Math.round(nor[k] * 127);
 const b64 = (arr) => Buffer.from(arr.buffer, arr.byteOffset, arr.byteLength).toString('base64');
 const dataUri = (p) => (p && p !== 'null' ? `data:image/${p.endsWith('.png') ? 'png' : 'jpeg'};base64,${readFileSync(p).toString('base64')}` : null);
 const info = raw.info ?? {};
+// animações do próprio modelo: giros em Int16 (x32767), posições em Float32
+const clipes = raw.clipes
+  ? Object.fromEntries(Object.entries(raw.clipes).map(([role, c]) => [role, {
+    fps: c.fps, quadros: c.quadros, loop: c.loop, passo: c.passo ?? null, ciclos: c.ciclos ?? null,
+    giro: Object.fromEntries(Object.entries(c.giro).map(([b, q]) => [b, b64(Int16Array.from(q.flat().map((v) => Math.round(v * 32767))))])),
+    pos: Object.fromEntries(Object.entries(c.pos).map(([b, p]) => [b, b64(Float32Array.from(p.flat()))])),
+  }]))
+  : null;
 const mats = groupTex.map(([map, normalMap, alpha]) => ({ map: dataUri(map), normalMap: dataUri(normalMap), alpha: alpha === 'true' }));
 const out = `// =============================================================
 // MODELO IMPORTADO: ${info.title ?? 'modelo'} (gerado por tools/models/bichos.sh)
@@ -144,6 +152,7 @@ export default {
   brilho: ${Number(brilho)},
   groups: ${JSON.stringify(groups)},
   materiais: ${JSON.stringify(mats)},
+  clipes: ${JSON.stringify(clipes)},
 };
 `;
 writeFileSync(outPath, out);

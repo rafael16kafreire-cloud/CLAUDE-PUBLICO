@@ -98,8 +98,9 @@ export class PlayerActions {
     // árvore gigante: só com machado; com a mão (ou outra coisa) machuca
     if (res.so_machado && mode !== 'machado' && mode !== 'colher') {
       if (mode === 'mao') {
-        this.player.stats.damage(BALANCE.combate.dano_soco_arvore_gigante ?? 4, 'arvore');
-        events.emit(EV.PLAYER_HURT, { amount: 4, source: 'árvore' });
+        const hurt = this.player.stats.max.health * BALANCE.combate.soco_arvore_dura_vida;
+        this.player.stats.damage(hurt, 'arvore');
+        events.emit(EV.PLAYER_HURT, { amount: hurt, source: 'árvore' });
       }
       events.emit(EV.MESSAGE, { text: `Ai! ${res.nome} é dura demais: precisa de um machado.`, kind: 'warn' });
       const pp = this.player.position;

@@ -381,6 +381,7 @@ export function createSkinnedMesh(model, material) {
     }
   });
   const mesh = new THREE.SkinnedMesh(model.geometry, material);
+  mesh.userData.clipes = model.clipes ?? null;
   const root = bones[model.bones.findIndex((d) => !d.parent)];
   mesh.add(root);
   mesh.updateMatrixWorld(true);

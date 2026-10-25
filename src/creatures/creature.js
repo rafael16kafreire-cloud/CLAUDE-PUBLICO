@@ -9,6 +9,7 @@
 //   medroso    – fogem quando alguém chega perto
 // =============================================================
 import * as THREE from 'three';
+import { ClipPlayer } from './clip_player.js';
 import { angleDelta, clamp } from '../core/math.js';
 import { BALANCE } from '../core/balance.js';
 import { sound } from '../audio/audio.js';
@@ -43,6 +44,7 @@ export class Creature {
     this.species = species;
     this.spec = spec;
     this.mesh = mesh;
+    this.clipPlayer = mesh.userData.clipes ? new ClipPlayer(mesh.userData.clipes, bones) : null;
     this.bones = bones;
     this.world = world;
     this.manager = manager;
@@ -995,6 +997,43 @@ export class Creature {
   // Animação (ossos)
   // ---------------------------------------------------------
   _animate(dt, ctx, yawVel) {
+    const cp = this.clipPlayer;
+    if (!cp) {
+      this._animateCode(dt, ctx, yawVel);
+      return;
+    }
+    // bicho com animação do próprio modelo: escolhe o clipe pelo que ele
+    // está fazendo; o que não tem clipe fica com a animação por código
+    const down = this.state === CSTATE.DEAD || this.state === CSTATE.KO;
+    if (!down) {
+      if (this.state === CSTATE.CHASE && this._clipState !== CSTATE.CHASE) cp.play('rugido');
+      if (this.attackAnim > 0.95 && !this._clipAtk) {
+        cp.play('ataque');
+        this._clipAtk = true;
+      } else if (this.attackAnim < 0.5) this._clipAtk = false;
+    } else cp.once = null;
+    this._clipState = this.state;
+    let want = null;
+    let rate = 1;
+    const inWater = this.swims && !this.aquatic && !!this.world.waterAt(this.pos.x, this.pos.z);
+    if (!down && !inWater) {
+      if (this.flies && !this.landed) {
+        want = 'voar';
+        rate = this.climb > 0.5 || this.state === CSTATE.FLEE ? 1.4 : 1;
+      } else if (this.speed > 0.15 && cp.has('andar')) {
+        // o clipe anda no ritmo do passo (pé não escorrega)
+        const c = cp.clips.andar;
+        want = 'andar';
+        rate = c.stride ? Math.min(3, (this.speed / (c.stride * this.scale)) * (c.duration / c.cycles)) : 1;
+      } else if (this.speed <= 0.15) want = 'parado';
+    }
+    const active = cp.update(dt, want, rate);
+    if (active) cp.reset();
+    this._animateCode(dt, ctx, yawVel);
+    if (active) cp.apply();
+  }
+
+  _animateCode(dt, ctx, yawVel) {
     const b = this.bones;
     const spec = this.spec;
     const t = this.time;

@@ -29,7 +29,7 @@ function bytes(b64) {
   return out.buffer;
 }
 
-function skinGeometry(part) {
+export function skinGeometry(part) {
   const q = new Uint16Array(bytes(part.pos));
   const uq = new Uint16Array(bytes(part.uv));
   const [x0, y0, z0, x1, y1, z1] = part.box;

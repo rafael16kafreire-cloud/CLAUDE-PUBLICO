@@ -7,6 +7,7 @@
 // =============================================================
 import * as THREE from 'three';
 import { hdTextures } from '../core/settings.js';
+import { parseClips } from './clip_player.js';
 import espinossauro from './imported/espinossauro.js';
 import trex from './imported/trex.js';
 import braquiossauro from './imported/braquiossauro.js';
@@ -20,10 +21,17 @@ import quetzalcoatlus from './imported/quetzalcoatlus.js';
 import mamute from './imported/mamute.js';
 import argentavis from './imported/argentavis.js';
 import reidodo from './imported/reidodo.js';
+import sauropelta from './imported/sauropelta.js';
+import argentinossauro from './imported/argentinossauro.js';
+import mosassauro from './imported/mosassauro.js';
+import pterodactilo from './imported/pterodactilo.js';
+import carnotauro from './imported/carnotauro.js';
 
 export const IMPORTED = {
   espinossauro, trex, braquiossauro, titanoboa, deinosuchus, estegossauro,
   anquilossauro, parassauro, raptor, quetzalcoatlus, mamute, argentavis, reidodo,
+  // com animação do próprio modelo
+  sauropelta, argentinossauro, mosassauro, pterodactilo, carnotauro,
 };
 
 function bytes(b64) {
@@ -83,7 +91,7 @@ export function buildImportedModel(d) {
       return mat;
     });
     const bones = d.bones.map((b) => ({ name: b.name, parent: b.parent, pos: new THREE.Vector3(...b.pos) }));
-    return { geometry: g, bones, material, imported: true };
+    return { geometry: g, bones, material, imported: true, clipes: parseClips(d.clipes) };
   }
 
   // textura cinza (escamas e relevo) × cor pintada por região

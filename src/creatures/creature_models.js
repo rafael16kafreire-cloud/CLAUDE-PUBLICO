@@ -765,3 +765,25 @@ export const MODELS = {
     ],
   },
 };
+
+// Bichos com modelo animado (o formato aqui só dá o tamanho do molde e
+// os nomes dos ossos; a forma vem do modelo importado).
+MODELS.sauropelta = { ...MODELS.anquilossauro };
+MODELS.argentinossauro = { ...MODELS.braquiossauro };
+
+// -------------------------------------------------- Mosassauro (mar)
+MODELS.mosassauro = {
+  body: 'fish',
+  root: 'chest',
+  colors: { top: '#3c4a52', belly: '#c8c4b4', pattern: '#24303a' },
+  skin: 'escamas', scalesPerMeter: 6, pattern: { type: 'mosqueado', freq: 3, strength: 0.4 },
+  spine: [
+    [0, 0, 6.2, 0.12, 1, 'tail3'],
+    [0, 0, 3.8, 0.45, 1.2, 'tail2'],
+    [0, 0, 1.4, 0.85, 1.25, 'tail1'],
+    [0, 0, -1.2, 1.0, 1.25, 'chest'],
+    [0, 0, -3.6, 0.6, 1.15, 'head'],
+    [0, 0, -5.8, 0.2, 1, 'head'],
+  ],
+  extras: [],
+};

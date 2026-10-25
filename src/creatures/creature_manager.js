@@ -161,7 +161,8 @@ export class CreatureManager {
       const z = center.z + Math.cos(a) * r;
       if (!this.world.map.inside(x, z, 40)) continue;
       const biome = this.world.biomeKeyAt(x, z);
-      if (biome === 'mar') continue;
+      // no mar só nasce bicho do mar (mosassauro)
+      if (biome === 'mar' && ambient) continue;
       const w = this.world.waterAt(x, z);
       const depth = w ? w.level - this.world.heightAt(x, z) : 0;
       // Dificuldade: zonas seguras, começo tranquilo, limite de carnívoros
