@@ -76,14 +76,25 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
 // PC
 // ---------------------------------------------------------------
 {
-  const { context, page, errors } = await openGame({ viewport: { width: 1280, height: 720 } }, 'PC');
-  await frames(page, 20);
-  // (sem foto da tela inicial: no navegador de teste sem placa de vídeo a
-  // foto durante o voo da câmera estoura a memória e derruba a página)
-
-  await page.click('#btn-play');
-  await page.mouse.move(640, 360); // cliques no meio da tela
-  await frames(page, 30);
+  // O navegador de teste (sem placa de vídeo) às vezes cai ao começar o
+  // jogo; nesse caso abre de novo uma vez (o jogo em si não muda).
+  let context;
+  let page;
+  let errors;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    ({ context, page, errors } = await openGame({ viewport: { width: 1280, height: 720 } }, 'PC'));
+    try {
+      await frames(page, 20);
+      await page.click('#btn-play');
+      await page.mouse.move(640, 360); // cliques no meio da tela
+      await frames(page, 30);
+      break;
+    } catch (e) {
+      if (attempt === 1) throw e;
+      console.log(`   (navegador de teste caiu ao iniciar: ${e.message.split('\n')[0]} – abrindo de novo)`);
+      await context.close().catch(() => {});
+    }
+  }
   const state = await page.evaluate(() => window.__ilha.game.state);
   check('PC: botão Jogar inicia o jogo', state === 'playing', state);
 
