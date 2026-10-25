@@ -24,7 +24,9 @@ function check(name, ok, detail = '') {
 }
 
 const browser = await chromium.launch({
-  args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'],
+  // --disable-gpu-compositing: sem ela o navegador de teste (sem placa de
+  // vídeo) acumula memória a cada quadro até cair
+  args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--disable-gpu-compositing'],
 });
 
 async function openGame(contextOptions, label) {
@@ -1047,7 +1049,9 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   const profile = await mkdtemp(join(tmpdir(), 'ilha-perfil-'));
   const openProfile = async () => {
     const pc = await chromium.launchPersistentContext(profile, {
-      args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'],
+      // --disable-gpu-compositing: sem ela o navegador de teste (sem placa de
+  // vídeo) acumula memória a cada quadro até cair
+  args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--disable-gpu-compositing'],
       viewport: { width: 1280, height: 720 },
     });
     const pg = pc.pages()[0] ?? await pc.newPage();
