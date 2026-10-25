@@ -813,13 +813,13 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   await frames(page, 3);
   await page.keyboard.press('KeyR');
   await gameWait(page, 800);
-  const early = await page.evaluate(() => document.querySelector('.inspect-card').hidden);
+  const inspEarly = await page.evaluate(() => document.querySelector('.inspect-card').hidden);
   await gameWait(page, 2000);
   const card = await page.evaluate(() => {
     const el = document.querySelector('.inspect-card');
     return { shown: !el.hidden, text: el.innerText.replace(/\n+/g, ' | '), vida: window.__insp.stats.vida };
   });
-  check('Lupa: leva 2 s e mostra a ficha do bicho', early && card.shown && card.text.includes('Triceratops') && card.text.includes('km/h') && card.text.includes('kg'), JSON.stringify(card));
+  check('Lupa: leva 2 s e mostra a ficha do bicho', inspEarly && card.shown && card.text.includes('Triceratops') && card.text.includes('km/h') && card.text.includes('kg'), JSON.stringify(card));
   await page.keyboard.press('KeyR');
   await page.evaluate(() => window.__ilha.ctx.creatures.clear());
 
