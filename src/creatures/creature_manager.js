@@ -16,6 +16,8 @@ import { MODELS } from './creature_models.js';
 import { buildSpeciesModel, createSkinnedMesh } from './creature_builder.js';
 import { makeCreatureMaterial } from './creature_material.js';
 import { IMPORTED, buildImportedModel } from './imported_model.js';
+import { ESPINO_COR_HD, ESPINO_RELEVO_HD } from '../world/textures/hd.js';
+import { hdTextures } from '../core/settings.js';
 import { Creature, CSTATE } from './creature.js';
 import { sound } from '../audio/audio.js';
 import { settings } from '../core/settings.js';
@@ -56,7 +58,12 @@ export class CreatureManager {
   _model(id) {
     // espécies com modelo importado (ex.: espinossauro) usam ele;
     // as outras são feitas por código
-    if (!this.models[id]) this.models[id] = IMPORTED[id] ? buildImportedModel(IMPORTED[id]) : buildSpeciesModel(MODELS[id]);
+    if (!this.models[id]) {
+      let d = IMPORTED[id];
+      // qualidade alta: textura e relevo em 2048 px
+      if (d && id === 'espinossauro' && hdTextures()) d = { ...d, map: ESPINO_COR_HD, normalMap: ESPINO_RELEVO_HD };
+      this.models[id] = d ? buildImportedModel(d) : buildSpeciesModel(MODELS[id]);
+    }
     return this.models[id];
   }
 

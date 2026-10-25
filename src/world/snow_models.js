@@ -8,6 +8,11 @@
 import * as THREE from 'three';
 import { ARVORES_NEVE, PEDRA_NEVE, ROCHA_NEVADA } from './textures/neve_modelos.js';
 import { addWind } from './materials.js';
+import { PEDRA_COR_HD, PEDRA_RELEVO_HD, ARVORE_MORTA_HD, ARVORE_SECA_HD } from './textures/hd.js';
+import { hdTextures } from '../core/settings.js';
+
+// texturas maiores na qualidade "alta"
+const TREE_HD = { arvore_morta: ARVORE_MORTA_HD, arvore_seca: ARVORE_SECA_HD };
 
 function bytes(b64) {
   const bin = atob(b64);
@@ -63,7 +68,7 @@ export function snowTreeGeometry(key, height) {
 
 export function snowTreeMaterial(key) {
   const mat = new THREE.MeshLambertMaterial({
-    map: texture(ARVORES_NEVE[key].tex),
+    map: texture((hdTextures() && TREE_HD[key]) || ARVORES_NEVE[key].tex),
     vertexColors: true,
     alphaTest: 0.45,
     side: THREE.DoubleSide,
@@ -78,7 +83,11 @@ export function snowRockGeometry() {
 }
 
 export function snowRockMaterial() {
-  return addWind(new THREE.MeshLambertMaterial({ map: texture(PEDRA_NEVE.tex), vertexColors: true }), 0, 0);
+  const hd = hdTextures();
+  const mat = new THREE.MeshLambertMaterial({ map: texture(hd ? PEDRA_COR_HD : PEDRA_NEVE.tex), vertexColors: true });
+  // relevo da pedra (normal map do arquivo) na qualidade alta
+  if (hd) mat.normalMap = texture(PEDRA_RELEVO_HD, false);
+  return addWind(mat, 0, 0);
 }
 
 // Textura de rocha nevada para os paredões das montanhas.

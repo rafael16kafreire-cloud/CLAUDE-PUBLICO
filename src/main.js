@@ -130,6 +130,11 @@ function boot(hotData = {}) {
     ctx.camCtl.setMode(settings.get('cameraMode'));
   }
   events.on(EV.SETTINGS_CHANGED, applySettings);
+  // texturas HD (qualidade alta) só trocam ao abrir o jogo de novo
+  events.on(EV.SETTINGS_CHANGED, ({ key, value }) => {
+    if (key !== 'quality' || !ctx) return;
+    events.emit(EV.MESSAGE, { text: `Texturas em alta resolução ${value === 'alta' ? 'ligam' : 'desligam'} quando você abrir o jogo de novo.`, kind: 'info' });
+  });
 
   // ---------- Criar o mundo (depois que a tela de carregando aparece) ----------
   function buildGame() {

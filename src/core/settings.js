@@ -92,3 +92,9 @@ class Settings {
 }
 
 export const settings = new Settings();
+
+// Texturas em alta resolução (2048 px) só na qualidade "alta": gastam
+// bem mais memória de vídeo. Vale a partir do próximo carregamento.
+export function hdTextures() {
+  return settings.get('quality') === 'alta';
+}

@@ -12,6 +12,8 @@ import * as THREE from 'three';
 import { TERRA_COR, TERRA_RELEVO, TERRA_MEDIA } from './textures/terra.js';
 import { NEVE_COR, NEVE_RELEVO } from './textures/neve.js';
 import { ROCHA_NEVADA } from './textures/neve_modelos.js';
+import { TERRA_COR_HD, TERRA_RELEVO_HD, NEVE_COR_HD, NEVE_RELEVO_HD } from './textures/hd.js';
+import { hdTextures } from '../core/settings.js';
 
 // Tempo compartilhado pelos materiais animados.
 export const sharedTime = { value: 0 };
@@ -105,12 +107,13 @@ export function makeTerrainMaterial() {
   const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
   // Textura de terra (arquivo Soft Dirt): cor + relevo. A cor do bioma
   // continua mandando no brilho/tom; a terra dá os grãos, raízes e torrões.
-  const dirtMap = loadTiled(TERRA_COR, true);
-  const dirtNormal = loadTiled(TERRA_RELEVO, false);
+  const hd = hdTextures();
+  const dirtMap = loadTiled(hd ? TERRA_COR_HD : TERRA_COR, true);
+  const dirtNormal = loadTiled(hd ? TERRA_RELEVO_HD : TERRA_RELEVO, false);
   const avg = new THREE.Color().setRGB(...TERRA_MEDIA, THREE.SRGBColorSpace);
   // neve (arquivo Snow Material) para a Lapônia
-  const snowMap = loadTiled(NEVE_COR, true);
-  const snowNormal = loadTiled(NEVE_RELEVO, false);
+  const snowMap = loadTiled(hd ? NEVE_COR_HD : NEVE_COR, true);
+  const snowNormal = loadTiled(hd ? NEVE_RELEVO_HD : NEVE_RELEVO, false);
   // rocha nevada (arquivo Snowy Rock PBR Material) nos paredões
   const rockMap = loadTiled(ROCHA_NEVADA, true);
   rockMap.wrapS = THREE.MirroredRepeatWrapping;
