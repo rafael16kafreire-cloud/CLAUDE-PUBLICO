@@ -952,6 +952,9 @@ body.underwater-swamp .uw-overlay {
 @keyframes uw-wave { 0%, 100% { transform: scale(1.02) translateY(0); } 50% { transform: scale(1.05) translateY(-1%); } }
 
 .credits { order: 99; margin: 4px 0 0; font-size: 11px; color: var(--bone-dim); opacity: 0.8; max-width: 44ch; }
+.credits summary { cursor: pointer; }
+.credits ul { margin: 4px 0 0; padding-left: 16px; max-height: 30vh; overflow-y: auto; }
+.credits li { margin: 2px 0; }
 
 /* ---------------- Inspecionar bicho (lupa) ----------------
    Fundo azul-marinho, ícones e textos brancos, no canto esquerdo

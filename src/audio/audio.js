@@ -43,6 +43,9 @@ const VOICES = {
   piranha: { kind: 'nenhum', f: 0, d: 0 },
   pterodactilo: { kind: 'grito', f: 700, d: 0.5 },
   quetzalcoatlus: { kind: 'grito', f: 300, d: 0.9 },
+  mamute: { kind: 'buzina', f: 120, d: 1.4 },
+  argentavis: { kind: 'grito', f: 520, d: 0.7 },
+  reidodo: { kind: 'rugido', f: 140, d: 1.2 },
 };
 
 class Sound {

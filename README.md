@@ -4,6 +4,21 @@ Jogo 3D de sobrevivência com dinossauros. Sozinho (offline) ou em **co-op onlin
 Roda no celular (Android como app ou no navegador) e no PC.
 Visual estilizado, feito para ser leve.
 
+**Versão 0.10.0** – bichos com modelos 3D de verdade
+- **12 modelos enviados pelo jogador** (Sketchfab, CC-BY 4.0): T-Rex, braquiossauro,
+  titanoboa, deinosuchus, estegossauro, anquilossauro, parassauro, raptor e
+  quetzalcoatlus trocaram o modelo feito por código pelo modelo com textura.
+- **Bichos novos:** **Mamute-lanoso** (Lapônia, em manada; revida; pode domar e montar),
+  **Argentavis** (ave gigante de ~7 m de asa que voa e pousa) e **Rei-dodô** (predador da
+  floresta com cabeça de dodô).
+- **Conversor novo** (`tools/models/bichos.sh` + `bichos.json`): os modelos não trazem
+  nomes nos ossos, então o esqueleto do jogo é encaixado na forma de cada bicho (patas
+  achadas onde tocam o chão, corpo/cauda/pescoço ao longo do comprimento, asas pela
+  envergadura). Funciona com e sem esqueleto no arquivo.
+- Créditos dos modelos na tela inicial (“Créditos dos modelos 3D”).
+- O *Raptor Blue* não entrou: a licença dele (CC-BY-NC-ND) não deixa modificar.
+- Jogo inteiro ≈ 22 MB.
+
 **Versão 0.9.2** – texturas em alta resolução
 - Na qualidade gráfica **alta**: terra 1024 px, neve 2048 px (+ relevo), pedra nevada
   2048 px com relevo (normal map), árvores da neve e espinossauro em 2048 px com relevo.
@@ -106,6 +121,17 @@ do bicho (cabeça, corpo ou cauda), não só o meio.
 relevo do modelo original, cor realista pintada por região, animado pelo jogo).
 
 ## Trocar o modelo de um animal
+
+Jeito novo (qualquer modelo `.usdz`, com ou sem esqueleto):
+
+1. Ponha os `.usdz` numa pasta e acrescente o bicho em `tools/models/bichos.json`
+   (parte do nome do arquivo, como virar o modelo, quantos triângulos).
+2. `PY=python_com_usd sh tools/models/bichos.sh pasta_dos_usdz pasta_temporaria espécie`
+   (precisa de `pip install usd-core numpy pillow`). Gera `src/creatures/imported/<id>.js`.
+3. Em `src/creatures/imported_model.js` acrescente a espécie em `IMPORTED`.
+   A espécie precisa de um molde em `creature_models.js` (é de lá que vêm os ossos).
+
+Jeito antigo (só o espinossauro, ossos ligados pelo nome):
 
 1. Coloque o arquivo `.usdz` (com esqueleto) numa pasta.
 2. `python tools/models/usd_extrair.py modelo.usdz cru.json 15` (15 = comprimento em metros;
@@ -284,5 +310,20 @@ Modelo 3D do espinossauro: **"Spinosaurus"** por **TheAquaticSpinosaurid**
 (https://sketchfab.com/3d-models/spinosaurus-9d206a9686d549ca9b99a432089091ca),
 licença **CC-BY 4.0** (https://creativecommons.org/licenses/by/4.0/). Mudanças: menos
 triângulos, esqueleto ligado às animações do jogo e cores pintadas por região.
+Outros modelos 3D (todos **CC-BY 4.0**, adaptados: menos triângulos e esqueleto do jogo
+encaixado; textura reduzida):
+- T-Rex: **"trex Jw"** por **kenchoo** – https://sketchfab.com/3d-models/trex-jw-888bc193e6cd429491f8e7147a13a85d
+- Braquiossauro: **"JWA Brachiosaurus"** por **TheAquaticSpinosaurid** – https://sketchfab.com/3d-models/jwa-brachiosaurus-67284b51b5ca42b387d176fe2a172d51
+- Titanoboa: **"Titanoboa"** por **TheAquaticSpinosaurid** – https://sketchfab.com/3d-models/titanoboa-bdf010862e92443d8af8f1054e9b9d31
+- Deinosuchus: **"Deinosuchus the isle ewrima"** por **Rexeoooo** – https://sketchfab.com/3d-models/deinosuchus-the-isle-ewrima-284f77a0761a484b80f0ed5a27f5bbae
+- Estegossauro: **"Stegosaurus"** por **TheAquaticSpinosaurid** – https://sketchfab.com/3d-models/stegosaurus-1ab4e8b290b94af79d0f43d68d1212b8
+- Anquilossauro: **"Ankylosaurus"** por **TheAquaticSpinosaurid** – https://sketchfab.com/3d-models/ankylosaurus-f979ce18535740efb2f791b2c45cd109
+- Parassauro: **"Parasaurolophus Walkeri"** por **Allosaurus28YT** – https://sketchfab.com/3d-models/parasaurolophus-walkeri-3b5c58508f5e4f57a32ed45d1a8ccb2c
+- Raptor: **"Reaper Raptor"** por **Pedro B. Goulart** – https://sketchfab.com/3d-models/reaper-raptor-c4628269b9fc40bca7d26f4f583a2bb7
+- Quetzalcoatlus: **"JWD Quetzalcoatlus"** por **TheAquaticSpinosaurid** – https://sketchfab.com/3d-models/jwd-quetzalcoatlus-be268e2da9d044b698882c6bdb194895
+- Mamute-lanoso: **"ARK woolly mammoth"** por **toro ardido modelos 3d** – https://sketchfab.com/3d-models/ark-woolly-mammoth-0ba92083ca334c9fabee4d14da54c9d1
+- Argentavis: **"Argentavis"** por **TheAquaticSpinosaurid** – https://sketchfab.com/3d-models/argentavis-d8a7ba6330b14deda408f34c78fde9db
+- Rei-dodô: **"Dodorex"** por **TheAquaticSpinosaurid** – https://sketchfab.com/3d-models/dodorex-e2cdf20b7ef448b7a8c41b3d45dec834
+
 Motor 3D: [three.js](https://threejs.org) (licença MIT).
 Fontes: Lilita One e Barlow Semi Condensed (SIL Open Font License, em `src/ui/fonts`).

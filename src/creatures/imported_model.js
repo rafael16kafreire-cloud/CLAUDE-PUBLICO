@@ -7,8 +7,23 @@
 // =============================================================
 import * as THREE from 'three';
 import espinossauro from './imported/espinossauro.js';
+import trex from './imported/trex.js';
+import braquiossauro from './imported/braquiossauro.js';
+import titanoboa from './imported/titanoboa.js';
+import deinosuchus from './imported/deinosuchus.js';
+import estegossauro from './imported/estegossauro.js';
+import anquilossauro from './imported/anquilossauro.js';
+import parassauro from './imported/parassauro.js';
+import raptor from './imported/raptor.js';
+import quetzalcoatlus from './imported/quetzalcoatlus.js';
+import mamute from './imported/mamute.js';
+import argentavis from './imported/argentavis.js';
+import reidodo from './imported/reidodo.js';
 
-export const IMPORTED = { espinossauro };
+export const IMPORTED = {
+  espinossauro, trex, braquiossauro, titanoboa, deinosuchus, estegossauro,
+  anquilossauro, parassauro, raptor, quetzalcoatlus, mamute, argentavis, reidodo,
+};
 
 function bytes(b64) {
   const bin = atob(b64);
@@ -40,13 +55,32 @@ export function buildImportedModel(d) {
   g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   g.setAttribute('normal', new THREE.BufferAttribute(view(d.normal, Int8Array), 3, true));
   g.setAttribute('uv', new THREE.BufferAttribute(view(d.uv, Uint16Array), 2, true));
-  g.setAttribute('color', new THREE.BufferAttribute(bytes(d.color), 3, true));
+  if (d.color) g.setAttribute('color', new THREE.BufferAttribute(bytes(d.color), 3, true));
   g.setAttribute('skinIndex', new THREE.BufferAttribute(bytes(d.skinIndex), 4));
   g.setAttribute('skinWeight', new THREE.BufferAttribute(bytes(d.skinWeight), 4, true));
   g.setIndex(new THREE.BufferAttribute(view(d.index, d.index32 ? Uint32Array : Uint16Array), 1));
   g.computeBoundingBox();
   g.computeBoundingSphere();
   g.boundingSphere.radius *= 1.3;
+
+  // modelos com textura colorida (um material por textura)
+  if (d.materiais) {
+    for (const [start, count, m] of d.groups) g.addGroup(start, count, m);
+    const material = d.materiais.map((m) => {
+      const mat = new THREE.MeshLambertMaterial({ map: texture(m.map, true) });
+      mat.color.setScalar(d.brilho ?? 1); // textura muito escura: clareia
+      if (m.normalMap) mat.normalMap = texture(m.normalMap, false);
+      // modelo com faces de um lado só pintado dos dois lados
+      if (d.doisLados) mat.side = THREE.DoubleSide;
+      if (m.alpha) {
+        mat.alphaTest = 0.45;
+        mat.side = THREE.DoubleSide;
+      }
+      return mat;
+    });
+    const bones = d.bones.map((b) => ({ name: b.name, parent: b.parent, pos: new THREE.Vector3(...b.pos) }));
+    return { geometry: g, bones, material, imported: true };
+  }
 
   // textura cinza (escamas e relevo) × cor pintada por região
   const material = new THREE.MeshLambertMaterial({

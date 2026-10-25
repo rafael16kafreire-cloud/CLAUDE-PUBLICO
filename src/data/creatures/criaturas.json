@@ -981,6 +981,158 @@
    "ambiente": true,
    "carga": 0,
    "atributos": { "vida": [17,23], "forca": [85,125], "peso": [4,6], "stamina": [70,100], "velocidade": [90,112], "torpor": [45,60] }
+  },
+  {
+   "id": "mamute",
+   "nome": "Mamute-lanoso",
+   "comprimento_m": [
+    5.5,
+    6.5
+   ],
+   "dieta": "herbivoro",
+   "temperamento": "passivo",
+   "revida": true,
+   "vida": 1300,
+   "dano": 45,
+   "vel_andar": 0.9,
+   "vel_correr": 3.3,
+   "tamanho": 1,
+   "raio": 1.7,
+   "altura": 3.6,
+   "biomas": [
+    "neve"
+   ],
+   "peso_spawn": 2.2,
+   "grupo": [
+    2,
+    4
+   ],
+   "xp": 90,
+   "loot": {
+    "carne_crua": [
+     12,
+     18
+    ],
+    "couro": [
+     12,
+     18
+    ],
+    "ossos": [
+     3,
+     6
+    ]
+   },
+   "pode_domar": true,
+   "comida_preferida": "baga_mejo",
+   "alcance_ataque": 2.8,
+   "intervalo_ataque": 1.6,
+   "pode_montar": true,
+   "carga": 700,
+   "atributos": { "vida": [1100,1500], "forca": [85,125], "peso": [600,840], "stamina": [300,420], "velocidade": [90,112], "torpor": [700,980] }
+  },
+  {
+   "id": "argentavis",
+   "nome": "Argentavis",
+   "envergadura_m": [
+    6.5,
+    7.5
+   ],
+   "pousa": true,
+   "vel_chao": [
+    1.2,
+    4
+   ],
+   "dieta": "carnivoro",
+   "temperamento": "agressivo",
+   "vida": 600,
+   "dano": 24,
+   "vel_andar": 7,
+   "vel_correr": 11,
+   "tamanho": 1,
+   "raio": 1.2,
+   "altura": 1.8,
+   "biomas": [
+    "selva",
+    "praia",
+    "neve"
+   ],
+   "peso_spawn": 0.8,
+   "grupo": [
+    1,
+    1
+   ],
+   "xp": 70,
+   "loot": {
+    "carne_crua": [
+     5,
+     9
+    ],
+    "couro": [
+     3,
+     6
+    ]
+   },
+   "pode_domar": true,
+   "comida_preferida": "carne_crua",
+   "voa": true,
+   "altura_voo": [
+    10,
+    24
+   ],
+   "alcance_agro": 14,
+   "alcance_ataque": 2.4,
+   "intervalo_ataque": 1.6,
+   "pode_montar": true,
+   "carga": 300,
+   "atributos": { "vida": [510,690], "forca": [85,125], "peso": [255,360], "stamina": [300,420], "velocidade": [90,112], "torpor": [400,560] }
+  },
+  {
+   "id": "reidodo",
+   "nome": "Rei-dodô",
+   "comprimento_m": [
+    9,
+    10.5
+   ],
+   "dieta": "carnivoro",
+   "temperamento": "agressivo",
+   "vida": 1300,
+   "dano": 45,
+   "vel_andar": 1.1,
+   "vel_correr": 4.0,
+   "tamanho": 1,
+   "raio": 1.5,
+   "altura": 4.4,
+   "biomas": [
+    "selva"
+   ],
+   "peso_spawn": 0.5,
+   "grupo": [
+    1,
+    1
+   ],
+   "xp": 130,
+   "loot": {
+    "carne_crua": [
+     12,
+     20
+    ],
+    "couro": [
+     8,
+     12
+    ],
+    "ossos": [
+     4,
+     7
+    ]
+   },
+   "pode_domar": true,
+   "comida_preferida": "carne_crua",
+   "alcance_agro": 36,
+   "alcance_ataque": 2.9,
+   "intervalo_ataque": 1.5,
+   "pode_montar": true,
+   "carga": 500,
+   "atributos": { "vida": [1100,1500], "forca": [85,125], "peso": [425,600], "stamina": [380,520], "velocidade": [90,112], "torpor": [750,1050] }
   }
  ]
 }

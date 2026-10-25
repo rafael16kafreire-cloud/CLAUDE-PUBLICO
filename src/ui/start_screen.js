@@ -3,6 +3,24 @@
 // Atrás dela, a câmera sobrevoa a ilha de verdade.
 // (Menu completo com Novo Jogo/Continuar/Opções/Créditos: Fase 12.)
 // =============================================================
+import { IMPORTED } from '../creatures/imported_model.js';
+import criaturas from '../data/creatures/criaturas.json';
+
+const SPECIES = Object.fromEntries(criaturas.especies.map((e) => [e.id, e]));
+
+// "Fulano (https://sketchfab.com/...)" -> "Fulano"
+const authorName = (a = '') => a.replace(/\s*\(.*\)\s*$/, '');
+const esc = (t = '') => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
+// Créditos dos modelos 3D (licença CC-BY pede o nome do autor)
+function creditsHtml() {
+  const rows = Object.entries(IMPORTED).map(([id, d]) => {
+    const c = d.credito ?? {};
+    const lic = (c.licenca ?? '').split(' ')[0];
+    return `<li><b>${esc(SPECIES[id]?.nome ?? id)}</b>: “${esc(c.titulo)}” por ${esc(authorName(c.autor))} (Sketchfab), ${esc(lic)} — adaptado.</li>`;
+  });
+  return `<details class="credits"><summary>Créditos dos modelos 3D</summary><ul>${rows.join('')}</ul></details>`;
+}
 
 export class StartScreen {
   constructor(root, { onPlay, onHost, onJoin, onNewGame, playerName = '' }) {
@@ -10,7 +28,7 @@ export class StartScreen {
     el.className = 'overlay start';
     el.innerHTML = `
       <div class="start-panel">
-        <p class="eyebrow">Protótipo · v0.9.2 · sobreviver, domar e construir</p>
+        <p class="eyebrow">Protótipo · v0.10.0 · sobreviver, domar e construir</p>
         <h1 class="title">Ilha<br>Primordial</h1>
         <p class="tagline">Você acordou na beira da mata sem nada. Pegue madeira, crie ferramentas e sobreviva aos predadores da floresta.</p>
         <button type="button" class="btn btn-primary btn-play" id="btn-play" disabled>Gerando a ilha…</button>
@@ -28,7 +46,7 @@ export class StartScreen {
           <p class="coop-status" id="coop-status">Co-op: até 4 jogadores pela internet.</p>
         </div>
         <p class="rotate-hint">Vire o celular na horizontal para jogar melhor.</p>
-        <p class="credits">Modelo do espinossauro: “Spinosaurus” por TheAquaticSpinosaurid (Sketchfab), CC-BY 4.0 — adaptado.</p>
+        ${creditsHtml()}
         <dl class="howto howto-touch">
           <dt>Andar</dt><dd>joystick à esquerda</dd>
           <dt>Olhar</dt><dd>arraste o lado direito</dd>

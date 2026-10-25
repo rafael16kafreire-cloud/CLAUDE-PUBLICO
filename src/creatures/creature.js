@@ -107,6 +107,7 @@ export class Creature {
     if (!geo.boundingBox) geo.computeBoundingBox();
     this.bodyFront = Math.max(0, -geo.boundingBox.min.z);
     this.bodyBack = Math.max(0, geo.boundingBox.max.z);
+    this.legsDown = Math.max(0.3, -geo.boundingBox.min.y);
     this._sync(0);
   }
 
@@ -704,7 +705,8 @@ export class Creature {
   // ---------------------------------------------------------
   // altura do corpo em pé no chão (pernas)
   get standHeight() {
-    return 2.55 * this.scale;
+    // do corpo (altura 0 do modelo) até o pé
+    return this.legsDown * this.scale;
   }
 
   _findLandingSpot() {

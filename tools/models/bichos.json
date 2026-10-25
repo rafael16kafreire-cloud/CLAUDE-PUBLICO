@@ -1,0 +1,70 @@
+{
+  "_explicacao": "Modelos de bichos enviados pelo jogador. arquivo = parte do nome do .usdz; giro = como virar (y180: cabeça estava em +Z; cabeca_cima / cabeca_baixo: modelo em pé); yaw = girar mais (graus); inclui/exclui = pedaços do modelo; triangulos = quantos ficam; textura = tamanho em px; ajuste = mover ossos do molde (metros do molde). brilho = clarear a textura (1 = igual).",
+  "trex": {
+    "arquivo": "trex_Jw",
+    "giro": "y180",
+    "triangulos": 22000
+  },
+  "braquiossauro": {
+    "arquivo": "JWA_Brachiosaurus",
+    "giro": "y180",
+    "triangulos": 7300
+  },
+  "titanoboa": {
+    "arquivo": "Titanoboa",
+    "giro": "cabeca_baixo",
+    "triangulos": 16000
+  },
+  "deinosuchus": {
+    "arquivo": "Deinosuchus",
+    "giro": "y180",
+    "triangulos": 16000
+  },
+  "estegossauro": {
+    "arquivo": "Stegosaurus",
+    "giro": "y180",
+    "triangulos": 20000
+  },
+  "anquilossauro": {
+    "arquivo": "Ankylosaurus",
+    "giro": "y180",
+    "triangulos": 20000
+  },
+  "parassauro": {
+    "arquivo": "Parasaurolophus",
+    "giro": "y180",
+    "triangulos": 20000,
+    "yaw": -20
+  },
+  "raptor": {
+    "arquivo": "Reaper_Raptor",
+    "giro": "nada",
+    "inclui": [
+      "_001_Material",
+      "_000_Material"
+    ],
+    "triangulos": 14000,
+    "brilho": 2.2
+  },
+  "quetzalcoatlus": {
+    "arquivo": "JWD_Quetzalcoatlus",
+    "giro": "cabeca_cima",
+    "triangulos": 16000,
+    "pitch": -30
+  },
+  "mamute": {
+    "arquivo": "woolly_mammoth",
+    "giro": "y180",
+    "triangulos": 24000
+  },
+  "argentavis": {
+    "arquivo": "Argentavis",
+    "giro": "y180",
+    "triangulos": 18000
+  },
+  "reidodo": {
+    "arquivo": "Dodorex",
+    "giro": "cabeca_cima",
+    "triangulos": 18000
+  }
+}
