@@ -22,7 +22,8 @@ Visual estilizado, feito para ser leve.
 - **Jogo salvo:** o progresso (você, mochila, nível, habilidades, hora, construções e
   bichos domados) fica salvo no aparelho — sozinho a cada 30 s, ao pausar e ao sair.
   Na tela inicial aparece *Continuar*; *Novo jogo* apaga o salvo.
-- Menos bichos por perto na qualidade gráfica baixa (celular fraco): 14 / 20 / 24.
+- Bichos por perto conforme a qualidade gráfica: baixa 14, média 20, **alta 45** (v0.8.1).
+  O limite de carnívoros sobe junto (4 a cada 20 bichos: 9 na alta).
 - Montado, a mordida dos predadores pega na montaria, não em você.
 
 **Versão 0.7.0**

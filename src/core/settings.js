@@ -16,15 +16,15 @@ const SETTINGS_VERSION = 3;
 export const QUALITY_PRESETS = {
   baixa: {
     pixelRatio: 0.75, shadows: false, shadowMap: 512, shadowRange: 40, viewDistance: 130,
-    lodHi: 22, lodLo: 55, grassRadius: 16, grassDensity: 0.55, creatures: 0.65,
+    lodHi: 22, lodLo: 55, grassRadius: 16, grassDensity: 0.55, creatures: 14,
   },
   media: {
     pixelRatio: 1.0, shadows: true, shadowMap: 1024, shadowRange: 55, viewDistance: 180,
-    lodHi: 36, lodLo: 85, grassRadius: 26, grassDensity: 1.0, creatures: 0.9,
+    lodHi: 36, lodLo: 85, grassRadius: 26, grassDensity: 1.0, creatures: 20,
   },
   alta: {
     pixelRatio: 1.5, shadows: true, shadowMap: 2048, shadowRange: 80, viewDistance: 260,
-    lodHi: 60, lodLo: 135, grassRadius: 40, grassDensity: 1.35, creatures: 1.1,
+    lodHi: 60, lodLo: 135, grassRadius: 40, grassDensity: 1.35, creatures: 45,
   },
 };
 

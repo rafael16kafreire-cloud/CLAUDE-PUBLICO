@@ -39,10 +39,15 @@ export class CreatureManager {
     this.cfg = C;
   }
 
-  // Limite de bichos por perto: menos na qualidade baixa (celular fraco).
+  // Limite de bichos por perto: vem da qualidade gráfica
+  // (baixa 14, média 20, alta 45 – configurações.js).
   get maxActive() {
-    const k = settings.quality?.creatures ?? 1;
-    return Math.round(BALANCE.desempenho.criaturas_max_ativas * k);
+    return settings.quality?.creatures ?? BALANCE.desempenho.criaturas_max_ativas;
+  }
+
+  // Limite de carnívoros cresce junto com o de bichos (4 a cada 20).
+  get maxCarnivores() {
+    return Math.max(2, Math.round(BALANCE.dificuldade.max_carnivoros_perto * Math.max(1, this.maxActive / 20)));
   }
 
   _model(id) {
@@ -155,7 +160,7 @@ export class CreatureManager {
       const safe = this.world.allRespawnPoints.some((p) => Math.hypot(p.position.x - x, p.position.z - z) < D.zona_segura_m);
       const early = (game.player?.aliveTime ?? 999) < D.inicio_tranquilo_min * 60;
       const carnAlive = this.list.filter((c) => c.alive && isCarn(c.species)).length;
-      const carnOk = !safe && carnAlive < D.max_carnivoros_perto;
+      const carnOk = !safe && carnAlive < this.maxCarnivores;
       const weight = (s) => (isCarn(s) ? s.peso_spawn * D.peso_carnivoros * (early ? 0.3 : 1) : s.peso_spawn);
       const options = Object.values(SPECIES).filter((s) => {
         if (!!s.ambiente !== ambient || !s.biomas.includes(biome)) return false;
@@ -179,7 +184,7 @@ export class CreatureManager {
       if (species.peso_spawn < 2 && this.list.filter((c) => c.species.id === species.id).length >= 2) continue;
       const [gmin, gmax] = species.grupo;
       let size = Math.min(cap - alive, gmin + Math.floor(this.rand() * (gmax - gmin + 1)));
-      if (isCarn(species)) size = Math.min(size, D.max_carnivoros_perto - carnAlive);
+      if (isCarn(species)) size = Math.min(size, this.maxCarnivores - carnAlive);
       if (size <= 0) continue;
       const maxLvl = early ? D.nivel_max_inicio : 30;
       const level = 1 + Math.floor(Math.pow(this.rand(), 1.7) * (maxLvl - 1));

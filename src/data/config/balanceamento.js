@@ -221,7 +221,7 @@ export default {
     inicio_tranquilo_min: 5,   // depois de nascer/renascer: poucos carnívoros e fracos
     nivel_max_inicio: 6,       // nível máximo dos bichos nesse começo
     peso_carnivoros: 0.6,      // 1 = normal; menor = menos carnívoros
-    max_carnivoros_perto: 4,   // nunca mais que isso de carnívoros vivos por perto
+    max_carnivoros_perto: 4,   // carnívoros vivos por perto a cada 20 bichos (qualidade alta, 45 bichos: 9)
     agro_noite: 1.25,          // à noite os predadores enxergam mais longe
   },
 
@@ -240,7 +240,7 @@ export default {
   // Desempenho
   // ---------------------------------------------------------
   desempenho: {
-    criaturas_max_ativas: 22,  // máximo de criaturas vivas perto do jogador
+    criaturas_max_ativas: 20,  // padrão; o valor de verdade vem da qualidade (baixa 14, média 20, alta 45)
   },
 
   // ---------------------------------------------------------
