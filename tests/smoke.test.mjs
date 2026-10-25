@@ -78,7 +78,8 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
 {
   const { context, page, errors } = await openGame({ viewport: { width: 1280, height: 720 } }, 'PC');
   await frames(page, 20);
-  await page.screenshot({ path: `${SHOTS}/01-pc-tela-inicial.png` });
+  // (sem foto da tela inicial: no navegador de teste sem placa de vídeo a
+  // foto durante o voo da câmera estoura a memória e derruba a página)
 
   await page.click('#btn-play');
   await page.mouse.move(640, 360); // cliques no meio da tela

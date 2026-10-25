@@ -20,8 +20,9 @@ Visual estilizado, feito para ser leve.
 - **Modelos novos:** árvore *Agarwood* (mata), *Bush with Berries* (arbustos redondos de
   Baga-Mejo azul, Baga-Escura e frutas vermelhas) e a **skin do jogador** *Base Chibi*.
   Ferramentas: `tools/models/vegetacao_modelos2.py` e `tools/models/skin_jogador.py`.
-- Ícones provisórios do ARK: lugar pronto em `assets/icons/placeholder_ark/` (ver o
-  LEIA-ME); o download ficou bloqueado pela rede do ambiente de desenvolvimento.
+- **Ícones provisórios dos itens** (wiki do ARK, Studio Wildcard) em
+  `assets/icons/placeholder_ark/` – **trocar antes de publicar** (ver o LEIA-ME). Sem os
+  PNG da pasta, voltam os ícones desenhados pelo jogo.
 
 **Versão 0.11.0** – praia e floresta novas, bichos comendo, HUD novo
 - **Praia:** palmeira *Palm Tree Realistic*, tamareiras e plantinhas do *Date palm and

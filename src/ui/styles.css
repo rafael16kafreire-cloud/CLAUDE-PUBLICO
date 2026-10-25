@@ -1118,3 +1118,10 @@ body.underwater-swamp .uw-overlay {
 .tc-edit-bar[hidden] { display: none; }
 .prompt .key-touch .tc-ico { width: 14px; height: 14px; }
 .item-png { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+/* ícones provisórios (PNG) com o mesmo tamanho dos desenhados */
+.rc-ing .item-png { width: 14px; height: 14px; flex: none; }
+.rd-head .item-png { width: 44px; height: 44px; flex: none; }
+.reqs li .item-png { width: 24px; height: 24px; flex: none; }
+.cq-row .item-png { width: 26px; height: 26px; flex: none; }
+.rc-icon .item-png, .hb-icon .item-png, .is-icon .item-png, .msg-icon .item-png, .drag-ghost .item-png { display: block; }
+@media (orientation: portrait) { .rd-head .item-png { width: 36px; height: 36px; } }
