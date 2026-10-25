@@ -1,10 +1,10 @@
 {
   "_explicacao": "Formato do mapa. Distâncias em metros. Centro = x 0, z 0. Norte = z negativo, Sul = z positivo, Leste = x positivo, Oeste = x negativo. O mapa tem o formato da Finlândia: floresta com pântanos e lagos no sul e no meio, e a Lapônia (norte) com montanhas geladas.",
-  "tamanho_terreno_m": 2400,
-  "tamanho_celula_m": 4,
+  "tamanho_terreno_m": 4000,
+  "tamanho_celula_m": 5,
   "tamanho_pedaco_celulas": 32,
-  "_contorno": "Contorno da Finlândia em [longitude, latitude] (simplificado). projecao: centro e quantos metros do jogo vale 1 grau.",
-  "projecao": { "lon0": 26, "lat0": 65, "m_por_grau_lat": 204.5, "m_por_grau_lon": 86.4 },
+  "_contorno": "Contorno da Finlândia em [longitude, latitude] (simplificado). projecao: centro e quantos metros do jogo vale 1 grau; do paralelo laponia_lat para o norte o mapa fica laponia_largura vezes mais largo e laponia_altura vezes mais comprido (cabe a Grande Montanha).",
+  "projecao": { "lon0": 26, "lat0": 65, "m_por_grau_lat": 306.75, "m_por_grau_lon": 129.6, "laponia_lat": 66.4, "laponia_largura": 1.8, "laponia_altura": 1.35 },
   "contorno": [
     [22.95, 59.82],
     [23.6, 59.98],
@@ -83,18 +83,22 @@
   "altura_colinas_m": 16,
   "profundidade_mar_m": 28,
 
-  "_lapônia": "Montanhas geladas do norte (relevo tirado do modelo Snow alps). inicio_z = onde começa a neve; montanhas_z = onde começam as montanhas; altura_max_m = altura dos picos; periodo_m = tamanho de cada 'pedaço' do relevo dos Alpes.",
-  "laponia": { "inicio_z": -470, "montanhas_z": -520, "altura_max_m": 250, "periodo_m": 1900, "pico_x": 20, "pico_z": -820 },
+  "_lapônia": "Norte gelado. inicio_z = onde começa a neve. grande_montanha = o modelo Great Mountain (pico em pico_x/pico_z, largura e altura em metros, some aos poucos até raio_m do pico). colinas = morros menores com o relevo do modelo Snow alps.",
+  "laponia": {
+    "inicio_z": -700,
+    "grande_montanha": { "pico_x": 60, "pico_z": -1330, "largura_m": 1800, "altura_m": 320, "raio_m": 820 },
+    "colinas": { "altura_m": 70, "periodo_m": 1300 }
+  },
 
   "pantano": {
     "nivel_agua_m": 4.2,
     "_partes": "Cada parte é um círculo de pântano; juntas formam o pântano do meio da ilha.",
     "partes": [
-      { "x": 0, "z": 560, "raio_m": 150 },
-      { "x": -120, "z": 460, "raio_m": 95 },
-      { "x": 135, "z": 645, "raio_m": 90 },
-      { "x": 95, "z": 430, "raio_m": 70 },
-      { "x": -110, "z": 685, "raio_m": 75 }
+      { "x": 0, "z": 840, "raio_m": 225 },
+      { "x": -180, "z": 690, "raio_m": 142 },
+      { "x": 202, "z": 968, "raio_m": 135 },
+      { "x": 142, "z": 645, "raio_m": 105 },
+      { "x": -165, "z": 1028, "raio_m": 112 }
     ]
   },
 
@@ -109,11 +113,11 @@
 
   "_rotulos_mapa": "Nomes escritos no mapa da tela de morte (posição em metros).",
   "rotulos_mapa": [
-    { "nome": "Pântano", "x": 0, "z": 560 },
-    { "nome": "Floresta", "x": 60, "z": -150 },
-    { "nome": "Floresta", "x": 200, "z": 250 },
-    { "nome": "Igapó", "x": 175, "z": 540 },
-    { "nome": "Lapônia", "x": 0, "z": -780 }
+    { "nome": "Pântano", "x": 0, "z": 840 },
+    { "nome": "Floresta", "x": 90, "z": -225 },
+    { "nome": "Floresta", "x": 300, "z": 375 },
+    { "nome": "Igapó", "x": 262, "z": 810 },
+    { "nome": "Lapônia", "x": 60, "z": -1330 }
   ],
 
   "pontos_renascer": [
@@ -141,7 +145,7 @@
         "samambaia": 0.12, "bananeira": 0.03, "arbusto_mejo": 0.02, "tronco_caido": 0.03, "junco": 0.12
       },
       "neve": {
-        "pinheiro": 0.11, "rochedo": 0.06, "minerio_ferro": 0.012, "pedrinhas": 0.03, "gravetos": 0.025
+        "pinheiro_neve": 0.09, "pinheiro": 0.03, "arvore_seca": 0.012, "arvore_morta": 0.008, "rochedo": 0.05, "minerio_ferro": 0.012, "pedrinhas": 0.03, "gravetos": 0.025
       },
       "pantano": {
         "mangue": 0.09, "arvore_morta": 0.04, "junco": 0.22, "taboa": 0.12,
@@ -154,7 +158,8 @@
       "biomas": {
         "selva": { "samambaia": 0.34, "arbusto": 0.08, "pedrinhas": 0.03, "gravetos": 0.05, "samambaia_gigante": 0.045, "arvore_media": 0.03, "acai": 0.015, "arbusto_mejo": 0.008, "arbusto_escura": 0.006 },
         "igapo": { "samambaia": 0.22, "junco": 0.1, "arbusto": 0.04, "gravetos": 0.03, "pedrinhas": 0.01 },
-        "praia": { "arbusto": 0.02, "pedrinhas": 0.03, "gravetos": 0.025 }
+        "praia": { "arbusto": 0.02, "pedrinhas": 0.03, "gravetos": 0.025 },
+        "neve": { "arbusto_neve": 0.08 }
       }
     }
   }

@@ -10,45 +10,32 @@
 import * as THREE from 'three';
 import { createNoise2D, fbm } from '../core/noise.js';
 import { clamp, lerp, smoothstep } from '../core/math.js';
-import { ALPES_N, ALPES_ALTURAS, ALPES_NEVE } from './textures/alpes.js';
+import { ALPES_N, ALPES_ALTURAS } from './textures/alpes.js';
+import { MONTANHA_N, MONTANHA_ALTURAS, MONTANHA_NEVE } from './textures/montanha.js';
 
-// relevo e máscara de neve dos Alpes (0..1), lidos uma vez
-const BLUR_PASSES = 6;
-function decodeAlps() {
-  const bin = atob(ALPES_ALTURAS);
-  const h = new Float32Array(ALPES_N * ALPES_N);
+// Relevos dos modelos (0..1), lidos uma vez:
+//  - Great Mountain: a grande montanha da Lapônia (+ máscara de neve)
+//  - Snow alps: colinas menores em volta
+function decodeU16(b64, n) {
+  const bin = atob(b64);
+  const h = new Float32Array(n * n);
   for (let i = 0; i < h.length; i++) h[i] = (bin.charCodeAt(i * 2) | (bin.charCodeAt(i * 2 + 1) << 8)) / 65535;
-  const n = ALPES_N;
-  // suaviza o relevo (cristas dos Alpes são íngremes demais para subir a pé)
-  for (let pass = 0; pass < BLUR_PASSES; pass++) {
-    const src = h.slice();
-    for (let j = 0; j < n; j++) {
-      for (let i = 0; i < n; i++) {
-        let sum = 0;
-        let c = 0;
-        for (let dj = -2; dj <= 2; dj++) {
-          const jj = Math.min(n - 1, Math.max(0, j + dj));
-          for (let di = -2; di <= 2; di++) {
-            sum += src[jj * n + Math.min(n - 1, Math.max(0, i + di))];
-            c++;
-          }
-        }
-        h[j * n + i] = sum / c;
-      }
-    }
-  }
-  const sb = atob(ALPES_NEVE);
-  const s = new Float32Array(ALPES_N * ALPES_N);
-  for (let i = 0; i < s.length; i++) s[i] = sb.charCodeAt(i) / 255;
-  // onde fica o pico mais alto (0..1)
+  return h;
+}
+function decodeU8(b64, n) {
+  const bin = atob(b64);
+  const s = new Float32Array(n * n);
+  for (let i = 0; i < s.length; i++) s[i] = bin.charCodeAt(i) / 255;
+  return s;
+}
+function peakOf(h, n) {
   let best = 0;
   for (let i = 1; i < h.length; i++) if (h[i] > h[best]) best = i;
-  return { h, s, peakU: (best % n) / (n - 1), peakV: Math.floor(best / n) / (n - 1) };
+  return { u: (best % n) / (n - 1), v: Math.floor(best / n) / (n - 1) };
 }
 
 // amostra com repetição espelhada (sem emendas) e interpolação
-function sampleMirror(arr, u, v) {
-  const n = ALPES_N;
+function sampleMirror(arr, n, u, v) {
   const m = (t) => {
     const f = ((t % 2) + 2) % 2;
     return (f > 1 ? 2 - f : f) * (n - 1);
@@ -132,12 +119,16 @@ export class IslandMap {
 
     // contorno da Finlândia em metros do jogo
     const pr = layout.projecao;
-    this.poly = layout.contorno.map(([lon, lat]) => [(lon - pr.lon0) * pr.m_por_grau_lon, -(lat - pr.lat0) * pr.m_por_grau_lat]);
+    this.poly = layout.contorno.map(([lon, lat]) => this.project(lon, lat));
     this.lap = layout.laponia;
-    this.alps = decodeAlps();
-    // o pico mais alto do relevo cai neste ponto da Lapônia
-    this.alpsU0 = this.alps.peakU - (this.lap.pico_x ?? 0) / this.lap.periodo_m;
-    this.alpsV0 = this.alps.peakV - (this.lap.pico_z ?? -800) / this.lap.periodo_m;
+    this.alpsH = decodeU16(ALPES_ALTURAS, ALPES_N);
+    this.mtnH = decodeU16(MONTANHA_ALTURAS, MONTANHA_N);
+    this.mtnS = decodeU8(MONTANHA_NEVE, MONTANHA_N);
+    // o pico do modelo cai em pico_x / pico_z
+    const gm = this.lap.grande_montanha;
+    const pk = peakOf(this.mtnH, MONTANHA_N);
+    this.mtnU0 = pk.u - gm.pico_x / gm.largura_m;
+    this.mtnV0 = pk.v - gm.pico_z / gm.largura_m;
 
     const n = this.verts * this.verts;
     this.heights = new Float32Array(n);
@@ -150,6 +141,18 @@ export class IslandMap {
   }
 
   // ----------------------------------------------------------
+  // [longitude, latitude] -> [x, z] do jogo. Do paralelo laponia_lat para
+  // o norte o mapa alarga e estica aos poucos (a Lapônia fica maior).
+  project(lon, lat) {
+    const pr = this.L.projecao;
+    const k = smoothstep(pr.laponia_lat - 0.6, pr.laponia_lat + 0.9, lat);
+    const wide = 1 + (pr.laponia_largura - 1) * k;
+    const x = (lon - pr.lon0 - 0.3 * k) * pr.m_por_grau_lon * wide;
+    let z = -(lat - pr.lat0) * pr.m_por_grau_lat;
+    if (lat > pr.laponia_lat) z -= (lat - pr.laponia_lat) ** 2 / (lat - pr.laponia_lat + 1) * pr.m_por_grau_lat * (pr.laponia_altura - 1);
+    return [x, z];
+  }
+
   // Distância até a costa (positivo = em terra), pelo contorno da Finlândia.
   coastDistance(x, z) {
     const P = this.poly;
@@ -175,27 +178,40 @@ export class IslandMap {
     return smoothstep(zs + 50, zs - 50, z);
   }
 
-  // Montanhas gigantes: relevo dos Alpes, mais detalhes de rocha.
+  // Quanto a Grande Montanha "manda" aqui (1 perto do pico, 0 longe).
+  bigMountainWeight(x, z) {
+    const gm = this.lap.grande_montanha;
+    const d = Math.hypot(x - gm.pico_x, z - gm.pico_z) + fbm(this.nRegion, x * 0.003, z * 0.003, 3) * 90;
+    return smoothstep(gm.raio_m, gm.raio_m * 0.4, d);
+  }
+
+  // Lapônia: a Grande Montanha (modelo Great Mountain) + colinas (Snow alps).
   mountainHeight(x, z, coastD) {
     const L = this.lap;
-    const zm = L.montanhas_z + fbm(this.nRegion, x * 0.003 - 4, 7.7, 3) * 60;
-    // sobe devagar a partir da costa e da borda sul (senão vira paredão)
-    const m = smoothstep(zm + 40, zm - 240, z) * smoothstep(10, 240, coastD);
-    if (m <= 0) return 0;
-    const u = x / L.periodo_m + this.alpsU0;
-    const v = z / L.periodo_m + this.alpsV0;
-    const a = sampleMirror(this.alps.h, u, v);
-    // picos altos e afiados; vales continuam baixos
-    let h = Math.pow(a, 1.15) * L.altura_max_m;
-    // rocha quebrada (não fica "lisa"): cristas finas + calombos
-    const ridge = 1 - Math.abs(fbm(this.nRock, x * 0.028, z * 0.028, 3));
-    h += (Math.pow(ridge, 3) * 4 + fbm(this.nRock, x * 0.11 + 30, z * 0.11, 2) * 1.0) * smoothstep(0.08, 0.35, a);
-    // degraus de rocha (saliências) nas encostas: a montanha não fica lisa
-    const step = 7 + fbm(this.nRock, x * 0.01, z * 0.01, 2) * 3;
+    const region = this.snowRegion(x, z);
+    const coast = smoothstep(5, 220, coastD);
+    // Grande Montanha
+    const gm = L.grande_montanha;
+    const wM = this.bigMountainWeight(x, z) * smoothstep(-10, 160, coastD);
+    let h = 0;
+    if (wM > 0) {
+      const a = sampleMirror(this.mtnH, MONTANHA_N, (x - 0) / gm.largura_m + this.mtnU0, (z - 0) / gm.largura_m + this.mtnV0);
+      h = a * gm.altura_m * wM;
+    }
+    // colinas em volta (mais baixas)
+    if (region > 0) {
+      const c = L.colinas;
+      const a2 = sampleMirror(this.alpsH, ALPES_N, x / c.periodo_m + 0.3, z / c.periodo_m + 0.7);
+      h += a2 * c.altura_m * region * coast * (1 - wM);
+    }
+    if (h <= 0.5) return h;
+    // rocha quebrada (não fica "lisa"): calombos e degraus pequenos
+    const rough = smoothstep(20, 80, h);
+    h += fbm(this.nRock, x * 0.09 + 30, z * 0.09, 2) * 1.2 * rough;
+    const step = 6 + fbm(this.nRock, x * 0.01, z * 0.01, 2) * 2;
     const q = h / step;
-    const terr = (Math.floor(q) + smoothstep(0.2, 1, q - Math.floor(q))) * step;
-    h = lerp(h, terr, 0.25 * smoothstep(0.12, 0.4, a));
-    return h * m;
+    const terr = (Math.floor(q) + smoothstep(0.25, 1, q - Math.floor(q))) * step;
+    return lerp(h, terr, 0.18 * rough);
   }
 
   // "Quanto dentro do pântano": > 0 dentro, < 0 fora (com borda irregular).
@@ -310,13 +326,16 @@ export class IslandMap {
   // Quanto de neve cobre o chão: pouca nas paredes íngremes (rocha
   // exposta), a máscara dos Alpes risca a neve nas encostas.
   _snowAmount(x, z, h, normalY) {
-    const L = this.lap;
-    const mask = sampleMirror(this.alps.s, x / L.periodo_m + this.alpsU0, z / L.periodo_m + this.alpsV0);
-    // paredão íngreme = rocha; no alto neva mais (só os paredões ficam de fora).
-    // A máscara dos Alpes risca a neve (rochas aparecendo em listras).
-    const high = smoothstep(30, 150, h);
-    const thr = 0.6 - 0.2 * high + (1 - mask) * 0.08 + fbm(this.nDetail, x * 0.04, z * 0.04, 2) * 0.06;
-    return clamp((normalY - thr) * 7 + 0.5, 0, 1);
+    // paredão íngreme = rocha; no alto neva mais
+    const high = smoothstep(30, 200, h);
+    const thr = 0.6 - 0.2 * high + fbm(this.nDetail, x * 0.04, z * 0.04, 2) * 0.06;
+    const bySlope = clamp((normalY - thr) * 7 + 0.5, 0, 1);
+    // na Grande Montanha a neve/rocha vem da textura do próprio modelo
+    const wM = this.bigMountainWeight(x, z);
+    if (wM <= 0) return bySlope;
+    const gm = this.lap.grande_montanha;
+    const mask = sampleMirror(this.mtnS, MONTANHA_N, x / gm.largura_m + this.mtnU0, z / gm.largura_m + this.mtnV0);
+    return lerp(bySlope, Math.min(bySlope + 0.3, mask), wM * 0.85);
   }
 
   _colorFor(out, biome, x, z, h, normalY) {

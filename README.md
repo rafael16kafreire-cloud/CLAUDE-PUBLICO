@@ -4,6 +4,18 @@ Jogo 3D de sobrevivência com dinossauros. Sozinho (offline) ou em **co-op onlin
 Roda no celular (Android como app ou no navegador) e no PC.
 Visual estilizado, feito para ser leve.
 
+**Versão 0.9.1** – Grande Montanha e modelos da neve
+- **Mapa 1,5× maior** (≈ 3,4 km de norte a sul) e a Lapônia mais larga que a real, para
+  caber a **Grande Montanha** (modelo *Great Mountain*): 1,8 km de largura e ~330 m de
+  altura, com a neve e a rocha tiradas da textura do próprio modelo. Em volta, colinas com
+  o relevo do *Snow alps*.
+- **Árvores do *Snow Trees Pack*:** pinheiro nevado, árvore morta, árvore seca e arbusto
+  com neve (com as texturas do pacote).
+- **Pedras:** os rochedos agora são a pedra *W041 Snowy Rock* (modelo e textura); os
+  paredões das montanhas usam a textura *Snowy Rock PBR Material*.
+- Ferramentas: `tools/models/montanha_relevo.py` (montanha) e
+  `tools/models/neve_modelos.py` (árvores, pedra e textura de rocha).
+
 **Versão 0.9.0** – mapa novo
 - **Formato da Finlândia** e bem maior (≈ 2,1 km de norte a sul): floresta com pântano e
   lagos no sul/meio, e a **Lapônia** no norte (contorno em `ilha.json` → `contorno`).

@@ -11,6 +11,7 @@
 import * as THREE from 'three';
 import { TERRA_COR, TERRA_RELEVO, TERRA_MEDIA } from './textures/terra.js';
 import { NEVE_COR, NEVE_RELEVO } from './textures/neve.js';
+import { ROCHA_NEVADA } from './textures/neve_modelos.js';
 
 // Tempo compartilhado pelos materiais animados.
 export const sharedTime = { value: 0 };
@@ -110,6 +111,10 @@ export function makeTerrainMaterial() {
   // neve (arquivo Snow Material) para a Lapônia
   const snowMap = loadTiled(NEVE_COR, true);
   const snowNormal = loadTiled(NEVE_RELEVO, false);
+  // rocha nevada (arquivo Snowy Rock PBR Material) nos paredões
+  const rockMap = loadTiled(ROCHA_NEVADA, true);
+  rockMap.wrapS = THREE.MirroredRepeatWrapping;
+  rockMap.wrapT = THREE.MirroredRepeatWrapping;
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.detailMap = { value: detailTexture() };
     shader.uniforms.dirtMap = { value: dirtMap };
@@ -117,11 +122,12 @@ export function makeTerrainMaterial() {
     shader.uniforms.dirtAvg = { value: new THREE.Vector3(avg.r, avg.g, avg.b) };
     shader.uniforms.snowMap = { value: snowMap };
     shader.uniforms.snowNormal = { value: snowNormal };
+    shader.uniforms.rockMap = { value: rockMap };
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nattribute float aDirt;\nvarying float vDirt;\nattribute float aSnow;\nvarying float vSnow;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvDirt = aDirt;\nvSnow = aSnow;');
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nvarying float vDirt;\nuniform sampler2D detailMap;\nuniform sampler2D dirtMap;\nuniform sampler2D dirtNormal;\nuniform vec3 dirtAvg;\nvarying float vSnow;\nuniform sampler2D snowMap;\nuniform sampler2D snowNormal;')
+      .replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nvarying float vDirt;\nuniform sampler2D detailMap;\nuniform sampler2D dirtMap;\nuniform sampler2D dirtNormal;\nuniform vec3 dirtAvg;\nvarying float vSnow;\nuniform sampler2D snowMap;\nuniform sampler2D snowNormal;\nuniform sampler2D rockMap;')
       .replace('#include <color_fragment>', `#include <color_fragment>
         float dNear = texture2D(detailMap, vWPos.xz * 0.23).r;
         float dFar = texture2D(detailMap, vWPos.xz * 0.019).r;
@@ -163,6 +169,9 @@ export function makeTerrainMaterial() {
           float vert = 1.0 - bw.y; // quanto é parede
           float rockK = mix(0.55, 1.4, r1) * mix(0.8, 1.15, f1) * mix(0.75, 1.15, big) * mix(1.0, mix(0.72, 1.12, strata), vert);
           diffuseColor.rgb *= rockK;
+          // textura de rocha nevada do arquivo, projetada pelos três lados
+          vec3 rt = texture2D(rockMap, vWPos.zy * 0.05).rgb * bw.x + texture2D(rockMap, vWPos.xz * 0.05).rgb * bw.y + texture2D(rockMap, vWPos.xy * 0.05).rgb * bw.z;
+          diffuseColor.rgb = mix(diffuseColor.rgb, rt * mix(0.75, 1.1, r1), 0.55);
           // líquen/ferrugem em manchas
           diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(1.15, 1.0, 0.82), smoothstep(0.62, 0.8, f1) * 0.4);
         }
