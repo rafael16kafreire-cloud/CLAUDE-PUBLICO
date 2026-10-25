@@ -10,6 +10,7 @@
 // =============================================================
 import * as THREE from 'three';
 import { TERRA_COR, TERRA_RELEVO, TERRA_MEDIA } from './textures/terra.js';
+import { FOLHAGEM_COR } from './textures/veg_modelos.js';
 import { NEVE_COR, NEVE_RELEVO } from './textures/neve.js';
 import { ROCHA_NEVADA } from './textures/neve_modelos.js';
 import { TERRA_COR_HD, TERRA_RELEVO_HD, NEVE_COR_HD, NEVE_RELEVO_HD } from './textures/hd.js';
@@ -116,6 +117,8 @@ export function makeTerrainMaterial() {
   const snowNormal = loadTiled(hd ? NEVE_RELEVO_HD : NEVE_RELEVO, false);
   // rocha nevada (arquivo Snowy Rock PBR Material) nos paredões
   const rockMap = loadTiled(ROCHA_NEVADA, true);
+  // folhagem rasteira no chão da floresta (arquivo Grass)
+  const leafMap = loadTiled(FOLHAGEM_COR, true);
   rockMap.wrapS = THREE.MirroredRepeatWrapping;
   rockMap.wrapT = THREE.MirroredRepeatWrapping;
   mat.onBeforeCompile = (shader) => {
@@ -126,11 +129,12 @@ export function makeTerrainMaterial() {
     shader.uniforms.snowMap = { value: snowMap };
     shader.uniforms.snowNormal = { value: snowNormal };
     shader.uniforms.rockMap = { value: rockMap };
+    shader.uniforms.leafMap = { value: leafMap };
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nattribute float aDirt;\nvarying float vDirt;\nattribute float aSnow;\nvarying float vSnow;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvDirt = aDirt;\nvSnow = aSnow;');
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nvarying float vDirt;\nuniform sampler2D detailMap;\nuniform sampler2D dirtMap;\nuniform sampler2D dirtNormal;\nuniform vec3 dirtAvg;\nvarying float vSnow;\nuniform sampler2D snowMap;\nuniform sampler2D snowNormal;\nuniform sampler2D rockMap;')
+      .replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nvarying float vDirt;\nuniform sampler2D detailMap;\nuniform sampler2D dirtMap;\nuniform sampler2D dirtNormal;\nuniform vec3 dirtAvg;\nvarying float vSnow;\nuniform sampler2D snowMap;\nuniform sampler2D snowNormal;\nuniform sampler2D rockMap;\nuniform sampler2D leafMap;')
       .replace('#include <color_fragment>', `#include <color_fragment>
         float dNear = texture2D(detailMap, vWPos.xz * 0.23).r;
         float dFar = texture2D(detailMap, vWPos.xz * 0.019).r;
@@ -157,6 +161,13 @@ export function makeTerrainMaterial() {
           vec3 pattern = dc / dirtAvg;
           vec3 soil = lumB * pattern * mix(hueD, hueB, 0.45) * relief;
           diffuseColor.rgb = mix(diffuseColor.rgb, soil, clamp(vDirt, 0.0, 1.0) * 0.9);
+          // floresta: manchas de folhagem rasteira (textura Grass) por cima da terra
+          if (vDirt > 0.9) {
+            float patchN = texture2D(detailMap, vWPos.xz * 0.006 + 0.13).r * 0.6 + dMid * 0.4;
+            float leafK = smoothstep(0.42, 0.62, patchN);
+            vec3 lc = texture2D(leafMap, vWPos.xz * 0.28).rgb * 0.65 + texture2D(leafMap, vWPos.zx * 0.083 + 0.4).rgb * 0.35;
+            diffuseColor.rgb = mix(diffuseColor.rgb, lc * 0.85 * relief, leafK * 0.85);
+          }
         }
         if (vDirt < -0.01) {
           // rocha da montanha: textura "por três lados" (funciona em paredão

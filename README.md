@@ -4,6 +4,30 @@ Jogo 3D de sobrevivência com dinossauros. Sozinho (offline) ou em **co-op onlin
 Roda no celular (Android como app ou no navegador) e no PC.
 Visual estilizado, feito para ser leve.
 
+**Versão 0.11.0** – praia e floresta novas, bichos comendo, HUD novo
+- **Praia:** palmeira *Palm Tree Realistic*, tamareiras e plantinhas do *Date palm and
+  vegetation*. **Floresta:** árvores folhosas e capim do *Low Poly Tree Scene Free* e
+  folhagem rasteira no chão (textura do *Grass*). Ferramenta: `tools/models/vegetacao_modelos.py`.
+- **Bichos comem de verdade:** herbívoros andam até uma planta (árvore para os de pescoço
+  comprido; arbusto, samambaia, capim para os outros), viram para ela e mastigam; carnívoros
+  com fome vão comer carcaças. **Passos de verdade** (a perna abre bem e o pé não escorrega),
+  cauda e cabeça acompanham os passos.
+- **Quetzalcoatlus** não voa mais de barriga para cima. **Mamute** gigante (9–10,5 m) e
+  mais arbustos e capim na neve para ele comer.
+- **Montanha:** não dá mais para atravessar as pedras grandes. **4 platôs de pedra
+  gigantes de topo plano** na ponta da Grande Montanha, perto do mar (dá para construir em
+  cima; cada um tem uma rampa) – `ilha.json` → `laponia.platos`.
+- **Renascer:** 2 pontos novos no pé da montanha (leste e oeste); o ponto lá de cima saiu.
+- **Comida e água com limite:** só come/bebe se faltar pelo menos 60% do que o item/gole
+  dá (`balanceamento.js` → `sobrevivencia.satisfeito`).
+- **Coleta:** dica pequena embaixo (é só aviso), um tempinho entre uma coleta e outra
+  (`balanceamento.js` → `coleta`) e animação de pegar. **Morte:** a visão cai no chão
+  antes da tela de morte.
+- **HUD:** minimapa pequenininho no canto de cima à direita; botões com ícones brancos
+  (pular ⬆, agachar, interagir, atacar, correr); joystick invisível (continua funcionando).
+- **Qualidade alta mais bonita:** bordas lisas (antialias), sombra suave 4096, mais longe,
+  mais plantas detalhadas e bichos com luz "de verdade".
+
 **Versão 0.10.0** – bichos com modelos 3D de verdade
 - **12 modelos enviados pelo jogador** (Sketchfab, CC-BY 4.0): T-Rex, braquiossauro,
   titanoboa, deinosuchus, estegossauro, anquilossauro, parassauro, raptor e
@@ -324,6 +348,12 @@ encaixado; textura reduzida):
 - Mamute-lanoso: **"ARK woolly mammoth"** por **toro ardido modelos 3d** – https://sketchfab.com/3d-models/ark-woolly-mammoth-0ba92083ca334c9fabee4d14da54c9d1
 - Argentavis: **"Argentavis"** por **TheAquaticSpinosaurid** – https://sketchfab.com/3d-models/argentavis-d8a7ba6330b14deda408f34c78fde9db
 - Rei-dodô: **"Dodorex"** por **TheAquaticSpinosaurid** – https://sketchfab.com/3d-models/dodorex-e2cdf20b7ef448b7a8c41b3d45dec834
+
+Plantas (CC-BY 4.0, adaptadas: menos detalhes e texturas reduzidas):
+- Palmeira: **"Palm Tree Realistic"** por **00amza** – https://sketchfab.com/3d-models/palm-tree-realistic-ced3b31f14f940d0b7480a83e6f8c9c0
+- Tamareiras e plantas da praia: **"Date palm and vegetation"** por **borsh_and** – https://sketchfab.com/3d-models/date-palm-and-vegetation-734c4537ca8547209a54df49f134824a
+- Árvores folhosas e capim: **"Low Poly Tree Scene Free"** por **Nicholas-3D** – https://sketchfab.com/3d-models/low-poly-tree-scene-free-89daa5e21f0d4f08a59dba0d566e88bd
+- Folhagem do chão: **"Grass"** por **Epic_Tree_Store** – https://sketchfab.com/3d-models/grass-e58b89ba5b5047338210dbcf730f7b05
 
 Motor 3D: [three.js](https://threejs.org) (licença MIT).
 Fontes: Lilita One e Barlow Semi Condensed (SIL Open Font License, em `src/ui/fonts`).

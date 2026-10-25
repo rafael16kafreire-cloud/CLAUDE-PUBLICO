@@ -11,6 +11,7 @@ import { game } from '../core/game_manager.js';
 import { BALANCE } from '../core/balance.js';
 import { ICONS } from './icons.js';
 import { STAT_ICONS } from './inspect_panel.js';
+import { BUTTON_ICONS } from './button_icons.js';
 
 const BARS = [
   { key: 'health', label: 'Vida' },
@@ -177,7 +178,7 @@ export class Hud {
     }
     const attack = keyKind === 'attack';
     const key = game.isTouch
-      ? `<span class="key key-touch">${attack ? 'Atacar' : 'Interagir'}</span>`
+      ? `<span class="key key-touch">${attack ? BUTTON_ICONS.attack : BUTTON_ICONS.interact}</span>`
       : `<span class="key">${attack ? 'Clique' : 'E'}</span>`;
     p.classList.toggle('prompt-attack', attack);
     p.innerHTML = `${key}<span></span>`;

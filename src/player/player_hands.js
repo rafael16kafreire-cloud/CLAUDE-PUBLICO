@@ -156,6 +156,11 @@ export class PlayerHands {
     this._side = 1; // um braço só
   }
 
+  // Coletar: a mão desce, pega e volta.
+  gather() {
+    this._gather = 1;
+  }
+
   update(dt, { visible, speed, swimming, running, onGround }) {
     this.root.visible = visible;
     if (!visible) return;
@@ -194,6 +199,16 @@ export class PlayerHands {
       this.left.position.y -= 0.05;
     }
 
+    if (this._gather > 0) {
+      this._gather = Math.max(0, this._gather - dt * 1.8);
+      const t = 1 - this._gather;
+      // desce e vai para frente (0..0.5), fecha a mão e puxa de volta (0.5..1)
+      const reach = Math.sin(Math.min(1, t / 0.5) * Math.PI * 0.5) * (t < 0.5 ? 1 : 1 - (t - 0.5) / 0.5);
+      this.right.position.y -= reach * 0.22;
+      this.right.position.z -= reach * 0.2;
+      this.right.position.x -= reach * 0.05;
+      this.right.rotation.x = this.restRotR.x - reach * 0.7;
+    }
     if (this._swing > 0) {
       this._swing = Math.max(0, this._swing - dt * (this._kind === 'mao' ? 3.5 : 2.3));
       const t = 1 - this._swing;

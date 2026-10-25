@@ -48,14 +48,15 @@
   },
   "quetzalcoatlus": {
     "arquivo": "JWD_Quetzalcoatlus",
-    "giro": "cabeca_cima",
+    "giro": "cabeca_cima_costas",
     "triangulos": 16000,
-    "pitch": -30
+    "pitch": 30
   },
   "mamute": {
     "arquivo": "woolly_mammoth",
     "giro": "y180",
-    "triangulos": 24000
+    "triangulos": 24000,
+    "brilho": 1.9
   },
   "argentavis": {
     "arquivo": "Argentavis",

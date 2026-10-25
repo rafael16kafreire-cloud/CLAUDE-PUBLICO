@@ -8,6 +8,11 @@ import * as THREE from 'three';
 
 export function findRespawnPoints(map, layout) {
   return layout.pontos_renascer.map((p) => {
+    // ponto com lugar certo (pos = [x, z]): olha para o centro da ilha
+    if (p.pos) {
+      const [x, z] = p.pos;
+      return { id: p.id, name: p.nome, position: new THREE.Vector3(x, map.heightAt(x, z), z), yaw: Math.atan2(x, z) };
+    }
     const len = Math.hypot(p.direcao[0], p.direcao[1]) || 1;
     const dx = p.direcao[0] / len;
     const dz = p.direcao[1] / len;

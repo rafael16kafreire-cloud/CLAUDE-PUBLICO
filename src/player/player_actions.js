@@ -115,6 +115,13 @@ export class PlayerActions {
     this.player.stats.addXP(res.xp ?? 1);
     veg.consume(rec);
     if (mode !== 'colher') this._wear();
+    // coleta tem um tempinho até a próxima (e animação de pegar)
+    const C = BALANCE.coleta;
+    const wait = mode === 'colher' ? C.intervalo_colher_seg : C.intervalo_bater_seg;
+    this.player._attackTimer = Math.max(this.player._attackTimer ?? 0, wait);
+    this.harvestCooldown = wait;
+    this.player.model?.gather?.();
+    if (mode === 'colher') this.player.onGather?.();
     // efeito visual
     const kind = res.key === 'pedra' ? 'pedra' : ['arvore', 'arvore_gigante', 'tronco', 'palmeira'].includes(res.key) ? 'madeira' : 'folha';
     const fx = this.player.position.clone();
@@ -165,8 +172,12 @@ export class PlayerActions {
     const c = def?.comida;
     if (!c) return false;
     const st = this.player.stats;
-    if (c.fome > 0 && st.food >= st.max.food - 0.5 && !c.vida && !c.sede) {
-      events.emit(EV.MESSAGE, { text: 'Você está sem fome.', kind: 'info' });
+    // não come mais do que precisa: tem que faltar boa parte do que o item dá
+    const lim = BALANCE.sobrevivencia.satisfeito;
+    const needFood = c.fome > 0 && st.max.food - st.food >= c.fome * lim;
+    const needWater = c.sede > 0 && st.max.water - st.water >= c.sede * lim;
+    if ((c.fome > 0 || c.sede > 0) && !c.vida && !needFood && !needWater) {
+      events.emit(EV.MESSAGE, { text: c.fome > 0 ? 'Você está satisfeito: guarde para depois.' : 'Você não está com sede.', kind: 'info' });
       return false;
     }
     st.food = Math.min(st.max.food, st.food + (c.fome ?? 0));

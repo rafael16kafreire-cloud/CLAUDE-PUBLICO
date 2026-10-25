@@ -39,9 +39,12 @@ export class PlayerInteraction {
       this.target = this._findTarget();
       this._setPrompt(this.target ? { text: this.target.text, key: this.target.key ?? 'interact' } : null);
     }
+    if (this.actions) this.actions.harvestCooldown = Math.max(0, (this.actions.harvestCooldown ?? 0) - dt);
     if (input.wasPressed('interact')) {
       const t = this._findTarget();
-      if (t && t.key !== 'attack') this._interact(t);
+      // colher tem um tempinho entre uma e outra
+      const wait = t?.kind === 'plant' && this.actions?.harvestCooldown > 0;
+      if (t && t.key !== 'attack' && !wait) this._interact(t);
     }
   }
 
@@ -215,7 +218,10 @@ export class PlayerInteraction {
         events.emit(EV.MESSAGE, { text: 'Água salgada não mata a sede!', kind: 'warn' });
         return;
       }
-      const got = this.player.stats.drink(BALANCE.sobrevivencia.gole_agua);
+      const st = this.player.stats;
+      const gole = BALANCE.sobrevivencia.gole_agua;
+      // só bebe se faltar boa parte de um gole
+      const got = st.max.water - st.water >= gole * BALANCE.sobrevivencia.satisfeito ? st.drink(gole) : 0;
       if (got < 0.5) {
         events.emit(EV.MESSAGE, { text: 'Você não está com sede.', kind: 'info' });
       } else {

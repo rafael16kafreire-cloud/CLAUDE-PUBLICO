@@ -27,6 +27,8 @@ ROT = {
     'nada': np.eye(3),
     # modelo em pé (cabeça para +Y, barriga para -Z) -> deitado
     'cabeca_cima': np.array([[1, 0, 0], [0, 0, 1], [0, -1, 0]]),
+    # em pé com a cabeça para +Y e as costas para -Z (vira e desvira)
+    'cabeca_cima_costas': np.array([[-1, 0, 0], [0, 0, -1], [0, -1, 0]]),
     # modelo em pé com a cabeça para -Y
     'cabeca_baixo': np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]]),
 }

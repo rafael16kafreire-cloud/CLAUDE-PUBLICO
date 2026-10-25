@@ -87,7 +87,14 @@
   "laponia": {
     "inicio_z": -700,
     "grande_montanha": { "pico_x": 60, "pico_z": -1330, "largura_m": 1800, "altura_m": 320, "raio_m": 820 },
-    "colinas": { "altura_m": 70, "periodo_m": 1300 }
+    "colinas": { "altura_m": 70, "periodo_m": 1300 },
+    "_platos": "Pedras gigantes de topo plano na ponta da Grande Montanha, perto do mar (dá para construir em cima). x/z = centro, raio_m = tamanho do topo, altura_m = quanto sobe acima do chão do centro, rampa_graus = para onde desce a rampa (0 = leste, 90 = sul, 180 = oeste, 270 = norte).",
+    "platos": [
+      { "x": 535, "z": -1440, "raio_m": 30, "altura_m": 34, "rampa_graus": 90 },
+      { "x": 470, "z": -1255, "raio_m": 34, "altura_m": 38, "rampa_graus": 270 },
+      { "x": 525, "z": -1095, "raio_m": 26, "altura_m": 30, "rampa_graus": 90 },
+      { "x": 440, "z": -1605, "raio_m": 28, "altura_m": 32, "rampa_graus": 180 }
+    ]
   },
 
   "pantano": {
@@ -124,7 +131,8 @@
     { "id": "sul", "nome": "Praia Sul", "direcao": [0, 1] },
     { "id": "sudeste", "nome": "Praia Sudeste", "direcao": [0.72, 0.7] },
     { "id": "leste", "nome": "Praia Leste", "direcao": [1, 0.05] },
-    { "id": "norte", "nome": "Lapônia (frio!)", "direcao": [0.05, -1] },
+    { "id": "montanha_leste", "nome": "Pé da Montanha – leste (frio!)", "pos": [550, -775] },
+    { "id": "montanha_oeste", "nome": "Pé da Montanha – oeste (frio!)", "pos": [-425, -675] },
     { "id": "oeste", "nome": "Praia Oeste", "direcao": [-1, 0.1] },
     { "id": "sudoeste", "nome": "Praia Sudoeste", "direcao": [-0.65, 0.76] }
   ],
@@ -133,19 +141,19 @@
     "passo_m": 4.2,
     "_chances": "Para cada ponto da grade: chance (0 a 1) de nascer cada coisa, por bioma. A soma pode passar de 1 só até onde couber.",
     "biomas": {
-      "praia": { "coqueiro": 0.05, "arbusto_frutas": 0.012, "pedra_musgo": 0.01, "tronco_caido": 0.006 },
+      "praia": { "coqueiro": 0.05, "tamareira": 0.012, "tamareira2": 0.01, "planta_praia": 0.03, "arbusto_frutas": 0.012, "pedra_musgo": 0.01, "tronco_caido": 0.006 },
       "selva": {
         "sumauma": 0.045, "arvore_dossel": 0.17, "arvore_media": 0.12, "acai": 0.07,
         "samambaia_gigante": 0.08, "bananeira": 0.035, "samambaia": 0.16,
         "arbusto_mejo": 0.025, "arbusto_escura": 0.02, "arbusto_frutas": 0.015,
-        "tronco_caido": 0.025, "pedra_musgo": 0.022
+        "tronco_caido": 0.025, "pedra_musgo": 0.022, "arvore_folhosa": 0.03, "arvore_folhosa2": 0.03
       },
       "igapo": {
         "arvore_dossel": 0.1, "acai": 0.12, "mangue": 0.1, "samambaia_gigante": 0.06,
         "samambaia": 0.12, "bananeira": 0.03, "arbusto_mejo": 0.02, "tronco_caido": 0.03, "junco": 0.12
       },
       "neve": {
-        "pinheiro_neve": 0.09, "pinheiro": 0.03, "arvore_seca": 0.012, "arvore_morta_neve": 0.008, "rochedo": 0.05, "minerio_ferro": 0.012, "pedrinhas": 0.03, "gravetos": 0.025
+        "pinheiro_neve": 0.12, "arvore_seca": 0.012, "arvore_morta_neve": 0.008, "rochedo": 0.05, "minerio_ferro": 0.012, "pedrinhas": 0.03, "gravetos": 0.025
       },
       "pantano": {
         "mangue": 0.09, "arvore_morta": 0.04, "junco": 0.22, "taboa": 0.12,
@@ -156,10 +164,10 @@
     "sub_bosque": {
       "passo_m": 3,
       "biomas": {
-        "selva": { "samambaia": 0.34, "arbusto": 0.08, "pedrinhas": 0.03, "gravetos": 0.05, "samambaia_gigante": 0.045, "arvore_media": 0.03, "acai": 0.015, "arbusto_mejo": 0.008, "arbusto_escura": 0.006 },
+        "selva": { "capim": 0.1, "samambaia": 0.34, "arbusto": 0.08, "pedrinhas": 0.03, "gravetos": 0.05, "samambaia_gigante": 0.045, "arvore_media": 0.03, "acai": 0.015, "arbusto_mejo": 0.008, "arbusto_escura": 0.006 },
         "igapo": { "samambaia": 0.22, "junco": 0.1, "arbusto": 0.04, "gravetos": 0.03, "pedrinhas": 0.01 },
-        "praia": { "arbusto": 0.02, "pedrinhas": 0.03, "gravetos": 0.025 },
-        "neve": { "arbusto_neve": 0.08 }
+        "praia": { "capim_praia": 0.05, "arbusto": 0.02, "pedrinhas": 0.03, "gravetos": 0.025 },
+        "neve": { "arbusto_neve": 0.16, "capim": 0.04 }
       }
     }
   }

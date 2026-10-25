@@ -545,6 +545,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   });
   await page.keyboard.down('KeyC');
   await gameWait(page, 1500);
+  await gameWait(page, 2000); // a visão cai antes da tela de morte
   await page.keyboard.up('KeyC');
   const dead = await page.evaluate(() => {
     const w = window.__ilha.ctx.world;

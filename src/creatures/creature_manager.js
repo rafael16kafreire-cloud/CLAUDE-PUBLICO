@@ -286,6 +286,21 @@ export class CreatureManager {
   // ---------------------------------------------------------
   // Carcaças: carne, couro e ossos
   // ---------------------------------------------------------
+  // Carcaça com carne perto (carnívoro com fome vai comer).
+  nearestCarcass(pos, radius) {
+    let best = null;
+    let bestD = radius;
+    for (const c of this.list) {
+      if (c.alive || !c.lootLeft || !Object.keys(c.lootLeft).some((k) => /carne/.test(k) && c.lootLeft[k] > 0)) continue;
+      const d = Math.hypot(c.pos.x - pos.x, c.pos.z - pos.z);
+      if (d < bestD) {
+        best = c;
+        bestD = d;
+      }
+    }
+    return best;
+  }
+
   findCorpse(pos, forward, reach) {
     let best = null;
     let bestD = Infinity;

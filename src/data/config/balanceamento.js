@@ -31,6 +31,7 @@ export default {
     regen_vida_seg: 0.6,       // vida recuperada por segundo
     regen_limite: 0.5,         // só regenera com fome E sede acima de 50%
     gole_agua: 12,             // quanto de sede cada "beber" recupera
+    satisfeito: 0.6,           // só come/bebe se faltar pelo menos 60% do que o item/gole dá
   },
 
   // ---------------------------------------------------------
@@ -142,6 +143,12 @@ export default {
   // ---------------------------------------------------------
   // Combate (soco por enquanto; armas na Fase 3)
   // ---------------------------------------------------------
+  // Coleta: tempo mínimo entre uma coleta e outra (não fica rápido demais)
+  coleta: {
+    intervalo_bater_seg: 1.0,  // bater em árvore/pedra/planta (Atacar)
+    intervalo_colher_seg: 0.9, // colher com a mão (Interagir: bagas, fibra...)
+  },
+
   combate: {
     soco_dano: 10,             // dano de um soco
     soco_alcance_m: 2.4,       // distância do soco

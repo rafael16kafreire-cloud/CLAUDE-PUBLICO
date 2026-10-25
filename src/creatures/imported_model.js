@@ -6,6 +6,7 @@
 // pernaE/D, bracoE/D...), então as animações do jogo funcionam.
 // =============================================================
 import * as THREE from 'three';
+import { hdTextures } from '../core/settings.js';
 import espinossauro from './imported/espinossauro.js';
 import trex from './imported/trex.js';
 import braquiossauro from './imported/braquiossauro.js';
@@ -67,7 +68,10 @@ export function buildImportedModel(d) {
   if (d.materiais) {
     for (const [start, count, m] of d.groups) g.addGroup(start, count, m);
     const material = d.materiais.map((m) => {
-      const mat = new THREE.MeshLambertMaterial({ map: texture(m.map, true) });
+      // qualidade alta: luz "de verdade" (brilho e relevo mais bonitos)
+      const mat = hdTextures()
+        ? new THREE.MeshStandardMaterial({ map: texture(m.map, true), roughness: 0.82, metalness: 0 })
+        : new THREE.MeshLambertMaterial({ map: texture(m.map, true) });
       mat.color.setScalar(d.brilho ?? 1); // textura muito escura: clareia
       if (m.normalMap) mat.normalMap = texture(m.normalMap, false);
       // modelo com faces de um lado só pintado dos dois lados

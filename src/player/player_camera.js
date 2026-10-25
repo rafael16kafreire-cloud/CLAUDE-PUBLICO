@@ -59,7 +59,18 @@ export class PlayerCamera {
 
     const t = this._target.copy(player.position);
     t.y += player.eyeHeight - 0.05;
-    if (player.dead) t.y = player.position.y + 0.6;
+    // morreu: a visão cai até o chão e tomba de lado
+    this._deathT = player.dead ? (this._deathT ?? 0) + dt : 0;
+    if (player.dead) {
+      const k = Math.min(1, this._deathT / 1.1);
+      const e = k * k * (3 - 2 * k);
+      if (this.mode === 'primeira') {
+        this.camera.position.set(player.position.x, player.position.y + (player.eyeHeight - 0.05) * (1 - e) + 0.3 * e, player.position.z);
+        this.camera.rotation.set(this.pitch * (1 - e) - 0.15 * e, this.yaw, 1.25 * e);
+        return;
+      }
+      t.y = player.position.y + 0.6;
+    }
 
     if (firstPerson) {
       this.camera.position.copy(t);

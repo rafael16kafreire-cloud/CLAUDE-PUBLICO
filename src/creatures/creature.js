@@ -13,6 +13,13 @@ import { angleDelta, clamp } from '../core/math.js';
 import { BALANCE } from '../core/balance.js';
 import { sound } from '../audio/audio.js';
 import { mulberry32 } from '../core/math.js';
+import { shakeAt } from '../world/materials.js';
+
+// O que cada herbívoro come (tipos de vegetação). Bicho alto (pescoço
+// comprido) come folha de árvore; os outros, arbustos e plantas baixas.
+const FOOD_LOW = new Set(['arbusto', 'arbusto_mejo', 'arbusto_escura', 'arbusto_frutas', 'samambaia', 'samambaia_gigante',
+  'bananeira', 'bananeira_vazia', 'junco', 'taboa', 'arbusto_neve', 'planta_praia', 'capim']);
+const FOOD_HIGH = new Set(['arvore_dossel', 'arvore_media', 'acai', 'sumauma', 'pinheiro_neve', 'pinheiro', 'arvore_folhosa', 'arvore_folhosa2']);
 
 export const CSTATE = {
   WANDER: 'vagar',
@@ -423,6 +430,32 @@ export class Creature {
     // Carnívoros com fome caçam outros bichos (cadeia alimentar) e
     // às vezes brigam com rivais. Depois de comer ficam um tempo saciados.
     const hungry = this.time > (this.fedUntil ?? 0);
+    // carnívoro com fome: carcaça perto? vai comer
+    if (sp.dieta === 'carnivoro' && hungry && !sp.ambiente && !this.flies && this.state === CSTATE.WANDER && !this.carcass
+      && this.rand() < 0.02) {
+      const c = this.manager.nearestCarcass(this.pos, 40);
+      if (c) {
+        this.carcass = c;
+        this.goal = new THREE.Vector2(c.pos.x, c.pos.z);
+      }
+    }
+    if (this.carcass) {
+      const c = this.carcass;
+      if (this.state !== CSTATE.WANDER || !c.lootLeft) {
+        this.carcass = null;
+      } else if (this._dist2D(c.pos) < c.radius + this.bodyFront * this.scale + 0.8) {
+        // come um pedaço: carcaça perde carne, bicho fica saciado
+        this.carcass = null;
+        this._setState(CSTATE.EAT);
+        this.eatRec = { x: c.pos.x, z: c.pos.z, type: 'carcaca', alive: true };
+        this.idleFor = BALANCE.brigas.comendo_seg;
+        this.fedUntil = this.time + BALANCE.brigas.saciado_seg;
+        for (const id of Object.keys(c.lootLeft)) if (/carne/.test(id)) c.lootLeft[id] = Math.max(0, Math.floor(c.lootLeft[id] * 0.6));
+        return;
+      } else {
+        this.goal = new THREE.Vector2(c.pos.x, c.pos.z);
+      }
+    }
     if (temp === 'agressivo' && hungry && !sp.ambiente && (this.state === CSTATE.WANDER || this.state === CSTATE.IDLE)
       && this.rand() < BALANCE.brigas.chance_caca_seg * 0.25) {
       const prey = this.manager.findPrey(this, ctx);
@@ -499,6 +532,29 @@ export class Creature {
     return true;
   }
 
+  // Planta para comer perto (sorteia entre as mais perto, para não irem
+  // todos na mesma).
+  _findFood(radius, kinds = this.height > 6 ? FOOD_HIGH : FOOD_LOW) {
+    const veg = this.world.vegetation;
+    if (!veg) return null;
+    let best = null;
+    let bestScore = Infinity;
+    veg.byHash.forEachNear(this.pos.x, this.pos.z, radius, (rec) => {
+      if (!rec.alive || !kinds.has(rec.type)) return;
+      const d = Math.hypot(rec.x - this.pos.x, rec.z - this.pos.z);
+      if (d > radius || d < 1.5) return;
+      if (this.world.waterAt(rec.x, rec.z) && !this.swims) return;
+      const score = d * (0.6 + this.rand());
+      if (score < bestScore) {
+        bestScore = score;
+        best = rec;
+      }
+    });
+    // bicho alto que não achou árvore come plantas baixas
+    if (!best && kinds === FOOD_HIGH) best = this._findFood(radius, FOOD_LOW);
+    return best;
+  }
+
   _setState(s) {
     this.state = s;
     this.stateTime = 0;
@@ -541,18 +597,49 @@ export class Creature {
         if (this.isBaby && mom?.alive && this._dist2D(mom.pos) > 5 + mom.radius) {
           this.goal = new THREE.Vector2(mom.pos.x + (this.rand() - 0.5) * 3, mom.pos.z + (this.rand() - 0.5) * 3);
         }
-        if (!this.goal || this.stateTime > 25) this.goal = this._pickWanderPoint(sp.raio > 2 ? 60 : 32);
-        if (!this.goal || this._steer(dt, this.goal.x, this.goal.y, this.walkSpeed)) {
-          const herb = sp.dieta === 'herbivoro' && !this.aquatic;
-          this._setState(herb && this.rand() < 0.6 ? CSTATE.EAT : CSTATE.IDLE);
-          this.idleFor = 5 + this.rand() * 10;
+        const herb = sp.dieta === 'herbivoro' && !this.aquatic && !this.flies;
+        if (!this.goal || this.stateTime > 25) {
+          // herbívoro: muitas vezes vai até uma planta para comer
+          this.food = herb && !this.isBaby && this.rand() < 0.6 ? this._findFood(sp.raio > 2 ? 45 : 28) : null;
+          if (this.food) {
+            const f = this.food;
+            const dx = this.pos.x - f.x;
+            const dz = this.pos.z - f.z;
+            const l = Math.hypot(dx, dz) || 1;
+            // para com a boca na planta
+            const reach = this.bodyFront * this.scale * 0.85 + 0.6;
+            this.goal = new THREE.Vector2(f.x + (dx / l) * reach, f.z + (dz / l) * reach);
+          } else {
+            this.goal = this._pickWanderPoint(sp.raio > 2 ? 60 : 32);
+          }
+        }
+        if (!this.goal || this._steer(dt, this.goal.x, this.goal.y, this.walkSpeed) || (this.food && this._dist2DXY(this.goal.x, this.goal.y) < 1.2)) {
+          const food = this.food?.alive ? this.food : null;
+          this._setState(herb && (food || this.rand() < 0.4) ? CSTATE.EAT : CSTATE.IDLE);
+          this.eatRec = food;
+          this.idleFor = food ? 8 + this.rand() * 8 : 5 + this.rand() * 10;
+          this.food = null;
         }
         break;
       }
       case CSTATE.IDLE:
       case CSTATE.EAT:
         this._brake(dt);
-        if (this.stateTime > (this.idleFor ?? 4)) this._setState(CSTATE.WANDER);
+        if (this.state === CSTATE.EAT && this.eatRec) {
+          // vira para a planta e arranca pedaços (a planta balança)
+          const r = this.eatRec;
+          this.yaw += clamp(angleDelta(this.yaw, Math.atan2(-(r.x - this.pos.x), -(r.z - this.pos.z))), -dt * 1.5, dt * 1.5);
+          this._chewT = (this._chewT ?? 0) - dt;
+          if (this._chewT <= 0) {
+            this._chewT = 1.3 + this.rand() * 0.6;
+            shakeAt(r.x, r.z, 0.7);
+            sound.play('comer', this.pos, { volume: 0.5 });
+          }
+        }
+        if (this.stateTime > (this.idleFor ?? 4)) {
+          this.eatRec = null;
+          this._setState(CSTATE.WANDER);
+        }
         break;
       case CSTATE.FOLLOW: {
         const o = this.owner;
@@ -919,9 +1006,12 @@ export class Creature {
     A.turn += (clamp(yawVel, -2, 2) - A.turn) * k(5);
     A.run += (clamp(this.speed / Math.max(0.1, this.runSpeed), 0, 1) - A.run) * k(4);
     const legLen = Math.max(0.25, this.height * 0.45);
-    const stride = legLen * (spec.body === 'spider' ? 1.4 : 2.6);
+    // passo de verdade: andando a perna abre ~0,35 rad, correndo até ~0,7;
+    // o ritmo segue o tamanho do passo (o pé não escorrega no chão)
+    const moving = clamp(this.speed / Math.max(0.15, this.walkSpeed * 0.4), 0, 1);
+    const amp = moving * (0.34 + 0.36 * A.run);
+    const stride = spec.body === 'spider' ? legLen * 1.4 : Math.max(0.3, 4 * legLen * Math.sin(Math.max(0.2, amp)) * 0.85);
     this.phase += (adt * this.speed) / stride;
-    const amp = clamp(this.speed / (legLen * 3), 0, 0.75);
 
     // ---------- voadores ----------
     if (spec.body === 'flyer' && this.landed && !dead) {
@@ -1064,7 +1154,9 @@ export class Creature {
     const tailSpeed = inWater ? 3 : 1.3;
     ['tail1', 'tail2', 'tail3'].forEach((n, i) => {
       if (!b[n]) return;
-      const target = dead ? 0.15 : -A.turn * 0.12 * (i + 1) + Math.sin(t * tailSpeed - i * 0.9) * tailIdle;
+      // andando, a cauda balança junto com os passos (contrapeso)
+      const stepSway = Math.sin(this.phase * TAU - i * 0.7) * amp * 0.22;
+      const target = dead ? 0.15 : -A.turn * 0.12 * (i + 1) + Math.sin(t * tailSpeed - i * 0.9) * tailIdle + stepSway;
       A.tail[i] += (target - A.tail[i]) * k(4 - i);
       b[n].rotation.y = A.tail[i];
       // correndo, a cauda fica reta para trás
@@ -1088,21 +1180,27 @@ export class Creature {
     A.headYaw += (wantYaw - A.headYaw) * k(3);
     A.headPitch += (wantPitch - A.headPitch) * k(3);
     const eating = this.state === CSTATE.EAT;
-    const neckDown = eating ? -0.55 - Math.max(0, Math.sin(t * 2.2)) * 0.15 : 0;
+    // comendo: abaixa a cabeça (bicho alto comendo árvore: estica para cima)
+    const high = eating && this.eatRec && FOOD_HIGH.has(this.eatRec.type);
+    const neckDown = eating ? (high ? 0.15 : -0.6) - Math.max(0, Math.sin(t * 2.2)) * 0.15 : 0;
     A.neck += (neckDown - A.neck) * k(3);
     // bote: recua (0..0.3) e avança (0.3..0.7)
     const at = 1 - this.attackAnim;
     const lunge = this.attackAnim > 0 ? (at < 0.3 ? at / 0.3 * 0.25 : -Math.sin(((at - 0.3) / 0.7) * Math.PI) * 0.6) : 0;
     if (b.neck) {
-      b.neck.rotation.x = dead ? -0.35 : A.neck + lunge + A.headPitch * 0.5 + this.hurtAnim * 0.25;
+      // cabeça sobe e desce um pouco a cada passo
+      const nod = Math.sin(this.phase * TAU * 2) * amp * 0.08;
+      b.neck.rotation.x = dead ? -0.35 : A.neck + lunge + A.headPitch * 0.5 + this.hurtAnim * 0.25 + nod;
       b.neck.rotation.y = A.headYaw * 0.5;
     }
     if (b.neck2) b.neck2.rotation.x = eating ? -0.35 : A.headPitch * 0.3;
     if (b.head) {
-      b.head.rotation.x = eating ? -0.3 : A.headPitch * 0.5 + lunge * 0.4;
+      // mastigando: a cabeça puxa e solta
+      b.head.rotation.x = eating ? -0.3 + Math.sin(t * 5.5) * 0.12 : A.headPitch * 0.5 + lunge * 0.4;
       b.head.rotation.y = A.headYaw * 0.5;
     }
-    if (b.jaw) b.jaw.rotation.x = this.attackAnim > 0 ? -Math.sin(at * Math.PI) * 0.65 : -0.03 - Math.max(0, Math.sin(t * 0.7)) * 0.05;
+    if (b.jaw && eating) b.jaw.rotation.x = -Math.max(0, Math.sin(t * 5.5)) * 0.3;
+    else if (b.jaw) b.jaw.rotation.x = this.attackAnim > 0 ? -Math.sin(at * Math.PI) * 0.65 : -0.03 - Math.max(0, Math.sin(t * 0.7)) * 0.05;
     if (b.hips) b.hips.position.z = (b.hips.userData.rest.z) - lunge * 0.15 * legLen / this.scale;
   }
 

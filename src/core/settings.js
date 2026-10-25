@@ -23,8 +23,8 @@ export const QUALITY_PRESETS = {
     lodHi: 36, lodLo: 85, grassRadius: 26, grassDensity: 1.0, creatures: 45,
   },
   alta: {
-    pixelRatio: 1.5, shadows: true, shadowMap: 2048, shadowRange: 80, viewDistance: 260,
-    lodHi: 60, lodLo: 135, grassRadius: 40, grassDensity: 1.35, creatures: 45,
+    pixelRatio: 2, shadows: true, shadowMap: 4096, shadowRange: 110, viewDistance: 320,
+    lodHi: 90, lodLo: 200, grassRadius: 55, grassDensity: 1.6, creatures: 45,
   },
 };
 

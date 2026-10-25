@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { events, EV } from './core/event_bus.js';
 import { game, STATE } from './core/game_manager.js';
-import { settings, QUALITY_PRESETS } from './core/settings.js';
+import { settings, QUALITY_PRESETS, hdTextures } from './core/settings.js';
 import { input } from './core/input.js';
 import { World } from './world/world.js';
 import { Player } from './player/player.js';
@@ -19,6 +19,7 @@ import { loadGame, saveGame, clearSave } from './core/save.js';
 import { Messages } from './ui/messages.js';
 import { TouchControls } from './ui/touch_controls.js';
 import { DeathScreen } from './ui/death_screen.js';
+import { Minimap } from './ui/minimap.js';
 import { DebugOverlay } from './ui/debug_overlay.js';
 import { PauseMenu } from './ui/pause_menu.js';
 import { StartScreen } from './ui/start_screen.js';
@@ -55,13 +56,15 @@ function boot(hotData = {}) {
   const canvas = document.createElement('canvas');
   canvas.id = 'game';
   app.appendChild(canvas);
+  // qualidade alta: bordas lisas (antialias) e sombra suave
+  const high = hdTextures();
   const renderer = new THREE.WebGLRenderer({
     canvas,
-    antialias: false,              // mais leve no celular
+    antialias: high,               // baixa/média: mais leve no celular
     powerPreference: 'high-performance',
   });
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFShadowMap;
+  renderer.shadowMap.type = high ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
   // Cores mais naturais (luz forte não "estoura").
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.15;
@@ -163,10 +166,12 @@ function boot(hotData = {}) {
     const messages = new Messages(ui);
     const touch = new TouchControls(ui, input);
     const death = new DeathScreen(ui, world);
+    const minimap = new Minimap(hud.el, world);
     const debug = new DebugOverlay(ui, renderer);
     const creatures = new CreatureManager(world, scene);
     world.creatures = creatures;
     const hands = new PlayerHands(camera);
+    player.onGather = () => hands.gather();
     player.onPunch = (kind) => {
       hands.swing(kind);
       sound.play('golpe');
@@ -203,7 +208,7 @@ function boot(hotData = {}) {
     game.world = world;
     game.player = player;
     ctx = {
-      world, player, camCtl, interaction, hud, inspect, buildGhost, messages, touch, death, debug, pause, creatures, hands,
+      world, player, camCtl, interaction, hud, minimap, inspect, buildGhost, messages, touch, death, debug, pause, creatures, hands,
       inventory, crafting, actions, hotbar, invScreen,
     };
     ctx.net = new Multiplayer({ world, player, creatures, inventory, actions, camCtl });
@@ -505,10 +510,12 @@ function boot(hotData = {}) {
     ctx.world.spawnDeathBag(position, ctx.inventory.takeAll());
     input.exitPointerLock();
     input.runToggle = false;
-    ctx.death.show(cause, position);
+    // primeiro o jogador cai (animação); depois aparece a tela de morte
+    ctx.deathPending = { cause, position, t: 1.6 };
   });
 
   events.on(EV.RESPAWN_REQUESTED, ({ pointId }) => {
+    ctx.deathPending = null;
     const point = ctx.world.respawnPoint(pointId);
     ctx.player.respawn(point);
     ctx.camCtl.yaw = point.yaw;
@@ -667,7 +674,7 @@ function boot(hotData = {}) {
 
     handleActions();
     autoQuality(dt);
-    const { world, player, camCtl, interaction, hud, inspect, buildGhost, touch, debug, creatures, hands, crafting, invScreen, actions } = ctx;
+    const { world, player, camCtl, interaction, hud, minimap, inspect, buildGhost, touch, debug, creatures, hands, crafting, invScreen, actions } = ctx;
     const look = input.consumeLook();
     const sens = settings.get('sensitivity');
 
@@ -683,6 +690,13 @@ function boot(hotData = {}) {
         if (invScreen.visible) invScreen.tick();
         break;
       case STATE.DEAD:
+        if (ctx.deathPending) {
+          ctx.deathPending.t -= dt;
+          if (ctx.deathPending.t <= 0) {
+            ctx.death.show(ctx.deathPending.cause, ctx.deathPending.position);
+            ctx.deathPending = null;
+          }
+        }
         camCtl.applyLook(look, sens, player);
         player.update(dt, input, camCtl);
         camCtl.update(dt, player);
@@ -726,6 +740,7 @@ function boot(hotData = {}) {
     world.update(dt, camera, focus);
     if (game.state !== STATE.MENU) {
       hud.update(dt);
+      minimap.update(dt, player, camCtl.yaw);
       inspect.update(dt);
       // fantasma da peça de construção na mão
       const pl = game.state === STATE.PLAYING && !player.dead && !player.riding ? actions.buildPlacement(camCtl.yaw) : null;

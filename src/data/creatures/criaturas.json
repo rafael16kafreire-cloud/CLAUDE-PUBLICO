@@ -986,8 +986,8 @@
    "id": "mamute",
    "nome": "Mamute-lanoso",
    "comprimento_m": [
-    5.5,
-    6.5
+    9,
+    10.5
    ],
    "dieta": "herbivoro",
    "temperamento": "passivo",
@@ -997,8 +997,8 @@
    "vel_andar": 0.9,
    "vel_correr": 3.3,
    "tamanho": 1,
-   "raio": 1.7,
-   "altura": 3.6,
+   "raio": 2.6,
+   "altura": 5.8,
    "biomas": [
     "neve"
    ],
@@ -1027,7 +1027,7 @@
    "alcance_ataque": 2.8,
    "intervalo_ataque": 1.6,
    "pode_montar": true,
-   "carga": 700,
+   "carga": 900,
    "atributos": { "vida": [1100,1500], "forca": [85,125], "peso": [600,840], "stamina": [300,420], "velocidade": [90,112], "torpor": [700,980] }
   },
   {

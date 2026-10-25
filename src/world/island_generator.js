@@ -255,8 +255,53 @@ export class IslandMap {
       const grotas = -Math.pow(ridge, 4) * 7;
       h = praia + planicie + (colinas + grotas) * inland;
       h += this.mountainHeight(x, z, d);
+      h = this._plateaus(x, z, h);
     }
     return this._applySwamp(x, z, h);
+  }
+
+  // Está em cima (ou na borda) de um platô? (sem árvores nem pedras lá)
+  onPlateau(x, z) {
+    for (const p of this.lap.platos ?? []) if (Math.hypot(x - p.x, z - p.z) < p.raio_m * 1.25 + 15) return true;
+    return false;
+  }
+
+  // Pedras gigantes de topo plano (laponia.platos): paredão de rocha em
+  // volta e uma rampa de um lado para subir. O topo é plano para construir.
+  _plateaus(x, z, h) {
+    const list = this.lap.platos;
+    if (!list) return h;
+    for (let i = 0; i < list.length; i++) {
+      const p = list[i];
+      const dx = x - p.x;
+      const dz = z - p.z;
+      const far = p.raio_m + 90;
+      if (dx * dx + dz * dz > far * far) continue;
+      if (this._plateauTop === undefined) this._plateauTop = [];
+      if (this._plateauTop[i] === undefined) {
+        // topo = chão do centro (sem os platôs) + altura
+        this._plateauTop[i] = -Infinity;
+        this._plateauTop[i] = this.rawHeight(p.x, p.z, this.coastDistance(p.x, p.z)) + p.altura_m;
+      }
+      const top = this._plateauTop[i];
+      if (top === -Infinity) continue;
+      const r = Math.hypot(dx, dz);
+      // borda irregular (pedra quebrada)
+      const ang = Math.atan2(dz, dx);
+      const R = p.raio_m * (1 + 0.12 * Math.sin(ang * 3 + i) + 0.07 * Math.sin(ang * 7 + i * 2));
+      // topo: quase plano (calombos de 20 cm)
+      const flat = top + fbm(this.nRock, x * 0.08, z * 0.08, 2) * 0.2;
+      // paredão quase reto
+      const cliff = flat - smoothstep(R, R + 9, r) * p.altura_m * 1.6;
+      // rampa (10 m de largura, ~27°)
+      const ra = ((p.rampa_graus ?? 0) * Math.PI) / 180;
+      const along = dx * Math.cos(ra) + dz * Math.sin(ra);
+      const side = Math.abs(-dx * Math.sin(ra) + dz * Math.cos(ra));
+      let ramp = -Infinity;
+      if (along > 0 && side < 5 + 3 * smoothstep(5, 0, along - R)) ramp = flat - Math.max(0, along - R * 0.85) * 0.5;
+      h = Math.max(h, cliff, ramp);
+    }
+    return h;
   }
 
   // Pântano: chão baixo e encharcado, com poças e ilhotas; borda

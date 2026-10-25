@@ -12,6 +12,13 @@ const SPECIES = Object.fromEntries(criaturas.especies.map((e) => [e.id, e]));
 const authorName = (a = '') => a.replace(/\s*\(.*\)\s*$/, '');
 const esc = (t = '') => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
+const PLANT_CREDITS = [
+  ['Palmeira', 'Palm Tree Realistic', '00amza'],
+  ['Tamareiras e plantas da praia', 'Date palm and vegetation', 'borsh_and'],
+  ['Árvores folhosas e capim', 'Low Poly Tree Scene Free', 'Nicholas-3D'],
+  ['Folhagem do chão da floresta', 'Grass', 'Epic_Tree_Store'],
+];
+
 // Créditos dos modelos 3D (licença CC-BY pede o nome do autor)
 function creditsHtml() {
   const rows = Object.entries(IMPORTED).map(([id, d]) => {
@@ -19,6 +26,10 @@ function creditsHtml() {
     const lic = (c.licenca ?? '').split(' ')[0];
     return `<li><b>${esc(SPECIES[id]?.nome ?? id)}</b>: “${esc(c.titulo)}” por ${esc(authorName(c.autor))} (Sketchfab), ${esc(lic)} — adaptado.</li>`;
   });
+  // plantas da praia e da floresta (também CC-BY 4.0)
+  for (const [what, title, author] of PLANT_CREDITS) {
+    rows.push(`<li><b>${esc(what)}</b>: “${esc(title)}” por ${esc(author)} (Sketchfab), CC-BY-4.0 — adaptado.</li>`);
+  }
   return `<details class="credits"><summary>Créditos dos modelos 3D</summary><ul>${rows.join('')}</ul></details>`;
 }
 
@@ -28,7 +39,7 @@ export class StartScreen {
     el.className = 'overlay start';
     el.innerHTML = `
       <div class="start-panel">
-        <p class="eyebrow">Protótipo · v0.10.0 · sobreviver, domar e construir</p>
+        <p class="eyebrow">Protótipo · v0.11.0 · sobreviver, domar e construir</p>
         <h1 class="title">Ilha<br>Primordial</h1>
         <p class="tagline">Você acordou na beira da mata sem nada. Pegue madeira, crie ferramentas e sobreviva aos predadores da floresta.</p>
         <button type="button" class="btn btn-primary btn-play" id="btn-play" disabled>Gerando a ilha…</button>

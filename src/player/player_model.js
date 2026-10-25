@@ -76,6 +76,11 @@ export class PlayerModel {
     if (this._swing <= 0) this._swing = 1;
   }
 
+  // Coletar: abaixa e pega com a mão.
+  gather() {
+    this._gather = 1;
+  }
+
   // state: { position, facing, speed, onGround, crouching, swimming, dead, visible }
   update(dt, s) {
     this.root.position.copy(s.position);
@@ -83,10 +88,16 @@ export class PlayerModel {
     this.root.visible = s.visible;
 
     const b = this.body;
+    // morte: o corpo tomba aos poucos
+    this._deadT = s.dead ? (this._deadT ?? 0) + dt : 0;
     if (s.dead) {
-      b.rotation.set(0, 0, Math.PI / 2);
-      b.position.set(0.9, 0.15, 0);
+      const k = Math.min(1, this._deadT / 0.9);
+      const e = k * k;
+      b.rotation.set(0, 0, (Math.PI / 2) * e);
+      b.position.set(0.9 * e, 0.15 * e, 0);
       this._resetLimbs();
+      this.armL.rotation.z = -0.6 * e;
+      this.armR.rotation.z = 0.6 * e;
       return;
     }
 
@@ -120,6 +131,13 @@ export class PlayerModel {
     }
     b.scale.y = !s.swimming && s.crouching ? 0.68 : 1;
 
+    // Coletar: inclina o corpo e estica o braço para baixo.
+    if (this._gather > 0) {
+      this._gather = Math.max(0, this._gather - dt * 1.8);
+      const k = Math.sin((1 - this._gather) * Math.PI);
+      b.rotation.x -= 0.45 * k;
+      this.armR.rotation.x = -1.1 * k;
+    }
     // Golpe com o braço direito (botão Atacar).
     if (this._swing > 0) {
       this._swing = Math.max(0, this._swing - dt * 3.2);

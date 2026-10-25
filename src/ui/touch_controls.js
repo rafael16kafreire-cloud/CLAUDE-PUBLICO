@@ -10,6 +10,7 @@
 //   então funciona em pé e deitado).
 // =============================================================
 import { TOUCH_LOOK_FACTOR } from '../core/input.js';
+import { BUTTON_ICONS } from './button_icons.js';
 
 const BUTTONS = [
   { id: 'jump', label: 'Pular', cls: 'b-jump' },
@@ -34,7 +35,7 @@ export class TouchControls {
         <div class="tc-stick-base"><div class="tc-stick-knob"></div></div>
       </div>
       <div class="tc-buttons">
-        ${BUTTONS.map((b) => `<button type="button" class="tc-btn ${b.cls}" data-id="${b.id}">${b.label}</button>`).join('')}
+        ${BUTTONS.map((b) => `<button type="button" class="tc-btn ${b.cls}" data-id="${b.id}" aria-label="${b.label}" title="${b.label}">${BUTTON_ICONS[b.id]}</button>`).join('')}
       </div>
       <div class="tc-edit-bar" hidden>
         <span>Arraste os botões para onde quiser</span>
@@ -115,8 +116,14 @@ export class TouchControls {
   updateStates(player) {
     this.btn.run.classList.toggle('on', this.input.runToggle);
     this.btn.crouch.classList.toggle('on', player.crouching);
-    this.btn.crouch.textContent = player.swimming ? 'Descer' : 'Agachar';
-    this.btn.jump.textContent = player.swimming ? 'Subir' : 'Pular';
+    // nadando: subir/descer (só troca o ícone quando muda)
+    const sw = !!player.swimming;
+    if (this._swimIcons !== sw) {
+      this._swimIcons = sw;
+      this.btn.crouch.innerHTML = sw ? BUTTON_ICONS.down : BUTTON_ICONS.crouch;
+      this.btn.crouch.setAttribute('aria-label', sw ? 'Descer' : 'Agachar');
+      this.btn.jump.setAttribute('aria-label', sw ? 'Subir' : 'Pular');
+    }
   }
 
   // ----- Câmera: arrastar o dedo -----
