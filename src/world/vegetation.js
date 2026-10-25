@@ -43,11 +43,11 @@ const TYPES = {
   tamareira: { foot: 0.45, hi: () => vegGeometry('tamareira', 8.5), lo: P.makeCoconutPalmLow, mat: () => vegMaterial('tamareira'), collider: 0.4, shadow: true, scale: [0.8, 1.2], res: 'palmeira', textured: true, maxDist: 280 },
   tamareira2: { foot: 0.45, hi: () => vegGeometry('tamareira2', 7), lo: P.makeCoconutPalmLow, mat: () => vegMaterial('tamareira2'), collider: 0.4, shadow: true, scale: [0.8, 1.2], res: 'palmeira', textured: true, maxDist: 280 },
   planta_praia: { hi: () => vegGeometry('planta_praia', 1.1), mat: () => vegMaterial('planta_praia'), collider: 0, shadow: false, scale: [0.7, 1.4], res: 'arbusto', maxDist: 80, textured: true },
-  capim_praia: { hi: () => vegGeometry('capim_praia', 0.9), mat: () => vegMaterial('capim_praia'), collider: 0, shadow: false, scale: [0.7, 1.4], res: 'arbusto', maxDist: 60, textured: true },
+  capim_praia: { hi: () => vegGeometry('capim_praia', 0.9), mat: () => vegMaterial('capim_praia'), collider: 0, shadow: false, scale: [0.7, 1.4], res: null, maxDist: 60, textured: true },
   // floresta (Low Poly Tree Scene Free): árvores folhosas e tufos de capim
   arvore_folhosa: { foot: 0.5, hi: () => vegGeometry('arvore_folhosa', 15), lo: P.makeCanopyTreeLow, mat: () => vegMaterial('arvore_folhosa'), collider: 0.45, shadow: true, scale: [0.8, 1.3], res: 'arvore', textured: true, maxDist: 320 },
   arvore_folhosa2: { foot: 0.35, hi: () => vegGeometry('arvore_folhosa2', 11), lo: P.makeUnderstoryTreeLow, mat: () => vegMaterial('arvore_folhosa2'), collider: 0.35, shadow: true, scale: [0.8, 1.3], res: 'arvore', textured: true, maxDist: 320 },
-  capim: { hi: () => vegGeometry('capim', 0.8), mat: () => vegMaterial('capim'), collider: 0, shadow: false, scale: [0.7, 1.5], res: 'arbusto', maxDist: 55, textured: true },
+  capim: { hi: () => vegGeometry('capim', 0.8), mat: () => vegMaterial('capim'), collider: 0, shadow: false, scale: [0.7, 1.5], res: null, maxDist: 55, textured: true },
   samambaia_gigante: { foot: 0.3, hi: P.makeTreeFern, lo: P.makeTreeFernLow, imp: true, collider: 0.2, shadow: true, scale: [0.8, 1.3], res: 'samambaia_gigante' },
   bananeira: { foot: 0.45, hi: P.makeBananaTree, lo: P.makeBananaTreeLow, collider: 0.22, shadow: false, scale: [0.85, 1.25], res: 'bananeira', maxDist: 110 },
   bananeira_vazia: { foot: 0.45, hi: P.makeBananaTreeEmpty, lo: P.makeBananaTreeEmptyLow, collider: 0.22, shadow: false, scale: [0.85, 1.25], res: 'planta', maxDist: 110 },
