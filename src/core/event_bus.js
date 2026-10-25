@@ -16,6 +16,7 @@ export const EV = {
   WATER_DRUNK: 'water_drunk',             // { fresh, amount }
   XP_GAINED: 'xp_gained',                 // { amount }
   LEVEL_UP: 'level_up',                   // { level, points }
+  SKILLS_CHANGED: 'skills_changed',       // { key } ponto de habilidade gasto
   SETTINGS_CHANGED: 'settings_changed',   // { key, value, settings }
   CAMERA_MODE: 'camera_mode',             // { mode }
   PLAYER_HURT: 'player_hurt',             // { amount, source }

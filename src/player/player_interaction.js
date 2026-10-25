@@ -71,7 +71,7 @@ export class PlayerInteraction {
     if (rec) {
       const res = this.world.vegetation.resourceOf(rec);
       const first = Object.keys(res.colher)[0];
-      const label = first === 'banana' ? 'Pegar bananas' : `Colher ${itemName(first)}`;
+      const label = res.rotulo ?? (first === 'banana' ? 'Pegar bananas' : `Colher ${itemName(first)}`);
       return { kind: 'plant', rec, text: label };
     }
 

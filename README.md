@@ -4,6 +4,24 @@ Jogo 3D de sobrevivência com dinossauros. Sozinho (offline) ou em **co-op onlin
 Roda no celular (Android como app ou no navegador) e no PC.
 Visual estilizado, feito para ser leve.
 
+**Versão 0.7.0**
+- **Chão de terra de verdade:** textura do arquivo *Soft Dirt Material* (cor + relevo)
+  em toda a floresta, misturada com a cor de cada lugar.
+- **Pedrinhas e gravetos no chão:** pegue com Interagir (E) desde o começo. Machado e
+  picareta de pedra, tocha e fogueira agora usam gravetos; a fogueira também queima
+  gravetos (o dobro da madeira).
+- **Botões do celular no lugar que você quiser:** Pausa → *Ajustar posição dos botões*,
+  arraste e aperte *Travar* (fica salvo; *Padrão* volta ao normal).
+- **Bichos nascem e morrem:** macho e fêmea da mesma espécie perto um do outro têm
+  filhotes; o filhote segue a mãe e cresce até virar adulto (~12 min). Um dia ficam
+  velhos e morrem. Mais bichos na floresta (até 22 por perto).
+- **Tamanhos reais** (do focinho à cauda): espinossauro 14–18 m, T-rex 11,5–12,4 m,
+  deinosuchus 10–12 m, titanoboa 12–14 m, braquiossauro 20–22 m… (`comprimento_m` em
+  `criaturas.json`). Sumaúmas agora têm 38–50 m, então nenhum bicho passa delas.
+- **Stamina dobrada** (200) e **Habilidades** no inventário: cada nível dá 1 ponto para
+  melhorar vida, stamina, comida, água, fôlego, peso ou força (`balanceamento.js` →
+  `habilidades`).
+
 **Versão 0.6.3** – lupa para inspecionar bichos: mire num bicho e aperte a lupa (canto de
 cima) ou **R**. Em 2 s aparece a ficha com vida, força, peso que carrega, stamina,
 velocidade e torpor. Cada bicho sorteia esses números entre o mínimo e o máximo da

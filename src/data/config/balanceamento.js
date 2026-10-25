@@ -11,7 +11,7 @@ export default {
   // ---------------------------------------------------------
   jogador: {
     vida_max: 100,
-    stamina_max: 100,
+    stamina_max: 200,    // (dobrada na v0.7)
     fome_max: 100,       // barra de comida (cheia = sem fome)
     sede_max: 100,       // barra de água (cheia = sem sede)
     folego_max: 100,     // ar embaixo d'água
@@ -41,7 +41,7 @@ export default {
     gasto_pulo: 8,             // por pulo
     gasto_nado_seg: 2.5,       // por segundo nadando
     gasto_nado_rapido_seg: 8,  // por segundo nadando rápido
-    regen_seg: 14,             // recuperação por segundo (parado ou andando)
+    regen_seg: 28,             // recuperação por segundo (parado ou andando)
     regen_na_agua: 0.3,        // boiando parado recupera só 30% disso
     espera_regen_seg: 1.0,     // espera antes de começar a recuperar
   },
@@ -97,6 +97,19 @@ export default {
   // ---------------------------------------------------------
   // Níveis e XP
   // ---------------------------------------------------------
+  // Habilidades: a cada nível ganha pontos para gastar (Inventário →
+  // Habilidades). Quanto cada ponto aumenta:
+  habilidades: {
+    pontos_por_nivel: 1,
+    vida: 10,       // +10 de vida máxima
+    stamina: 20,    // +20 de stamina máxima
+    fome: 10,       // +10 na barra de comida (dura mais)
+    sede: 10,       // +10 na barra de água (dura mais)
+    folego: 15,     // +15 de fôlego embaixo d'água
+    peso: 15,       // +15 kg que carrega
+    forca: 5,       // +5% de dano corpo a corpo
+  },
+
   nivel: {
     max: 60,
     xp_base: 60,               // XP para ir do nível 1 ao 2
@@ -146,6 +159,14 @@ export default {
     // stamina dos bichos: aguentam correr X s com stamina cheia
     // e recuperam tudo em Y s andando/parados (cansados só andam)
     corrida_seg: 30,
+    // ciclo de vida: nascem filhotes quando macho e fêmea adultos da mesma
+    // espécie estão perto um do outro; o filhote cresce e um dia morre de velho
+    vida_media_min: [45, 80],    // quanto tempo (min de jogo) um bicho vive
+    crescer_min: 12,             // filhote vira adulto em X min
+    intervalo_cria_min: [6, 10], // depois de ter filhote, espera X min
+    chance_cria: 0.35,           // chance a cada tentativa (a cada 15 s)
+    distancia_casal_m: 35,       // macho e fêmea a até X m
+    extra_filhotes: 6,           // filhotes podem passar o limite em até X
     recupera_seg: 20,
     // tempo para inspecionar um bicho com a lupa
     inspecionar_seg: 2,
@@ -201,7 +222,7 @@ export default {
   // Desempenho
   // ---------------------------------------------------------
   desempenho: {
-    criaturas_max_ativas: 15,  // máximo de criaturas vivas perto do jogador
+    criaturas_max_ativas: 22,  // máximo de criaturas vivas perto do jogador
   },
 
   // ---------------------------------------------------------

@@ -25,7 +25,8 @@ export class PlayerStats {
 
     this.level = 1;
     this.xp = 0;
-    this.points = 0; // pontos para gastar ao subir de nível (Fase 3)
+    this.points = 0; // pontos para gastar ao subir de nível (Inventário → Habilidades)
+    this.skills = { vida: 0, stamina: 0, fome: 0, sede: 0, folego: 0, peso: 0, forca: 0 };
 
     this.dead = false;
     this.deathCause = null;
@@ -44,8 +45,10 @@ export class PlayerStats {
     let mult = 1;
     if (ctx.running) mult = S.mult_correndo;
     else if (ctx.swimming) mult = S.mult_nadando;
-    this.food = Math.max(0, this.food - perSecond(this.max.food, S.fome_duracao_min) * mult * dt);
-    this.water = Math.max(0, this.water - perSecond(this.max.water, S.sede_duracao_min) * mult * dt);
+    // (gasta como se a barra fosse a do nível 1: barra maior = dura mais)
+    const J = BALANCE.jogador;
+    this.food = Math.max(0, this.food - perSecond(J.fome_max, S.fome_duracao_min) * mult * dt);
+    this.water = Math.max(0, this.water - perSecond(J.sede_max, S.sede_duracao_min) * mult * dt);
 
     // ---- Stamina
     let drain = 0;
@@ -63,7 +66,7 @@ export class PlayerStats {
 
     // ---- Fôlego (só cai com a cabeça embaixo d'água)
     if (ctx.headUnderwater) {
-      this.oxygen = Math.max(0, this.oxygen - (this.max.oxygen / F.duracao_seg) * dt);
+      this.oxygen = Math.max(0, this.oxygen - (J.folego_max / F.duracao_seg) * dt);
     } else {
       this.oxygen = Math.min(this.max.oxygen, this.oxygen + F.regen_seg * dt);
     }
@@ -139,10 +142,63 @@ export class PlayerStats {
     while (this.level < N.max && this.xp >= this.xpToNext()) {
       this.xp -= this.xpToNext();
       this.level += 1;
-      this.points += 1;
+      this.points += BALANCE.habilidades.pontos_por_nivel;
       events.emit(EV.LEVEL_UP, { level: this.level, points: this.points });
     }
     if (this.level >= N.max) this.xp = 0;
+  }
+
+  // ---- Habilidades (pontos ganhos ao subir de nível)
+  // Peso que carrega sem ficar lento.
+  get maxWeight() {
+    return BALANCE.jogador.peso_max + this.skills.peso * BALANCE.habilidades.peso;
+  }
+
+  // Multiplicador do dano corpo a corpo.
+  get damageMul() {
+    return 1 + (this.skills.forca * BALANCE.habilidades.forca) / 100;
+  }
+
+  // Valor de cada habilidade agora (para a tela).
+  skillValue(key) {
+    const H = BALANCE.habilidades;
+    switch (key) {
+      case 'vida': return this.max.health;
+      case 'stamina': return this.max.stamina;
+      case 'fome': return this.max.food;
+      case 'sede': return this.max.water;
+      case 'folego': return this.max.oxygen;
+      case 'peso': return this.maxWeight;
+      case 'forca': return 100 + this.skills.forca * H.forca;
+      default: return 0;
+    }
+  }
+
+  spendPoint(key) {
+    if (this.points <= 0 || !(key in this.skills)) return false;
+    this.points -= 1;
+    this.skills[key] += 1;
+    const before = { ...this.max };
+    this._applySkills();
+    // o que aumentou já vem cheio
+    this.health += this.max.health - before.health;
+    this.stamina += this.max.stamina - before.stamina;
+    this.food += this.max.food - before.food;
+    this.water += this.max.water - before.water;
+    this.oxygen += this.max.oxygen - before.oxygen;
+    events.emit(EV.SKILLS_CHANGED, { key });
+    return true;
+  }
+
+  _applySkills() {
+    const J = BALANCE.jogador;
+    const H = BALANCE.habilidades;
+    const s = this.skills;
+    this.max.health = J.vida_max + s.vida * H.vida;
+    this.max.stamina = J.stamina_max + s.stamina * H.stamina;
+    this.max.food = J.fome_max + s.fome * H.fome;
+    this.max.water = J.sede_max + s.sede * H.sede;
+    this.max.oxygen = J.folego_max + s.folego * H.folego;
   }
 
   // Ao renascer: tudo cheio, fome/sede conforme o balanceamento.
@@ -161,13 +217,17 @@ export class PlayerStats {
   // Para salvar/carregar (usado de verdade na Fase 12).
   toJSON() {
     const { health, stamina, food, water, oxygen, temperature, level, xp, points } = this;
-    return { health, stamina, food, water, oxygen, temperature, level, xp, points };
+    return { health, stamina, food, water, oxygen, temperature, level, xp, points, skills: { ...this.skills } };
   }
 
   fromJSON(data) {
     if (!data) return;
     for (const key of ['health', 'stamina', 'food', 'water', 'oxygen', 'temperature', 'level', 'xp', 'points']) {
       if (typeof data[key] === 'number') this[key] = data[key];
+    }
+    if (data.skills) {
+      for (const k of Object.keys(this.skills)) if (typeof data.skills[k] === 'number') this.skills[k] = data.skills[k];
+      this._applySkills();
     }
   }
 }

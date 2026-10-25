@@ -118,8 +118,9 @@ function boot(hotData = {}) {
     camera.far = vd + 40;
     camera.updateProjectionMatrix();
     const inGame = [STATE.PLAYING, STATE.PAUSED, STATE.DEAD].includes(game.state);
-    ctx.touch.setVisible(game.isTouch && inGame && !ctx.invScreen.visible);
+    ctx.touch.setVisible((game.isTouch && inGame && !ctx.invScreen.visible) || ctx.touch.editing);
     ctx.touch.applySettings(settings.get('buttonOpacity'), settings.get('buttonSize'));
+    if (!ctx.touch.editing) ctx.touch.applyLayout(settings.get('buttonLayout'));
     ctx.debug.setVisible(settings.get('showDebug'));
     ctx.camCtl.setMode(settings.get('cameraMode'));
   }
@@ -165,6 +166,7 @@ function boot(hotData = {}) {
       inventory,
       crafting,
       actions,
+      stats: player.stats,
       onDrop: (stack) => dropStack(stack),
       onClose: () => closeInventory(),
     });
@@ -174,6 +176,14 @@ function boot(hotData = {}) {
       onCloseApp: androidApp?.exit ? () => androidApp.exit() : null,
       species: Object.values(SPECIES),
       onSpawnTest: (id) => spawnInFront(id),
+      // ajustar botões: esconde o menu, arrasta, Travar salva e volta ao menu
+      onAdjustButtons: () => {
+        ctx.pause.hide();
+        ctx.touch.startEdit((layout) => {
+          settings.set('buttonLayout', layout);
+          ctx.pause.show();
+        });
+      },
       onLeaveCoop: () => {
         ctx.net.leave();
         ctx.pause.setCoop(null);
@@ -519,7 +529,10 @@ function boot(hotData = {}) {
   events.on(EV.WATER_DRUNK, () => sound.play('beber'));
   events.on(EV.PLAYER_HURT, () => sound.play('dor'));
   events.on(EV.PLAYER_DIED, () => sound.play('morte'));
-  events.on(EV.LEVEL_UP, () => sound.play('nivel'));
+  events.on(EV.LEVEL_UP, ({ level }) => {
+    sound.play('nivel');
+    events.emit(EV.MESSAGE, { text: `Nível ${level}! Ganhou ponto de habilidade (Inventário → Habilidades)`, kind: 'gain' });
+  });
   events.on(EV.PLACED, ({ structure }) => sound.play('colocar', structure.position));
   events.on(EV.STRUCTURE_USED, ({ structure }) => structure.type === 'fogueira' && sound.play('acender', structure.position));
   events.on(EV.SETTINGS_CHANGED, ({ key, value }) => {

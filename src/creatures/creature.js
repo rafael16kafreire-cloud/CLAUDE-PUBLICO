@@ -41,7 +41,24 @@ export class Creature {
     this.level = level;
 
     this.rollStats(Math.floor(rand() * 1e9));
-    this.scale = (species.tamanho ?? 1) * (0.92 + Math.min(level, 30) * 0.006 + rand() * 0.06);
+    // Tamanho: com comprimento_m (tamanho real, em metros) cada bicho
+    // sorteia o seu comprimento; senão usa o "tamanho" antigo.
+    const bb0 = mesh.geometry.boundingBox ?? (mesh.geometry.computeBoundingBox(), mesh.geometry.boundingBox);
+    const len0 = bb0.max.z - bb0.min.z;
+    if (species.comprimento_m && len0 > 0) {
+      const [a, b] = species.comprimento_m;
+      this.adultScale = (a + (b - a) * rand()) / len0;
+    } else {
+      this.adultScale = (species.tamanho ?? 1) * (0.92 + Math.min(level, 30) * 0.006 + rand() * 0.06);
+    }
+    // Ciclo de vida: filhote cresce (growth 0.3 → 1), adulto envelhece e
+    // um dia morre de velhice. Bicho selvagem já nasce com alguma idade.
+    const C = BALANCE.criaturas;
+    this.growth = 1;
+    this.lifespan = 60 * (C.vida_media_min[0] + rand() * (C.vida_media_min[1] - C.vida_media_min[0]));
+    this.age = rand() * 0.6 * this.lifespan;
+    this.nextBreed = C.intervalo_cria_min[0] * 60 * rand();
+    this.scale = this.adultScale;
 
     this.flies = !!species.voa;
     this.swims = !!species.nada;
@@ -123,11 +140,27 @@ export class Creature {
     const ratio = this.maxHealth ? this.health / this.maxHealth : 1;
     this.maxHealth = this.stats.vida;
     this.health = Math.max(1, Math.round(this.maxHealth * ratio));
-    this.damage = sp.dano * this.stats.forca / 100;
+    this.baseDamage = sp.dano * this.stats.forca / 100;
+    this.damage = this.baseDamage * (this.growth ?? 1);
     this.speedMul = this.stats.velocidade / 100;
     this.stamina = this.stats.stamina;
     this.torpor = 0;
     this.tired = false;
+  }
+
+  // Filhote: tamanho, força e vida crescem junto (0.3 = recém-nascido, 1 = adulto)
+  setGrowth(g) {
+    const ratio = this.health / this.maxHealth;
+    this.growth = clamp(g, 0.2, 1);
+    this.scale = this.adultScale * this.growth;
+    this.mesh.scale.setScalar(this.scale);
+    this.maxHealth = Math.max(1, Math.round(this.stats.vida * (0.25 + 0.75 * this.growth)));
+    this.health = Math.max(1, this.maxHealth * ratio);
+    this.damage = this.baseDamage * this.growth;
+  }
+
+  get isBaby() {
+    return this.growth < 1;
   }
 
   get walkSpeed() {
@@ -182,6 +215,23 @@ export class Creature {
 
     // de vez em quando, um chamado à toa
     if (this.rand() < dt * 0.025) sound.creature(this, this.state === CSTATE.CHASE ? 'rugido' : 'chamado');
+
+    // idade: filhote cresce; velho morre (não vale para o convidado no co-op)
+    if (!this.netControlled && !this.species.ambiente) {
+      this.age += dt;
+      if (this.growth < 1) {
+        const g = Math.min(1, 0.3 + 0.7 * this.age / (BALANCE.criaturas.crescer_min * 60));
+        if (g - this.growth > 0.01 || g === 1) this.setGrowth(g);
+      }
+      if (this.age > this.lifespan) {
+        this.health = 0;
+        this._setState(CSTATE.DEAD);
+        sound.creature(this, 'morte');
+        this.oldAge = true;
+        this.manager.onDeath(this, null);
+        return;
+      }
+    }
 
     // stamina: correr cansa; cansado só anda até recuperar 40%
     if (this.stats && !this.netControlled) {
@@ -332,6 +382,11 @@ export class Creature {
     const sp = this.species;
     switch (this.state) {
       case CSTATE.WANDER: {
+        // filhote anda atrás da mãe
+        const mom = this.mother;
+        if (this.isBaby && mom?.alive && this._dist2D(mom.pos) > 5 + mom.radius) {
+          this.goal = new THREE.Vector2(mom.pos.x + (this.rand() - 0.5) * 3, mom.pos.z + (this.rand() - 0.5) * 3);
+        }
         if (!this.goal || this.stateTime > 25) this.goal = this._pickWanderPoint(sp.raio > 2 ? 60 : 32);
         if (!this.goal || this._steer(dt, this.goal.x, this.goal.y, this.walkSpeed)) {
           const herb = sp.dieta === 'herbivoro' && !this.aquatic;

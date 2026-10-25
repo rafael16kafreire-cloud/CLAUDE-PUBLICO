@@ -640,6 +640,34 @@ export function makeMossRock(low = false) {
 }
 export const makeMossRockLow = () => makeMossRock(true);
 
+// Pedrinhas soltas no chão (pega com Interagir)
+export function makePebbles() {
+  const parts = [];
+  const spots = [[0, 0, 0.16], [0.24, 0.1, 0.11], [-0.18, 0.16, 0.09], [0.06, -0.22, 0.12]];
+  spots.forEach(([x, z, r], i) => {
+    const g = blob(r, [x, r * 0.45, z], [1.2, 0.7, 1], [6, 4], 0.35, 70 + i);
+    g.computeVertexNormals();
+    parts.push(paintFn(g, (c, px, py, pz) => {
+      c.set(i % 2 ? '#8c877c' : '#6f6a60');
+      c.multiplyScalar(0.85 + hash3(px, py, pz, 3) * 0.3);
+    }));
+  });
+  const m = merge(parts);
+  const uv = m.attributes.uv;
+  for (let i = 0; i < uv.count; i++) uv.setXY(i, WHITE_UV[0], 0.55);
+  return m;
+}
+
+// Gravetos secos caídos (pega com Interagir)
+export function makeSticks() {
+  return merge([
+    paint(limb([-0.45, 0.04, -0.1], [0.5, 0.05, 0.12], 0.03, 0.018, 4), '#6e5236', 0.2),
+    paint(limb([-0.25, 0.06, 0.3], [0.32, 0.04, -0.28], 0.025, 0.015, 4), '#7d5f3e', 0.2),
+    paint(limb([0.1, 0.05, 0.05], [0.28, 0.08, 0.3], 0.014, 0.008, 3), '#6e5236', 0.2),
+    paint(limb([-0.05, 0.03, -0.32], [0.18, 0.05, -0.05], 0.018, 0.01, 3), '#5f4630', 0.2),
+  ]);
+}
+
 // ------------------------------------------------------------
 // Pântano: mangue, árvore morta, junco, taboa, vitória-régia
 // ------------------------------------------------------------

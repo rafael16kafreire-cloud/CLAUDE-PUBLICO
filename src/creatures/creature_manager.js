@@ -106,6 +106,12 @@ export class CreatureManager {
     game.activeCreatures = this.list.filter((c) => c.alive && !c.species.ambiente).length;
 
     if (!this.enabled || player.dead) return;
+    this.clock = (this.clock ?? 0) + dt;
+    this._breedT = (this._breedT ?? 15) - dt;
+    if (this._breedT <= 0) {
+      this._breedT = 15;
+      this.tryBreed(players);
+    }
     this.spawnTimer -= dt;
     if (this.spawnTimer <= 0) {
       this.spawnTimer = this.cfg.intervalo_spawn_seg;
@@ -180,6 +186,39 @@ export class CreatureManager {
       return true;
     }
     return false;
+  }
+
+  // Nascimentos: macho e fêmea adultos da mesma espécie, perto um do
+  // outro e tranquilos, às vezes têm um filhote. O filhote segue a mãe
+  // e cresce até virar adulto (creature.setGrowth).
+  tryBreed(players) {
+    const C = this.cfg;
+    const calm = (c) => c.alive && !c.isBaby && !c.species.ambiente && !c.netControlled
+      && (c.state === CSTATE.WANDER || c.state === CSTATE.IDLE || c.state === CSTATE.EAT)
+      && c.age > (c.nextBreed ?? 0);
+    const alive = this.list.filter((c) => c.alive && !c.species.ambiente).length;
+    if (alive >= this.maxActive + C.extra_filhotes) return null;
+    for (const mom of this.list) {
+      if (mom.sex !== 'Fêmea' || !calm(mom)) continue;
+      const dad = this.list.find((o) => o !== mom && o.species.id === mom.species.id && o.sex === 'Macho'
+        && calm(o) && o.pos.distanceTo(mom.pos) < C.distancia_casal_m);
+      if (!dad || this.rand() > C.chance_cria) continue;
+      const a = this.rand() * Math.PI * 2;
+      const d = mom.radius + 1;
+      const baby = this.spawn(mom.species.id, mom.pos.x + Math.sin(a) * d, mom.pos.z + Math.cos(a) * d, Math.max(1, Math.round((mom.level + dad.level) / 2)));
+      if (!baby) return null;
+      baby.age = 0;
+      baby.mother = mom;
+      baby.home.copy(mom.home);
+      baby.setGrowth(0.3);
+      const wait = () => 60 * (C.intervalo_cria_min[0] + this.rand() * (C.intervalo_cria_min[1] - C.intervalo_cria_min[0]));
+      mom.nextBreed = mom.age + wait();
+      dad.nextBreed = dad.age + wait();
+      const near = players.some((p) => !p.dead && Math.hypot(p.position.x - mom.pos.x, p.position.z - mom.pos.z) < 60);
+      if (near) events.emit(EV.MESSAGE, { text: `Nasceu um filhote de ${mom.species.nome}!`, kind: 'info' });
+      return baby;
+    }
+    return null;
   }
 
   // Moradores do pântano: perto do pântano sempre tem jacaré gigante
@@ -290,6 +329,11 @@ export class CreatureManager {
         c.scale = scale;
         c.mesh.scale.setScalar(scale);
         if (seed !== undefined) c.rollStats(seed); // mesmos atributos do anfitrião
+      }
+      // filhote crescendo
+      if (Math.abs(c.scale - scale) > 0.005) {
+        c.scale = scale;
+        c.mesh.scale.setScalar(scale);
       }
       c.applyNet({ x, y, z, yaw, st, hp, atk, loot });
     }

@@ -72,9 +72,9 @@
     "sub_bosque": {
       "passo_m": 3,
       "biomas": {
-        "selva": { "samambaia": 0.34, "arbusto": 0.08, "samambaia_gigante": 0.045, "arvore_media": 0.03, "acai": 0.015, "arbusto_mejo": 0.008, "arbusto_escura": 0.006 },
-        "igapo": { "samambaia": 0.22, "junco": 0.1, "arbusto": 0.04 },
-        "praia": { "arbusto": 0.02 }
+        "selva": { "samambaia": 0.34, "arbusto": 0.08, "pedrinhas": 0.03, "gravetos": 0.05, "samambaia_gigante": 0.045, "arvore_media": 0.03, "acai": 0.015, "arbusto_mejo": 0.008, "arbusto_escura": 0.006 },
+        "igapo": { "samambaia": 0.22, "junco": 0.1, "arbusto": 0.04, "gravetos": 0.03, "pedrinhas": 0.01 },
+        "praia": { "arbusto": 0.02, "pedrinhas": 0.03, "gravetos": 0.025 }
       }
     }
   }

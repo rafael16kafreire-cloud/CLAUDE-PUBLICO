@@ -23,6 +23,10 @@ const SHAPES = {
     <path d="M10 21h22M12 27h20" stroke="${b}" stroke-width="1.6" stroke-linecap="round" opacity=".6"/>
     <ellipse cx="38" cy="24.5" rx="5" ry="7.5" fill="${b}"/>
     <ellipse cx="38" cy="24.5" rx="2.6" ry="4" fill="none" stroke="${a}" stroke-width="1.3"/>`,
+  graveto: (a, b) => `
+    <path d="M7 38 L41 12" stroke="${a}" stroke-width="4.5" stroke-linecap="round"/>
+    <path d="M10 30 L37 22" stroke="${b}" stroke-width="3.2" stroke-linecap="round"/>
+    <path d="M26 24 L31 13 M18 33 L15 26" stroke="${a}" stroke-width="2.2" stroke-linecap="round"/>`,
   palha: (a, b) => `
     ${[10, 15, 20, 25, 30, 35].map((x, i) => `<path d="M${x} 40 L${x + (i % 2 ? 4 : -3)} 8" stroke="${a}" stroke-width="3" stroke-linecap="round"/>`).join('')}
     <rect x="9" y="24" width="30" height="5" rx="2" fill="${b}"/>`,

@@ -145,7 +145,8 @@ export class InspectPanel {
     const r = this.refs;
     if (all) {
       r.name.textContent = `${c.species.nome} · Nv ${c.level}`;
-      r.tags.textContent = `${c.sex} · Selvagem · ${TEMPER[c.species.temperamento] ?? ''}`;
+      const len = c.species.comprimento_m ? ` · ${(c.scale * (c.mesh.geometry.boundingBox.max.z - c.mesh.geometry.boundingBox.min.z)).toFixed(1)} m` : '';
+      r.tags.textContent = `${c.sex}${c.isBaby ? ' · Filhote' : ''} · Selvagem · ${TEMPER[c.species.temperamento] ?? ''}${len}`;
       r['s-vida'].textContent = fmt(s.vida);
       r['s-forca'].textContent = `${s.forca}%`;
       r['s-peso'].textContent = `${fmt(s.peso)} kg`;

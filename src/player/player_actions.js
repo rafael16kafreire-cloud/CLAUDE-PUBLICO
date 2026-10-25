@@ -43,7 +43,7 @@ export class PlayerActions {
 
   // Peso: até o máximo anda normal; acima anda devagar; muito acima, para.
   weightFactor() {
-    const max = BALANCE.jogador.peso_max;
+    const max = this.player.stats.maxWeight;
     const w = this.inv.weight();
     if (w <= max) return 1;
     if (w <= max * 1.5) return 0.45;
@@ -58,7 +58,7 @@ export class PlayerActions {
     const t = this.tool;
     const creatures = this.world.creatures;
     // 1) criatura viva
-    const hit = creatures?.playerAttack(p, forward, t.dano, t.alcance);
+    const hit = creatures?.playerAttack(p, forward, t.dano * p.stats.damageMul, t.alcance);
     if (hit) {
       this.world.effects.burst(hit.center(), 'sangue', 6, 2.5);
       sound.play('carne', hit.center());

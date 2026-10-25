@@ -32,6 +32,10 @@ export function buildTerrain(map, chunkCells) {
   return { group, material, chunks };
 }
 
+// terra de verdade: floresta toda, igapó e pântano um pouco menos; praia e mar nada
+// (índices = BIOME: mar, praia, floresta, igapó, pântano)
+const DIRT_BY_BIOME = [0, 0, 1, 0.8, 0.6];
+
 function buildChunkGeometry(map, i0, j0, size) {
   const cellsX = Math.min(size, map.cells - i0);
   const cellsZ = Math.min(size, map.cells - j0);
@@ -39,6 +43,7 @@ function buildChunkGeometry(map, i0, j0, size) {
   const vz = cellsZ + 1;
   const positions = new Float32Array(vx * vz * 3);
   const colors = new Float32Array(vx * vz * 3);
+  const dirt = new Float32Array(vx * vz); // quanto de textura de terra (por bioma)
 
   for (let j = 0; j < vz; j++) {
     for (let i = 0; i < vx; i++) {
@@ -52,6 +57,7 @@ function buildChunkGeometry(map, i0, j0, size) {
       colors[dst] = map.colors[src * 3];
       colors[dst + 1] = map.colors[src * 3 + 1];
       colors[dst + 2] = map.colors[src * 3 + 2];
+      dirt[j * vx + i] = DIRT_BY_BIOME[map.biomes[src]] ?? 0;
     }
   }
 
@@ -73,6 +79,7 @@ function buildChunkGeometry(map, i0, j0, size) {
   const geom = new THREE.BufferGeometry();
   geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   geom.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  geom.setAttribute('aDirt', new THREE.BufferAttribute(dirt, 1));
   geom.setIndex(new THREE.BufferAttribute(index, 1));
   geom.computeVertexNormals();
   geom.computeBoundingSphere();

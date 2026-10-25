@@ -6,7 +6,7 @@
 import { settings, QUALITY_PRESETS } from '../core/settings.js';
 
 export class PauseMenu {
-  constructor(root, { onResume, onQuitToMenu, onCloseApp, species = [], onSpawnTest, onLeaveCoop }) {
+  constructor(root, { onResume, onQuitToMenu, onCloseApp, species = [], onSpawnTest, onLeaveCoop, onAdjustButtons }) {
     const el = document.createElement('div');
     el.className = 'overlay pause';
     el.hidden = true;
@@ -45,6 +45,8 @@ export class PauseMenu {
 
           <label for="opt-size">Tamanho dos botões <output id="opt-size-out"></output></label>
           <input type="range" id="opt-size" min="0.7" max="1.4" step="0.05">
+
+          <button type="button" class="btn btn-small touch-only" id="pause-buttons">Ajustar posição dos botões</button>
 
           <label for="opt-touch">Controles na tela</label>
           <select id="opt-touch">
@@ -109,6 +111,7 @@ export class PauseMenu {
     $('pause-opts').addEventListener('submit', (e) => e.preventDefault());
     $('pause-spawn').addEventListener('click', () => onSpawnTest?.($('opt-spawn').value));
     $('pause-resume').addEventListener('click', () => onResume());
+    $('pause-buttons').addEventListener('click', () => onAdjustButtons?.());
     $('pause-leave').addEventListener('click', () => onLeaveCoop?.());
     this.coopEls = { box: $('pause-coop'), code: $('pause-code'), players: $('pause-players') };
     $('pause-menu').addEventListener('click', () => onQuitToMenu());

@@ -9,6 +9,7 @@
 // - Impostor: árvore distante desenhada como "foto" (bem leve).
 // =============================================================
 import * as THREE from 'three';
+import { TERRA_COR, TERRA_RELEVO, TERRA_MEDIA } from './textures/terra.js';
 
 // Tempo compartilhado pelos materiais animados.
 export const sharedTime = { value: 0 };
@@ -89,15 +90,32 @@ export function detailTexture() {
 // ----------------------------------------------------------
 // Terreno
 // ----------------------------------------------------------
+function loadTiled(url, srgb) {
+  const tex = new THREE.TextureLoader().load(url);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.anisotropy = 4;
+  if (srgb) tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
 export function makeTerrainMaterial() {
   const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
+  // Textura de terra (arquivo Soft Dirt): cor + relevo. A cor do bioma
+  // continua mandando no brilho/tom; a terra dá os grãos, raízes e torrões.
+  const dirtMap = loadTiled(TERRA_COR, true);
+  const dirtNormal = loadTiled(TERRA_RELEVO, false);
+  const avg = new THREE.Color().setRGB(...TERRA_MEDIA, THREE.SRGBColorSpace);
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.detailMap = { value: detailTexture() };
+    shader.uniforms.dirtMap = { value: dirtMap };
+    shader.uniforms.dirtNormal = { value: dirtNormal };
+    shader.uniforms.dirtAvg = { value: new THREE.Vector3(avg.r, avg.g, avg.b) };
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vWPos;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+      .replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nattribute float aDirt;\nvarying float vDirt;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvDirt = aDirt;');
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nuniform sampler2D detailMap;')
+      .replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nvarying float vDirt;\nuniform sampler2D detailMap;\nuniform sampler2D dirtMap;\nuniform sampler2D dirtNormal;\nuniform vec3 dirtAvg;')
       .replace('#include <color_fragment>', `#include <color_fragment>
         float dNear = texture2D(detailMap, vWPos.xz * 0.23).r;
         float dFar = texture2D(detailMap, vWPos.xz * 0.019).r;
@@ -106,7 +124,25 @@ export function makeTerrainMaterial() {
         // manchinhas de folhas secas e terra
         float spots = smoothstep(0.55, 0.75, texture2D(detailMap, vWPos.xz * 0.43 + 0.37).r);
         diffuseColor.rgb *= mix(0.7, 1.28, detail);
-        diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(1.25, 1.0, 0.7), spots * 0.35);`);
+        diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(1.25, 1.0, 0.7), spots * 0.35);
+        if (vDirt > 0.01) {
+          // 1 repetição a cada ~2,8 m, girada numa segunda escala para não "quadricular"
+          vec2 uvA = vWPos.xz * 0.36;
+          vec2 uvB = vec2(vWPos.z, -vWPos.x) * 0.11 + 0.31;
+          vec3 dA = texture2D(dirtMap, uvA).rgb;
+          vec3 dB = texture2D(dirtMap, uvB).rgb;
+          vec3 dc = mix(dA, dB, 0.35 * dFar);
+          // relevo falso: o normal map clareia o lado virado para o sol
+          vec3 nm = texture2D(dirtNormal, uvA).xyz * 2.0 - 1.0;
+          float relief = 1.0 + dot(nm.xy, vec2(0.55, -0.45)) * 0.55;
+          // padrão da terra com o brilho/tom do bioma
+          float lumB = dot(diffuseColor.rgb, vec3(0.333));
+          vec3 hueB = diffuseColor.rgb / max(lumB, 0.001);
+          vec3 hueD = dirtAvg / dot(dirtAvg, vec3(0.333));
+          vec3 pattern = dc / dirtAvg;
+          vec3 soil = lumB * pattern * mix(hueD, hueB, 0.45) * relief;
+          diffuseColor.rgb = mix(diffuseColor.rgb, soil, clamp(vDirt, 0.0, 1.0) * 0.9);
+        }`);
   };
   return mat;
 }

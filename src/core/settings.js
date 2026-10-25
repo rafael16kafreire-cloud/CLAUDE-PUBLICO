@@ -42,6 +42,7 @@ const DEFAULTS = {
   playerName: '',          // nome no co-op
   volume: 0.8,             // som (0 = mudo)
   music: 0.35,             // música de fundo (0 = sem música)
+  buttonLayout: null,      // posição de cada botão de toque ({ id: [x, y] } em fração da tela) ou null = padrão
 };
 
 class Settings {

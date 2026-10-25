@@ -109,11 +109,14 @@ export class Campfire extends Structure {
 
   use({ inventory }) {
     const F = BALANCE.fogueira;
-    if (inventory.count('madeira') < F.madeira_por_acender) {
-      events.emit(EV.MESSAGE, { text: `Precisa de ${F.madeira_por_acender} madeira.`, kind: 'warn' });
+    // lenha: madeira, ou o dobro de gravetos
+    const sticks = F.madeira_por_acender * 2;
+    if (inventory.count('madeira') >= F.madeira_por_acender) inventory.remove('madeira', F.madeira_por_acender);
+    else if (inventory.count('graveto') >= sticks) inventory.remove('graveto', sticks);
+    else {
+      events.emit(EV.MESSAGE, { text: `Precisa de ${F.madeira_por_acender} madeira ou ${sticks} gravetos.`, kind: 'warn' });
       return false;
     }
-    inventory.remove('madeira', F.madeira_por_acender);
     const was = this.lit;
     this.fuel += F.minutos_por_lenha * 60;
     events.emit(EV.MESSAGE, { text: was ? 'Mais lenha na fogueira.' : 'Fogueira acesa! Fique perto para assar carne.', kind: 'info' });

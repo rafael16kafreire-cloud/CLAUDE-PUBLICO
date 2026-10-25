@@ -32,8 +32,8 @@ import * as P from './props.js';
 //   water: pode nascer em água rasa; surface: boia na água
 //   foot: raio da base (m) – em morro a planta afunda até o ponto mais baixo
 const TYPES = {
-  sumauma: { foot: 2.6, hi: P.makeSumauma, lo: P.makeSumaumaLow, imp: true, collider: 1.5, shadow: true, scale: [0.85, 1.2], res: 'arvore_gigante' },
-  arvore_dossel: { foot: 0.75, hi: P.makeCanopyTree, lo: P.makeCanopyTreeLow, imp: true, collider: 0.55, shadow: true, scale: [0.8, 1.25], res: 'arvore' },
+  sumauma: { foot: 2.6, hi: P.makeSumauma, lo: P.makeSumaumaLow, imp: true, collider: 1.5, shadow: true, scale: [1.2, 1.6], res: 'arvore_gigante' },
+  arvore_dossel: { foot: 0.75, hi: P.makeCanopyTree, lo: P.makeCanopyTreeLow, imp: true, collider: 0.55, shadow: true, scale: [1.0, 1.45], res: 'arvore' },
   arvore_media: { foot: 0.3, hi: P.makeUnderstoryTree, lo: P.makeUnderstoryTreeLow, imp: true, collider: 0.3, shadow: true, scale: [0.75, 1.3], res: 'arvore' },
   acai: { foot: 0.4, hi: P.makeAcai, lo: P.makeAcaiLow, imp: true, collider: 0.22, shadow: true, scale: [0.8, 1.2], res: 'palmeira' },
   coqueiro: { foot: 0.3, hi: P.makeCoconutPalm, lo: P.makeCoconutPalmLow, imp: true, collider: 0.3, shadow: true, scale: [0.85, 1.2], res: 'palmeira' },
@@ -46,6 +46,8 @@ const TYPES = {
   arbusto_frutas: { hi: P.makeFruitBush, collider: 0, shadow: false, scale: [0.8, 1.2], res: 'frutas', maxDist: 75 },
   arbusto: { hi: P.makeBushEmpty, collider: 0, shadow: false, scale: [0.8, 1.2], res: 'arbusto', maxDist: 75 },
   tronco_caido: { hi: P.makeFallenLog, lo: P.makeFallenLogLow, collider: 'log', shadow: true, scale: [0.8, 1.3], res: 'tronco', maxDist: 140 },
+  pedrinhas: { foot: 0.05, hi: P.makePebbles, collider: 0, shadow: false, scale: [0.8, 1.3], res: 'pedrinhas', maxDist: 45 },
+  gravetos: { foot: 0.05, hi: P.makeSticks, collider: 0, shadow: false, scale: [0.8, 1.3], res: 'gravetos', maxDist: 45 },
   pedra_musgo: { foot: 0.85, hi: P.makeMossRock, lo: P.makeMossRockLow, collider: 1.0, shadow: false, scale: [0.6, 2.2], res: 'pedra', maxDist: 160 },
   mangue: { foot: 1.2, hi: P.makeMangrove, lo: P.makeMangroveLow, imp: true, collider: 0.6, shadow: true, scale: [0.8, 1.2], res: 'arvore', water: true },
   arvore_morta: { foot: 0.3, hi: P.makeDeadTree, collider: 0.3, shadow: true, scale: [0.8, 1.3], res: 'arvore', water: true, maxDist: 200 },
@@ -202,7 +204,7 @@ export class Vegetation {
 
         const scale = def.scale[0] + r2 * (def.scale[1] - def.scale[0]);
         const rot = r3 * Math.PI * 2;
-        const sink = type === 'pedra_musgo' ? 0.2 * scale : type === 'tronco_caido' ? 0.12 : 0.15;
+        const sink = type === 'pedra_musgo' ? 0.2 * scale : type === 'tronco_caido' ? 0.12 : (type === 'gravetos' || type === 'pedrinhas') ? 0.02 : 0.15;
         // Em morro: apoia no ponto MAIS BAIXO do chão embaixo da planta
         // (senão um lado fica "flutuando").
         let ground = h;

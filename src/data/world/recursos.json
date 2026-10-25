@@ -34,6 +34,16 @@
       "lanca": { "madeira": [0, 1] },
       "clava": { "madeira": [1, 1] }
     },
+    "pedrinhas": {
+      "nome": "Pedrinhas", "capacidade": 1, "xp": 1, "rotulo": "Pegar pedras",
+      "mao": { "pedra": [1, 2] },
+      "colher": { "pedra": [2, 3], "silex": [0, 1] }
+    },
+    "gravetos": {
+      "nome": "Gravetos", "capacidade": 1, "xp": 1, "rotulo": "Pegar gravetos",
+      "mao": { "graveto": [1, 2] },
+      "colher": { "graveto": [2, 3] }
+    },
     "pedra": {
       "nome": "Pedra", "capacidade": 35, "xp": 1,
       "mao": { "pedra": [1, 1] },

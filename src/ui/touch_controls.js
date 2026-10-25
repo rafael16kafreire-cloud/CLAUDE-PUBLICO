@@ -5,6 +5,9 @@
 // - Arrastar no resto da tela: gira a câmera.
 // - Botões grandes à direita. Tamanho e opacidade vêm das Opções.
 // Vários dedos ao mesmo tempo funcionam (cada dedo tem um id).
+// - Ajustar botões (menu de pausa): arraste cada botão para onde
+//   quiser e aperte Travar; a posição fica salva (em fração da tela,
+//   então funciona em pé e deitado).
 // =============================================================
 import { TOUCH_LOOK_FACTOR } from '../core/input.js';
 
@@ -33,6 +36,11 @@ export class TouchControls {
       <div class="tc-buttons">
         ${BUTTONS.map((b) => `<button type="button" class="tc-btn ${b.cls}" data-id="${b.id}">${b.label}</button>`).join('')}
       </div>
+      <div class="tc-edit-bar" hidden>
+        <span>Arraste os botões para onde quiser</span>
+        <button type="button" class="btn btn-small" data-act="reset">Padrão</button>
+        <button type="button" class="btn btn-small btn-primary" data-act="lock" id="tc-lock">Travar</button>
+      </div>
     `;
     root.appendChild(el);
     this.el = el;
@@ -42,6 +50,13 @@ export class TouchControls {
     el.querySelectorAll('.tc-btn').forEach((b) => {
       this.btn[b.dataset.id] = b;
     });
+
+    this.editing = false;
+    this.layout = null;
+    this.editBar = el.querySelector('.tc-edit-bar');
+    this.editBar.addEventListener('pointerdown', (e) => e.stopPropagation());
+    this.editBar.querySelector('[data-act="reset"]').addEventListener('click', () => this.applyLayout(null));
+    this.editBar.querySelector('[data-act="lock"]').addEventListener('click', () => this.stopEdit());
 
     this._setupLook(el.querySelector('.tc-look'));
     this._setupStick(el.querySelector('.tc-stick-zone'));
@@ -57,6 +72,43 @@ export class TouchControls {
     this.scale = size;
     this.el.style.setProperty('--tc-opacity', String(opacity));
     this.el.style.setProperty('--tc-scale', String(size));
+  }
+
+  // Posições salvas ({ id: [x, y] } em fração da tela) ou null = padrão do CSS.
+  applyLayout(layout) {
+    this.layout = layout ? { ...layout } : null;
+    for (const [id, b] of Object.entries(this.btn)) {
+      const p = this.layout?.[id];
+      b.classList.toggle('placed', !!p);
+      b.style.left = p ? `${(p[0] * 100).toFixed(2)}%` : '';
+      b.style.top = p ? `${(p[1] * 100).toFixed(2)}%` : '';
+    }
+  }
+
+  // Modo de ajustar: arrastar move o botão em vez de apertar.
+  startEdit(onDone) {
+    this.editing = true;
+    this._onEditDone = onDone;
+    this.el.classList.add('tc-editing');
+    this.editBar.hidden = false;
+    this.setVisible(true);
+  }
+
+  stopEdit() {
+    if (!this.editing) return;
+    this.editing = false;
+    this.el.classList.remove('tc-editing');
+    this.editBar.hidden = true;
+    this._onEditDone?.(this.layout);
+  }
+
+  _dragTo(id, b, x, y) {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const r = b.offsetWidth / 2;
+    const fx = Math.min(w - r, Math.max(r, x)) / w;
+    const fy = Math.min(h - r, Math.max(r, y)) / h;
+    this.applyLayout({ ...(this.layout ?? {}), [id]: [+fx.toFixed(4), +fy.toFixed(4)] });
   }
 
   // Destaca os botões que estão "ligados" (correr, agachar).
@@ -163,15 +215,37 @@ export class TouchControls {
         e.stopPropagation();
         try { b.setPointerCapture(e.pointerId); } catch { /* ok */ }
         b.classList.add('down');
+        if (this.editing) {
+          // ajustando: o dedo arrasta o botão
+          b._drag = e.pointerId;
+          if (!this.layout?.[id]) {
+            // primeira vez: fixa todos onde estão agora
+            const lay = { ...(this.layout ?? {}) };
+            for (const [k, o] of Object.entries(this.btn)) {
+              if (lay[k]) continue;
+              const rc = o.getBoundingClientRect();
+              lay[k] = [(rc.left + rc.width / 2) / window.innerWidth, (rc.top + rc.height / 2) / window.innerHeight];
+            }
+            this.applyLayout(lay);
+          }
+          return;
+        }
         if (id === 'run') {
           this.input.runToggle = !this.input.runToggle; // liga/desliga
         } else {
           this.input.press(id);
         }
       });
+      b.addEventListener('pointermove', (e) => {
+        if (this.editing && b._drag === e.pointerId) this._dragTo(id, b, e.clientX, e.clientY);
+      });
       const up = (e) => {
         e.stopPropagation();
         b.classList.remove('down');
+        if (b._drag !== undefined) {
+          b._drag = undefined;
+          return;
+        }
         if (id !== 'run') this.input.release(id);
       };
       b.addEventListener('pointerup', up);

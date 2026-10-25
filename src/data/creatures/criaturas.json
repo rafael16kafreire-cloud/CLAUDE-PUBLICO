@@ -1,8 +1,9 @@
 {
- "_explicacao": "atributos: [mínimo, máximo] no nível 1 – cada bicho sorteia um valor no meio (vida, força em % do dano, peso que carrega em kg, stamina, velocidade em % da corrida, torpor). Dados de cada espécie. vida/dano no nível 1 (sobem com o nível). Velocidades em m/s. temperamento: passivo (só reage se apanhar: revida=true ataca de volta, senão foge), medroso (foge de perto, nunca ataca), agressivo (carnívoros: caçam o jogador). biomas: praia, selva, igapo, pantano. peso_spawn: quanto maior, mais comum. grupo: [mínimo, máximo]. loot: o que sai da carcaça. ambiente: animais de enfeite (não contam no limite).",
+ "_explicacao": "comprimento_m: [mínimo, máximo] do focinho à ponta da cauda, em metros (tamanho real do bicho adulto; cada um sorteia o seu). atributos: [mínimo, máximo] no nível 1 – cada bicho sorteia um valor no meio (vida, força em % do dano, peso que carrega em kg, stamina, velocidade em % da corrida, torpor). Dados de cada espécie. vida/dano no nível 1 (sobem com o nível). Velocidades em m/s. temperamento: passivo (só reage se apanhar: revida=true ataca de volta, senão foge), medroso (foge de perto, nunca ataca), agressivo (carnívoros: caçam o jogador). biomas: praia, selva, igapo, pantano. peso_spawn: quanto maior, mais comum. grupo: [mínimo, máximo]. loot: o que sai da carcaça. ambiente: animais de enfeite (não contam no limite).",
  "especies": [
   {
    "id": "dodo",
+   "comprimento_m": [0.9, 1],
    "nome": "Dodô",
    "dieta": "herbivoro",
    "temperamento": "passivo",
@@ -41,6 +42,7 @@
   },
   {
    "id": "parassauro",
+   "comprimento_m": [9, 10],
    "nome": "Parassauro",
    "dieta": "herbivoro",
    "temperamento": "medroso",
@@ -79,6 +81,7 @@
   },
   {
    "id": "galimimo",
+   "comprimento_m": [5.5, 6.5],
    "nome": "Galimimo",
    "dieta": "herbivoro",
    "temperamento": "medroso",
@@ -117,6 +120,7 @@
   },
   {
    "id": "capivara",
+   "comprimento_m": [1.1, 1.35],
    "nome": "Capivara",
    "dieta": "herbivoro",
    "temperamento": "medroso",
@@ -155,6 +159,7 @@
   },
   {
    "id": "paquicefalossauro",
+   "comprimento_m": [4, 4.6],
    "nome": "Paquicefalossauro",
    "dieta": "herbivoro",
    "temperamento": "passivo",
@@ -198,6 +203,7 @@
   },
   {
    "id": "triceratops",
+   "comprimento_m": [8, 9],
    "nome": "Triceratops",
    "dieta": "herbivoro",
    "temperamento": "passivo",
@@ -243,6 +249,7 @@
   },
   {
    "id": "estegossauro",
+   "comprimento_m": [8.5, 9.2],
    "nome": "Estegossauro",
    "dieta": "herbivoro",
    "temperamento": "passivo",
@@ -287,6 +294,7 @@
   },
   {
    "id": "anquilossauro",
+   "comprimento_m": [6.5, 8],
    "nome": "Anquilossauro",
    "dieta": "herbivoro",
    "temperamento": "passivo",
@@ -332,6 +340,7 @@
   },
   {
    "id": "braquiossauro",
+   "comprimento_m": [20, 22],
    "nome": "Braquiossauro",
    "dieta": "herbivoro",
    "temperamento": "passivo",
@@ -377,6 +386,7 @@
   },
   {
    "id": "compsognato",
+   "comprimento_m": [0.9, 1.2],
    "nome": "Compsognato",
    "dieta": "carnivoro",
    "temperamento": "agressivo",
@@ -417,6 +427,7 @@
   },
   {
    "id": "dilofossauro",
+   "comprimento_m": [6, 7],
    "nome": "Dilofossauro",
    "dieta": "carnivoro",
    "temperamento": "agressivo",
@@ -456,6 +467,7 @@
   },
   {
    "id": "raptor",
+   "comprimento_m": [3, 3.4],
    "nome": "Raptor",
    "dieta": "carnivoro",
    "temperamento": "agressivo",
@@ -497,6 +509,7 @@
   },
   {
    "id": "onca",
+   "comprimento_m": [1.8, 2.3],
    "nome": "Onça-pintada",
    "dieta": "carnivoro",
    "temperamento": "agressivo",
@@ -572,6 +585,7 @@
   },
   {
    "id": "carnotauro",
+   "comprimento_m": [7.5, 8],
    "nome": "Carnotauro",
    "dieta": "carnivoro",
    "temperamento": "agressivo",
@@ -616,6 +630,7 @@
   },
   {
    "id": "trex",
+   "comprimento_m": [11.5, 12.4],
    "nome": "T-Rex",
    "dieta": "carnivoro",
    "temperamento": "agressivo",
@@ -660,6 +675,7 @@
   },
   {
    "id": "titanoboa",
+   "comprimento_m": [12, 14],
    "nome": "Titanoboa",
    "dieta": "carnivoro",
    "temperamento": "agressivo",
@@ -699,6 +715,7 @@
   },
   {
    "id": "deinosuchus",
+   "comprimento_m": [10, 12],
    "nome": "Deinosuchus",
    "dieta": "carnivoro",
    "temperamento": "agressivo",
@@ -746,6 +763,7 @@
   },
   {
    "id": "espinossauro",
+   "comprimento_m": [14, 18],
    "nome": "Espinossauro",
    "dieta": "carnivoro",
    "temperamento": "agressivo",

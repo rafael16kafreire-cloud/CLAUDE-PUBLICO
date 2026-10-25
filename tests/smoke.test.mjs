@@ -366,7 +366,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   // ---------- Crafting ----------
   await page.evaluate(() => {
     const inv = window.__ilha.ctx.inventory;
-    inv.add('madeira', 6); inv.add('pedra', 4); inv.add('silex', 2); inv.add('fibra', 20);
+    inv.add('madeira', 6); inv.add('graveto', 6); inv.add('pedra', 4); inv.add('silex', 2); inv.add('fibra', 20);
   });
   await page.keyboard.press('Tab');
   await frames(page, 4);
@@ -375,7 +375,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   await page.click('#receita-machado_pedra');
   await frames(page, 2);
   const reqs = await page.evaluate(() => [...document.querySelectorAll('.reqs li')].map((li) => li.textContent.replace(/\s+/g, ' ').trim()));
-  check('Crafting: clicar no machado mostra o que precisa', reqs.length === 3 && reqs.some((r) => /Madeira/.test(r)), reqs.join(' | '));
+  check('Crafting: clicar no machado mostra o que precisa', reqs.length === 3 && reqs.some((r) => /Graveto/.test(r)), reqs.join(' | '));
   await page.screenshot({ path: `${SHOTS}/08-pc-crafting.png` });
   await page.click('#craft-1');
   await gameWait(page, 3600);
@@ -459,7 +459,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     const c = window.__ilha.ctx;
     const sul = c.world.respawnPoint('sul').position;
     c.player.position.set(sul.x + 8, c.world.heightAt(sul.x + 8, sul.z - 3), sul.z - 3);
-    c.inventory.add('madeira', 4); c.inventory.add('carne_crua', 2); c.inventory.add('fogueira', 1);
+    c.inventory.add('madeira', 4); c.inventory.add('graveto', 6); c.inventory.add('carne_crua', 2); c.inventory.add('fogueira', 1);
     const i = c.inventory.slots.findIndex((x) => x && x.id === 'fogueira');
     c.camCtl.yaw = 0;
     c.actions.place(i);
@@ -782,6 +782,42 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     return out;
   });
   check('Golpe: acerta cabeça e cauda de bicho grande', Object.values(parts).every(Boolean), JSON.stringify(parts));
+
+  // v0.7: tamanhos reais, filhotes, velhice, gravetos/pedrinhas, habilidades, botões
+  const v07 = await page.evaluate(() => {
+    const c = window.__ilha.ctx; const m = c.creatures; const p = c.player.position; const out = {};
+    const L = (x) => x.scale * (x.mesh.geometry.boundingBox.max.z - x.mesh.geometry.boundingBox.min.z);
+    const sz = {};
+    for (const id of ['espinossauro', 'deinosuchus', 'titanoboa', 'trex']) {
+      const x = m.spawn(id, p.x + 300, p.z + 300, 5); sz[id] = +L(x).toFixed(1); m.clear();
+    }
+    out.sizes = sz;
+    out.sizesOk = sz.espinossauro >= 14 && sz.espinossauro <= 18.01 && sz.deinosuchus >= 10 && sz.deinosuchus <= 12.01
+      && sz.titanoboa >= 12 && sz.titanoboa <= 14.01 && sz.trex < 13;
+    // filhote nasce, cresce e o velho morre
+    const a = m.spawn('parassauro', p.x + 200, p.z, 5); const b = m.spawn('parassauro', p.x + 206, p.z, 5);
+    a.sex = 'Fêmea'; b.sex = 'Macho'; a.nextBreed = 0; b.nextBreed = 0;
+    const r0 = m.rand; m.rand = () => 0.01; const baby = m.tryBreed([c.player]); m.rand = r0;
+    const cx = { player: c.player, players: [c.player], world: c.world, camPos: p };
+    out.baby = !!baby && baby.isBaby && baby.mother === a;
+    if (baby) { baby.age = 13 * 60; baby.update(0.016, cx); out.grew = !baby.isBaby && Math.abs(baby.scale - baby.adultScale) < 1e-6; }
+    const old = m.spawn('dodo', p.x + 210, p.z, 1); old.age = old.lifespan + 1; old.update(0.016, cx); out.oldDies = !old.alive;
+    m.clear();
+    // gravetos e pedrinhas no chão
+    const n = {}; for (const r of c.world.vegetation.recs) n[r.type] = (n[r.type] ?? 0) + 1;
+    out.ground = { gravetos: n.gravetos ?? 0, pedrinhas: n.pedrinhas ?? 0 };
+    // stamina dobrada + habilidades
+    const st = c.player.stats;
+    out.stamina = st.max.stamina;
+    st.points += 2; const hp0 = st.max.health; st.spendPoint('vida'); st.spendPoint('peso');
+    out.skills = { vida: st.max.health - hp0, peso: st.maxWeight };
+    st.skills.vida = 0; st.skills.peso = 0; st._applySkills(); st.health = Math.min(st.health, st.max.health);
+    return out;
+  });
+  check('Tamanhos reais: espino 14–18 m, deinosuchus 10–12, titanoboa 12–14, T-rex < 13', v07.sizesOk, JSON.stringify(v07.sizes));
+  check('Ciclo de vida: nasce filhote, cresce e o velho morre', v07.baby && v07.grew && v07.oldDies, JSON.stringify({ b: v07.baby, g: v07.grew, o: v07.oldDies }));
+  check('Chão: gravetos e pedrinhas para pegar', v07.ground.gravetos > 500 && v07.ground.pedrinhas > 300, JSON.stringify(v07.ground));
+  check('Stamina dobrada e habilidades aumentam vida/peso', v07.stamina === 200 && v07.skills.vida === 10 && v07.skills.peso === 135, JSON.stringify(v07));
 
   // Atributos sorteados entre o mínimo e o máximo da espécie
   const rolls = await page.evaluate(() => {

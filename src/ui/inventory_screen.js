@@ -11,14 +11,28 @@ import { BALANCE } from '../core/balance.js';
 import { ITEMS, itemIcon, itemName } from '../items/items.js';
 import { HOTBAR } from '../inventory/inventory.js';
 import { RECIPES } from '../crafting/crafting.js';
+import { ICONS } from './icons.js';
+import { STAT_ICONS } from './inspect_panel.js';
+
+// Habilidades (Inventário → Habilidades): gasta os pontos de nível.
+const SKILLS = [
+  { key: 'vida', nome: 'Vida', icon: ICONS.health, cls: 'health' },
+  { key: 'stamina', nome: 'Stamina', icon: ICONS.stamina, cls: 'stamina' },
+  { key: 'fome', nome: 'Comida', icon: ICONS.food, cls: 'food' },
+  { key: 'sede', nome: 'Água', icon: ICONS.water, cls: 'water' },
+  { key: 'folego', nome: 'Fôlego', icon: ICONS.oxygen, cls: 'oxygen' },
+  { key: 'peso', nome: 'Peso', icon: STAT_ICONS.peso, cls: 'weight', unit: ' kg' },
+  { key: 'forca', nome: 'Força', icon: STAT_ICONS.forca, cls: 'melee', unit: '%' },
+];
 
 const CATS = ['Tudo', 'Ferramentas', 'Armas', 'Estruturas', 'Cura'];
 const STATION_NAME = { bancada: 'Bancada de Trabalho' };
 const TYPE_LABEL = { recurso: 'Recurso', comida: 'Comida', ferramenta: 'Ferramenta', consumivel: 'Cura', estrutura: 'Estrutura' };
 
 export class InventoryScreen {
-  constructor(root, { inventory, crafting, actions, onDrop, onClose }) {
+  constructor(root, { inventory, crafting, actions, stats, onDrop, onClose }) {
     this.inv = inventory;
+    this.stats = stats;
     this.crafting = crafting;
     this.actions = actions;
     this.onDrop = onDrop;
@@ -47,6 +61,7 @@ export class InventoryScreen {
           <div class="inv-tabs">
             <button type="button" class="tab" data-tab="craft">Criar</button>
             <button type="button" class="tab" data-tab="item">Item</button>
+            <button type="button" class="tab" data-tab="skills" id="tab-skills">Habilidades<b class="tab-dot" data-ref="sdot" hidden></b></button>
             <button type="button" class="btn btn-small inv-close" id="inv-close" aria-label="Fechar">Fechar</button>
           </div>
           <div class="tab-body" data-tab-body="craft">
@@ -60,6 +75,19 @@ export class InventoryScreen {
           </div>
           <div class="tab-body" data-tab-body="item" hidden>
             <div class="item-detail" data-ref="idetail"></div>
+          </div>
+          <div class="tab-body" data-tab-body="skills" hidden>
+            <p class="skill-points">Pontos para gastar: <b data-ref="spoints">0</b> <span>· ganha ${BALANCE.habilidades.pontos_por_nivel} a cada nível</span></p>
+            <div class="skill-list">
+              ${SKILLS.map((s) => `
+                <div class="skill-row skill-${s.cls}">
+                  <span class="ico">${s.icon}</span>
+                  <span class="sk-name">${s.nome}</span>
+                  <span class="sk-lvl" data-ref="sl-${s.key}"></span>
+                  <b class="sk-val" data-ref="sv-${s.key}"></b>
+                  <button type="button" class="sk-plus" id="skill-${s.key}" data-skill="${s.key}" aria-label="Melhorar ${s.nome}">+</button>
+                </div>`).join('')}
+            </div>
           </div>
         </section>
       </div>
@@ -107,6 +135,10 @@ export class InventoryScreen {
     }));
     el.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => this.showTab(t.dataset.tab)));
     el.querySelector('#inv-close').addEventListener('click', () => this.onClose());
+    el.querySelectorAll('.sk-plus').forEach((b) => b.addEventListener('click', () => {
+      if (this.stats?.spendPoint(b.dataset.skill)) this.refresh();
+    }));
+    events.on(EV.LEVEL_UP, () => this.visible && this.refresh());
     el.querySelector('#inv-sort').addEventListener('click', () => this.inv.sort());
     el.addEventListener('pointerdown', (e) => e.stopPropagation());
 
@@ -134,11 +166,25 @@ export class InventoryScreen {
     this.el.querySelectorAll('[data-tab-body]').forEach((b) => { b.hidden = b.dataset.tabBody !== tab; });
   }
 
+  _refreshSkills() {
+    const st = this.stats;
+    if (!st) return;
+    this.refs.spoints.textContent = String(st.points);
+    this.refs.sdot.hidden = st.points <= 0;
+    this.refs.sdot.textContent = String(st.points);
+    for (const s of SKILLS) {
+      this.refs[`sv-${s.key}`].textContent = `${Math.round(st.skillValue(s.key))}${s.unit ?? ''}`;
+      this.refs[`sl-${s.key}`].textContent = st.skills[s.key] ? `+${st.skills[s.key]}` : '';
+    }
+    this.el.querySelectorAll('.sk-plus').forEach((b) => { b.disabled = st.points <= 0; });
+  }
+
   // ---------------------------------------------------------
   refresh() {
     const inv = this.inv;
     const w = inv.weight();
-    const max = BALANCE.jogador.peso_max;
+    const max = this.stats?.maxWeight ?? BALANCE.jogador.peso_max;
+    this._refreshSkills();
     this.refs.weight.textContent = `${w.toFixed(1)} / ${max} kg`;
     this.refs.weight.classList.toggle('over', w > max);
     this.refs.wfill.style.transform = `scaleX(${Math.min(1, w / max).toFixed(3)})`;
