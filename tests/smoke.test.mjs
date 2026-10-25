@@ -256,14 +256,14 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     const sul = ctx.world.respawnPoint('sul').position;
     let z = sul.z;
     while (z < sul.z + 300 && !ctx.world.waterAt(0, z)) z += 1;
-    ctx.player.position.set(0, ctx.world.heightAt(0, z + 6), z + 6);
+    ctx.player.position.set(0, ctx.world.heightAt(0, z + 10), z + 10);
     ctx.camCtl.pitch = -0.3;
     ctx.player.stats.water = 40;
   });
   await frames(page, 20);
-  await gameWait(page, 250);
+  await gameWait(page, 400);
   await page.keyboard.press('KeyE');
-  await frames(page, 5);
+  await gameWait(page, 400);
   const seaMsg = await page.evaluate(() => [...document.querySelectorAll('.msg')].map((m) => m.textContent).join(' | '));
   const water2 = await page.evaluate(() => window.__ilha.ctx.player.stats.water);
   check('Mar: água salgada não mata a sede', water2 <= 40.01 && /salgada/i.test(seaMsg), seaMsg);
