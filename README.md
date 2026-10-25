@@ -7,7 +7,8 @@ Visual estilizado, feito para ser leve.
 **Versão 0.9.0** – mapa novo
 - **Formato da Finlândia** e bem maior (≈ 2,1 km de norte a sul): floresta com pântano e
   lagos no sul/meio, e a **Lapônia** no norte (contorno em `ilha.json` → `contorno`).
-- **Lapônia:** montanhas gigantes (picos de ~170–200 m) com o relevo tirado do modelo
+- **Lapônia:** montanhas grandes (picos de ~130 m, subindo devagar desde a costa para dar
+  para escalar; dá para subir rampas de até 55°) com o relevo tirado do modelo
   *Snow alps*, neve com a textura *Snow Material*, rocha aparecendo nos paredões (com
   camadas e degraus, não fica lisa), rochedos enormes, pinheiros nevados e **minério de
   ferro** (melhor com picareta). Lá a neblina é azulada e dá para ver longe.

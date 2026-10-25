@@ -84,7 +84,7 @@
   "profundidade_mar_m": 28,
 
   "_lapônia": "Montanhas geladas do norte (relevo tirado do modelo Snow alps). inicio_z = onde começa a neve; montanhas_z = onde começam as montanhas; altura_max_m = altura dos picos; periodo_m = tamanho de cada 'pedaço' do relevo dos Alpes.",
-  "laponia": { "inicio_z": -500, "montanhas_z": -590, "altura_max_m": 420, "periodo_m": 820 },
+  "laponia": { "inicio_z": -470, "montanhas_z": -520, "altura_max_m": 250, "periodo_m": 1900, "pico_x": 20, "pico_z": -820 },
 
   "pantano": {
     "nivel_agua_m": 4.2,

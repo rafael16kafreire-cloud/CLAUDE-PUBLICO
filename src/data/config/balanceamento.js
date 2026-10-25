@@ -67,7 +67,7 @@ export default {
     nadar_rapido: 4.8,
     pulo: 7.2,                 // força do pulo
     gravidade: 22,
-    inclinacao_max_graus: 48,  // rampas mais íngremes que isso não dá para subir
+    inclinacao_max_graus: 55,  // rampas mais íngremes que isso não dá para subir
   },
 
   // ---------------------------------------------------------
