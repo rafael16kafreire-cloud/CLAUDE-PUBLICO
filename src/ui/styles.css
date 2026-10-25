@@ -951,3 +951,69 @@ body.underwater-swamp .uw-overlay {
 @keyframes uw-wave { 0%, 100% { transform: scale(1.02) translateY(0); } 50% { transform: scale(1.05) translateY(-1%); } }
 
 .credits { order: 99; margin: 4px 0 0; font-size: 11px; color: var(--bone-dim); opacity: 0.8; max-width: 44ch; }
+
+/* ---------------- Inspecionar bicho (lupa) ----------------
+   Fundo azul-marinho, ícones e textos brancos, no canto esquerdo
+   ao lado das barras do jogador. */
+.inspect {
+  --navy: rgba(14, 28, 51, 0.88);
+  --navy-line: rgba(160, 190, 235, 0.28);
+  position: absolute;
+  top: calc(8px + var(--safe-t));
+  left: calc(170px + var(--safe-l));
+  z-index: 4;
+  color: #fff;
+  pointer-events: none;
+}
+.inspect .ico { display: inline-grid; width: 17px; height: 17px; color: #fff; flex: none; }
+.inspect .ico svg { width: 100%; height: 100%; }
+.inspect-loading {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 10px; background: var(--navy); border: 1px solid var(--navy-line); border-radius: 8px;
+}
+.inspect-ring { width: 120px; height: 5px; background: rgba(255, 255, 255, 0.15); border-radius: 3px; overflow: hidden; }
+.inspect-ring i { display: block; height: 100%; background: #fff; transform: scaleX(0); transform-origin: left center; }
+.inspect-card {
+  position: relative;
+  width: 236px;
+  padding: 8px 10px 9px;
+  background: var(--navy);
+  border: 1px solid var(--navy-line);
+  border-radius: 8px;
+  font-family: var(--font-ui);
+}
+.inspect-card.dead { opacity: 0.75; }
+.inspect-close {
+  position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; padding: 5px;
+  border: 0; background: transparent; color: #fff; cursor: pointer; opacity: 0.8; pointer-events: auto;
+}
+.inspect-close svg { width: 100%; height: 100%; }
+.inspect-head { padding-right: 24px; margin-bottom: 6px; }
+.inspect-name { font-size: 15px; font-weight: 700; line-height: 1.15; }
+.inspect-tags { font-size: 11.5px; color: rgba(255, 255, 255, 0.72); }
+.inspect-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; margin-bottom: 6px; }
+.inspect-stat { display: flex; align-items: center; gap: 6px; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+.inspect-stat b { font-weight: 600; white-space: nowrap; }
+.inspect-bar {
+  position: relative; height: 16px; margin-top: 3px;
+  background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.35); border-radius: 3px; overflow: hidden;
+}
+.inspect-bar i { position: absolute; inset: 0; transform-origin: left center; }
+.inspect-bar span {
+  position: relative; display: block; text-align: center; font-size: 11.5px; line-height: 14px;
+  font-variant-numeric: tabular-nums; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+.bar-vida i { background: #b3261e; }
+.bar-stamina i { background: rgba(255, 255, 255, 0.35); }
+.bar-torpor i { background: rgba(255, 255, 255, 0.55); }
+/* com a ficha aberta, o nome do bicho no topo some (já está na ficha) */
+.hud:has(.inspect-card:not([hidden])) .target { display: none; }
+@media (max-height: 420px) {
+  .inspect-card { width: 214px; padding: 6px 8px 7px; }
+  .inspect-head { margin-bottom: 4px; }
+  .inspect-grid { gap: 2px 8px; margin-bottom: 4px; }
+  .bar-stamina { display: none; }
+  .inspect-stat { font-size: 12.5px; }
+  .inspect-bar { height: 14px; }
+  .inspect-bar span { line-height: 12px; font-size: 10.5px; }
+}

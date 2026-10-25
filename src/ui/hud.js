@@ -10,6 +10,7 @@ import { events, EV } from '../core/event_bus.js';
 import { game } from '../core/game_manager.js';
 import { BALANCE } from '../core/balance.js';
 import { ICONS } from './icons.js';
+import { STAT_ICONS } from './inspect_panel.js';
 
 const BARS = [
   { key: 'health', label: 'Vida' },
@@ -66,6 +67,7 @@ export class Hud {
         <button type="button" class="corner-btn touch-only" data-action="inventory">Inventário</button>
         <button type="button" class="corner-btn touch-only" data-action="build">Construir</button>
         <button type="button" class="corner-btn touch-only" data-action="mount">Montar</button>
+        <button type="button" class="corner-btn icon-btn inspect-btn" data-action="inspect" aria-label="Inspecionar bicho" title="Inspecionar bicho (R)">${STAT_ICONS.lupa}</button>
         <button type="button" class="corner-btn icon-btn" data-action="pause" aria-label="Pausar">${ICONS.pause}</button>
       </div>
 

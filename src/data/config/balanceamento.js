@@ -143,6 +143,12 @@ export default {
     max_ambiente: 6,           // araras e outros bichos de enfeite (fora do limite)
     // sempre tem estes bichos no pântano quando você está por perto
     moradores_pantano: { deinosuchus: 2, titanoboa: 1 },
+    // stamina dos bichos: aguentam correr X s com stamina cheia
+    // e recuperam tudo em Y s andando/parados (cansados só andam)
+    corrida_seg: 30,
+    recupera_seg: 20,
+    // tempo para inspecionar um bicho com a lupa
+    inspecionar_seg: 2,
   },
 
   // ---------------------------------------------------------

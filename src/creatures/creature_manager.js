@@ -271,7 +271,7 @@ export class CreatureManager {
       out.push([
         c.id, c.species.id, c.level, +c.scale.toFixed(3),
         +c.pos.x.toFixed(2), +c.pos.y.toFixed(2), +c.pos.z.toFixed(2), +c.yaw.toFixed(3),
-        c.state, Math.ceil(c.health), c.attackAnim > 0.8 ? 1 : 0, c.lootLeft ? 1 : 0,
+        c.state, Math.ceil(c.health), c.attackAnim > 0.8 ? 1 : 0, c.lootLeft ? 1 : 0, c.statSeed,
       ]);
     }
     return out;
@@ -280,7 +280,7 @@ export class CreatureManager {
   // Convidado: cria/atualiza as criaturas que o anfitrião mandou.
   applySnapshot(list) {
     const byNid = new Map(this.list.filter((c) => c.netControlled).map((c) => [c.nid, c]));
-    for (const [nid, sid, level, scale, x, y, z, yaw, st, hp, atk, loot] of list) {
+    for (const [nid, sid, level, scale, x, y, z, yaw, st, hp, atk, loot, seed] of list) {
       let c = byNid.get(nid);
       if (!c) {
         c = this.spawn(sid, x, z, level);
@@ -289,6 +289,7 @@ export class CreatureManager {
         c.netControlled = true;
         c.scale = scale;
         c.mesh.scale.setScalar(scale);
+        if (seed !== undefined) c.rollStats(seed); // mesmos atributos do anfitrião
       }
       c.applyNet({ x, y, z, yaw, st, hp, atk, loot });
     }
@@ -443,13 +444,18 @@ export class CreatureManager {
     let best = null;
     let bestT = maxDist;
     const tmp = new THREE.Vector3();
+    const onRay = new THREE.Vector3();
     for (const c of this.list) {
-      const center = c.center(tmp);
-      const to = center.sub(origin);
-      const t = to.dot(dir);
+      // ponto do corpo (cabeça…cauda) mais perto da linha da mira
+      let t = c.center(tmp).sub(origin).dot(dir);
+      for (let i = 0; i < 2; i++) {
+        onRay.copy(origin).addScaledVector(dir, Math.max(0, t));
+        c.closestBodyPoint(onRay.x, onRay.z, tmp);
+        t = tmp.sub(origin).dot(dir);
+      }
       if (t < 0 || t > bestT) continue;
-      const perp2 = to.lengthSq() - t * t;
-      const r = Math.max(c.radius, c.height * 0.5) * 1.1;
+      const perp2 = tmp.lengthSq() - t * t;
+      const r = Math.max(Math.min(c.radius, 1.6), c.height * 0.5) * 1.1;
       if (perp2 < r * r) {
         best = c;
         bestT = t;

@@ -4,6 +4,13 @@ Jogo 3D de sobrevivência com dinossauros. Sozinho (offline) ou em **co-op onlin
 Roda no celular (Android como app ou no navegador) e no PC.
 Visual estilizado, feito para ser leve.
 
+**Versão 0.6.3** – lupa para inspecionar bichos: mire num bicho e aperte a lupa (canto de
+cima) ou **R**. Em 2 s aparece a ficha com vida, força, peso que carrega, stamina,
+velocidade e torpor. Cada bicho sorteia esses números entre o mínimo e o máximo da
+espécie (`criaturas.json` → `atributos`), então dois raptores podem ser bem diferentes.
+A velocidade sorteada muda o quanto ele corre de verdade, e agora os bichos cansam:
+correndo gastam stamina e, sem stamina, só andam até recuperar.
+
 **Versão 0.6.2** – bichos mais devagar (andar ~30% e correr ~35% mais lentos, passos
 mais compridos, descansam mais) e brigas entre animais: carnívoros com fome caçam
 herbívoros, os grandões comem carnívoros menores, rivais do mesmo porte brigam por

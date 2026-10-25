@@ -1,5 +1,5 @@
 {
- "_explicacao": "Dados de cada espécie. vida/dano no nível 1 (sobem com o nível). Velocidades em m/s. temperamento: passivo (só reage se apanhar: revida=true ataca de volta, senão foge), medroso (foge de perto, nunca ataca), agressivo (carnívoros: caçam o jogador). biomas: praia, selva, igapo, pantano. peso_spawn: quanto maior, mais comum. grupo: [mínimo, máximo]. loot: o que sai da carcaça. ambiente: animais de enfeite (não contam no limite).",
+ "_explicacao": "atributos: [mínimo, máximo] no nível 1 – cada bicho sorteia um valor no meio (vida, força em % do dano, peso que carrega em kg, stamina, velocidade em % da corrida, torpor). Dados de cada espécie. vida/dano no nível 1 (sobem com o nível). Velocidades em m/s. temperamento: passivo (só reage se apanhar: revida=true ataca de volta, senão foge), medroso (foge de perto, nunca ataca), agressivo (carnívoros: caçam o jogador). biomas: praia, selva, igapo, pantano. peso_spawn: quanto maior, mais comum. grupo: [mínimo, máximo]. loot: o que sai da carcaça. ambiente: animais de enfeite (não contam no limite).",
  "especies": [
   {
    "id": "dodo",
@@ -36,7 +36,8 @@
    },
    "pode_domar": true,
    "comida_preferida": "baga_mejo",
-   "carga": 20
+   "carga": 20,
+   "atributos": { "vida": [34,46], "forca": [85,125], "peso": [17,24], "stamina": [75,110], "velocidade": [90,112], "torpor": [55,75] }
   },
   {
    "id": "parassauro",
@@ -73,7 +74,8 @@
    "pode_domar": true,
    "comida_preferida": "baga_mejo",
    "pode_montar": true,
-   "carga": 220
+   "carga": 220,
+   "atributos": { "vida": [221,299], "forca": [85,125], "peso": [187,264], "stamina": [125,175], "velocidade": [90,112], "torpor": [165,235] }
   },
   {
    "id": "galimimo",
@@ -110,7 +112,8 @@
    "pode_domar": true,
    "comida_preferida": "baga_mejo",
    "pode_montar": true,
-   "carga": 120
+   "carga": 120,
+   "atributos": { "vida": [128,173], "forca": [85,125], "peso": [102,144], "stamina": [100,140], "velocidade": [90,112], "torpor": [110,155] }
   },
   {
    "id": "capivara",
@@ -147,7 +150,8 @@
    "pode_domar": true,
    "comida_preferida": "baga_mejo",
    "nada": true,
-   "carga": 30
+   "carga": 30,
+   "atributos": { "vida": [68,92], "forca": [85,125], "peso": [26,36], "stamina": [85,120], "velocidade": [90,112], "torpor": [75,105] }
   },
   {
    "id": "paquicefalossauro",
@@ -189,7 +193,8 @@
    "revida": true,
    "alcance_ataque": 1.4,
    "intervalo_ataque": 1.1,
-   "carga": 120
+   "carga": 120,
+   "atributos": { "vida": [187,253], "forca": [85,125], "peso": [102,144], "stamina": [115,160], "velocidade": [90,112], "torpor": [145,205] }
   },
   {
    "id": "triceratops",
@@ -233,7 +238,8 @@
    "alcance_ataque": 2.4,
    "intervalo_ataque": 1.4,
    "pode_montar": true,
-   "carga": 500
+   "carga": 500,
+   "atributos": { "vida": [765,1035], "forca": [85,125], "peso": [425,600], "stamina": [260,365], "velocidade": [90,112], "torpor": [495,695] }
   },
   {
    "id": "estegossauro",
@@ -276,7 +282,8 @@
    "alcance_ataque": 3.0,
    "intervalo_ataque": 1.6,
    "pode_montar": true,
-   "carga": 500
+   "carga": 500,
+   "atributos": { "vida": [935,1265], "forca": [85,125], "peso": [425,600], "stamina": [300,425], "velocidade": [90,112], "torpor": [595,840] }
   },
   {
    "id": "anquilossauro",
@@ -320,7 +327,8 @@
    "alcance_ataque": 3.2,
    "intervalo_ataque": 1.6,
    "pode_montar": true,
-   "carga": 450
+   "carga": 450,
+   "atributos": { "vida": [850,1150], "forca": [85,125], "peso": [383,540], "stamina": [280,395], "velocidade": [90,112], "torpor": [545,770] }
   },
   {
    "id": "braquiossauro",
@@ -364,7 +372,8 @@
    "alcance_ataque": 4.0,
    "intervalo_ataque": 2.2,
    "pode_montar": true,
-   "carga": 1500
+   "carga": 1500,
+   "atributos": { "vida": [2975,4025], "forca": [85,125], "peso": [1275,1800], "stamina": [810,1145], "velocidade": [90,112], "torpor": [1820,2570] }
   },
   {
    "id": "compsognato",
@@ -403,7 +412,8 @@
    "alcance_agro": 18,
    "alcance_ataque": 0.9,
    "intervalo_ataque": 0.7,
-   "carga": 10
+   "carga": 10,
+   "atributos": { "vida": [30,40], "forca": [85,125], "peso": [9,12], "stamina": [75,105], "velocidade": [90,112], "torpor": [50,75] }
   },
   {
    "id": "dilofossauro",
@@ -441,7 +451,8 @@
    "alcance_agro": 22,
    "alcance_ataque": 1.4,
    "intervalo_ataque": 0.9,
-   "carga": 60
+   "carga": 60,
+   "atributos": { "vida": [119,161], "forca": [85,125], "peso": [51,72], "stamina": [100,140], "velocidade": [90,112], "torpor": [105,150] }
   },
   {
    "id": "raptor",
@@ -481,7 +492,8 @@
    "alcance_ataque": 1.6,
    "intervalo_ataque": 0.9,
    "pode_montar": true,
-   "carga": 140
+   "carga": 140,
+   "atributos": { "vida": [145,195], "forca": [85,125], "peso": [119,168], "stamina": [105,145], "velocidade": [90,112], "torpor": [120,170] }
   },
   {
    "id": "onca",
@@ -520,7 +532,8 @@
    "alcance_agro": 26,
    "alcance_ataque": 1.6,
    "intervalo_ataque": 0.8,
-   "carga": 80
+   "carga": 80,
+   "atributos": { "vida": [255,345], "forca": [85,125], "peso": [68,96], "stamina": [130,185], "velocidade": [90,112], "torpor": [185,265] }
   },
   {
    "id": "aranha",
@@ -554,7 +567,8 @@
    "alcance_agro": 20,
    "alcance_ataque": 1.6,
    "intervalo_ataque": 1.0,
-   "carga": 0
+   "carga": 0,
+   "atributos": { "vida": [153,207], "forca": [85,125], "peso": [4,6], "stamina": [105,150], "velocidade": [90,112], "torpor": [125,180] }
   },
   {
    "id": "carnotauro",
@@ -597,7 +611,8 @@
    "alcance_ataque": 2.2,
    "intervalo_ataque": 1.2,
    "pode_montar": true,
-   "carga": 300
+   "carga": 300,
+   "atributos": { "vida": [510,690], "forca": [85,125], "peso": [255,360], "stamina": [195,275], "velocidade": [90,112], "torpor": [340,480] }
   },
   {
    "id": "trex",
@@ -640,7 +655,8 @@
    "alcance_ataque": 3.2,
    "intervalo_ataque": 1.6,
    "pode_montar": true,
-   "carga": 600
+   "carga": 600,
+   "atributos": { "vida": [1360,1840], "forca": [85,125], "peso": [510,720], "stamina": [410,575], "velocidade": [90,112], "torpor": [850,1200] }
   },
   {
    "id": "titanoboa",
@@ -678,7 +694,8 @@
    "alcance_agro": 18,
    "alcance_ataque": 2.6,
    "intervalo_ataque": 1.4,
-   "carga": 0
+   "carga": 0,
+   "atributos": { "vida": [595,805], "forca": [85,125], "peso": [4,6], "stamina": [215,305], "velocidade": [90,112], "torpor": [390,550] }
   },
   {
    "id": "deinosuchus",
@@ -724,7 +741,8 @@
    "alcance_ataque": 2.8,
    "intervalo_ataque": 1.5,
    "pode_montar": true,
-   "carga": 400
+   "carga": 400,
+   "atributos": { "vida": [765,1035], "forca": [85,125], "peso": [340,480], "stamina": [260,365], "velocidade": [90,112], "torpor": [495,695] }
   },
   {
    "id": "espinossauro",
@@ -769,7 +787,8 @@
    "alcance_ataque": 3.2,
    "intervalo_ataque": 1.5,
    "pode_montar": true,
-   "carga": 650
+   "carga": 650,
+   "atributos": { "vida": [1530,2070], "forca": [85,125], "peso": [553,780], "stamina": [450,635], "velocidade": [90,112], "torpor": [950,1345] }
   },
   {
    "id": "piranha",
@@ -803,7 +822,8 @@
    "alcance_agro": 14,
    "alcance_ataque": 1.0,
    "intervalo_ataque": 0.7,
-   "carga": 0
+   "carga": 0,
+   "atributos": { "vida": [51,69], "forca": [85,125], "peso": [4,6], "stamina": [80,115], "velocidade": [90,112], "torpor": [65,90] }
   },
   {
    "id": "pterodactilo",
@@ -846,7 +866,8 @@
    "alcance_ataque": 1.8,
    "intervalo_ataque": 1.4,
    "pode_montar": true,
-   "carga": 60
+   "carga": 60,
+   "atributos": { "vida": [94,126], "forca": [85,125], "peso": [51,72], "stamina": [90,130], "velocidade": [90,112], "torpor": [90,125] }
   },
   {
    "id": "quetzalcoatlus",
@@ -888,7 +909,8 @@
    "alcance_ataque": 3.0,
    "intervalo_ataque": 2.0,
    "pode_montar": true,
-   "carga": 500
+   "carga": 500,
+   "atributos": { "vida": [1020,1380], "forca": [85,125], "peso": [425,600], "stamina": [325,455], "velocidade": [90,112], "torpor": [645,910] }
   },
   {
    "id": "arara",
@@ -923,7 +945,8 @@
     30
    ],
    "ambiente": true,
-   "carga": 0
+   "carga": 0,
+   "atributos": { "vida": [17,23], "forca": [85,125], "peso": [4,6], "stamina": [70,100], "velocidade": [90,112], "torpor": [45,60] }
   }
  ]
 }

@@ -12,6 +12,7 @@ import * as THREE from 'three';
 import { angleDelta, clamp } from '../core/math.js';
 import { BALANCE } from '../core/balance.js';
 import { sound } from '../audio/audio.js';
+import { mulberry32 } from '../core/math.js';
 
 export const CSTATE = {
   WANDER: 'vagar',
@@ -39,9 +40,7 @@ export class Creature {
     this.rand = rand;
     this.level = level;
 
-    this.maxHealth = Math.round(species.vida * (1 + 0.06 * (level - 1)));
-    this.health = this.maxHealth;
-    this.damage = species.dano * (1 + 0.03 * (level - 1));
+    this.rollStats(Math.floor(rand() * 1e9));
     this.scale = (species.tamanho ?? 1) * (0.92 + Math.min(level, 30) * 0.006 + rand() * 0.06);
 
     this.flies = !!species.voa;
@@ -97,6 +96,49 @@ export class Creature {
     return this.center(out).set(this.pos.x + fx * s, out.y, this.pos.z + fz * s);
   }
 
+  // Sorteia os atributos entre o mínimo e o máximo da espécie
+  // (criaturas.json → atributos) e soma o bônus do nível.
+  // A semente vai pela rede no co-op, então todos veem os mesmos números.
+  rollStats(seed) {
+    const sp = this.species;
+    const L = this.level - 1;
+    const r = mulberry32(seed >>> 0);
+    const at = sp.atributos ?? {};
+    const pick = (k, def) => {
+      const [a, b] = at[k] ?? def;
+      return a + (b - a) * r();
+    };
+    this.statSeed = seed >>> 0;
+    this.sex = r() < 0.5 ? 'Macho' : 'Fêmea';
+    const vida = pick('vida', [sp.vida, sp.vida]);
+    const forca = pick('forca', [100, 100]);
+    this.stats = {
+      vida: Math.round(vida * (1 + 0.06 * L)),
+      forca: Math.round(forca * (1 + 0.03 * L)),
+      peso: Math.round(pick('peso', [sp.carga ?? 20, sp.carga ?? 20]) * (1 + 0.02 * L)),
+      stamina: Math.round(pick('stamina', [100, 100]) * (1 + 0.04 * L)),
+      velocidade: Math.round(pick('velocidade', [100, 100])),
+      torpor: Math.round(pick('torpor', [100, 100]) * (1 + 0.06 * L)),
+    };
+    const ratio = this.maxHealth ? this.health / this.maxHealth : 1;
+    this.maxHealth = this.stats.vida;
+    this.health = Math.max(1, Math.round(this.maxHealth * ratio));
+    this.damage = sp.dano * this.stats.forca / 100;
+    this.speedMul = this.stats.velocidade / 100;
+    this.stamina = this.stats.stamina;
+    this.torpor = 0;
+    this.tired = false;
+  }
+
+  get walkSpeed() {
+    return this.species.vel_andar * this.speedMul;
+  }
+
+  // correndo gasta stamina; sem stamina só anda até recuperar
+  get runSpeed() {
+    return this.tired ? this.walkSpeed * 1.2 : this.species.vel_correr * this.speedMul;
+  }
+
   get alive() {
     return this.state !== CSTATE.DEAD;
   }
@@ -140,6 +182,15 @@ export class Creature {
 
     // de vez em quando, um chamado à toa
     if (this.rand() < dt * 0.025) sound.creature(this, this.state === CSTATE.CHASE ? 'rugido' : 'chamado');
+
+    // stamina: correr cansa; cansado só anda até recuperar 40%
+    if (this.stats && !this.netControlled) {
+      const max = this.stats.stamina;
+      if (this.speed > this.walkSpeed * 1.5) this.stamina = Math.max(0, this.stamina - max / BALANCE.criaturas.corrida_seg * dt);
+      else this.stamina = Math.min(max, this.stamina + max / BALANCE.criaturas.recupera_seg * dt);
+      if (this.stamina <= 0) this.tired = true;
+      else if (this.tired && this.stamina > max * 0.4) this.tired = false;
+    }
 
     this.thinkTimer -= dt;
     if (this.thinkTimer <= 0) {
@@ -282,7 +333,7 @@ export class Creature {
     switch (this.state) {
       case CSTATE.WANDER: {
         if (!this.goal || this.stateTime > 25) this.goal = this._pickWanderPoint(sp.raio > 2 ? 60 : 32);
-        if (!this.goal || this._steer(dt, this.goal.x, this.goal.y, sp.vel_andar)) {
+        if (!this.goal || this._steer(dt, this.goal.x, this.goal.y, this.walkSpeed)) {
           const herb = sp.dieta === 'herbivoro' && !this.aquatic;
           this._setState(herb && this.rand() < 0.6 ? CSTATE.EAT : CSTATE.IDLE);
           this.idleFor = 5 + this.rand() * 10;
@@ -295,7 +346,7 @@ export class Creature {
         if (this.stateTime > (this.idleFor ?? 4)) this._setState(CSTATE.WANDER);
         break;
       case CSTATE.RETURN:
-        if (this._steer(dt, this.home.x, this.home.y, sp.vel_andar * 1.3) || this._dist2DXY(this.home.x, this.home.y) < 10) {
+        if (this._steer(dt, this.home.x, this.home.y, this.walkSpeed * 1.3) || this._dist2DXY(this.home.x, this.home.y) < 10) {
           this._setState(CSTATE.WANDER);
         }
         break;
@@ -310,7 +361,7 @@ export class Creature {
           this.goal = new THREE.Vector2(this.pos.x + Math.sin(a) * 35, this.pos.z + Math.cos(a) * 35);
           this.blockedTime = 0;
         }
-        this._steer(dt, this.goal.x, this.goal.y, sp.vel_correr);
+        this._steer(dt, this.goal.x, this.goal.y, this.runSpeed);
         break;
       }
       case CSTATE.CHASE: {
@@ -320,7 +371,7 @@ export class Creature {
           this._setState(CSTATE.ATTACK);
           break;
         }
-        this._steer(dt, t.position.x, t.position.z, sp.vel_correr);
+        this._steer(dt, t.position.x, t.position.z, this.runSpeed);
         break;
       }
       case CSTATE.ATTACK: {
@@ -378,20 +429,20 @@ export class Creature {
     }
     const ground = Math.max(0, this.world.heightAt(this.pos.x, this.pos.z));
     let wanted = ground + this.cruise + Math.sin(this.time * 0.3) * 4;
-    let speed = sp.vel_andar;
+    let speed = this.walkSpeed;
     if (fleeing && this.threat) {
       const ax = this.pos.x - this.threat.position.x;
       const az = this.pos.z - this.threat.position.z;
       const len = Math.hypot(ax, az) || 1;
       this.goal = new THREE.Vector2(this.pos.x + (ax / len) * 60, this.pos.z + (az / len) * 60);
       wanted += 20;
-      speed = sp.vel_correr;
+      speed = this.runSpeed;
     }
     if (hunting) {
       const t = this.target.position;
       this.goal = new THREE.Vector2(t.x, t.z);
       const d = this._dist2D(t);
-      speed = sp.vel_correr;
+      speed = this.runSpeed;
       // mergulha quando pode atacar; sobe enquanto recarrega
       if (d < 28 && this.attackCooldown <= 0) wanted = t.y + 1.4;
       else if (this.attackCooldown > 0) wanted = ground + this.cruise * 0.6;
@@ -422,7 +473,7 @@ export class Creature {
     }
     const want = Math.atan2(-dx, -dz);
     const delta = angleDelta(this.yaw, want);
-    const turn = this.turnRate * dt * (speed > this.species.vel_andar * 1.5 ? 1.3 : 1);
+    const turn = this.turnRate * dt * (speed > this.walkSpeed * 1.5 ? 1.3 : 1);
     this.yaw += clamp(delta, -turn, turn);
     const target = speed * (Math.abs(delta) > 1.3 ? 0.35 : 1);
     this.speed += (target - this.speed) * Math.min(1, dt * 1.6);
@@ -565,7 +616,7 @@ export class Creature {
     const k = (rate) => Math.min(1, adt * rate);
 
     A.turn += (clamp(yawVel, -2, 2) - A.turn) * k(5);
-    A.run += (clamp(this.speed / Math.max(0.1, this.species.vel_correr), 0, 1) - A.run) * k(4);
+    A.run += (clamp(this.speed / Math.max(0.1, this.runSpeed), 0, 1) - A.run) * k(4);
     const legLen = Math.max(0.25, this.height * 0.45);
     const stride = legLen * (spec.body === 'spider' ? 1.4 : 2.6);
     this.phase += (adt * this.speed) / stride;

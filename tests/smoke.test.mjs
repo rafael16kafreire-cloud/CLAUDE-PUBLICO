@@ -783,6 +783,46 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   });
   check('Golpe: acerta cabeça e cauda de bicho grande', Object.values(parts).every(Boolean), JSON.stringify(parts));
 
+  // Atributos sorteados entre o mínimo e o máximo da espécie
+  const rolls = await page.evaluate(() => {
+    const c = window.__ilha.ctx; const p = c.player.position; const out = { ok: true, bad: [], distinct: 0 };
+    const seen = new Set();
+    for (let i = 0; i < 12; i++) {
+      const cr = c.creatures.spawn('raptor', p.x + 200 + i * 3, p.z + 200, 1);
+      const at = cr.species.atributos;
+      for (const k of ['vida', 'forca', 'peso', 'stamina', 'velocidade', 'torpor']) {
+        const v = cr.stats[k]; const [a, b] = at[k];
+        if (v < Math.floor(a) || v > Math.ceil(b)) { out.ok = false; out.bad.push(`${k}=${v}`); }
+      }
+      seen.add(cr.stats.vida);
+    }
+    out.distinct = seen.size;
+    c.creatures.clear();
+    return out;
+  });
+  check('Atributos: cada bicho sorteia vida/força/peso/stamina/velocidade/torpor no intervalo', rolls.ok && rolls.distinct > 3, JSON.stringify(rolls));
+
+  // Lupa: mira num bicho, espera 2 s e aparece a ficha com os atributos
+  await page.evaluate(() => {
+    const c = window.__ilha.ctx; const p = c.player.position; const f = c.camCtl.forward;
+    const t = c.creatures.spawn('triceratops', p.x + f.x * 12, p.z + f.z * 12, 8);
+    t._setState('parado'); t.idleFor = 99;
+    c.camCtl.pitch = 0.08;
+    window.__insp = t;
+  });
+  await frames(page, 3);
+  await page.keyboard.press('KeyR');
+  await gameWait(page, 800);
+  const early = await page.evaluate(() => document.querySelector('.inspect-card').hidden);
+  await gameWait(page, 2000);
+  const card = await page.evaluate(() => {
+    const el = document.querySelector('.inspect-card');
+    return { shown: !el.hidden, text: el.innerText.replace(/\n+/g, ' | '), vida: window.__insp.stats.vida };
+  });
+  check('Lupa: leva 2 s e mostra a ficha do bicho', early && card.shown && card.text.includes('Triceratops') && card.text.includes('km/h') && card.text.includes('kg'), JSON.stringify(card));
+  await page.keyboard.press('KeyR');
+  await page.evaluate(() => window.__ilha.ctx.creatures.clear());
+
   // Mira numa criatura mostra nome, nível e vida
   await page.evaluate(() => {
     const c = window.__ilha.ctx;

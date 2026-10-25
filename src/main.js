@@ -13,6 +13,7 @@ import { Player } from './player/player.js';
 import { PlayerCamera } from './player/player_camera.js';
 import { PlayerInteraction } from './player/player_interaction.js';
 import { Hud } from './ui/hud.js';
+import { InspectPanel } from './ui/inspect_panel.js';
 import { Messages } from './ui/messages.js';
 import { TouchControls } from './ui/touch_controls.js';
 import { DeathScreen } from './ui/death_screen.js';
@@ -146,6 +147,7 @@ function boot(hotData = {}) {
     world.localInventory = inventory;
     const interaction = new PlayerInteraction(player, world, camCtl, actions, inventory);
     const hud = new Hud(ui, player, (action) => onCornerButton(action));
+    const inspect = new InspectPanel(hud.el, () => creatures.findAimed(camera.position, camCtl.forward, 45));
     const messages = new Messages(ui);
     const touch = new TouchControls(ui, input);
     const death = new DeathScreen(ui, world);
@@ -180,7 +182,7 @@ function boot(hotData = {}) {
     game.world = world;
     game.player = player;
     ctx = {
-      world, player, camCtl, interaction, hud, messages, touch, death, debug, pause, creatures, hands,
+      world, player, camCtl, interaction, hud, inspect, messages, touch, death, debug, pause, creatures, hands,
       inventory, crafting, actions, hotbar, invScreen,
     };
     ctx.net = new Multiplayer({ world, player, creatures, inventory, actions, camCtl });
@@ -378,6 +380,10 @@ function boot(hotData = {}) {
       else resume();
       return;
     }
+    if (action === 'inspect') {
+      if (game.state === STATE.PLAYING) ctx.inspect.toggle();
+      return;
+    }
     if (action === 'inventory') {
       if (ctx.invScreen.visible) closeInventory();
       else openInventory();
@@ -457,6 +463,7 @@ function boot(hotData = {}) {
       if (ctx.invScreen.visible) closeInventory();
       else openInventory();
     }
+    if (input.wasPressed('inspect')) ctx.inspect.toggle();
     if (input.wasPressed('camera')) settings.set('cameraMode', ctx.camCtl.mode === 'primeira' ? 'terceira' : 'primeira');
     for (let i = 0; i < 8; i++) if (input.wasPressed(`slot${i + 1}`)) ctx.actions.pressHotbar(i);
     for (const action of ['build', 'mount']) {
@@ -567,7 +574,7 @@ function boot(hotData = {}) {
 
     handleActions();
     autoQuality(dt);
-    const { world, player, camCtl, interaction, hud, touch, debug, creatures, hands, crafting, invScreen, actions } = ctx;
+    const { world, player, camCtl, interaction, hud, inspect, touch, debug, creatures, hands, crafting, invScreen, actions } = ctx;
     const look = input.consumeLook();
     const sens = settings.get('sensitivity');
 
@@ -626,6 +633,7 @@ function boot(hotData = {}) {
     world.update(dt, camera, focus);
     if (game.state !== STATE.MENU) {
       hud.update(dt);
+      inspect.update(dt);
       touch.updateStates(player);
       // Criatura na mira: nome, nível e vida.
       targetTimer -= dt;
