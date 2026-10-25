@@ -61,6 +61,9 @@ export class PauseMenu {
             <option value="primeira">Primeira pessoa</option>
           </select>
 
+          <label for="opt-smaa">Suavizar bordas (SMAA)</label>
+          <input type="checkbox" id="opt-smaa">
+
           <label for="opt-auto">Baixar qualidade se ficar lento</label>
           <input type="checkbox" id="opt-auto">
 
@@ -97,6 +100,7 @@ export class PauseMenu {
       touch: $('opt-touch'),
       camera: $('opt-camera'),
       debug: $('opt-debug'),
+      smaa: $('opt-smaa'),
       auto: $('opt-auto'),
     };
     this.outs = {
@@ -154,6 +158,7 @@ export class PauseMenu {
     f.touch.addEventListener('change', () => settings.set('touchControls', f.touch.value));
     f.camera.addEventListener('change', () => settings.set('cameraMode', f.camera.value));
     f.debug.addEventListener('change', () => settings.set('showDebug', f.debug.checked));
+    f.smaa.addEventListener('change', () => settings.set('smaa', f.smaa.checked));
     f.auto.addEventListener('change', () => settings.set('autoQuality', f.auto.checked));
   }
 
@@ -173,6 +178,7 @@ export class PauseMenu {
     f.touch.value = v.touchControls;
     f.camera.value = v.cameraMode;
     f.debug.checked = !!v.showDebug;
+    f.smaa.checked = v.smaa !== false;
     f.auto.checked = !!v.autoQuality;
     this.outs.view.textContent = `${v.viewDistance} m`;
     this.outs.sens.textContent = Number(v.sensitivity).toFixed(1);

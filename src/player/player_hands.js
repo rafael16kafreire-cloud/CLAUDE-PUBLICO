@@ -66,7 +66,7 @@ function skinArm() {
   const tex = new THREE.TextureLoader().load(SKIN_TEXTURA);
   tex.colorSpace = THREE.SRGBColorSpace;
   const arm = new THREE.Mesh(skinGeometry(SKIN_PARTES.armR), new THREE.MeshLambertMaterial({ map: tex }));
-  const s = 0.42;
+  const s = 0.3;
   const len = 0.86 * s;
   arm.scale.setScalar(s);
   arm.rotation.set(Math.PI / 2, Math.PI / 2, 0); // costas da mão para cima
@@ -77,7 +77,7 @@ function skinArm() {
   g.add(hand);
   g.userData.fist = hand;
   g.scale.setScalar(1.25);
-  g.position.set(0.22, -0.27, -0.27);
+  g.position.set(0.24, -0.25, -0.3);
   g.rotation.set(0.32, 0.2, 0.05);
   return g;
 }

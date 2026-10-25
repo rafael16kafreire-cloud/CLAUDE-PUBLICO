@@ -4,6 +4,10 @@
 // roda o "loop": a cada quadro atualiza tudo e desenha.
 // =============================================================
 import * as THREE from 'three';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { events, EV } from './core/event_bus.js';
 import { game, STATE } from './core/game_manager.js';
 import { settings, QUALITY_PRESETS, hdTextures } from './core/settings.js';
@@ -102,10 +106,32 @@ function boot(hotData = {}) {
   });
   start.setLoading('Gerando a ilha…');
 
+  // SMAA: suaviza as bordas serrilhadas depois de desenhar a cena
+  // (opção "Suavizar bordas"; desligado = desenha direto, mais leve)
+  let composer = null;
+  function setupSMAA() {
+    const on = settings.get('smaa') !== false;
+    if (!on) {
+      composer?.dispose();
+      composer = null;
+      return;
+    }
+    if (!composer) {
+      composer = new EffectComposer(renderer);
+      composer.addPass(new RenderPass(scene, camera));
+      composer.addPass(new SMAAPass(window.innerWidth, window.innerHeight));
+      composer.addPass(new OutputPass());
+    }
+    composer.setPixelRatio(renderer.getPixelRatio());
+    composer.setSize(window.innerWidth, window.innerHeight);
+  }
+
   function resize() {
     const w = window.innerWidth;
     const h = window.innerHeight;
     renderer.setSize(w, h, false);
+    composer?.setPixelRatio(renderer.getPixelRatio());
+    composer?.setSize(w, h);
     camera.aspect = w / h;
     camera.fov = w < h ? 82 : 70; // celular em pé: campo de visão maior
     camera.updateProjectionMatrix();
@@ -117,6 +143,7 @@ function boot(hotData = {}) {
   function applySettings() {
     const q = settings.quality;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, q.pixelRatio));
+    setupSMAA();
     resize();
     game.isTouch = detectTouch();
     document.body.classList.toggle('is-touch', game.isTouch);
@@ -801,7 +828,8 @@ function boot(hotData = {}) {
     if (world.cameraUnderwater) wob = Math.sin(now * 0.0011) * 0.02;
     else if (player.swimming) wob = Math.sin(now * 0.0016) * 0.018;
     camera.rotation.z += wob;
-    renderer.render(scene, camera);
+    if (composer) composer.render(dt);
+    else renderer.render(scene, camera);
     camera.rotation.z -= wob;
     debug.frame(dt);
     input.endFrame();

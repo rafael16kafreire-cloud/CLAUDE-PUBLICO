@@ -10,6 +10,7 @@
 // =============================================================
 import * as THREE from 'three';
 import { ClipPlayer } from './clip_player.js';
+import { PASSOS } from './gait_profiles.js';
 import { angleDelta, clamp } from '../core/math.js';
 import { BALANCE } from '../core/balance.js';
 import { sound } from '../audio/audio.js';
@@ -20,6 +21,21 @@ import { shakeAt } from '../world/materials.js';
 // comprido) come folha de árvore; os outros, arbustos e plantas baixas.
 const FOOD_LOW = new Set(['arbusto', 'arbusto_mejo', 'arbusto_escura', 'arbusto_frutas', 'samambaia', 'samambaia_gigante',
   'bananeira', 'bananeira_vazia', 'junco', 'taboa', 'arbusto_neve', 'planta_praia', 'capim']);
+// Jeito de andar tirado de animações de verdade (gait_profiles.js):
+// baixo = Sauropelta (quadrúpede de perna curta), alto = Argentinossauro
+// (perna reta de coluna). Quem não está aqui anda com a curva simples.
+const GAIT_OF = {
+  anquilossauro: 'baixo', estegossauro: 'baixo', triceratops: 'baixo', parassauro: 'baixo', capivara: 'baixo',
+  sauropelta: 'baixo', braquiossauro: 'alto', mamute: 'alto', argentinossauro: 'alto',
+};
+// valor da curva (n pontos por passo) na fase p (0..1), com interpolação
+function gaitAt(c, p) {
+  const n = c.length;
+  const f = (((p % 1) + 1) % 1) * n;
+  const i = Math.floor(f);
+  return c[i] + (c[(i + 1) % n] - c[i]) * (f - i);
+}
+
 const FOOD_HIGH = new Set(['arvore_agar', 'arvore_dossel', 'arvore_media', 'acai', 'sumauma', 'pinheiro_neve', 'pinheiro', 'arvore_folhosa', 'arvore_folhosa2']);
 
 export const CSTATE = {
@@ -1162,6 +1178,16 @@ export class Creature {
       if (isArm) {
         const reach = this.attackAnim > 0 ? -Math.sin(this.attackAnim * Math.PI) * 0.8 : 0;
         thigh.rotation.x = 0.3 + Math.sin((this.phase + leg.phase) * TAU) * amp * 0.3 + reach;
+        continue;
+      }
+      // curva de verdade (se o bicho tiver um jeito de andar)
+      const gait = PASSOS[GAIT_OF[this.species.id]]?.pernas[leg.name.slice(0, -1)];
+      if (gait && spec.body === 'quad') {
+        const p = this.phase + gait.atraso + (leg.name.endsWith('D') ? gait.atraso_D : 0);
+        const g = moving * (1 + A.run * 0.8);
+        thigh.rotation.x = gaitAt(gait.coxa, p) * g;
+        if (knee && gait.joelho) knee.rotation.x = gaitAt(gait.joelho, p) * g;
+        if (foot && gait.pe) foot.rotation.x = gaitAt(gait.pe, p) * g;
         continue;
       }
       const ph = (this.phase + leg.phase) * TAU;

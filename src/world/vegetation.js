@@ -24,7 +24,7 @@ import { renderImpostor } from './impostor.js';
 import { foliageTexture, addPlantDetail } from './foliage_texture.js';
 import recursos from '../data/world/recursos.json';
 import * as P from './props.js';
-import { snowTreeGeometry, snowTreeMaterial, snowRockGeometry, snowRockMaterial } from './snow_models.js';
+import { snowRockGeometry, snowRockMaterial } from './snow_models.js';
 import { vegGeometry, vegMaterial } from './veg_models.js';
 
 const ROOTS = P.sumaumaRootColliders();
@@ -65,10 +65,11 @@ const TYPES = {
   gravetos: { foot: 0.05, hi: P.makeSticks, collider: 0, shadow: false, scale: [0.8, 1.3], res: 'gravetos', maxDist: 45 },
   pinheiro: { foot: 0.4, hi: P.makeSpruce, lo: P.makeSpruceLow, imp: true, collider: 0.3, shadow: true, scale: [0.7, 1.3], res: 'arvore', cold: true },
   // modelos da neve enviados pelo jogador (mat = material próprio, com textura)
-  pinheiro_neve: { foot: 0.4, hi: () => snowTreeGeometry('pinheiro_neve', 13), mat: () => snowTreeMaterial('pinheiro_neve'), collider: 0.3, shadow: true, scale: [0.75, 1.35], res: 'arvore', cold: true, textured: true },
-  arvore_morta_neve: { foot: 0.4, hi: () => snowTreeGeometry('arvore_morta', 9), mat: () => snowTreeMaterial('arvore_morta'), collider: 0.3, shadow: true, scale: [0.8, 1.3], res: 'arvore', cold: true, textured: true },
-  arvore_seca: { foot: 0.4, hi: () => snowTreeGeometry('arvore_seca', 11), mat: () => snowTreeMaterial('arvore_seca'), collider: 0.25, shadow: true, scale: [0.8, 1.3], res: 'arvore', cold: true, textured: true },
-  arbusto_neve: { hi: () => snowTreeGeometry('arbusto_neve', 1.4), mat: () => snowTreeMaterial('arbusto_neve'), collider: 0, shadow: false, scale: [0.7, 1.4], res: 'arbusto', maxDist: 90, textured: true },
+  // neve: árvores em 3D de verdade (galhos e neve em cima), não placas com foto
+  pinheiro_neve: { foot: 0.4, hi: P.makeSnowSpruce, lo: P.makeSnowSpruceLow, imp: true, collider: 0.3, shadow: true, scale: [0.75, 1.35], res: 'arvore', cold: true },
+  arvore_morta_neve: { foot: 0.4, hi: P.makeSnowDeadTree, lo: P.makeSnowDeadTreeLow, collider: 0.3, shadow: true, scale: [0.8, 1.3], res: 'arvore', cold: true, maxDist: 320 },
+  arvore_seca: { foot: 0.4, hi: () => P.makeSnowDeadTree(false, 5), lo: () => P.makeSnowDeadTree(true, 5), collider: 0.25, shadow: true, scale: [0.9, 1.4], res: 'arvore', cold: true, maxDist: 320 },
+  arbusto_neve: { hi: P.makeSnowShrub, collider: 0, shadow: false, scale: [0.7, 1.4], res: 'arbusto', maxDist: 90 },
   rochedo: { foot: 1.6, hi: snowRockGeometry, mat: snowRockMaterial, lo: P.makeBoulderLow, collider: 1.0, shadow: true, scale: [1.8, 9], res: 'rochedo', maxDist: 320, rock: true, textured: true },
   minerio_ferro: { foot: 0.8, hi: P.makeIronOre, collider: 0.9, shadow: false, scale: [0.9, 1.6], res: 'ferro', maxDist: 140, rock: true },
   pedra_musgo: { foot: 0.85, hi: P.makeMossRock, lo: P.makeMossRockLow, collider: 1.0, shadow: false, scale: [0.6, 2.2], res: 'pedra', maxDist: 160 },

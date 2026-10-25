@@ -36,6 +36,7 @@ const DEFAULTS = {
   buttonOpacity: 0.7,      // 0.2 a 1.0
   buttonSize: 1.0,         // 0.7 a 1.4
   showDebug: false,        // overlay de FPS
+  smaa: true,              // suavizar bordas (SMAA)
   touchControls: 'auto',   // auto | sempre | nunca
   cameraMode: 'primeira',  // primeira | terceira
   autoQuality: true,       // baixa a qualidade sozinho se ficar lento

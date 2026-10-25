@@ -121,8 +121,10 @@ export class PlayerInteraction {
     if (hit) {
       const res = this.world.vegetation.resourceOf(hit);
       if (res.so_machado && tool.tipo !== 'machado') return { kind: 'hint', key: 'attack', text: `${res.nome}: precisa de machado` };
+      if (res.so_ferramenta && (tool.tipo === 'mao' || !res[tool.tipo])) return { kind: 'hint', key: 'attack', text: `${res.nome}: precisa de picareta ou machado` };
       const table = res[tool.tipo] ?? res.mao;
       const names = Object.keys(table).slice(0, 2).map(itemName).join(' e ');
+      if (!names) return null;
       return { kind: 'hint', key: 'attack', text: `${res.nome}: ${names}` };
     }
     return null;

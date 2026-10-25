@@ -696,6 +696,109 @@ export function makeSpruce(low = false) {
 }
 export const makeSpruceLow = () => makeSpruce(true);
 
+// Pinheiro nevado em 3D de verdade (Lapônia): tronco, galhos em
+// andares que caem para baixo na ponta, cada galho uma "almofada" de
+// agulhas com neve por cima (onde a face olha para o céu).
+// low = versão de média distância (menos galhos e menos faces).
+export function makeSnowSpruce(low = false, seed = 1) {
+  const H = 13;
+  const parts = [paint(cyl(0.09, 0.32, H * 0.97, [0, 0, 0], low ? 5 : 8), '#4a3a2e', 0.25)];
+  // miolo escuro (não deixa ver através entre os galhos)
+  const core = new THREE.ConeGeometry(1.25, H * 0.82, low ? 6 : 9, 1, true).translate(0, H * 0.18 + H * 0.41, 0);
+  parts.push(paintFn(core, (c, x, y, z) => c.set('#1c2c22').multiplyScalar(0.85 + hash3(x, y, z, seed) * 0.3), 0.1));
+  const whorls = low ? 7 : 13;
+  for (let w = 0; w < whorls; w++) {
+    const k = w / (whorls - 1); // 0 = embaixo, 1 = em cima
+    const y0 = 1.5 + k * (H * 0.86 - 1.5);
+    const L = 0.35 + 3.1 * Math.pow(1 - k, 0.85); // galho comprido embaixo
+    const nb = low ? 5 : 6 + (w % 2);
+    for (let b = 0; b < nb; b++) {
+      const a = (b / nb) * Math.PI * 2 + w * 0.9 + (hash3(w, b, 1, seed) - 0.5) * 0.6;
+      const len = L * (0.85 + hash3(w, b, 2, seed) * 0.3);
+      // galho principal + 2 galhinhos de lado (só nos andares de baixo)
+      const pads = [[0, 1, 0]];
+      if (!low && k < 0.7) pads.push([0.55, 0.55, 0.7], [0.45, 0.5, -0.75]);
+      for (const [at, sc, side] of pads) {
+        const g = new THREE.SphereGeometry(1, low ? 5 : 7, low ? 3 : 4);
+        const l = len * sc;
+        const pos = g.attributes.position;
+        for (let i = 0; i < pos.count; i++) {
+          let x = pos.getX(i);
+          let y = pos.getY(i);
+          let z = pos.getZ(i);
+          const t = (x + 1) / 2; // 0 = base, 1 = ponta
+          // agulhas: superfície irregular (não uma almofada lisa)
+          const bump = 0.75 + hash3(Math.round(x * 5), Math.round(y * 5), Math.round(z * 5), seed + w * 7 + b) * 0.5;
+          x = t * l;
+          y = y * (0.1 + 0.1 * Math.min(1, l)) * bump - Math.pow(t, 2) * l * 0.45;
+          z = z * (0.12 + 0.22 * Math.sin(Math.PI * Math.min(1, t * 1.15)) * Math.min(1.2, l * 0.6)) * bump;
+          pos.setXYZ(i, x, y, z);
+        }
+        g.rotateY(side); // galhinho sai para o lado
+        g.translate(at * len, -Math.pow(at, 2) * len * 0.45, 0);
+        g.rotateZ(0.15);
+        g.rotateY(-a);
+        g.translate(0, y0, 0);
+        g.computeVertexNormals();
+        parts.push(paintFn(g, (c, x, y, z, nx, ny) => {
+          const n = hash3(Math.round(x * 6), Math.round(y * 6), Math.round(z * 6), seed + w);
+          if (ny > 0.5 + n * 0.3) c.set(SNOW_HEX).multiplyScalar(0.9 + n * 0.12);
+          else c.set(n > 0.5 ? '#2a4532' : '#1d3326').multiplyScalar(0.7 + n * 0.45);
+        }, 0.25 + k * 0.3));
+      }
+    }
+  }
+  // ponta
+  const tip = new THREE.ConeGeometry(0.32, 1.6, low ? 5 : 7).translate(0, H * 0.9, 0);
+  parts.push(paintFn(tip, (c, x, y, z, nx, ny) => c.set(ny > 0.5 ? SNOW_HEX : '#22382a'), 0.6));
+  return merge(parts);
+}
+export const makeSnowSpruceLow = () => makeSnowSpruce(true);
+
+// Árvore morta/seca da neve em 3D: tronco torto, galhos secos com
+// neve em cima dos galhos grossos.
+export function makeSnowDeadTree(low = false, seed = 2) {
+  const bark = '#5e554a';
+  const parts = [paint(cyl(0.12, 0.3, 8.5, [0, 0, 0], low ? 5 : 7), bark, 0.3)];
+  const n = low ? 5 : 9;
+  for (let i = 0; i < n; i++) {
+    const y = 2.2 + (i / n) * 5.6;
+    const a = i * 2.3 + seed;
+    const L = 1.8 * (1 - i / n) + 0.5;
+    const end = [Math.cos(a) * L, y + L * 0.55, Math.sin(a) * L];
+    parts.push(paint(limb([0, y, 0], end, 0.08 * (1 - i / n) + 0.03, 0.015, low ? 4 : 5), bark, 0.2));
+    if (!low) {
+      // galhinho
+      const mid = [end[0] * 0.6, y + L * 0.33, end[2] * 0.6];
+      parts.push(paint(limb(mid, [mid[0] + Math.cos(a + 1) * 0.6, mid[1] + 0.5, mid[2] + Math.sin(a + 1) * 0.6], 0.03, 0.01, 4), bark, 0.2));
+    }
+    // neve no galho: tira fina por cima
+    const snow = limb([0, y + 0.06, 0], [end[0], end[1] + 0.05, end[2]], 0.05, 0.02, 4);
+    parts.push(paintFn(snow, (c, x, yy, z, nx, ny) => c.set(ny > 0 ? SNOW_HEX : bark), 0));
+  }
+  // neve no chão em volta do pé e no topo quebrado
+  parts.push(paint(cyl(0.13, 0.13, 0.15, [0, 8.45, 0], 6), SNOW_HEX));
+  return merge(parts);
+}
+export const makeSnowDeadTreeLow = () => makeSnowDeadTree(true);
+
+// Arbusto de pinheirinho nevado (baixo)
+export function makeSnowShrub() {
+  const parts = [];
+  for (let i = 0; i < 6; i++) {
+    const a = i * 1.05;
+    const r = 0.25 + (i % 3) * 0.15;
+    const g = new THREE.IcosahedronGeometry(0.42 + (i % 2) * 0.12, 1);
+    g.scale(1.1, 0.8, 1.1).translate(Math.cos(a) * r, 0.35 + (i % 3) * 0.12, Math.sin(a) * r);
+    g.computeVertexNormals();
+    parts.push(paintFn(g, (c, x, y, z, nx, ny) => {
+      const n = hash3(Math.round(x * 6), Math.round(y * 6), Math.round(z * 6), 3);
+      c.set(ny > 0.35 + n * 0.3 ? SNOW_HEX : '#22382a').multiplyScalar(0.85 + n * 0.25);
+    }, 0.3));
+  }
+  return merge(parts);
+}
+
 // Rochedo grande e quebrado (não liso), com neve em cima
 export function makeBoulder(seed = 3) {
   const g = new THREE.IcosahedronGeometry(1, 2).toNonIndexed();
