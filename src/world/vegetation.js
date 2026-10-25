@@ -52,7 +52,7 @@ const TYPES = {
   pinheiro: { foot: 0.4, hi: P.makeSpruce, lo: P.makeSpruceLow, imp: true, collider: 0.3, shadow: true, scale: [0.7, 1.3], res: 'arvore', cold: true },
   // modelos da neve enviados pelo jogador (mat = material próprio, com textura)
   pinheiro_neve: { foot: 0.4, hi: () => snowTreeGeometry('pinheiro_neve', 13), mat: () => snowTreeMaterial('pinheiro_neve'), collider: 0.3, shadow: true, scale: [0.75, 1.35], res: 'arvore', cold: true, textured: true },
-  arvore_morta: { foot: 0.4, hi: () => snowTreeGeometry('arvore_morta', 9), mat: () => snowTreeMaterial('arvore_morta'), collider: 0.3, shadow: true, scale: [0.8, 1.3], res: 'arvore', cold: true, textured: true },
+  arvore_morta_neve: { foot: 0.4, hi: () => snowTreeGeometry('arvore_morta', 9), mat: () => snowTreeMaterial('arvore_morta'), collider: 0.3, shadow: true, scale: [0.8, 1.3], res: 'arvore', cold: true, textured: true },
   arvore_seca: { foot: 0.4, hi: () => snowTreeGeometry('arvore_seca', 11), mat: () => snowTreeMaterial('arvore_seca'), collider: 0.25, shadow: true, scale: [0.8, 1.3], res: 'arvore', cold: true, textured: true },
   arbusto_neve: { hi: () => snowTreeGeometry('arbusto_neve', 1.4), mat: () => snowTreeMaterial('arbusto_neve'), collider: 0, shadow: false, scale: [0.7, 1.4], res: 'arbusto', maxDist: 90, textured: true },
   rochedo: { foot: 1.6, hi: snowRockGeometry, mat: snowRockMaterial, lo: P.makeBoulderLow, collider: 1.0, shadow: true, scale: [1.8, 9], res: 'rochedo', maxDist: 320, rock: true, textured: true },

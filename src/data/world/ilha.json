@@ -145,7 +145,7 @@
         "samambaia": 0.12, "bananeira": 0.03, "arbusto_mejo": 0.02, "tronco_caido": 0.03, "junco": 0.12
       },
       "neve": {
-        "pinheiro_neve": 0.09, "pinheiro": 0.03, "arvore_seca": 0.012, "arvore_morta": 0.008, "rochedo": 0.05, "minerio_ferro": 0.012, "pedrinhas": 0.03, "gravetos": 0.025
+        "pinheiro_neve": 0.09, "pinheiro": 0.03, "arvore_seca": 0.012, "arvore_morta_neve": 0.008, "rochedo": 0.05, "minerio_ferro": 0.012, "pedrinhas": 0.03, "gravetos": 0.025
       },
       "pantano": {
         "mangue": 0.09, "arvore_morta": 0.04, "junco": 0.22, "taboa": 0.12,
