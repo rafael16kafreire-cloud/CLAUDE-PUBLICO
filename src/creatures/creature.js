@@ -453,6 +453,8 @@ export class Creature {
         this.attackAnim = 1;
       }
     }
+    // (se acabou de matar a presa, o estado muda e o destino zera)
+    if (!this.goal) this.goal = new THREE.Vector2(this.pos.x - Math.sin(this.yaw) * 40, this.pos.z - Math.cos(this.yaw) * 40);
     const prevYaw = this.yaw;
     this._steer(dt, this.goal.x, this.goal.y, speed, true);
     this.climb = clamp((wanted - this.pos.y) * 0.8, -9, 7);

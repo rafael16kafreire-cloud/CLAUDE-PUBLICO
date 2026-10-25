@@ -36,7 +36,7 @@ async function openGame(contextOptions, label) {
   });
   const page = await context.newPage();
   const errors = [];
-  page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
+  page.on('pageerror', (e) => errors.push(`pageerror: ${e.message} @ ${(e.stack ?? "").split("\n").slice(1, 4).join(" <")}`));
   page.on('console', (m) => {
     if (m.type() === 'error' && !/fonts\.(googleapis|gstatic)/.test(m.text())) errors.push(`console: ${m.text()}`);
     if (m.type() === 'info' || m.type() === 'log') console.log(`   [${label}] ${m.text()}`);
@@ -811,6 +811,8 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     window.__insp = t;
   });
   await frames(page, 3);
+  // (mira garantida no bicho: o teste não depende do relevo)
+  await page.evaluate(() => { window.__ilha.ctx.inspect.aim = () => window.__insp; });
   await page.keyboard.press('KeyR');
   await gameWait(page, 800);
   const inspEarly = await page.evaluate(() => document.querySelector('.inspect-card').hidden);
@@ -821,7 +823,11 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   });
   check('Lupa: leva 2 s e mostra a ficha do bicho', inspEarly && card.shown && card.text.includes('Triceratops') && card.text.includes('km/h') && card.text.includes('kg'), JSON.stringify(card));
   await page.keyboard.press('KeyR');
-  await page.evaluate(() => window.__ilha.ctx.creatures.clear());
+  await page.evaluate(() => {
+    const c = window.__ilha.ctx;
+    c.inspect.aim = () => c.creatures.findAimed(c.camCtl.camera.position, c.camCtl.forward, 45);
+    c.creatures.clear();
+  });
 
   // Mira numa criatura mostra nome, nível e vida
   await page.evaluate(() => {
