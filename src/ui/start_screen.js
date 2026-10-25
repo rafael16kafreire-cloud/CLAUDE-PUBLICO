@@ -5,7 +5,7 @@
 // =============================================================
 
 export class StartScreen {
-  constructor(root, { onPlay, onHost, onJoin, playerName = '' }) {
+  constructor(root, { onPlay, onHost, onJoin, onNewGame, playerName = '' }) {
     const el = document.createElement('div');
     el.className = 'overlay start';
     el.innerHTML = `
@@ -14,6 +14,7 @@ export class StartScreen {
         <h1 class="title">Ilha<br>Primordial</h1>
         <p class="tagline">Você acordou na beira da mata sem nada. Pegue madeira, crie ferramentas e sobreviva aos predadores da floresta.</p>
         <button type="button" class="btn btn-primary btn-play" id="btn-play" disabled>Gerando a ilha…</button>
+        <button type="button" class="btn btn-small btn-new" id="btn-new" hidden>Novo jogo (apaga o salvo)</button>
         <div class="coop-box">
           <label class="coop-name">Seu nome <input id="coop-name" maxlength="16" autocomplete="off" placeholder="Jogador"></label>
           <div class="coop-row">
@@ -50,6 +51,11 @@ export class StartScreen {
     this.el = el;
     this.button = el.querySelector('#btn-play');
     this.button.addEventListener('click', () => onPlay());
+    this.newButton = el.querySelector('#btn-new');
+    this.newButton.addEventListener('click', () => {
+      // eslint-disable-next-line no-alert
+      if (window.confirm('Começar um jogo novo? O jogo salvo (casa, bichos domados, itens) será apagado.')) onNewGame?.();
+    });
     const $ = (id) => el.querySelector(`#${id}`);
     this.nameInput = $('coop-name');
     this.nameInput.value = playerName;
@@ -91,9 +97,10 @@ export class StartScreen {
     this.button.textContent = text;
   }
 
-  setReady(label = 'Jogar sozinho') {
+  setReady(label = 'Jogar sozinho', canStartNew = false) {
     this.button.disabled = false;
     this.button.textContent = label;
+    this.newButton.hidden = !canStartNew;
     for (const b of this.coopButtons) b.disabled = false;
   }
 

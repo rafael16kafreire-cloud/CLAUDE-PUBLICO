@@ -15,6 +15,7 @@ import { PlayerInteraction } from './player/player_interaction.js';
 import { Hud } from './ui/hud.js';
 import { InspectPanel } from './ui/inspect_panel.js';
 import { BuildGhost } from './world/building.js';
+import { loadGame, saveGame, clearSave } from './core/save.js';
 import { Messages } from './ui/messages.js';
 import { TouchControls } from './ui/touch_controls.js';
 import { DeathScreen } from './ui/death_screen.js';
@@ -89,6 +90,10 @@ function boot(hotData = {}) {
     onPlay: () => play(),
     onHost: (name) => hostCoop(name),
     onJoin: (code, name) => joinCoop(code, name),
+    onNewGame: () => {
+      clearSave();
+      location.reload();
+    },
     playerName: settings.get('playerName') || '',
   });
   start.setLoading('Gerando a ilha…');
@@ -198,7 +203,13 @@ function boot(hotData = {}) {
     };
     ctx.net = new Multiplayer({ world, player, creatures, inventory, actions, camCtl });
 
-    // Voltando de uma atualização da página: restaura posição, barras e itens.
+    // Jogo salvo no aparelho (se não veio de uma atualização da página)
+    if (!hotData.player) {
+      const saved = loadGame();
+      if (saved) hotData = saved;
+    }
+    // Voltando de uma atualização da página (ou jogo salvo): restaura
+    // posição, barras, itens, construções e bichos domados.
     if (hotData.player) {
       player.fromJSON(hotData.player);
       if (typeof hotData.yaw === 'number') camCtl.yaw = hotData.yaw;
@@ -208,6 +219,7 @@ function boot(hotData = {}) {
         world.day = hotData.world.day ?? world.day;
         for (const st of hotData.world.structures ?? []) world.addStructure(st);
       }
+      for (const t of hotData.tamed ?? []) restoreTamed(t);
     }
 
     hud.setVisible(false);
@@ -220,7 +232,7 @@ function boot(hotData = {}) {
     } catch (err) {
       console.warn('[Ilha] compile', err);
     }
-    start.setReady(hotData.player ? 'Continuar' : 'Jogar');
+    start.setReady(hotData.player ? 'Continuar' : 'Jogar', !!hotData.player);
     game.setState(STATE.MENU);
     console.info(`[Ilha] ilha gerada em ${world.generationMs} ms`, world.vegetation.countByType());
   }
@@ -357,6 +369,7 @@ function boot(hotData = {}) {
 
   function pauseGame() {
     if (game.state !== STATE.PLAYING) return;
+    autosave();
     closeInventory();
     game.setState(STATE.PAUSED);
     input.clear();
@@ -384,6 +397,53 @@ function boot(hotData = {}) {
     start.show();
     game.setState(STATE.MENU);
   }
+
+  // ---------- Jogo salvo ----------
+  function tamedJSON(c) {
+    return {
+      id: c.species.id, level: c.level, seed: c.statSeed, sex: c.sex, x: +c.pos.x.toFixed(2), z: +c.pos.z.toFixed(2),
+      yaw: +c.yaw.toFixed(2), follow: !!c.follow, growth: +c.growth.toFixed(3), age: Math.round(c.age),
+      hp: Math.round(c.health), name: c.name ?? null, adult: +c.adultScale.toFixed(4),
+    };
+  }
+
+  function restoreTamed(t) {
+    const c = ctx.creatures.spawn(t.id, t.x, t.z, t.level);
+    if (!c) return;
+    c.rollStats(t.seed);
+    c.sex = t.sex ?? c.sex;
+    if (t.adult) c.adultScale = t.adult;
+    c.age = t.age ?? 0;
+    c.setGrowth(t.growth ?? 1);
+    c.health = Math.min(c.maxHealth, t.hp ?? c.maxHealth);
+    c.yaw = t.yaw ?? 0;
+    c.tamed = true;
+    c.owner = ctx.player;
+    c.follow = t.follow;
+    c.name = t.name ?? c.species.nome;
+    c.home.set(c.pos.x, c.pos.z);
+    c._setState('parado');
+    c.idleFor = c.follow ? 0.5 : 1e9;
+  }
+
+  function gameSnapshot() {
+    return {
+      player: ctx.player.toJSON(),
+      yaw: ctx.camCtl.yaw,
+      inventory: ctx.inventory.toJSON(),
+      world: { time: ctx.world.time, day: ctx.world.day, structures: ctx.world.structures.filter((st) => !st.removed).map((st) => st.toJSON()) },
+      tamed: ctx.creatures.tamedBy(ctx.player).map(tamedJSON),
+    };
+  }
+
+  // Salva (não no co-op como convidado: o mundo é do anfitrião).
+  function autosave() {
+    if (!ctx || game.state === STATE.MENU || game.playTime < 2 || ctx.creatures.netClient) return;
+    saveGame(gameSnapshot());
+  }
+  setInterval(autosave, 30000);
+  document.addEventListener('visibilitychange', () => document.hidden && autosave());
+  window.addEventListener('pagehide', autosave);
 
   // Montar / descer do bicho domado mais perto.
   function toggleMount() {
@@ -738,12 +798,9 @@ function boot(hotData = {}) {
     get ctx() { return ctx; },
     get net() { return ctx?.net; },
     sound,
-    snapshot: () => (ctx ? {
-      player: ctx.player.toJSON(),
-      yaw: ctx.camCtl.yaw,
-      inventory: ctx.inventory.toJSON(),
-      world: { time: ctx.world.time, day: ctx.world.day, structures: ctx.world.structures.map((st) => st.toJSON()) },
-    } : {}),
+    snapshot: () => (ctx ? gameSnapshot() : {}),
+    save: () => autosave(),
+    clearSave,
   };
 }
 

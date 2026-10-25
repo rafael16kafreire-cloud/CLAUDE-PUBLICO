@@ -18,6 +18,7 @@ import { makeCreatureMaterial } from './creature_material.js';
 import { IMPORTED, buildImportedModel } from './imported_model.js';
 import { Creature, CSTATE } from './creature.js';
 import { sound } from '../audio/audio.js';
+import { settings } from '../core/settings.js';
 
 export const SPECIES = Object.fromEntries(data.especies.map((s) => [s.id, s]));
 
@@ -38,8 +39,10 @@ export class CreatureManager {
     this.cfg = C;
   }
 
+  // Limite de bichos por perto: menos na qualidade baixa (celular fraco).
   get maxActive() {
-    return BALANCE.desempenho.criaturas_max_ativas;
+    const k = settings.quality?.creatures ?? 1;
+    return Math.round(BALANCE.desempenho.criaturas_max_ativas * k);
   }
 
   _model(id) {
@@ -410,6 +413,8 @@ export class CreatureManager {
 
   // Uma criatura acertou alguém.
   hit(attacker, target, amount) {
+    // montado: quem leva a mordida é a montaria
+    if (target === game.player && game.player.riding && game.player.riding !== attacker) target = game.player.riding;
     if (target.isRemote) {
       this.net?.sendDamage(target, amount, attacker.species.nome);
       return;
@@ -443,6 +448,9 @@ export class CreatureManager {
       if (n > 0) c.lootLeft[id] = Math.round(n * (1 + c.level * 0.02));
     }
     events.emit(EV.CREATURE_KILLED, { creature: c, byPlayer: attacker === game.player });
+    if (c.tamed && c.owner === game.player) {
+      events.emit(EV.MESSAGE, { text: `${c.name ?? c.species.nome} (domado) morreu${c.oldAge ? ' de velhice' : ''}.`, kind: 'warn' });
+    }
     if (attacker?.isRemote) {
       this.net?.sendKill(attacker, c, Math.round(c.species.xp * (1 + c.level * 0.05)));
     } else if (attacker === game.player) {

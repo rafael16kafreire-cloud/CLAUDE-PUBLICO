@@ -1001,6 +1001,26 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   await page.click('#pause-resume');
   check('Pausa e continuar', paused === 'paused', paused);
 
+  // Jogo salvo: salva, recarrega a página e continua com tudo
+  const saved0 = await page.evaluate(() => {
+    const c = window.__ilha.ctx; const p = c.player.position;
+    c.creatures.clear();
+    const pet = c.creatures.spawn('raptor', p.x + 5, p.z, 4);
+    pet.addTorpor(1e9, c.player); pet._tame(c.player);
+    c.inventory.add('graveto', 7);
+    window.__ilha.save();
+    return { lvl: c.player.stats.level, sticks: c.inventory.count('graveto'), builds: c.world.structures.filter((s) => s.isBuild).length, pets: c.creatures.tamedBy(c.player).length, day: c.world.day };
+  });
+  await page.reload();
+  await page.waitForFunction(() => { const b = document.querySelector('#btn-play'); return b && !b.disabled; }, null, { timeout: 120000 });
+  const label = await page.evaluate(() => ({ play: document.querySelector('#btn-play').textContent, newShown: !document.querySelector('#btn-new').hidden }));
+  const saved1 = await page.evaluate(() => {
+    const c = window.__ilha.ctx;
+    return { lvl: c.player.stats.level, sticks: c.inventory.count('graveto'), builds: c.world.structures.filter((s) => s.isBuild).length, pets: c.creatures.tamedBy(c.player).length, day: c.world.day };
+  });
+  check('Jogo salvo: recarregar continua com itens, casa e bichos domados', label.play === 'Continuar' && label.newShown && JSON.stringify(saved0) === JSON.stringify(saved1), JSON.stringify({ label, saved0, saved1 }));
+  await page.evaluate(() => window.__ilha.clearSave());
+
   check('PC: sem erros no console', errors.length === 0, errors.slice(0, 3).join(' / '));
   await context.close();
 }

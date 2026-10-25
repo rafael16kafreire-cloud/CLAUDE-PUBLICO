@@ -19,6 +19,11 @@ Visual estilizado, feito para ser leve.
   (vermelho = não dá). Atacar coloca. As peças encaixam numa grade de 3 m; o teto vira
   chão do segundo andar e a rampa sobe até ele. Parede segura você e os bichos.
   Interagir numa peça desmonta (devolve metade); na porta, abre/fecha.
+- **Jogo salvo:** o progresso (você, mochila, nível, habilidades, hora, construções e
+  bichos domados) fica salvo no aparelho — sozinho a cada 30 s, ao pausar e ao sair.
+  Na tela inicial aparece *Continuar*; *Novo jogo* apaga o salvo.
+- Menos bichos por perto na qualidade gráfica baixa (celular fraco): 14 / 20 / 24.
+- Montado, a mordida dos predadores pega na montaria, não em você.
 
 **Versão 0.7.0**
 - **Chão de terra de verdade:** textura do arquivo *Soft Dirt Material* (cor + relevo)

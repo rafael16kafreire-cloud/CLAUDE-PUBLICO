@@ -486,6 +486,7 @@ body:not(.is-touch) .touch-only { display: none; }
 }
 .tagline { margin: 0; font-size: 17px; line-height: 1.35; color: var(--bone); max-width: 34ch; }
 .btn-play { align-self: flex-start; min-width: 200px; min-height: 52px; font-size: 22px; }
+.btn-new { align-self: flex-start; margin-top: -4px; background: transparent; border-color: var(--line); color: var(--bone-dim); }
 .howto {
   display: grid;
   grid-template-columns: auto 1fr;
