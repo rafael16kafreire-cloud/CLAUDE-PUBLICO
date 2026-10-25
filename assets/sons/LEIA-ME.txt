@@ -1,0 +1,22 @@
+SONS GRAVADOS (opcional)
+========================
+Ponha aqui arquivos .mp3, .ogg ou .wav com o NOME do som. O jogo toca o
+arquivo no lugar do som gerado por código. Variações: nome_1.mp3,
+nome_2.mp3 ... (o jogo sorteia uma e muda um pouco o tom).
+
+Jogador e coleta:
+  passo_mato  passo_areia  passo_agua  passo_neve  (ou só "passo")
+  esforco (o "huss" ao bater)  golpe (golpe no ar)  dor  morte  pulo  queda
+  madeira  pedra  folhas  carne  comer  beber  splash  acender  colocar
+  pegar  criar  nivel  clique
+
+Bichos: bicho_<espécie> ou bicho_<espécie>_<tipo>
+  espécies: trex espinossauro carnotauro reidodo raptor dilofossauro onca
+    deinosuchus titanoboa aranha triceratops estegossauro anquilossauro
+    paquicefalossauro parassauro braquiossauro mamute galimimo dodo
+    capivara compsognato pterodactilo quetzalcoatlus argentavis arara
+  tipos: chamado (à toa)  rugido (viu você)  ataque  dor  morte
+  ex.: bicho_trex_rugido.mp3, bicho_raptor_ataque_1.mp3, bicho_mamute.mp3
+
+Depois: npm run build (gera o jogo de novo).
+Atenção à licença dos sons (sons de outros jogos só como provisório).

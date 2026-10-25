@@ -1,6 +1,13 @@
 // =============================================================
-// SONS – todos gerados por código (Web Audio), nada gravado de
-// outros jogos. Leve para o celular: poucos "osciladores" por som.
+// SONS – gerados por código (Web Audio). Leve para o celular.
+// - Eco de floresta (reverberação) em tudo: o som não fica "seco".
+// - Vozes (bichos e jogador) com filtros de vogal (formantes) e um
+//   pouco de distorção: soam como garganta, não como apito.
+// - Golpes em madeira/pedra ressoam como o material (ressonadores).
+// - Sons gravados (opcional): ponha arquivos em assets/sons/ com o
+//   nome do som (ex.: passo_mato.mp3, madeira.ogg, bicho_trex.mp3,
+//   bicho_trex_ataque.mp3; variações: madeira_1.mp3, madeira_2.mp3).
+//   Se existir, o jogo toca o arquivo no lugar do som gerado.
 //
 //  - Ambiente: de dia vento, pássaros e insetos; à noite grilos,
 //    sapos e corujas. Perto do pântano, mais sapos.
@@ -15,8 +22,18 @@
 //      sound.play('madeira', posição)   sound.creature(c, 'rugido')
 // =============================================================
 import * as THREE from 'three';
+import SONS_GRAVADOS from 'virtual:sons';
 
-const MAX_VOICES = 28;
+const MAX_VOICES = 32;
+
+// Vogais (formantes em Hz) para vozes de bicho e de gente.
+const VOWELS = {
+  a: [[730, 7], [1090, 9], [2440, 11]],
+  o: [[570, 7], [840, 9], [2410, 12]],
+  u: [[300, 7], [870, 9], [2240, 12]],
+  e: [[530, 7], [1840, 10], [2480, 12]],
+  h: [[900, 2], [1800, 3], [3000, 4]], // sopro
+};
 
 // Voz de cada espécie: tipo, tom base (Hz) e duração base (s).
 const VOICES = {
@@ -89,6 +106,16 @@ class Sound {
         this.musicBus = c.createGain();
         this.musicBus.gain.value = this.musicVolume;
         this.musicBus.connect(this.master);
+        // eco de floresta (reverberação gerada aqui)
+        this.verb = c.createConvolver();
+        this.verb.buffer = this._makeIR(2.6, 3.2);
+        this.verbIn = c.createGain();
+        this.verbIn.gain.value = 0.32;
+        this.verbIn.connect(this.verb).connect(this.lowpass);
+        const ambSend = c.createGain();
+        ambSend.gain.value = 0.35;
+        this.ambBus.connect(ambSend).connect(this.verbIn);
+        this._loadSamples();
         this._startWind();
         this._startFire();
         this._startCicadas();
@@ -124,6 +151,149 @@ class Sound {
     this.lowpass.frequency.setTargetAtTime(on ? 600 : 20000, this.ctx.currentTime, 0.08);
   }
 
+  // Resposta de sala "floresta": cauda longa, densa e escura, estéreo.
+  _makeIR(seconds, decay) {
+    const c = this.ctx;
+    const len = Math.floor(c.sampleRate * seconds);
+    const buf = c.createBuffer(2, len, c.sampleRate);
+    for (let ch = 0; ch < 2; ch++) {
+      const d = buf.getChannelData(ch);
+      let lp = 0;
+      for (let i = 0; i < len; i++) {
+        const t = i / len;
+        lp += (Math.random() * 2 - 1 - lp) * (0.35 - 0.25 * t); // escurece com o tempo
+        d[i] = lp * Math.pow(1 - t, decay) * (i < c.sampleRate * 0.012 ? i / (c.sampleRate * 0.012) : 1);
+      }
+      // reflexões iniciais (troncos perto)
+      for (const ms of [17, 29, 41, 63, 87]) d[Math.floor((ms + ch * 3) * c.sampleRate / 1000)] += 0.5 * (1 - ms / 120);
+    }
+    return buf;
+  }
+
+  // Curva de distorção suave (rosnado/garganta).
+  _shaper(amount) {
+    const c = this.ctx;
+    const ws = c.createWaveShaper();
+    const n = 1024;
+    const curve = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+      const x = (i / (n - 1)) * 2 - 1;
+      curve[i] = Math.tanh(x * amount) / Math.tanh(amount);
+    }
+    ws.curve = curve;
+    ws.oversample = '2x';
+    return ws;
+  }
+
+  // Sons gravados (assets/sons): decodifica em segundo plano.
+  _loadSamples() {
+    this.samples = {};
+    for (const [name, list] of Object.entries(SONS_GRAVADOS)) {
+      for (const uri of list) {
+        const bin = atob(uri.split(',')[1]);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        this.ctx.decodeAudioData(bytes.buffer).then((buf) => {
+          (this.samples[name] ??= []).push(buf);
+        }).catch(() => {});
+      }
+    }
+  }
+
+  // Toca um som gravado, se existir. Devolve true se tocou.
+  _sample(name, pos, gain = 1, ref = 4, max = 80) {
+    const list = this.samples?.[name];
+    if (!list?.length) return false;
+    const out = this._dest(pos, gain, ref, max);
+    if (!out) return true;
+    const src = this.ctx.createBufferSource();
+    src.buffer = list[Math.floor(Math.random() * list.length)];
+    src.playbackRate.value = 0.94 + Math.random() * 0.12; // nunca igual
+    src.connect(out);
+    src.start();
+    return true;
+  }
+
+  // Voz com garganta: fonte (serra com tremor + sopro) -> distorção ->
+  // filtros de vogal. contour = [[tempo 0..1, multiplicador do tom]].
+  _throat(t, d, out, { f, vowel = 'a', shift = 1, contour = [[0, 1], [1, 0.8]], grit = 2, breath = 0.3, trem = 0, peak = 0.8, attack = 0.08, sub = 0 }) {
+    const c = this.ctx;
+    const src = c.createOscillator();
+    src.type = 'sawtooth';
+    for (const [k, m] of contour) {
+      if (k === 0) src.frequency.setValueAtTime(f * m, t);
+      else src.frequency.exponentialRampToValueAtTime(Math.max(20, f * m), t + d * k);
+    }
+    // tremor irregular (voz de bicho não é afinada)
+    const j = c.createOscillator();
+    j.type = 'triangle';
+    j.frequency.value = 6 + Math.random() * 7;
+    const jg = c.createGain();
+    jg.gain.value = f * 0.05;
+    j.connect(jg).connect(src.frequency);
+    const mix = c.createGain();
+    mix.gain.value = 1;
+    src.connect(mix);
+    if (breath > 0) {
+      const n = c.createBufferSource();
+      n.buffer = this.noise;
+      n.loop = true;
+      const ng = c.createGain();
+      ng.gain.value = breath;
+      n.connect(ng).connect(mix);
+      n.start(t, Math.random());
+      n.stop(t + d + 0.2);
+    }
+    const sh = this._shaper(grit);
+    mix.connect(sh);
+    const g = c.createGain();
+    this._env(g.gain, t, peak, attack, d);
+    if (trem > 0) {
+      // rosnado: vibração rápida no volume
+      const am = c.createOscillator();
+      am.frequency.value = trem;
+      const ag = c.createGain();
+      ag.gain.value = peak * 0.45;
+      am.connect(ag).connect(g.gain);
+      am.start(t);
+      am.stop(t + d + 0.2);
+    }
+    for (const [ff, q] of VOWELS[vowel]) {
+      const bp = c.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = ff * shift;
+      bp.Q.value = q * 0.6;
+      sh.connect(bp).connect(g);
+    }
+    g.connect(out);
+    src.start(t);
+    j.start(t);
+    src.stop(t + d + 0.2);
+    j.stop(t + d + 0.2);
+    if (sub > 0) this._osc('sine', f * 0.5, t, d, out, sub, attack, f * 0.38); // peito (grave)
+  }
+
+  // Golpe que ressoa como o material: impulso -> ressonadores.
+  _modal(t, out, modes, peak = 0.6) {
+    const c = this.ctx;
+    const n = c.createBufferSource();
+    n.buffer = this.noise;
+    const g = c.createGain();
+    this._env(g.gain, t, peak, 0.001, 0.012);
+    n.connect(g);
+    for (const [f, q, a] of modes) {
+      const bp = c.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = f * (0.96 + Math.random() * 0.08);
+      bp.Q.value = q;
+      const mg = c.createGain();
+      mg.gain.value = a * Math.sqrt(q) * 0.9; // filtro estreito perde volume: compensa
+      g.connect(bp).connect(mg).connect(out);
+    }
+    n.start(t, Math.random());
+    n.stop(t + 0.05);
+  }
+
   _makeNoise(seconds, color) {
     const c = this.ctx;
     const len = Math.floor(c.sampleRate * seconds);
@@ -152,12 +322,18 @@ class Sound {
     const c = this.ctx;
     const g = c.createGain();
     g.gain.value = gain;
+    const send = c.createGain();
     if (!pos) {
       g.connect(this.out);
+      send.gain.value = 0.12;
+      g.connect(send).connect(this.verbIn);
       return g;
     }
     const d = pos.distanceTo(this._listenerPos);
     if (d > max) return null;
+    // mais longe = mais eco (soa distante de verdade)
+    send.gain.value = 0.18 + 0.6 * Math.min(1, d / 40);
+    g.connect(send).connect(this.verbIn);
     const p = c.createStereoPanner ? c.createStereoPanner() : null;
     // volume pela distância
     g.gain.value = gain * Math.min(1, ref / Math.max(ref, d)) * (1 - d / (max * 1.15));
@@ -233,26 +409,38 @@ class Sound {
     const v = opts.volume ?? 1;
     if (pos && pos.distanceTo(this._listenerPos) > 75) return;
     const R = (a, b) => a + Math.random() * (b - a);
+    // som gravado (assets/sons) no lugar do gerado
+    const sampleName = name === 'passo' ? `passo_${opts.surface ?? 'mato'}` : name;
+    if (this._sample(sampleName, pos, 0.7 * v) || (name === 'passo' && this._sample('passo', pos, 0.6 * v))) return;
     switch (name) {
       case 'passo': {
-        if (!this._voice(0.2)) return;
-        const out = this._dest(pos, 0.35 * v);
+        if (!this._voice(0.3)) return;
+        const out = this._dest(pos, 0.6 * v);
         const surf = opts.surface ?? 'mato';
-        if (surf === 'agua') this._noise(t, 0.18, out, { f: R(500, 900), q: 0.8, peak: 0.5, type: 'lowpass' });
-        else if (surf === 'areia') this._noise(t, 0.09, out, { f: R(2500, 3500), q: 0.6, peak: 0.35 });
-        else {
-          this._noise(t, 0.07, out, { f: R(700, 1100), q: 0.7, peak: 0.45, brown: true, type: 'lowpass' });
-          this._noise(t + 0.01, 0.06, out, { f: R(3000, 5000), q: 1.5, peak: 0.08 });
+        // calcanhar (batida grave) + ponta do pé, e o som do chão
+        this._noise(t, 0.06, out, { f: R(180, 260), q: 0.8, peak: 1.3, brown: true, type: 'lowpass' });
+        if (surf === 'agua') {
+          this._noise(t, 0.22, out, { f: R(900, 1400), fTo: 350, q: 0.9, peak: 0.5 });
+          for (let i = 0; i < 3; i++) this._osc('sine', R(500, 1100), t + 0.05 + i * R(0.03, 0.06), 0.04, out, 0.12, 0.003, R(1200, 1800)); // bolhas
+        } else if (surf === 'areia') {
+          this._noise(t + 0.02, 0.12, out, { f: R(2200, 3200), q: 0.5, peak: 0.28, attack: 0.02 });
+        } else if (surf === 'neve') {
+          // neve: "cranch" de grãos
+          for (let i = 0; i < 6; i++) this._noise(t + i * R(0.012, 0.022), 0.02, out, { f: R(1800, 4200), q: 2, peak: 0.25, attack: 0.002 });
+        } else {
+          // mata: folhas secas e gravetos estalando
+          this._noise(t + 0.03, 0.06, out, { f: R(700, 1000), q: 0.6, peak: 0.7, brown: true, type: 'lowpass' });
+          for (let i = 0; i < 4; i++) this._noise(t + 0.02 + i * R(0.015, 0.035), 0.025, out, { f: R(3000, 6500), q: 1.2, peak: 0.3, attack: 0.002 });
+          if (Math.random() < 0.15) this._modal(t + 0.04, out, [[R(1800, 2600), 18, 0.5]], 0.2); // graveto
         }
         break;
       }
       case 'esforco': { // "huss": expiração forte de quem bate (voz humana)
         if (!this._voice(0.2)) return;
         const out = this._dest(null, 0.32 * v);
-        const f0 = R(780, 1050);
-        this._noise(t, R(0.16, 0.22), out, { f: f0, fTo: f0 * 0.62, q: 1.3, attack: 0.012, peak: 0.55 });
-        this._noise(t, 0.12, out, { f: 2600, fTo: 1800, q: 0.9, attack: 0.008, peak: 0.18 }); // "ss" do ar nos dentes
-        this._osc('sawtooth', R(115, 150), t, 0.11, this._dest(null, 0.03 * v), 0.25, 0.01, R(90, 105)); // um pouco de voz
+        // "hhuh": sopro forte com um pouco de voz no fim
+        this._throat(t, R(0.16, 0.22), out, { f: R(110, 140), vowel: 'h', contour: [[0, 1.1], [1, 0.8]], grit: 1.5, breath: 1.6, peak: 0.45, attack: 0.015 });
+        this._throat(t + 0.03, 0.1, out, { f: R(115, 135), vowel: 'u', contour: [[0, 1], [1, 0.85]], grit: 1.2, breath: 0.4, peak: 0.12, attack: 0.02 });
         break;
       }
       case 'golpe': { // golpe no ar
@@ -262,18 +450,20 @@ class Sound {
       }
       case 'madeira': {
         if (!this._voice(0.35)) return;
-        const out = this._dest(pos, 0.7 * v);
-        this._osc('triangle', R(150, 190), t, 0.18, out, 0.5, 0.002, 90);
-        this._noise(t, 0.05, out, { f: 2200, q: 1.2, peak: 0.5 });
-        this._noise(t + 0.02, 0.25, out, { f: 5000, q: 0.5, peak: 0.06 }); // folhas balançando
+        const out = this._dest(pos, 0.8 * v);
+        // "toc" oco de tronco: modos de madeira + lasca + folhas
+        this._modal(t, out, [[R(140, 190), 9, 1], [R(380, 460), 12, 0.6], [R(780, 900), 14, 0.35], [R(1500, 1900), 10, 0.2]], 0.9);
+        this._noise(t, 0.04, out, { f: 2600, q: 1.2, peak: 0.35 });
+        this._noise(t + 0.03, 0.4, out, { f: 5200, q: 0.5, peak: 0.05, attack: 0.05 }); // folhas balançando
         break;
       }
       case 'pedra': {
         if (!this._voice(0.3)) return;
-        const out = this._dest(pos, 0.6 * v);
-        this._noise(t, 0.04, out, { f: 3500, q: 3, peak: 0.6 });
-        this._osc('square', R(900, 1300), t, 0.06, out, 0.08, 0.001, 600);
-        this._noise(t + 0.03, 0.12, out, { f: 1500, q: 0.8, peak: 0.15, brown: true, type: 'lowpass' });
+        const out = this._dest(pos, 0.7 * v);
+        // pedra: estalo seco com modos agudos e desarmônicos + cascalho
+        this._modal(t, out, [[R(1100, 1400), 25, 0.7], [R(2700, 3300), 30, 0.45], [R(4300, 5200), 30, 0.3]], 0.9);
+        this._noise(t + 0.02, 0.15, out, { f: 1400, q: 0.7, peak: 0.12, brown: true, type: 'lowpass' });
+        for (let i = 0; i < 3; i++) this._noise(t + 0.05 + i * R(0.02, 0.05), 0.02, out, { f: R(3000, 6000), q: 2, peak: 0.1 }); // pedrinhas caindo
         break;
       }
       case 'folhas': {
@@ -285,8 +475,10 @@ class Sound {
       case 'carne': {
         if (!this._voice(0.3)) return;
         const out = this._dest(pos, 0.7 * v);
-        this._osc('sine', R(85, 110), t, 0.16, out, 0.6, 0.002, 50);
-        this._noise(t, 0.08, out, { f: 600, q: 0.8, peak: 0.35, brown: true, type: 'lowpass' });
+        // golpe na carne: baque surdo + "chap" molhado
+        this._osc('sine', R(70, 95), t, 0.14, out, 0.7, 0.002, 45);
+        this._noise(t, 0.09, out, { f: R(700, 1000), q: 1.5, peak: 0.45 });
+        this._noise(t + 0.03, 0.12, out, { f: 2400, fTo: 900, q: 1, peak: 0.12 });
         break;
       }
       case 'pegar': {
@@ -316,15 +508,18 @@ class Sound {
       case 'dor': {
         if (!this._voice(0.4)) return;
         const out = this._dest(null, 0.5 * v);
-        this._osc('sine', 110, t, 0.25, out, 0.7, 0.003, 55);
-        this._noise(t, 0.12, out, { f: 800, q: 0.7, peak: 0.3, brown: true, type: 'lowpass' });
+        // "ugh!" (voz de quem se machuca) + baque
+        this._throat(t, R(0.18, 0.26), out, { f: R(140, 175), vowel: Math.random() < 0.5 ? 'a' : 'u', contour: [[0, 1.25], [0.3, 1], [1, 0.75]], grit: 2.5, breath: 0.5, peak: 0.6, attack: 0.01 });
+        this._osc('sine', 90, t, 0.12, out, 0.4, 0.002, 50);
         break;
       }
       case 'morte': {
         if (!this._voice(1.6)) return;
         const out = this._dest(null, 0.5 * v);
-        this._osc('sawtooth', 180, t, 1.4, out, 0.15, 0.05, 50);
-        this._osc('sine', 90, t, 1.5, out, 0.4, 0.05, 35);
+        // gemido longo que cai + último suspiro
+        this._throat(t, 1.1, out, { f: 150, vowel: 'a', contour: [[0, 1.15], [0.4, 1], [1, 0.6]], grit: 2, breath: 0.6, peak: 0.5, attack: 0.05 });
+        this._throat(t + 1.2, 0.6, out, { f: 120, vowel: 'h', contour: [[0, 1], [1, 0.8]], grit: 1, breath: 1.5, peak: 0.25, attack: 0.1 });
+        this._osc('sine', 60, t + 0.9, 0.5, out, 0.35, 0.01, 35); // corpo caindo
         break;
       }
       case 'nivel': {
@@ -394,9 +589,11 @@ class Sound {
     const f = v.f * pitchMul * R(0.92, 1.08) / Math.sqrt(big);
     const d = v.d * durMul;
     if (!this._voice(d + 0.2)) return;
+    // som gravado (assets/sons): bicho_<espécie>_<tipo> ou bicho_<espécie>
+    const sg = kind === 'chamado' ? 0.5 : 0.85;
+    if (this._sample(`bicho_${c.species.id}_${kind}`, pos, sg, ref, max) || this._sample(`bicho_${c.species.id}`, pos, sg, ref, max)) return;
     const out = this._dest(pos, (kind === 'chamado' ? 0.45 : 0.75), ref, max);
     if (!out) return;
-    const c2 = this.ctx;
     if (kind === 'ataque' && v.kind !== 'ave' && v.kind !== 'pio') {
       // estalo de mandíbula
       this._noise(t + d * 0.6, 0.05, out, { f: 1800, q: 1, peak: 0.5 });
@@ -404,60 +601,42 @@ class Sound {
     switch (v.kind) {
       case 'rugido':
       case 'rosnado': {
-        // corpo do rugido: serra grave passando por "boca" (filtro)
-        const o = c2.createOscillator();
-        o.type = 'sawtooth';
-        o.frequency.setValueAtTime(f * 1.25, t);
-        o.frequency.exponentialRampToValueAtTime(f, t + d * 0.3);
-        o.frequency.exponentialRampToValueAtTime(f * 0.7, t + d);
-        const lfo = c2.createOscillator();
-        lfo.frequency.value = v.kind === 'rosnado' ? 28 : 11;
-        const lg = c2.createGain();
-        lg.gain.value = f * 0.08;
-        lfo.connect(lg).connect(o.frequency);
-        const bp = c2.createBiquadFilter();
-        bp.type = 'bandpass';
-        bp.frequency.setValueAtTime(f * 6, t);
-        bp.frequency.exponentialRampToValueAtTime(f * 3, t + d);
-        bp.Q.value = 1.4;
-        const g = c2.createGain();
-        this._env(g.gain, t, 0.9, d * 0.15, d * 0.85);
-        o.connect(bp).connect(g).connect(out);
-        o.start(t);
-        lfo.start(t);
-        o.stop(t + d + 0.1);
-        lfo.stop(t + d + 0.1);
-        this._noise(t, d, out, { f: f * 8, q: 0.8, peak: 0.35, attack: d * 0.2, brown: true });
-        this._osc('sine', f * 0.5, t, d, out, 0.5, d * 0.2, f * 0.35);
+        // garganta grande: vogal "a/o" bem grave (formantes descem com o
+        // tamanho), distorção forte, peito e um sopro áspero
+        const shift = Math.max(0.28, 0.75 / Math.sqrt(big) * (v.f < 70 ? 0.55 : v.f < 100 ? 0.7 : 1));
+        const rough = v.kind === 'rosnado';
+        this._throat(t, d, out, {
+          f, vowel: rough ? 'o' : 'a', shift,
+          contour: kind === 'ataque' ? [[0, 1.3], [1, 0.9]] : [[0, 0.9], [0.25, 1.15], [0.7, 1], [1, 0.65]],
+          grit: rough ? 6 : 4.5, breath: rough ? 0.9 : 0.6, trem: rough ? R(22, 32) : R(8, 13), peak: 0.85, attack: d * 0.12, sub: 0.5,
+        });
+        this._noise(t, d * 0.9, out, { f: f * 7, q: 0.9, peak: 0.25, attack: d * 0.2, brown: true });
         break;
       }
       case 'mugido':
       case 'buzina': {
-        const o = c2.createOscillator();
-        o.type = v.kind === 'buzina' ? 'sawtooth' : 'triangle';
-        o.frequency.setValueAtTime(f, t);
-        o.frequency.linearRampToValueAtTime(f * 1.12, t + d * 0.4);
-        o.frequency.linearRampToValueAtTime(f * 0.9, t + d);
-        const lp = c2.createBiquadFilter();
-        lp.type = 'lowpass';
-        lp.frequency.value = f * (v.kind === 'buzina' ? 7 : 4);
-        lp.Q.value = 4;
-        const g = c2.createGain();
-        this._env(g.gain, t, 0.7, d * 0.25, d * 0.75);
-        o.connect(lp).connect(g).connect(out);
-        o.start(t);
-        o.stop(t + d + 0.1);
-        if (v.kind === 'buzina') this._osc('sine', f * 2, t, d, out, 0.15, d * 0.3);
+        // mugido: vogal "u-o" que abre; buzina (crista de parassauro,
+        // tromba do mamute): tubo longo, som mais limpo e cheio
+        const horn = v.kind === 'buzina';
+        this._throat(t, d, out, {
+          f, vowel: horn ? 'o' : 'u', shift: Math.max(0.35, (horn ? 0.9 : 0.7) / Math.sqrt(big)),
+          contour: [[0, 0.95], [0.35, 1.12], [1, 0.88]], grit: horn ? 1.6 : 2.5, breath: horn ? 0.15 : 0.35, trem: horn ? 0 : R(5, 8),
+          peak: 0.75, attack: d * 0.22, sub: horn ? 0.25 : 0.4,
+        });
+        if (horn) this._osc('sine', f * 2, t, d, out, 0.12, d * 0.3); // harmônico do tubo
         break;
       }
       case 'grito': {
-        this._osc('sawtooth', f * 1.6, t, d, out, 0.25, 0.02, f * 0.9);
-        this._osc('square', f * 2.4, t, d * 0.8, out, 0.06, 0.02, f * 1.5);
-        this._noise(t, d * 0.8, out, { f: f * 4, q: 3, peak: 0.25 });
+        // grito agudo e rasgado (raptor, pterossauros, aves grandes)
+        this._throat(t, d, out, { f: f * 1.4, vowel: 'e', shift: 1.4, contour: [[0, 1.2], [0.2, 1.35], [1, 0.75]], grit: 5, breath: 0.5, trem: R(18, 26), peak: 0.6, attack: 0.02 });
+        this._noise(t, d * 0.6, out, { f: f * 5, q: 2, peak: 0.12 });
         break;
       }
       case 'chiado': {
-        this._noise(t, d, out, { f: f * 6, q: 0.7, peak: 0.6, attack: d * 0.15, type: 'highpass' });
+        // sibilo de cobra/lagarto: "sss" que pulsa + garganta grave por baixo
+        this._noise(t, d, out, { f: R(4500, 6500), q: 1.2, peak: 0.5, attack: d * 0.15 });
+        this._noise(t, d, out, { f: f * 6, q: 0.7, peak: 0.25, attack: d * 0.2, type: 'highpass' });
+        if (big > 1) this._throat(t, d * 0.8, out, { f: f * 0.4, vowel: 'h', shift: 0.6, contour: [[0, 1], [1, 0.9]], grit: 3, breath: 1, trem: 18, peak: 0.25, attack: d * 0.2 });
         break;
       }
       case 'ave':

@@ -6,7 +6,7 @@
 //   android/app/src/main/assets/index.html -> usado pelo app Android
 // =============================================================
 import * as esbuild from 'esbuild';
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
 const pkg = JSON.parse(await readFile('package.json', 'utf8'));
@@ -31,8 +31,30 @@ const placeholderIcons = {
   },
 };
 
+// Sons gravados (assets/sons/<nome>.mp3|ogg|wav): o jogo toca no lugar do
+// som gerado. Variações: nome_1.mp3, nome_2.mp3 ... (sorteia uma).
+const recordedSounds = {
+  name: 'sons-gravados',
+  setup(build) {
+    build.onResolve({ filter: /^virtual:sons$/ }, () => ({ path: 'sons', namespace: 'sons' }));
+    build.onLoad({ filter: /.*/, namespace: 'sons' }, async () => {
+      const dir = 'assets/sons';
+      const files = await readdir(dir).catch(() => []);
+      const out = {};
+      const MIME = { mp3: 'audio/mpeg', ogg: 'audio/ogg', wav: 'audio/wav' };
+      for (const f of files) {
+        const m = f.match(/^(.+?)(?:_(\d+))?\.(mp3|ogg|wav)$/i);
+        if (!m) continue;
+        const data = await readFile(`${dir}/${f}`);
+        (out[m[1]] ??= []).push(`data:${MIME[m[3].toLowerCase()]};base64,${data.toString('base64')}`);
+      }
+      return { contents: `export default ${JSON.stringify(out)};`, loader: 'js' };
+    });
+  },
+};
+
 const js = await esbuild.build({
-  plugins: [placeholderIcons],
+  plugins: [placeholderIcons, recordedSounds],
   entryPoints: ['src/main.js'],
   bundle: true,
   minify: true,

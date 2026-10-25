@@ -657,7 +657,7 @@ function boot(hotData = {}) {
         steps.dist = 0;
         const b = ctx.world.biomeKeyAt(p.position.x, p.position.z);
         const wet = ctx.world.waterAt(p.position.x, p.position.z);
-        sound.play('passo', null, { surface: wet ? 'agua' : b === 'praia' ? 'areia' : 'mato', volume: p.crouching ? 0.4 : p.running ? 1.2 : 0.8 });
+        sound.play('passo', null, { surface: wet ? 'agua' : b === 'praia' ? 'areia' : b === 'neve' ? 'neve' : 'mato', volume: p.crouching ? 0.4 : p.running ? 1.2 : 0.8 });
       }
     }
     if (steps.ground && !p.onGround && p.velocity.y > 2 && !p.swimming) sound.play('pulo');
