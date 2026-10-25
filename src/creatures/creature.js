@@ -47,7 +47,11 @@ export class Creature {
     // sorteia o seu comprimento; senão usa o "tamanho" antigo.
     const bb0 = mesh.geometry.boundingBox ?? (mesh.geometry.computeBoundingBox(), mesh.geometry.boundingBox);
     const len0 = bb0.max.z - bb0.min.z;
-    if (species.comprimento_m && len0 > 0) {
+    const wid0 = bb0.max.x - bb0.min.x;
+    if (species.envergadura_m && wid0 > 0) {
+      const [a, b] = species.envergadura_m;
+      this.adultScale = (a + (b - a) * rand()) / wid0;
+    } else if (species.comprimento_m && len0 > 0) {
       const [a, b] = species.comprimento_m;
       this.adultScale = (a + (b - a) * rand()) / len0;
     } else {
@@ -166,12 +170,15 @@ export class Creature {
   }
 
   get walkSpeed() {
+    if (this.landed && this.species.vel_chao) return this.species.vel_chao[0] * this.speedMul;
     return this.species.vel_andar * this.speedMul;
   }
 
   // correndo gasta stamina; sem stamina só anda até recuperar
   get runSpeed() {
-    return this.tired ? this.walkSpeed * 1.2 : this.species.vel_correr * this.speedMul;
+    if (this.tired) return this.walkSpeed * 1.2;
+    if (this.landed && this.species.vel_chao) return this.species.vel_chao[1] * this.speedMul;
+    return this.species.vel_correr * this.speedMul;
   }
 
   get alive() {
@@ -346,8 +353,9 @@ export class Creature {
       this._think(ctx);
     }
 
+    if (this.landed) this._updateLanded(dt);
     if (this.rider) this._updateRidden(dt);
-    else if (this.flies) this._updateFlying(dt, ctx);
+    else if (this.flies && !this.landed) this._updateFlying(dt, ctx);
     else this._updateGround(dt, ctx);
 
     const yawVel = angleDelta(prevYaw, this.yaw) / Math.max(dt, 1e-3);
@@ -637,6 +645,25 @@ export class Creature {
     const ground = Math.max(0, this.world.heightAt(this.pos.x, this.pos.z));
     let wanted = ground + this.cruise + Math.sin(this.time * 0.3) * 4;
     let speed = this.walkSpeed;
+    // de vez em quando desce para pousar e andar no chão
+    if (sp.pousa && !fleeing && !hunting) {
+      this._landT = (this._landT ?? 30 + this.rand() * 60) - dt;
+      if (this._landT <= 0) {
+        if (!this.landingSpot) this.landingSpot = this._findLandingSpot();
+        const s = this.landingSpot;
+        if (s) {
+          this.goal = s;
+          const d = this._dist2DXY(s.x, s.y);
+          const gH = this.world.heightAt(this.pos.x, this.pos.z) + this.standHeight;
+          wanted = gH + Math.max(0, d - 4) * 0.35; // plana descendo
+          speed = Math.max(this.walkSpeed * 0.55, Math.min(this.walkSpeed, d * 0.4));
+          if (d < 5 && this.pos.y - gH < 1.2) {
+            this._land();
+            return;
+          }
+        } else this._landT = 20;
+      }
+    }
     if (fleeing && this.threat) {
       const ax = this.pos.x - this.threat.position.x;
       const az = this.pos.z - this.threat.position.z;
@@ -670,6 +697,55 @@ export class Creature {
     const turning = angleDelta(prevYaw, this.yaw) / Math.max(dt, 1e-3);
     this.roll += (clamp(-turning * 0.6, -0.7, 0.7) - this.roll) * Math.min(1, dt * 2);
     this.pitch += (clamp(this.climb * 0.07, -0.45, 0.35) - this.pitch) * Math.min(1, dt * 2);
+  }
+
+  // ---------------------------------------------------------
+  // Pousar (voadores grandes que também andam no chão)
+  // ---------------------------------------------------------
+  // altura do corpo em pé no chão (pernas)
+  get standHeight() {
+    return 2.55 * this.scale;
+  }
+
+  _findLandingSpot() {
+    for (let i = 0; i < 12; i++) {
+      const p = this._pickWanderPoint(70);
+      if (!p) continue;
+      if (this.world.waterAt(p.x, p.y)) continue;
+      const n = this.world.map.normalAt(p.x, p.y, new THREE.Vector3());
+      if (n.y < 0.9) continue;
+      return p;
+    }
+    return null;
+  }
+
+  _land() {
+    this.landed = true;
+    this.landingSpot = null;
+    this.climb = 0;
+    this.roll = 0;
+    this.speed = 0;
+    this.goal = null;
+    this._groundT = 30 + this.rand() * 70;
+    this._setState(CSTATE.IDLE);
+    this.idleFor = 3 + this.rand() * 4;
+  }
+
+  _takeOff() {
+    this.landed = false;
+    this._landT = 50 + this.rand() * 90;
+    this.goal = null;
+    this.climb = 4;
+    if (this.state !== CSTATE.FLEE && this.state !== CSTATE.CHASE && this.state !== CSTATE.ATTACK) this._setState(CSTATE.WANDER);
+  }
+
+  // No chão: anda como bicho de terra; levanta voo quando cansa de
+  // ficar, quando foge ou quando a presa está longe.
+  _updateLanded(dt) {
+    this._groundT -= dt;
+    const t = this.target;
+    const farPrey = (this.state === CSTATE.CHASE || this.state === CSTATE.ATTACK) && t && this._dist2D(t.position) > 25;
+    if (this._groundT <= 0 || this.state === CSTATE.FLEE || farPrey || this.tamed) this._takeOff();
   }
 
   _steer(dt, tx, tz, speed, flying = false) {
@@ -750,6 +826,7 @@ export class Creature {
   }
 
   _groundY(x, z) {
+    if (this.landed) return this.world.heightAt(x, z) + this.standHeight;
     const g = this.aquatic ? this.world.heightAt(x, z) : this.world.groundAt(x, z, this.pos.y + 0.3);
     const w = this.world.waterAt(x, z);
     if (this.aquatic && w) return Math.max(g + this.height, (w.level + g) * 0.5);
@@ -845,7 +922,48 @@ export class Creature {
     const amp = clamp(this.speed / (legLen * 3), 0, 0.75);
 
     // ---------- voadores ----------
+    if (spec.body === 'flyer' && this.landed && !dead) {
+      // no chão: asas dobradas viram as patas da frente; pescoço em pé
+      const ph = this.phase * TAU;
+      const walk = clamp(this.speed / Math.max(0.1, this.walkSpeed), 0, 1.4);
+      const s = Math.sin(ph) * 0.22 * walk;
+      if (b.asaE) b.asaE.rotation.set(0, 0.3 + s, -1.42);
+      if (b.asaD) b.asaD.rotation.set(0, -0.3 + s, 1.42);
+      // a ponta da asa (dedo comprido) fica dobrada junto do braço
+      if (b.asaE_punho) {
+        b.asaE_punho.rotation.set(0, -0.4, 2.5);
+        b.asaE_punho.scale.setScalar(0.14);
+      }
+      if (b.asaD_punho) {
+        b.asaD_punho.rotation.set(0, 0.4, -2.5);
+        b.asaD_punho.scale.setScalar(0.14);
+      }
+      for (const [n, o] of [['pernaE', 0], ['pernaD', Math.PI]]) {
+        if (!b[n]) continue;
+        b[n].rotation.x = Math.sin(ph + o) * 0.35 * walk;
+        if (b[`${n}_joelho`]) b[`${n}_joelho`].rotation.x = -Math.max(0, Math.cos(ph + o)) * 0.4 * walk;
+      }
+      const look = Math.sin(t * 0.6 + this.id) * 0.3;
+      if (b.neck) b.neck.rotation.x = 1.2 - this.attackAnim * 0.9 + Math.sin(t * 1.1) * 0.03;
+      if (b.neck2) b.neck2.rotation.x = 0.25;
+      if (b.head) {
+        b.head.rotation.x = -1.25 + this.attackAnim * 0.5;
+        b.head.rotation.y = look;
+      }
+      return;
+    }
     if (spec.body === 'flyer') {
+      // em voo: pernas esticadas para trás, pescoço reto
+      for (const n of ['pernaE', 'pernaD']) if (b[n]) b[n].rotation.x = -1.25;
+      if (b.asaE) b.asaE.rotation.y = 0;
+      if (b.asaD) b.asaD.rotation.y = 0;
+      for (const n of ['asaE_punho', 'asaD_punho']) {
+        if (!b[n]) continue;
+        b[n].rotation.y = 0;
+        b[n].scale.setScalar(1);
+      }
+      if (b.neck2) b.neck2.rotation.x = 0;
+      if (b.head) b.head.rotation.x = 0;
       const flapping = this.climb > 0.5 || this.state === CSTATE.FLEE || this.attackCooldown > 0;
       const diving = this.climb < -2;
       const f = flapping ? Math.sin(t * (this.species.raio > 1 ? 4 : this.species.raio < 0.4 ? 14 : 9)) : Math.sin(t * 1.3) * 0.12;
@@ -990,7 +1108,8 @@ export class Creature {
   // Co-op (convidado): a criatura só segue o que o anfitrião manda.
   // ---------------------------------------------------------
   applyNet(e) {
-    // e = { x, y, z, yaw, st, hp, atk, loot }
+    // e = { x, y, z, yaw, st, hp, atk, loot, ld (pousado) }
+    this.landed = !!e.ld;
     if (!this.netGoal) {
       this.pos.set(e.x, e.y, e.z);
       this.yaw = e.yaw;
@@ -1058,6 +1177,8 @@ export class Creature {
       return;
     }
     m.position.copy(this.pos);
+    // voador pousado: peito alto, apoiado nas asas dobradas
+    this._standUp = (this._standUp ?? 0) + ((this.landed ? 0.12 : 0) - (this._standUp ?? 0)) * Math.min(1, dt * 3);
     const ko = this.koAnim ?? 0;
     if (ko > 0) {
       // desmaiado: deita de lado
@@ -1065,6 +1186,6 @@ export class Creature {
       m.rotation.set(this.pitch, this.yaw, this.roll + side * ko * ko * (3 - 2 * ko), 'YXZ');
       return;
     }
-    m.rotation.set(this.pitch, this.yaw, this.roll, 'YXZ');
+    m.rotation.set(this.pitch + this._standUp, this.yaw, this.roll, 'YXZ');
   }
 }

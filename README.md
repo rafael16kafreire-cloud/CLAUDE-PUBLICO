@@ -4,6 +4,12 @@ Jogo 3D de sobrevivência com dinossauros. Sozinho (offline) ou em **co-op onlin
 Roda no celular (Android como app ou no navegador) e no PC.
 Visual estilizado, feito para ser leve.
 
+**Versão 0.8.2** – Quetzalcoatlus no tamanho real: 10–11 m de asa aberta e uns 5 m de
+altura em pé (do tamanho de uma girafa). Agora ele também pousa: de vez em quando desce
+planando, anda no chão de quatro (apoiado nas asas dobradas, com o pescoço em pé), caça
+bichos pequenos a pé e depois levanta voo de novo (`envergadura_m`, `pousa` e `vel_chao`
+em `criaturas.json`).
+
 **Versão 0.8.0**
 - **Domar:** soco e clava dão *torpor* (sono). Com o torpor no máximo o bicho desmaia;
   chegue perto e aperte Interagir para pôr a comida preferida dele no "prato" (ele come

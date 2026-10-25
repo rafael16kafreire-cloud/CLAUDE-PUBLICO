@@ -327,7 +327,7 @@ export class CreatureManager {
       out.push([
         c.id, c.species.id, c.level, +c.scale.toFixed(3),
         +c.pos.x.toFixed(2), +c.pos.y.toFixed(2), +c.pos.z.toFixed(2), +c.yaw.toFixed(3),
-        c.state, Math.ceil(c.health), c.attackAnim > 0.8 ? 1 : 0, c.lootLeft ? 1 : 0, c.statSeed,
+        c.state, Math.ceil(c.health), c.attackAnim > 0.8 ? 1 : 0, c.lootLeft ? 1 : 0, c.statSeed, c.landed ? 1 : 0,
       ]);
     }
     return out;
@@ -336,7 +336,7 @@ export class CreatureManager {
   // Convidado: cria/atualiza as criaturas que o anfitrião mandou.
   applySnapshot(list) {
     const byNid = new Map(this.list.filter((c) => c.netControlled).map((c) => [c.nid, c]));
-    for (const [nid, sid, level, scale, x, y, z, yaw, st, hp, atk, loot, seed] of list) {
+    for (const [nid, sid, level, scale, x, y, z, yaw, st, hp, atk, loot, seed, ld] of list) {
       let c = byNid.get(nid);
       if (!c) {
         c = this.spawn(sid, x, z, level);
@@ -352,7 +352,7 @@ export class CreatureManager {
         c.scale = scale;
         c.mesh.scale.setScalar(scale);
       }
-      c.applyNet({ x, y, z, yaw, st, hp, atk, loot });
+      c.applyNet({ x, y, z, yaw, st, hp, atk, loot, ld });
     }
   }
 

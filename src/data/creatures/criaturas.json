@@ -1,5 +1,5 @@
 {
- "_explicacao": "comprimento_m: [mínimo, máximo] do focinho à ponta da cauda, em metros (tamanho real do bicho adulto; cada um sorteia o seu). atributos: [mínimo, máximo] no nível 1 – cada bicho sorteia um valor no meio (vida, força em % do dano, peso que carrega em kg, stamina, velocidade em % da corrida, torpor). Dados de cada espécie. vida/dano no nível 1 (sobem com o nível). Velocidades em m/s. temperamento: passivo (só reage se apanhar: revida=true ataca de volta, senão foge), medroso (foge de perto, nunca ataca), agressivo (carnívoros: caçam o jogador). biomas: praia, selva, igapo, pantano. peso_spawn: quanto maior, mais comum. grupo: [mínimo, máximo]. loot: o que sai da carcaça. ambiente: animais de enfeite (não contam no limite).",
+ "_explicacao": "envergadura_m: asas abertas de ponta a ponta (voadores). pousa: às vezes desce e anda no chão (vel_chao = [andar, correr] no chão). comprimento_m: [mínimo, máximo] do focinho à ponta da cauda, em metros (tamanho real do bicho adulto; cada um sorteia o seu). atributos: [mínimo, máximo] no nível 1 – cada bicho sorteia um valor no meio (vida, força em % do dano, peso que carrega em kg, stamina, velocidade em % da corrida, torpor). Dados de cada espécie. vida/dano no nível 1 (sobem com o nível). Velocidades em m/s. temperamento: passivo (só reage se apanhar: revida=true ataca de volta, senão foge), medroso (foge de perto, nunca ataca), agressivo (carnívoros: caçam o jogador). biomas: praia, selva, igapo, pantano. peso_spawn: quanto maior, mais comum. grupo: [mínimo, máximo]. loot: o que sai da carcaça. ambiente: animais de enfeite (não contam no limite).",
  "especies": [
   {
    "id": "dodo",
@@ -890,6 +890,9 @@
   {
    "id": "quetzalcoatlus",
    "nome": "Quetzalcoatlus",
+   "envergadura_m": [10, 11],
+   "pousa": true,
+   "vel_chao": [1.3, 4.5],
    "dieta": "carnivoro",
    "temperamento": "agressivo",
    "vida": 1200,
