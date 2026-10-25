@@ -145,14 +145,14 @@ export default {
   // ---------------------------------------------------------
   // Coleta: tempo mínimo entre uma coleta e outra (não fica rápido demais)
   coleta: {
-    intervalo_bater_seg: 1.0,  // bater em árvore/pedra/planta (Atacar)
+    intervalo_bater_seg: 0.36, // bater em árvore/pedra/planta (Atacar)
     intervalo_colher_seg: 0.9, // colher com a mão (Interagir: bagas, fibra...)
   },
 
   combate: {
     soco_dano: 10,             // dano de um soco
     soco_alcance_m: 2.4,       // distância do soco
-    soco_intervalo_seg: 0.45,  // tempo entre socos
+    soco_intervalo_seg: 0.36,  // tempo entre socos (360 ms)
     soco_stamina: 4,           // stamina gasta por soco
     dano_soco_arvore_gigante: 4, // socar uma sumaúma machuca a mão
   },
