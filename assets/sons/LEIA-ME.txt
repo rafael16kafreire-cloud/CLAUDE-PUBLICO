@@ -20,3 +20,20 @@ Bichos: bicho_<espécie> ou bicho_<espécie>_<tipo>
 
 Depois: npm run build (gera o jogo de novo).
 Atenção à licença dos sons (sons de outros jogos só como provisório).
+
+SONS PROVISÓRIOS DO ARK (NÃO PUBLICAR COM ELES)
+-----------------------------------------------
+Os arquivos bicho_*.mp3 que estão aqui foram cortados do "ARK Survival
+Evolved Soundboard" (101soundboards.com). São sons do jogo ARK, da
+Studio Wildcard: servem só para testar. Troque por sons próprios ou com
+licença livre antes de publicar o jogo.
+Qual som do ARK virou qual bicho:
+  Argentavis -> argentavis   Dodo -> dodo   Dodorex -> reidodo
+  Quetzal -> quetzalcoatlus   Dimorphodon -> pterodactilo
+  Giganotosaurus -> trex   Sarco -> deinosuchus   Xiphactinus -> piranha
+  Microraptor -> compsognato e dilofossauro   Ravager -> onca
+  Brood Mother -> aranha   Turkey -> galimimo   Dragon -> espinossauro
+  Magmasaur -> carnotauro   Zilla -> argentinossauro
+  Astrocetus -> mosassauro   Pelagornis -> arara
+Para tirar: apague os bicho_*.mp3 e rode npm run build (volta o som
+feito por código).

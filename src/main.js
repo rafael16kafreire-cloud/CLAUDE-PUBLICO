@@ -68,6 +68,7 @@ function boot(hotData = {}) {
     antialias: high,               // baixa/média: mais leve no celular
     powerPreference: 'high-performance',
   });
+  renderer.info.autoReset = false; // zerado a cada quadro (veja o fim do loop)
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = high ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
   // Cores mais naturais (luz forte não "estoura").
@@ -828,6 +829,8 @@ function boot(hotData = {}) {
     if (world.cameraUnderwater) wob = Math.sin(now * 0.0011) * 0.02;
     else if (player.swimming) wob = Math.sin(now * 0.0016) * 0.018;
     camera.rotation.z += wob;
+    // com SMAA são várias passadas: conta os triângulos de todas
+    renderer.info.reset();
     if (composer) composer.render(dt);
     else renderer.render(scene, camera);
     camera.rotation.z -= wob;

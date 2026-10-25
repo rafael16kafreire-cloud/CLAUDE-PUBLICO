@@ -60,7 +60,10 @@ const TYPES = {
   arbusto_escura: { hi: () => vegGeometry('arbusto_bagas', 1.3), mat: () => vegMaterial('arbusto_bagas', '#1e1430'), textured: true, collider: 0, shadow: false, scale: [0.8, 1.2], res: 'baga_escura', maxDist: 75 },
   arbusto_frutas: { hi: () => vegGeometry('arbusto_bagas', 1.3), mat: () => vegMaterial('arbusto_bagas', '#c0282a'), textured: true, collider: 0, shadow: false, scale: [0.8, 1.2], res: 'frutas', maxDist: 75 },
   arbusto: { hi: () => vegGeometry('arbusto_bagas', 1.3), mat: () => vegMaterial('arbusto_bagas', null), textured: true, collider: 0, shadow: false, scale: [0.8, 1.2], res: 'arbusto', maxDist: 75 },
-  tronco_caido: { hi: P.makeFallenLog, lo: P.makeFallenLogLow, collider: 'log', shadow: true, scale: [0.8, 1.3], res: 'tronco', maxDist: 140 },
+  // troncos caídos enviados pelo jogador (log = metade do comprimento,
+  // raio e altura de cima para a colisão, em metros)
+  tronco_caido: { hi: () => vegGeometry('musgo', 5, 0), lo: P.makeFallenLogLow, mat: () => vegMaterial('musgo'), textured: true, collider: 'log', log: [2.3, 0.7, 1.5], shadow: true, scale: [0.8, 1.3], res: 'tronco', maxDist: 140 },
+  tronco_pinho: { hi: () => vegGeometry('pinho', 9, 0), lo: P.makeFallenLogLow, mat: () => vegMaterial('pinho'), textured: true, collider: 'log', log: [4.3, 0.45, 0.9], shadow: true, scale: [0.8, 1.2], res: 'tronco', maxDist: 140 },
   pedrinhas: { foot: 0.05, hi: P.makePebbles, collider: 0, shadow: false, scale: [0.8, 1.3], res: 'pedrinhas', maxDist: 45 },
   gravetos: { foot: 0.05, hi: P.makeSticks, collider: 0, shadow: false, scale: [0.8, 1.3], res: 'gravetos', maxDist: 45 },
   pinheiro: { foot: 0.4, hi: P.makeSpruce, lo: P.makeSpruceLow, imp: true, collider: 0.3, shadow: true, scale: [0.7, 1.3], res: 'arvore', cold: true },
@@ -216,7 +219,7 @@ export class Vegetation {
           continue;
         }
         const ny = map.normalAt(x, z, normal).y;
-        if (ny < 0.78 && type !== 'pedra_musgo' && type !== 'tronco_caido' && !def.rock) continue;
+        if (ny < 0.78 && type !== 'pedra_musgo' && def.collider !== 'log' && !def.rock) continue;
         // pinheiro não sobe nos picos (linha das árvores); minério só no alto
         if (def.cold && h > 75) continue;
         if (type === 'minerio_ferro' && h < 30) continue;
@@ -234,7 +237,7 @@ export class Vegetation {
 
         const scale = def.scale[0] + r2 * (def.scale[1] - def.scale[0]);
         const rot = r3 * Math.PI * 2;
-        const sink = type === 'pedra_musgo' || def.rock ? 0.2 * scale : type === 'tronco_caido' ? 0.12 : (type === 'gravetos' || type === 'pedrinhas') ? 0.02 : 0.15;
+        const sink = type === 'pedra_musgo' || def.rock ? 0.2 * scale : def.collider === 'log' ? 0.12 : (type === 'gravetos' || type === 'pedrinhas') ? 0.02 : 0.15;
         // Em morro: apoia no ponto MAIS BAIXO do chão embaixo da planta
         // (senão um lado fica "flutuando").
         let ground = h;
@@ -247,7 +250,7 @@ export class Vegetation {
         q.setFromAxisAngle(up, rot);
         if (def.collider === 'log') {
           // tronco caído deita acompanhando a descida do morro
-          const hl = 4.3 * scale;
+          const hl = (def.log?.[0] ?? 4.3) * scale;
           const hA = map.heightAt(x + Math.cos(rot) * hl, z - Math.sin(rot) * hl);
           const hB = map.heightAt(x - Math.cos(rot) * hl, z + Math.sin(rot) * hl);
           const tilt = Math.atan2(hA - hB, 2 * hl);
@@ -266,11 +269,12 @@ export class Vegetation {
         const res = def.res ? recursos.tipos[def.res] : null;
         const rec = { id: this.recs.length, type, origType: type, x, y, z, scale, rot, alive: true, cap: res ? res.capacidade : 0 };
         if (def.collider === 'log') {
-          const hl = 4.3 * scale;
+          const [half, lr, top] = def.log ?? [4.3, 0.45, 0.75];
+          const hl = half * scale;
           rec.log = {
             ax: x + Math.cos(rot) * hl, az: z - Math.sin(rot) * hl,
             bx: x - Math.cos(rot) * hl, bz: z + Math.sin(rot) * hl,
-            r: 0.45 * scale, top: y + 0.75 * scale,
+            r: lr * scale, top: y + top * scale,
           };
         } else if (def.roots) {
           // árvore gigante: tronco + cada raiz com sua própria colisão

@@ -8,9 +8,10 @@
 import * as THREE from 'three';
 import { VEG_MODELOS as M1, VEG_TEXTURAS as T1, FOLHAGEM_COR } from './textures/veg_modelos.js';
 import { VEG_MODELOS2, VEG_TEXTURAS2 } from './textures/veg_modelos2.js';
+import { VEG_TRONCOS, VEG_TRONCOS_TEX } from './textures/veg_troncos.js';
 
-const VEG_MODELOS = { ...M1, ...VEG_MODELOS2 };
-const VEG_TEXTURAS = { ...T1, ...VEG_TEXTURAS2, folhagem_arbusto: FOLHAGEM_COR };
+const VEG_MODELOS = { ...M1, ...VEG_MODELOS2, ...VEG_TRONCOS };
+const VEG_TEXTURAS = { ...T1, ...VEG_TEXTURAS2, ...VEG_TRONCOS_TEX, folhagem_arbusto: FOLHAGEM_COR };
 import { addWind } from './materials.js';
 
 function bytes(b64) {
@@ -62,10 +63,10 @@ export function vegGeometry(key, height, wind = 0.5) {
 }
 
 const texCache = {};
-function texture(name) {
+function texture(name, srgb = true) {
   if (!texCache[name]) {
     const t = new THREE.TextureLoader().load(VEG_TEXTURAS[name]);
-    t.colorSpace = THREE.SRGBColorSpace;
+    if (srgb) t.colorSpace = THREE.SRGBColorSpace;
     t.anisotropy = 4;
     t.wrapS = t.wrapT = THREE.RepeatWrapping; // casca do tronco se repete
     texCache[name] = t;
@@ -84,7 +85,7 @@ export function vegMaterial(key, berry) {
       m.emissive.set(berry ?? '#000').multiplyScalar(0.12);
       return addWind(m, 0.004, 0.01);
     }
-    const opaque = OPAQUE.has(part.tex);
+    const opaque = OPAQUE.has(part.tex) || part.tex.startsWith('tronco_');
     const m = new THREE.MeshLambertMaterial({
       map: texture(part.tex),
       vertexColors: true,
@@ -92,6 +93,8 @@ export function vegMaterial(key, berry) {
       // cipós são cartões sem recorte: dos dois lados
       side: opaque && part.tex !== 'agar_cipo' ? THREE.FrontSide : THREE.DoubleSide,
     });
+    // relevo (normal map), se o modelo tiver
+    if (VEG_TEXTURAS[`${part.tex}_relevo`]) m.normalMap = texture(`${part.tex}_relevo`, false);
     return addWind(m, opaque ? 0.004 : 0.01, opaque ? 0 : 0.03);
   });
   return mats.length === 1 ? mats[0] : mats;

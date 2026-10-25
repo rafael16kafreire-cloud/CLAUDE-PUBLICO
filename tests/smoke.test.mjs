@@ -280,9 +280,16 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     const pr = await page.evaluate(() => document.querySelector('.prompt:not([hidden])')?.textContent ?? '');
     if (/salgada|beber/i.test(pr)) break;
   }
+  // guarda os avisos que aparecerem (no navegador lento eles somem rápido)
+  await page.evaluate(() => {
+    window.__seaMsgs = [];
+    const box = document.querySelector('.hud-msgs');
+    window.__seaObs = new MutationObserver(() => box.querySelectorAll('.msg').forEach((m) => window.__seaMsgs.push(m.textContent)));
+    window.__seaObs.observe(box, { childList: true, subtree: true, characterData: true });
+  });
   await page.keyboard.press('KeyE');
   await gameWait(page, 400);
-  const seaMsg = await page.evaluate(() => [...document.querySelectorAll('.msg')].map((m) => m.textContent).join(' | '));
+  const seaMsg = await page.evaluate(() => { window.__seaObs.disconnect(); return [...new Set(window.__seaMsgs)].join(' | '); });
   const water2 = await page.evaluate(() => window.__ilha.ctx.player.stats.water);
   check('Mar: água salgada não mata a sede', water2 <= 40.01 && /salgada/i.test(seaMsg), seaMsg);
 
@@ -1289,7 +1296,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   const server = PeerServer({ port: 9123, path: '/', host: '127.0.0.1' });
   await new Promise((r) => setTimeout(r, 400));
   const coopBrowser = await chromium.launch({
-    args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--disable-features=WebRtcHideLocalIpsWithMdns'],
+    args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--disable-gpu-compositing', '--disable-features=WebRtcHideLocalIpsWithMdns'],
   });
   const curl = `${url}?servidor=127.0.0.1:9123`;
   const errors = [];
@@ -1315,6 +1322,8 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   await B.click('#btn-join');
   await B.waitForFunction(() => window.__ilha.net?.active, null, { timeout: 30000 }).catch(() => {});
   await gameWait(A, 2500);
+  // convidado: espera o mundo do anfitrião chegar (navegador de teste é lento)
+  await B.waitForFunction(() => window.__ilha.net?.playerNames?.includes('Rafa') && window.__ilha.ctx?.creatures.list.length > 0, null, { timeout: 90000 }).catch(() => {});
   await gameWait(B, 1000);
   const ia = await A.evaluate(() => ({ names: window.__ilha.net.playerNames, badge: document.querySelector('.coop-badge').textContent }));
   const ib = await B.evaluate(() => ({ names: window.__ilha.net.playerNames, net: window.__ilha.ctx.creatures.list.filter((x) => x.netControlled).length, all: window.__ilha.ctx.creatures.list.length }));
