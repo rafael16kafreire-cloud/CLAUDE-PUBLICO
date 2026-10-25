@@ -35,6 +35,7 @@ async function openGame(contextOptions, label) {
     } catch { /* ok */ }
   });
   const page = await context.newPage();
+  page.setDefaultTimeout(120000); // navegador de teste sem placa de vídeo é lento
   const errors = [];
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message} @ ${(e.stack ?? "").split("\n").slice(1, 4).join(" <")}`));
   page.on('console', (m) => {
@@ -52,13 +53,13 @@ async function openGame(contextOptions, label) {
 
 // Espera passar X ms de TEMPO DE JOGO (o navegador de teste não tem
 // placa de vídeo e pode desenhar bem devagar). Para se o jogo sair do
-// estado "jogando" (morte, pausa) ou depois de 90 s de relógio.
+// estado "jogando" (morte, pausa) ou depois de 4 min de relógio.
 const gameWait = (page, ms) => page.evaluate((sec) => new Promise((res) => {
   const g = window.__ilha.game;
   const t0 = g.playTime;
   const w0 = performance.now();
   const step = () => {
-    if (g.playTime - t0 >= sec || g.state !== 'playing' || performance.now() - w0 > 90000) res();
+    if (g.playTime - t0 >= sec || g.state !== 'playing' || performance.now() - w0 > 240000) res();
     else requestAnimationFrame(step);
   };
   requestAnimationFrame(step);
@@ -113,7 +114,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   const st = await page.evaluate(() => window.__ilha.ctx.player.stats.stamina);
   await page.keyboard.up('ShiftLeft');
   await page.keyboard.up('KeyW');
-  check('PC: correr gasta stamina', st < 99, `stamina ${st.toFixed(1)}`);
+  check('PC: correr gasta stamina', st < 199, `stamina ${st.toFixed(1)}`);
 
   // Pular
   const yBefore = await page.evaluate(() => window.__ilha.ctx.player.position.y);
@@ -818,6 +819,103 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   check('Ciclo de vida: nasce filhote, cresce e o velho morre', v07.baby && v07.grew && v07.oldDies, JSON.stringify({ b: v07.baby, g: v07.grew, o: v07.oldDies }));
   check('Chão: gravetos e pedrinhas para pegar', v07.ground.gravetos > 500 && v07.ground.pedrinhas > 300, JSON.stringify(v07.ground));
   check('Stamina dobrada e habilidades aumentam vida/peso', v07.stamina === 200 && v07.skills.vida === 10 && v07.skills.peso === 135, JSON.stringify(v07));
+
+  // Construção: piso encaixa do lado do outro, parede na beira, teto em cima,
+  // rampa sobe 3 m, parede segura o jogador e a porta abre
+  const build = await page.evaluate(() => {
+    const c = window.__ilha.ctx; const inv = c.inventory; const a = c.actions; const w = c.world;
+    c.creatures.clear();
+    // lugar plano perto da praia sul (para a casa não afundar no morro)
+    const sul = w.respawnPoint('sul').position;
+    const n = new c.camCtl.camera.position.constructor();
+    let spot = null;
+    for (let r = 20; r < 200 && !spot; r += 6) {
+      for (let k = 0; k < 16 && !spot; k++) {
+        const x = sul.x + Math.sin(k) * r; const z = sul.z - 30 - Math.cos(k) * r;
+        let flat = !w.waterAt(x, z);
+        for (const [dx, dz] of [[0, 0], [0, -3], [0, -6], [3, 0], [-3, 0], [0, 3]]) {
+          if (w.map.normalAt(x + dx, z + dz, n).y < 0.985 || w.waterAt(x + dx, z + dz)) flat = false;
+        }
+        if (flat) spot = { x, z };
+      }
+    }
+    c.player.position.set(spot.x, w.heightAt(spot.x, spot.z), spot.z + 3.4);
+    c.camCtl.yaw = 0; a.forward = { x: 0, z: -1 }; c.player.facing = 0;
+    for (const id of ['piso', 'parede', 'porta', 'teto', 'rampa']) inv.add(id, 3);
+    const sel = (id) => { inv.selected = inv.slots.findIndex((s) => s && s.id === id); };
+    const placed = (type) => w.structures.filter((s) => s.type === type && !s.removed);
+    const out = {};
+    sel('piso'); out.p1 = a.placeBuild(0);
+    const p1 = placed('piso')[0];
+    // segundo piso: mira 3 m à frente do primeiro
+    c.player.position.set(p1.position.x, p1.position.y, p1.position.z + 1);
+    sel('piso'); out.p2 = a.placeBuild(0);
+    const [q1, q2] = placed('piso');
+    out.gap = q2 ? +Math.hypot(q2.position.x - q1.position.x, q2.position.z - q1.position.z).toFixed(2) : null;
+    c.player.position.set(q1.position.x, q1.position.y, q1.position.z);
+    sel('parede'); out.wall = a.placeBuild(0);
+    sel('teto'); out.roof = a.placeBuild(0);
+    const wall = placed('parede')[0]; const roof = placed('teto')[0];
+    out.roofY = roof ? +(roof.position.y - q1.position.y).toFixed(2) : null;
+    out.floorTop = +(w.groundAt(q1.position.x, q1.position.z, q1.position.y + 0.2) - q1.position.y).toFixed(2);
+    // parede segura: tenta atravessar
+    if (wall) {
+      const fx = Math.sin(wall.rotY); const fz = Math.cos(wall.rotY);
+      const pos = wall.position.clone().addScaledVector(new window.__ilha.ctx.camCtl.camera.position.constructor(fx, 0, fz), -0.3);
+      w.resolveCollisions(pos, 0.38, wall.position.y + 0.1, 1.7);
+      out.pushed = +(((pos.x - wall.position.x) * fx + (pos.z - wall.position.z) * fz)).toFixed(2);
+    }
+    sel('rampa'); out.ramp = a.placeBuild(0);
+    const ramp = placed('rampa')[0];
+    out.rampMid = ramp ? +(w.groundAt(ramp.position.x, ramp.position.z, ramp.position.y + 1.2) - ramp.position.y).toFixed(2) : null;
+    // porta: no segundo piso
+    c.player.position.set(q2.position.x, q2.position.y, q2.position.z);
+    sel('porta'); out.door = a.placeBuild(0);
+    const door = placed('porta')[0];
+    if (door) { door.use({ inventory: inv }); out.doorOpen = door.open; }
+    inv.selected = -1;
+    return out;
+  });
+  check('Construção: piso encaixa (3 m), parede, teto 3 m acima, rampa e porta', build.p1 && build.p2 && build.gap === 3 && build.wall && build.roof && build.roofY === 3 && build.ramp && build.door && build.doorOpen, JSON.stringify(build));
+  check('Construção: anda em cima do piso/rampa e a parede segura', build.floorTop === 0 && build.rampMid > 1.3 && build.rampMid < 1.8 && Math.abs(build.pushed) >= 0.38, JSON.stringify(build));
+
+  // Domar: desmaia com torpor, come do prato até domar; depois monta (F) e anda
+  const tame0 = await page.evaluate(() => {
+    const c = window.__ilha.ctx; const p = c.player.position;
+    c.creatures.clear();
+    const d = c.creatures.spawn('parassauro', p.x + 6, p.z, 1);
+    window.__pet = d;
+    d.addTorpor(1e9, c.player);
+    c.inventory.add('baga_mejo', 20);
+    c.interaction._interact({ kind: 'tame-feed', c: d, food: 'baga_mejo' });
+    return { ko: d.knockedOut, need: d.tameNeed, plate: d.tameFood.baga_mejo };
+  });
+  let tame1 = null;
+  for (let i = 0; i < 6 && !tame1?.tamed; i++) {
+    await gameWait(page, 4000);
+    tame1 = await page.evaluate(() => ({ tamed: !!window.__pet.tamed, pct: window.__pet.tameProgress, st: window.__pet.state }));
+  }
+  check('Domar: desmaiado come do prato e fica domado', tame0.ko && tame1.tamed, JSON.stringify({ tame0, tame1 }));
+  const ride0 = await page.evaluate(() => {
+    const c = window.__ilha.ctx; const d = window.__pet;
+    c.player.position.set(d.pos.x + d.radius + 1, d.pos.y, d.pos.z);
+    window.__r0 = { x: d.pos.x, z: d.pos.z };
+    return window.__r0;
+  });
+  await page.keyboard.press('KeyF');
+  await frames(page, 3);
+  await page.keyboard.down('KeyW');
+  await gameWait(page, 2500);
+  await page.keyboard.up('KeyW');
+  const ride1 = await page.evaluate(() => {
+    const c = window.__ilha.ctx; const d = window.__pet;
+    return { riding: c.player.riding === d, moved: Math.hypot(d.pos.x - window.__r0.x, d.pos.z - window.__r0.z), onTop: c.player.position.y > d.pos.y + 1 };
+  });
+  await page.keyboard.press('KeyF');
+  await frames(page, 3);
+  const ride2 = await page.evaluate(() => ({ riding: !!window.__ilha.ctx.player.riding }));
+  check('Montar: F monta, o bicho anda com você e F desce', ride1 && ride1.riding && ride1.onTop && ride1.moved > 1 && !ride2.riding, JSON.stringify({ ride1, ride2 }));
+  await page.evaluate(() => window.__ilha.ctx.creatures.clear());
 
   // Atributos sorteados entre o mínimo e o máximo da espécie
   const rolls = await page.evaluate(() => {

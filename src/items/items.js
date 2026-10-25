@@ -23,6 +23,24 @@ const SHAPES = {
     <path d="M10 21h22M12 27h20" stroke="${b}" stroke-width="1.6" stroke-linecap="round" opacity=".6"/>
     <ellipse cx="38" cy="24.5" rx="5" ry="7.5" fill="${b}"/>
     <ellipse cx="38" cy="24.5" rx="2.6" ry="4" fill="none" stroke="${a}" stroke-width="1.3"/>`,
+  piso: (a, b) => `
+    <path d="M24 12 L44 22 L24 32 L4 22 Z" fill="${a}"/>
+    <path d="M4 22 L24 32 L24 37 L4 27 Z M44 22 L24 32 L24 37 L44 27 Z" fill="${b}"/>
+    <path d="M14 17 L34 27 M19 14.5 L39 24.5 M9 19.5 L29 29.5" stroke="${b}" stroke-width="1.2" opacity=".7"/>`,
+  parede: (a, b) => `
+    <rect x="8" y="9" width="32" height="30" rx="1.5" fill="${a}"/>
+    <path d="M8 16.5h32M8 24h32M8 31.5h32" stroke="${b}" stroke-width="1.6"/>`,
+  porta: (a, b) => `
+    <rect x="8" y="9" width="32" height="30" rx="1.5" fill="${a}"/>
+    <rect x="18" y="16" width="12" height="23" fill="${b}"/>
+    <circle cx="27" cy="28" r="1.4" fill="${a}"/>`,
+  teto: (a, b) => `
+    <path d="M24 8 L44 24 L4 24 Z" fill="${a}"/>
+    <path d="M10 24 L10 40 M38 24 L38 40" stroke="${b}" stroke-width="3"/>
+    <path d="M14 19 L34 19 M18 15 L30 15" stroke="${b}" stroke-width="1.3" opacity=".6"/>`,
+  rampa: (a, b) => `
+    <path d="M6 40 L42 12 L42 40 Z" fill="${a}"/>
+    <path d="M14 34 L18 37 M22 28 L26 31 M30 22 L34 25 M38 16 L41 18" stroke="${b}" stroke-width="2.2" stroke-linecap="round"/>`,
   graveto: (a, b) => `
     <path d="M7 38 L41 12" stroke="${a}" stroke-width="4.5" stroke-linecap="round"/>
     <path d="M10 30 L37 22" stroke="${b}" stroke-width="3.2" stroke-linecap="round"/>

@@ -23,6 +23,7 @@
 //   loot / loot-r                    carcaça: pedido / itens
 //   veg    planta coletada           { rec }
 //   st+    estrutura nova            { data }
+//   st-    estrutura desmontada      { id }
 //   st     estado de estrutura       { id, fuel }
 //   time   hora do dia (anfitrião)   { time, day }
 // =============================================================
@@ -79,8 +80,12 @@ export class Multiplayer {
 
     // eventos locais que os outros precisam saber
     events.on(EV.PLACED, ({ structure }) => this.active && this._broadcast({ t: 'st+', data: structure.toJSON() }));
-    events.on(EV.STRUCTURE_USED, ({ structure }) => this.active && structure.type === 'fogueira'
-      && this._broadcast({ t: 'st', id: structure.id, fuel: structure.fuel }));
+    events.on(EV.STRUCTURE_USED, ({ structure }) => {
+      if (!this.active) return;
+      if (structure.type === 'fogueira') this._broadcast({ t: 'st', id: structure.id, fuel: structure.fuel });
+      if (structure.type === 'porta') this._broadcast({ t: 'st', id: structure.id, open: structure.open });
+    });
+    events.on(EV.STRUCTURE_REMOVED, ({ structure }) => this.active && !this._applyingRemote && this._broadcast({ t: 'st-', id: structure.id }));
     events.on(EV.VEG_CONSUMED, ({ rec, remote }) => this.active && !remote && this._broadcast({ t: 'veg', rec: rec.id }));
   }
 
@@ -293,6 +298,14 @@ export class Multiplayer {
         this.world.addStructure(m.data);
         if (this.isHost) this._broadcast(m, from);
         break;
+      case 'st-': {
+        const s = this.world.structureById(m.id);
+        this._applyingRemote = true;
+        if (s && !s.removed) this.world.removeStructure(s);
+        this._applyingRemote = false;
+        if (this.isHost) this._broadcast(m, from);
+        break;
+      }
       case 'st': {
         this.world.structureById(m.id)?.applyState?.(m);
         if (this.isHost) this._broadcast(m, from);

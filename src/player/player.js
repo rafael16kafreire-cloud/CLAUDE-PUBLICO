@@ -78,6 +78,10 @@ export class Player {
       return;
     }
     this.aliveTime = (this.aliveTime ?? 0) + dt;
+    if (this.riding) {
+      this._ride(dt, input, cam);
+      return;
+    }
 
     // ---------- Entrada: direção relativa à câmera ----------
     const mv = input.moveVector();
@@ -117,11 +121,11 @@ export class Player {
     this._updateAttack(dt, input, cam);
 
     // ---------- Colisões e limite do mapa ----------
-    this.world.resolveCollisions(this.position, RADIUS, this.position.y);
+    this.world.resolveCollisions(this.position, RADIUS, this.position.y, this.eyeHeight + 0.15);
     this.world.creatures?.resolvePlayer(this.position, RADIUS);
     this._keepInsideWorld(dt);
     // Depois de empurrado, não pode ficar dentro do chão.
-    const ground = this.world.heightAt(this.position.x, this.position.z);
+    const ground = this.world.groundAt(this.position.x, this.position.z, this.position.y);
     if (this.position.y < ground) this.position.y = ground;
 
     // ---------- Cabeça embaixo d'água? ----------
@@ -150,6 +154,78 @@ export class Player {
     this._updateModel(dt);
   }
 
+  // ---------------------------------------------------------
+  // Montaria: o jogador vai sentado nas costas do bicho domado e
+  // o joystick/WASD comanda ele. Atacar = o bicho morde/chifra.
+  // ---------------------------------------------------------
+  mount(c) {
+    if (!c || c.rider) return false;
+    this.riding = c;
+    c.rider = this;
+    c.target = null;
+    c._setState('parado');
+    this.crouching = false;
+    this.swimming = false;
+    events.emit(EV.MESSAGE, { text: `Montado em ${c.name ?? c.species.nome} (Montar de novo para descer)`, kind: 'info' });
+    return true;
+  }
+
+  dismount() {
+    const c = this.riding;
+    if (!c) return;
+    this.riding = null;
+    c.rider = null;
+    c.rideInput = null;
+    c._setState('parado');
+    c.idleFor = c.follow ? 0.5 : 1e9;
+    if (!c.follow) c.home.set(c.pos.x, c.pos.z);
+    // desce do lado do bicho
+    const side = c.radius + 1.2;
+    const x = c.pos.x + Math.cos(c.yaw) * side;
+    const z = c.pos.z - Math.sin(c.yaw) * side;
+    this.position.set(x, Math.max(this.world.heightAt(x, z), c.pos.y), z);
+    this.velocity.set(0, 0, 0);
+  }
+
+  _ride(dt, input, cam) {
+    const c = this.riding;
+    if (!c.alive || c.knockedOut || !c.tamed) {
+      this.dismount();
+      return;
+    }
+    const mv = input.moveVector();
+    const mag = Math.min(1, Math.hypot(mv.x, mv.y));
+    const sinY = Math.sin(cam.yaw);
+    const cosY = Math.cos(cam.yaw);
+    let dx = -sinY * mv.y + cosY * mv.x;
+    let dz = -cosY * mv.y - sinY * mv.x;
+    const len = Math.hypot(dx, dz) || 1;
+    dx /= len;
+    dz /= len;
+    this.moving = mag > 0.05;
+    c.rideInput = { x: dx, z: dz, mag, run: input.isHeld('run') || input.runToggle };
+    // sentado nas costas
+    this.position.set(c.pos.x, c.pos.y + c.height * 0.62, c.pos.z);
+    this.velocity.set(0, 0, 0);
+    this.onGround = true;
+    this.facing = this.firstPerson ? cam.yaw : c.yaw;
+    // atacar montado: o bicho ataca o que estiver na frente dele
+    this._attackTimer -= dt;
+    if (input.wasPressed('attack') && this._attackTimer <= 0 && c.damage > 0) {
+      this._attackTimer = this.world.creatures?.riderAttack(c, this) ?? 1;
+    }
+    const body = this.world.waterAt(this.position.x, this.position.z);
+    this.headUnderwater = !!body && this.position.y + this.eyeHeight < body.level - 0.05;
+    this.stats.update(dt, {
+      running: false,
+      swimming: false,
+      moving: this.moving,
+      headUnderwater: this.headUnderwater,
+      ambientTemp: this.world.temperatureAt(this.position, false),
+    });
+    this._updateModel(dt);
+  }
+
   // Soco: gasta um pouco de stamina e acerta o que estiver na frente.
   // Atacar: com comida selecionada, come; senão bate (soco ou ferramenta).
   _updateAttack(dt, input, cam) {
@@ -160,6 +236,9 @@ export class Player {
       if (actions?.selectedIsConsumable) {
         actions.useSelected();
         this._attackTimer = 0.4;
+      } else if (actions?.selectedPiece) {
+        actions.placeBuild(cam.yaw);
+        this._attackTimer = 0.3;
       } else if (this.stats.useStamina(C.soco_stamina)) {
         const tool = actions?.tool ?? { tipo: 'mao', intervalo: C.soco_intervalo_seg };
         this._attackTimer = tool.intervalo;
@@ -257,7 +336,7 @@ export class Player {
 
     // Movimento vertical e chão
     pos.y += vel.y * dt;
-    const ground = this.world.heightAt(pos.x, pos.z);
+    const ground = this.world.groundAt(pos.x, pos.z, pos.y);
     if (pos.y <= ground) {
       pos.y = ground;
       if (vel.y < 0) vel.y = 0;
@@ -291,10 +370,12 @@ export class Player {
     const horiz = Math.hypot(dx, dz);
     if (horiz < 1e-6) return true;
     const pos = this.position;
-    const from = this.world.heightAt(pos.x, pos.z);
-    const to = this.world.heightAt(nx, nz);
+    const from = this.world.groundAt(pos.x, pos.z, pos.y);
+    const to = this.world.groundAt(nx, nz, pos.y);
     const climb = to - Math.max(from, pos.y - 0.05);
     if (climb <= 0.02) return true;
+    // degrau de piso/rampa construído: sobe se for baixo
+    if (to > this.world.heightAt(nx, nz) + 0.01) return climb <= 0.6;
     return climb / horiz <= this._maxSlopeTan;
   }
 

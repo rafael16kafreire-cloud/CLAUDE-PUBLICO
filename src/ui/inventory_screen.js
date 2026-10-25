@@ -25,7 +25,7 @@ const SKILLS = [
   { key: 'forca', nome: 'Força', icon: STAT_ICONS.forca, cls: 'melee', unit: '%' },
 ];
 
-const CATS = ['Tudo', 'Ferramentas', 'Armas', 'Estruturas', 'Cura'];
+const CATS = ['Tudo', 'Ferramentas', 'Armas', 'Estruturas', 'Construção', 'Cura'];
 const STATION_NAME = { bancada: 'Bancada de Trabalho' };
 const TYPE_LABEL = { recurso: 'Recurso', comida: 'Comida', ferramenta: 'Ferramenta', consumivel: 'Cura', estrutura: 'Estrutura' };
 

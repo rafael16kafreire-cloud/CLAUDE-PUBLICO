@@ -11,6 +11,7 @@ import { ITEMS, itemName } from '../items/items.js';
 import { shakeAt } from '../world/materials.js';
 import * as THREE from 'three';
 import { sound } from '../audio/audio.js';
+import { snapPiece } from '../world/building.js';
 
 const FIST = { tipo: 'mao', dano: null, alcance: null, intervalo: null };
 const INTERVAL = { mao: 0.45, machado: 0.6, picareta: 0.6, lanca: 0.7, clava: 0.62, tocha: 0.5 };
@@ -60,6 +61,9 @@ export class PlayerActions {
     // 1) criatura viva
     const hit = creatures?.playerAttack(p, forward, t.dano * p.stats.damageMul, t.alcance);
     if (hit) {
+      // soco e clava dão sono (torpor): dá para desmaiar e domar
+      const T = BALANCE.domar.torpor_por_dano;
+      hit.addTorpor?.(t.dano * p.stats.damageMul * (T[t.tipo] ?? T.outro), p);
       this.world.effects.burst(hit.center(), 'sangue', 6, 2.5);
       sound.play('carne', hit.center());
       this._wear();
@@ -206,6 +210,40 @@ export class PlayerActions {
     return true;
   }
 
+  // ---------------------------------------------------------
+  // Construção
+  // ---------------------------------------------------------
+  get selectedPiece() {
+    const s = this.inv.equipped;
+    return (s && ITEMS[s.id]?.peca) || null;
+  }
+
+  // Onde a peça selecionada vai ficar agora (para o fantasma e para colocar).
+  buildPlacement(camYaw) {
+    const type = this.selectedPiece;
+    if (!type) return null;
+    const p = this.player;
+    const f = this.forward ?? { x: -Math.sin(p.facing), z: -Math.cos(p.facing) };
+    const len = Math.hypot(f.x, f.z) || 1;
+    const dist = type === 'piso' ? 3.4 : 2.6;
+    const aim = { x: p.position.x + (f.x / len) * dist, z: p.position.z + (f.z / len) * dist };
+    return { type, ...snapPiece(this.world, type, p, aim, camYaw ?? p.facing) };
+  }
+
+  placeBuild(camYaw) {
+    const pl = this.buildPlacement(camYaw);
+    if (!pl) return false;
+    if (!pl.ok) {
+      events.emit(EV.MESSAGE, { text: pl.why || 'Não dá para colocar aqui.', kind: 'warn' });
+      return false;
+    }
+    const st = this.world.addStructure({ type: pl.type, x: pl.x, y: pl.y, z: pl.z, rot: pl.rot });
+    if (!st) return false;
+    this.inv.takeFrom(this.inv.selected, 1);
+    events.emit(EV.PLACED, { type: pl.type, structure: st });
+    return true;
+  }
+
   useSelected() {
     if (this.inv.selected < 0) return false;
     return this.useSlot(this.inv.selected);
@@ -227,6 +265,7 @@ export class PlayerActions {
       this.place(i);
       return;
     }
+    // peça de construção: segura na mão (aparece o fantasma); Atacar coloca
     this.inv.selected = this.inv.selected === i ? -1 : i;
     events.emit(EV.INVENTORY_CHANGED, { inventory: this.inv });
   }

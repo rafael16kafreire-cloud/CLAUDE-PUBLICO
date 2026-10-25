@@ -145,6 +145,24 @@ export default {
   },
 
   // ---------------------------------------------------------
+  // Domar e montar
+  // Soco e clava dão torpor (sono). Torpor no máximo = o bicho desmaia.
+  // Desmaiado: dê a comida preferida dele (Interagir) até a barra de
+  // domar encher. Se o torpor acabar antes, ele acorda.
+  // ---------------------------------------------------------
+  domar: {
+    torpor_por_dano: { mao: 1.6, clava: 3.0, outro: 0.2 }, // torpor = dano × isto
+    torpor_cai_seg: 0.03,      // acordado: torpor cai X do máximo por segundo
+    desmaio_cai_seg: 0.005,    // desmaiado: cai X do máximo por segundo (~3 min)
+    comer_a_cada_seg: 3,       // come uma comida a cada X s
+    comidas_base: 4,           // comidas preferidas para domar no nível 1
+    comidas_por_nivel: 0.2,    // + X por nível
+    comida_qualquer: 0.35,     // comida que não é a preferida vale isso
+    baga_escura_torpor: 0.15,  // cada baga-escura dada põe +15% de torpor
+    seguir_m: 4,               // distância que o bicho domado fica de você
+  },
+
+  // ---------------------------------------------------------
   // Criaturas (dados de cada espécie: data/creatures/criaturas.json)
   // ---------------------------------------------------------
   criaturas: {

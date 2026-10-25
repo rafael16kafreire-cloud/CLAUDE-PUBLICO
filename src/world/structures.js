@@ -26,7 +26,7 @@ function mmss(sec) {
   return `${m}:${s}`;
 }
 
-class Structure {
+export class Structure {
   constructor(world, type, position, rotY, id) {
     this.world = world;
     this.type = type;

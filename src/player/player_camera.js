@@ -68,7 +68,8 @@ export class PlayerCamera {
 
     // Terceira pessoa: um pouco acima e ao lado do ombro.
     t.addScaledVector(this._right, SHOULDER);
-    const wanted = player.crouching ? CROUCH_DISTANCE : THIRD_DISTANCE;
+    // montado num bicho grande: câmera mais longe para ver o bicho todo
+    const wanted = player.riding ? THIRD_DISTANCE + player.riding.radius * 3.5 : player.crouching ? CROUCH_DISTANCE : THIRD_DISTANCE;
 
     // Procura o chão entre o jogador e a câmera.
     let allowed = wanted;

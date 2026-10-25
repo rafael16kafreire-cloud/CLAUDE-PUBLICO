@@ -163,9 +163,8 @@ export class Hud {
     }
     const ratio = Math.max(0, c.health / c.maxHealth);
     this.refs.tfill.style.transform = `scaleX(${ratio.toFixed(3)})`;
-    this.refs.tsub.textContent = c.alive
-      ? `${TEMPER[c.species.temperamento] ?? ''} · ${Math.ceil(c.health)}/${c.maxHealth}`
-      : 'Abatido';
+    const status = c.tamed ? 'Domado' : c.knockedOut ? 'Desmaiado' : (TEMPER[c.species.temperamento] ?? '');
+    this.refs.tsub.textContent = c.alive ? `${status} · ${Math.ceil(c.health)}/${c.maxHealth}` : 'Abatido';
     t.hidden = false;
   }
 

@@ -72,6 +72,12 @@ async function out(path, text) {
 }
 
 console.log(`Ilha Primordial v${pkg.version}`);
+// ILHA_OUT=arquivo.html: gera só a versão para abrir no navegador nesse
+// caminho (útil para testar sem mexer no dist/ enquanto outro teste roda)
+if (process.env.ILHA_OUT) {
+  await out(process.env.ILHA_OUT, standalone);
+  process.exit(0);
+}
 await out('dist/ilha-primordial.html', standalone);
 await out('build/artifact.html', content);
 await out('android/app/src/main/assets/index.html', standalone);

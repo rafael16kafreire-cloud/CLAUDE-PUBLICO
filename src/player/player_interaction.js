@@ -1,6 +1,7 @@
 // =============================================================
 // INTERAÇÃO – o que o jogador está mirando e o botão "Interagir"
-// Interagir: recuperar saco, colher (bagas, bananas, fibra), beber.
+// Interagir: recuperar saco, colher (bagas, bananas, fibra), beber,
+// dar comida para bicho desmaiado (domar), mandar domado seguir/ficar.
 // Também mostra dicas do que dá para fazer com "Atacar"
 // (árvore = madeira e palha, pedra = pedra e sílex...).
 // =============================================================
@@ -8,6 +9,7 @@ import * as THREE from 'three';
 import { BALANCE } from '../core/balance.js';
 import { events, EV } from '../core/event_bus.js';
 import { itemName } from '../items/items.js';
+import { game } from '../core/game_manager.js';
 
 const REACH = 3.4;        // alcance para objetos (m)
 const WATER_REACH = 4.5;  // alcance para beber (m)
@@ -66,6 +68,10 @@ export class PlayerInteraction {
     }
     if (best) return { kind: 'object', obj: best, text: best.promptText() };
 
+    // 1b) Bicho desmaiado (domar) ou domado (seguir/ficar)
+    const cr = this._creatureTarget(camPos, f);
+    if (cr) return cr;
+
     // 2) Planta para colher (bagas, bananas, fibra)
     const rec = this.actions.findHarvestable(f);
     if (rec) {
@@ -107,12 +113,98 @@ export class PlayerInteraction {
     return null;
   }
 
+  _creatureTarget(camPos, f) {
+    const cm = this.world.creatures;
+    if (!cm) return null;
+    const p = this.player.position;
+    const mine = (o) => o.alive && !o.rider && (o.knockedOut || (o.tamed && o.owner === this.player));
+    let c = cm.findAimed(camPos, f, 14);
+    if (this.player.riding) return null;
+    if (!c || !mine(c)) {
+      // sem mira certinha: o desmaiado/domado mais perto na sua frente
+      c = null;
+      let bd = REACH;
+      const fl = Math.hypot(f.x, f.z) || 1;
+      for (const o of cm.list) {
+        if (!mine(o)) continue;
+        const q = o.closestBodyPoint(p.x, p.z);
+        const d = Math.hypot(q.x - p.x, q.z - p.z);
+        const dot = d < 0.6 ? 1 : ((q.x - p.x) * f.x + (q.z - p.z) * f.z) / (d * fl);
+        if (d < bd && dot > 0.2) {
+          bd = d;
+          c = o;
+        }
+      }
+      if (!c) return null;
+    }
+    const pt = c.closestBodyPoint(p.x, p.z);
+    if (Math.hypot(pt.x - p.x, pt.z - p.z) > REACH + 1) return null;
+    if (c.knockedOut && !c.tamed) {
+      if (!c.species.pode_domar) return { kind: 'hint', key: 'attack', text: `${c.species.nome} desmaiado (não dá para domar)` };
+      const pct = Math.floor((c.tameProgress ?? 0) * 100);
+      const fav = c.species.comida_preferida;
+      const plate = Object.values(c.tameFood ?? {}).reduce((a, n) => a + n, 0);
+      // pouco torpor e tem baga-escura: dar baga-escura primeiro
+      if (c.torpor < c.stats.torpor * 0.4 && this.inv.count('baga_escura') > 0) {
+        return { kind: 'tame-sleep', c, text: `Dar Baga-Escura (mais sono) · domando ${pct}%` };
+      }
+      const food = this._tameFoodFor(c);
+      if (!food) return { kind: 'hint', key: 'interact', text: `Domando ${pct}% · precisa de ${itemName(fav)}${plate ? ` (comendo: ${plate})` : ''}` };
+      return { kind: 'tame-feed', c, food, text: `Dar ${itemName(food)} · domando ${pct}%${plate ? ` (no prato: ${plate})` : ''}` };
+    }
+    if (c.tamed && c.owner === this.player) {
+      const ride = c.species.pode_montar && !c.flies && !c.isBaby ? (game.isTouch ? ' · botão Montar' : ' · F: montar') : '';
+      return { kind: 'tame-order', c, text: `${c.name ?? c.species.nome}: ${c.follow ? 'mandar ficar' : 'mandar seguir'}${ride}` };
+    }
+    return null;
+  }
+
+  // Comida que o jogador tem para dar: a preferida; senão outra do mesmo tipo.
+  _tameFoodFor(c) {
+    const fav = c.species.comida_preferida;
+    if (this.inv.count(fav) > 0) return fav;
+    const carn = c.species.dieta === 'carnivoro';
+    const alt = carn ? ['carne_assada'] : ['baga_mejo', 'fruta_rubra', 'fruta_azul', 'banana'];
+    return alt.find((id) => this.inv.count(id) > 0) ?? null;
+  }
+
   _waterTarget(body) {
     return { kind: 'water', body, text: body.fresh ? 'Beber água' : 'Água do mar (salgada)' };
   }
 
   _interact(target) {
     if (!target) return;
+    if (target.kind === 'tame-feed') {
+      // põe no prato o que falta para domar (ele come aos poucos)
+      const c = target.c;
+      const left = Math.max(1, Math.ceil(((1 - (c.tameProgress ?? 0)) * c.tameNeed) / c.foodValue(target.food)));
+      const plate = c.tameFood[target.food] ?? 0;
+      const n = Math.min(this.inv.count(target.food), Math.max(1, left - plate));
+      this.inv.remove(target.food, n);
+      c.feed(target.food, n);
+      events.emit(EV.MESSAGE, { text: `Deu ${n} ${itemName(target.food)} para ${c.species.nome}`, kind: 'info' });
+      this._timer = 0;
+      return;
+    }
+    if (target.kind === 'tame-sleep') {
+      const c = target.c;
+      this.inv.remove('baga_escura', 1);
+      c.torpor = Math.min(c.stats.torpor, c.torpor + c.stats.torpor * BALANCE.domar.baga_escura_torpor);
+      events.emit(EV.MESSAGE, { text: `${c.species.nome} dormiu mais um pouco`, kind: 'info' });
+      this._timer = 0;
+      return;
+    }
+    if (target.kind === 'tame-order') {
+      const c = target.c;
+      c.follow = !c.follow;
+      c.target = null;
+      c._setState('parado');
+      c.idleFor = c.follow ? 0.5 : 1e9;
+      if (!c.follow) c.home.set(c.pos.x, c.pos.z);
+      events.emit(EV.MESSAGE, { text: `${c.name ?? c.species.nome}: ${c.follow ? 'seguindo você' : 'esperando aqui'}`, kind: 'info' });
+      this._timer = 0;
+      return;
+    }
     if (target.kind === 'plant') {
       this.actions.colher(target.rec);
       this._timer = 0;

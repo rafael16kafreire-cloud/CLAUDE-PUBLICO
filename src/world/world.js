@@ -18,6 +18,8 @@ import { findRespawnPoints } from './respawn_points.js';
 import { DeathBag } from './death_bag.js';
 import { sharedTime } from './materials.js';
 import { createStructure } from './structures.js';
+import { BuildPiece, PIECES } from './building.js';
+import recipes from '../data/crafting/receitas.json';
 import { events, EV } from '../core/event_bus.js';
 import * as THREE from 'three';
 
@@ -123,9 +125,34 @@ export class World {
   // Coloca uma estrutura (fogueira, saco de dormir). d = { type, x, y, z, rot, id? }
   addStructure(d) {
     if (d.id && this.structures.some((s) => s.id === d.id)) return null;
-    const s = createStructure(this, d);
+    let s;
+    if (PIECES.includes(d.type)) {
+      s = new BuildPiece(this, d.type, new THREE.Vector3(d.x, d.y, d.z), d.rot, d.id);
+      if (d.open) s.applyState({ open: true }); // porta aberta
+    } else s = createStructure(this, d);
     if (s) this.structures.push(s);
     return s;
+  }
+
+  removeStructure(s) {
+    s.remove();
+    events.emit(EV.STRUCTURE_REMOVED, { structure: s });
+  }
+
+  recipeFor(type) {
+    return recipes.receitas.find((r) => r.resultado === type);
+  }
+
+  // Chão onde se pisa: terreno ou piso/teto/rampa construído
+  // (só conta superfície que não esteja muito acima de y).
+  groundAt(x, z, y = Infinity) {
+    let g = this.heightAt(x, z);
+    for (const s of this.structures) {
+      if (!s.isBuild || s.removed) continue;
+      const top = s.surfaceAt(x, z);
+      if (top !== null && top <= y + 0.6 && top > g) g = top;
+    }
+    return g;
   }
 
   structureById(id) {
@@ -140,8 +167,9 @@ export class World {
     events.emit(EV.DAWN, { day: this.day, slept: true });
   }
 
-  resolveCollisions(pos, radius, feetY) {
+  resolveCollisions(pos, radius, feetY, height) {
     this.vegetation.resolveCollisions(pos, radius, feetY);
+    for (const s of this.structures) if (s.isBuild && !s.removed) s.collide(pos, radius, feetY, height);
   }
 
   // ---------- sacos de morte / itens largados ----------

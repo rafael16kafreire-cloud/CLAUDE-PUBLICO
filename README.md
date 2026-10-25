@@ -4,6 +4,22 @@ Jogo 3D de sobrevivência com dinossauros. Sozinho (offline) ou em **co-op onlin
 Roda no celular (Android como app ou no navegador) e no PC.
 Visual estilizado, feito para ser leve.
 
+**Versão 0.8.0**
+- **Domar:** soco e clava dão *torpor* (sono). Com o torpor no máximo o bicho desmaia;
+  chegue perto e aperte Interagir para pôr a comida preferida dele no "prato" (ele come
+  uma a cada 3 s). Encheu a barra = domado. Se o torpor acabar antes, ele acorda bravo —
+  dê Baga-Escura para ele dormir mais. A lupa mostra o progresso.
+- **Domado:** segue você e defende (ataca quem te bate e quem você ataca). Interagir nele
+  manda *ficar* / *seguir*. Domado não some e vive bem mais.
+- **Montar:** F (ou botão Montar) perto de um domado que dá para montar (parassauro,
+  raptor, tricerátops, T-rex…). Joystick/WASD comanda, Correr corre, Atacar = o bicho
+  ataca. F de novo para descer.
+- **Construir:** Piso, Parede, Parede com Porta, Teto e Rampa (Inventário → Criar →
+  Construção). Selecione a peça na barra: aparece um fantasma verde onde ela vai ficar
+  (vermelho = não dá). Atacar coloca. As peças encaixam numa grade de 3 m; o teto vira
+  chão do segundo andar e a rampa sobe até ele. Parede segura você e os bichos.
+  Interagir numa peça desmonta (devolve metade); na porta, abre/fecha.
+
 **Versão 0.7.0**
 - **Chão de terra de verdade:** textura do arquivo *Soft Dirt Material* (cor + relevo)
   em toda a floresta, misturada com a cor de cada lugar.

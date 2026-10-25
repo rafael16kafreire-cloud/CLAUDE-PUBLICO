@@ -145,8 +145,7 @@ export class InspectPanel {
     const r = this.refs;
     if (all) {
       r.name.textContent = `${c.species.nome} · Nv ${c.level}`;
-      const len = c.species.comprimento_m ? ` · ${(c.scale * (c.mesh.geometry.boundingBox.max.z - c.mesh.geometry.boundingBox.min.z)).toFixed(1)} m` : '';
-      r.tags.textContent = `${c.sex}${c.isBaby ? ' · Filhote' : ''} · Selvagem · ${TEMPER[c.species.temperamento] ?? ''}${len}`;
+
       r['s-vida'].textContent = fmt(s.vida);
       r['s-forca'].textContent = `${s.forca}%`;
       r['s-peso'].textContent = `${fmt(s.peso)} kg`;
@@ -154,6 +153,10 @@ export class InspectPanel {
       r['s-velocidade'].textContent = `${(c.species.vel_correr * c.speedMul * 3.6).toFixed(0)} km/h`;
       r['s-torpor'].textContent = fmt(s.torpor);
     }
+    // situação muda com o tempo (filhote, desmaiado, domado)
+    const len = c.species.comprimento_m ? ` · ${(c.scale * (c.mesh.geometry.boundingBox.max.z - c.mesh.geometry.boundingBox.min.z)).toFixed(1)} m` : '';
+    const status = c.tamed ? 'Domado' : c.knockedOut ? `Desmaiado · domando ${Math.floor((c.tameProgress ?? 0) * 100)}%` : 'Selvagem';
+    r.tags.textContent = `${c.sex}${c.isBaby ? ' · Filhote' : ''} · ${status} · ${TEMPER[c.species.temperamento] ?? ''}${len}`;
     const bar = (k, v, max) => {
       r[`b-${k}`].style.transform = `scaleX(${Math.max(0, Math.min(1, v / max)).toFixed(3)})`;
       r[`t-${k}`].textContent = `${fmt(Math.ceil(v))} / ${fmt(max)}`;

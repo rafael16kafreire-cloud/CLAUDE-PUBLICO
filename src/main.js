@@ -14,6 +14,7 @@ import { PlayerCamera } from './player/player_camera.js';
 import { PlayerInteraction } from './player/player_interaction.js';
 import { Hud } from './ui/hud.js';
 import { InspectPanel } from './ui/inspect_panel.js';
+import { BuildGhost } from './world/building.js';
 import { Messages } from './ui/messages.js';
 import { TouchControls } from './ui/touch_controls.js';
 import { DeathScreen } from './ui/death_screen.js';
@@ -43,8 +44,7 @@ function detectTouch() {
 
 // Mensagens para recursos que chegam nas próximas fases.
 const COMING_SOON = {
-  build: 'Construção chega na Fase 6.',
-  mount: 'Montaria chega na Fase 9.',
+  build: 'Construir: crie Piso, Parede, Porta, Teto ou Rampa (Inventário → Criar → Construção), selecione na barra e Atacar para colocar.',
 };
 
 function boot(hotData = {}) {
@@ -148,6 +148,7 @@ function boot(hotData = {}) {
     world.localInventory = inventory;
     const interaction = new PlayerInteraction(player, world, camCtl, actions, inventory);
     const hud = new Hud(ui, player, (action) => onCornerButton(action));
+    const buildGhost = new BuildGhost(scene);
     const inspect = new InspectPanel(hud.el, () => creatures.findAimed(camera.position, camCtl.forward, 45));
     const messages = new Messages(ui);
     const touch = new TouchControls(ui, input);
@@ -192,7 +193,7 @@ function boot(hotData = {}) {
     game.world = world;
     game.player = player;
     ctx = {
-      world, player, camCtl, interaction, hud, inspect, messages, touch, death, debug, pause, creatures, hands,
+      world, player, camCtl, interaction, hud, inspect, buildGhost, messages, touch, death, debug, pause, creatures, hands,
       inventory, crafting, actions, hotbar, invScreen,
     };
     ctx.net = new Multiplayer({ world, player, creatures, inventory, actions, camCtl });
@@ -384,6 +385,21 @@ function boot(hotData = {}) {
     game.setState(STATE.MENU);
   }
 
+  // Montar / descer do bicho domado mais perto.
+  function toggleMount() {
+    const p = ctx.player;
+    if (p.riding) {
+      p.dismount();
+      return;
+    }
+    const c = ctx.creatures.findMountable(p, p.position, 5);
+    if (c) p.mount(c);
+    else {
+      const any = ctx.creatures.tamedBy(p).length;
+      events.emit(EV.MESSAGE, { text: any ? 'Chegue perto de um bicho domado que dá para montar.' : 'Você ainda não domou nenhum bicho. Desmaie um com soco/clava e dê comida.', kind: 'info' });
+    }
+  }
+
   function onCornerButton(action) {
     if (action === 'pause') {
       if (game.state === STATE.PLAYING) pauseGame();
@@ -476,9 +492,8 @@ function boot(hotData = {}) {
     if (input.wasPressed('inspect')) ctx.inspect.toggle();
     if (input.wasPressed('camera')) settings.set('cameraMode', ctx.camCtl.mode === 'primeira' ? 'terceira' : 'primeira');
     for (let i = 0; i < 8; i++) if (input.wasPressed(`slot${i + 1}`)) ctx.actions.pressHotbar(i);
-    for (const action of ['build', 'mount']) {
-      if (input.wasPressed(action)) events.emit(EV.MESSAGE, { text: COMING_SOON[action], kind: 'info' });
-    }
+    if (input.wasPressed('build')) events.emit(EV.MESSAGE, { text: COMING_SOON.build, kind: 'info' });
+    if (input.wasPressed('mount')) toggleMount();
   }
 
   // ---------- Qualidade automática ----------
@@ -587,7 +602,7 @@ function boot(hotData = {}) {
 
     handleActions();
     autoQuality(dt);
-    const { world, player, camCtl, interaction, hud, inspect, touch, debug, creatures, hands, crafting, invScreen, actions } = ctx;
+    const { world, player, camCtl, interaction, hud, inspect, buildGhost, touch, debug, creatures, hands, crafting, invScreen, actions } = ctx;
     const look = input.consumeLook();
     const sens = settings.get('sensitivity');
 
@@ -647,6 +662,10 @@ function boot(hotData = {}) {
     if (game.state !== STATE.MENU) {
       hud.update(dt);
       inspect.update(dt);
+      // fantasma da peça de construção na mão
+      const pl = game.state === STATE.PLAYING && !player.dead && !player.riding ? actions.buildPlacement(camCtl.yaw) : null;
+      if (pl) buildGhost.show(pl.type, pl);
+      else buildGhost.hide();
       touch.updateStates(player);
       // Criatura na mira: nome, nível e vida.
       targetTimer -= dt;

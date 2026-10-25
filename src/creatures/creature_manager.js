@@ -8,6 +8,7 @@
 import * as THREE from 'three';
 import data from '../data/creatures/criaturas.json';
 import { BALANCE } from '../core/balance.js';
+import { itemName } from '../items/items.js';
 import { events, EV } from '../core/event_bus.js';
 import { game } from '../core/game_manager.js';
 import { mulberry32 } from '../core/math.js';
@@ -98,7 +99,8 @@ export class CreatureManager {
       let d = Infinity;
       for (const p of players) d = Math.min(d, Math.hypot(c.pos.x - p.position.x, c.pos.z - p.position.z));
       const chasingPlayer = players.includes(c.target);
-      if ((c.state === CSTATE.DEAD && c.deadTime > this.cfg.corpo_dura_seg) || (d > despawn && !chasingPlayer)) {
+      const keep = c.tamed && c.alive; // domado nunca some
+      if ((c.state === CSTATE.DEAD && c.deadTime > this.cfg.corpo_dura_seg) || (d > despawn && !chasingPlayer && !keep)) {
         this.remove(c);
       }
     }
@@ -211,6 +213,13 @@ export class CreatureManager {
       baby.mother = mom;
       baby.home.copy(mom.home);
       baby.setGrowth(0.3);
+      if (mom.tamed) {
+        // filhote de domado já nasce domado
+        baby.tamed = true;
+        baby.owner = mom.owner;
+        baby.follow = true;
+        baby.name = mom.species.nome;
+      }
       const wait = () => 60 * (C.intervalo_cria_min[0] + this.rand() * (C.intervalo_cria_min[1] - C.intervalo_cria_min[0]));
       mom.nextBreed = mom.age + wait();
       dad.nextBreed = dad.age + wait();
@@ -359,7 +368,7 @@ export class CreatureManager {
   // Bando: os iguais por perto também atacam.
   alertPack(c, target) {
     for (const o of this.list) {
-      if (o !== c && o.alive && o.species.id === c.species.id && o.pos.distanceTo(c.pos) < 30 && !o.target) {
+      if (o !== c && o.alive && !o.tamed && !o.knockedOut && o.species.id === c.species.id && o.pos.distanceTo(c.pos) < 30 && !o.target) {
         o._chase(target);
       }
     }
@@ -408,6 +417,7 @@ export class CreatureManager {
     if (target === game.player) {
       const p = game.player;
       if (p.dead) return;
+      this.defendOwner(p, attacker);
       p.stats.damage(amount, `criatura:${attacker.species.nome}`);
       // empurrão para trás
       const dx = p.position.x - attacker.pos.x;
@@ -462,7 +472,7 @@ export class CreatureManager {
     const fl = Math.hypot(forward.x, forward.z) || 1;
     const pt = new THREE.Vector3();
     for (const c of this.list) {
-      if (!c.alive) continue;
+      if (!c.alive || (c.tamed && c.owner === player) || c.rider) continue;
       // mede até a parte do corpo mais perto (cabeça, barriga ou cauda)
       c.closestBodyPoint(p.x, p.z, pt);
       const dx = pt.x - p.x;
@@ -479,8 +489,92 @@ export class CreatureManager {
         bestD = d;
       }
     }
-    if (best) best.takeDamage(damage, player);
+    if (best) {
+      best.takeDamage(damage, player);
+      this.defendOwner(player, best);
+    }
     return best;
+  }
+
+  // Bichos domados de quem apanhou/atacou vão para cima do inimigo.
+  defendOwner(owner, enemy) {
+    if (!enemy || enemy === owner || !enemy.alive || enemy.tamed || enemy.knockedOut) return;
+    for (const c of this.list) {
+      if (!c.tamed || c.owner !== owner || !c.alive || c.rider || c.damage <= 0) continue;
+      if (c.target || c.pos.distanceTo(enemy.pos ?? enemy.position) > 40) continue;
+      c._chase(enemy);
+    }
+  }
+
+  // Montado: o bicho ataca o que estiver na frente dele.
+  // Devolve o tempo até poder atacar de novo.
+  riderAttack(mount, rider) {
+    const sp = mount.species;
+    mount.attackAnim = 1;
+    sound.creature(mount, 'ataque');
+    const fx = -Math.sin(mount.yaw);
+    const fz = -Math.cos(mount.yaw);
+    const head = new THREE.Vector3(mount.pos.x + fx * mount.bodyFront * mount.scale, mount.pos.y, mount.pos.z + fz * mount.bodyFront * mount.scale);
+    const reach = (sp.alcance_ataque ?? 1.5) * mount.scale + 1.5;
+    let best = null;
+    let bestD = reach;
+    const pt = new THREE.Vector3();
+    for (const c of this.list) {
+      if (c === mount || !c.alive || (c.tamed && c.owner === rider)) continue;
+      c.closestBodyPoint(head.x, head.z, pt);
+      const d = Math.hypot(pt.x - head.x, pt.z - head.z) - Math.min(c.radius, 1.2);
+      if (d < bestD) {
+        best = c;
+        bestD = d;
+      }
+    }
+    if (best) {
+      this.hit(mount, best, mount.damage);
+      this.defendOwner(rider, best);
+    }
+    return sp.intervalo_ataque ?? 1.2;
+  }
+
+  // Bichos domados por este jogador.
+  tamedBy(owner) {
+    return this.list.filter((c) => c.tamed && c.owner === owner && c.alive);
+  }
+
+  // Domado montável mais perto (para o botão Montar).
+  findMountable(owner, pos, maxD = 5) {
+    let best = null;
+    let bestD = maxD;
+    for (const c of this.tamedBy(owner)) {
+      if (!c.species.pode_montar || c.flies || c.isBaby) continue;
+      const d = Math.hypot(c.pos.x - pos.x, c.pos.z - pos.z) - c.radius;
+      if (d < bestD) {
+        best = c;
+        bestD = d;
+      }
+    }
+    return best;
+  }
+
+  onKnockOut(c, by) {
+    if (by !== game.player) return;
+    const can = c.species.pode_domar;
+    events.emit(EV.MESSAGE, {
+      text: can ? `${c.species.nome} desmaiou! Interagir para dar ${itemName(c.species.comida_preferida)} e domar.` : `${c.species.nome} desmaiou (não dá para domar).`,
+      kind: can ? 'gain' : 'info',
+    });
+  }
+
+  onWake(c) {
+    if (c.tamer === game.player) events.emit(EV.MESSAGE, { text: `${c.species.nome} acordou!`, kind: 'warn' });
+  }
+
+  onTamed(c, owner) {
+    if (owner === game.player) {
+      const xp = Math.round(c.species.xp * (1 + c.level * 0.05) * 1.5);
+      owner.stats.addXP(xp);
+      events.emit(EV.MESSAGE, { text: `${c.species.nome} domado! +${xp} XP`, kind: 'gain' });
+      events.emit(EV.CREATURE_TAMED, { creature: c });
+    }
   }
 
   // Criatura na mira (para mostrar nome, nível e vida).

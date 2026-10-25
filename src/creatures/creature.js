@@ -23,6 +23,8 @@ export const CSTATE = {
   ATTACK: 'atacar',
   RETURN: 'voltar',
   DEAD: 'morto',
+  KO: 'desmaiado',   // torpor no máximo: dá para domar
+  FOLLOW: 'seguir',  // domado indo atrás do dono
 };
 
 const TAU = Math.PI * 2;
@@ -176,6 +178,93 @@ export class Creature {
     return this.state !== CSTATE.DEAD;
   }
 
+  get knockedOut() {
+    return this.state === CSTATE.KO;
+  }
+
+  // ---------------------------------------------------------
+  // Domar
+  // ---------------------------------------------------------
+  // Quantas comidas preferidas precisa para domar.
+  get tameNeed() {
+    const D = BALANCE.domar;
+    return Math.max(1, Math.round(D.comidas_base + D.comidas_por_nivel * (this.level - 1)));
+  }
+
+  addTorpor(amount, by) {
+    if (!this.alive || this.tamed || amount <= 0) return;
+    this.torpor = Math.min(this.stats.torpor, this.torpor + amount);
+    if (this.torpor >= this.stats.torpor && this.state !== CSTATE.KO) this._knockOut(by);
+  }
+
+  _knockOut(by) {
+    this._setState(CSTATE.KO);
+    this.target = null;
+    this.threat = null;
+    this.speed = 0;
+    this.tamer = by;
+    this.tameProgress = this.tameProgress ?? 0;
+    this.tameFood = this.tameFood ?? {};
+    this._eatT = 1;
+    sound.creature(this, 'dor');
+    this.manager.onKnockOut?.(this, by);
+  }
+
+  // Coloca comida no "prato" do bicho desmaiado (ele come aos poucos).
+  feed(id, qty) {
+    this.tameFood[id] = (this.tameFood[id] ?? 0) + qty;
+  }
+
+  foodValue(id) {
+    if (id === this.species.comida_preferida) return 1;
+    return BALANCE.domar.comida_qualquer;
+  }
+
+  _updateKO(dt) {
+    const D = BALANCE.domar;
+    this.speed = 0;
+    this.torpor -= this.stats.torpor * D.desmaio_cai_seg * dt;
+    // come uma comida do prato de tempos em tempos
+    this._eatT -= dt;
+    if (this._eatT <= 0) {
+      this._eatT = D.comer_a_cada_seg;
+      const id = Object.keys(this.tameFood).find((k) => this.tameFood[k] > 0);
+      if (id) {
+        this.tameFood[id] -= 1;
+        this.tameProgress = Math.min(1, this.tameProgress + this.foodValue(id) / this.tameNeed);
+        sound.play('comer', this.pos);
+        if (this.tameProgress >= 1) {
+          this._tame(this.tamer);
+          return;
+        }
+      }
+    }
+    if (this.torpor <= 0) {
+      // acordou antes de domar: perde metade do progresso e fica bravo
+      this.torpor = 0;
+      this.tameProgress *= 0.5;
+      this._setState(CSTATE.WANDER);
+      const t = this.tamer;
+      if (t && !t.dead && (this.species.temperamento === 'agressivo' || this.species.revida)) this._chase(t);
+      else if (t) this._flee(t);
+      this.manager.onWake?.(this);
+    }
+  }
+
+  _tame(owner) {
+    this.tamed = true;
+    this.owner = owner;
+    this.follow = true;
+    this.torpor = 0;
+    this.tameFood = {};
+    this.home.set(this.pos.x, this.pos.z);
+    this._setState(CSTATE.IDLE);
+    this.idleFor = 2;
+    this.name = this.species.nome;
+    sound.creature(this, 'chamado');
+    this.manager.onTamed?.(this, owner);
+  }
+
   get radius() {
     return this.species.raio * this.scale;
   }
@@ -212,13 +301,22 @@ export class Creature {
       this._sync(dt);
       return;
     }
+    // desmaiado: deita e come o que tiver no prato
+    this.koAnim = clamp((this.koAnim ?? 0) + (this.state === CSTATE.KO ? dt * 1.5 : -dt * 1.2), 0, 1);
+    if (this.state === CSTATE.KO) {
+      this._updateKO(dt);
+      this._animate(dt, ctx, 0);
+      this._sync(dt);
+      return;
+    }
+    if (this.torpor > 0) this.torpor = Math.max(0, this.torpor - this.stats.torpor * BALANCE.domar.torpor_cai_seg * dt);
 
     // de vez em quando, um chamado à toa
     if (this.rand() < dt * 0.025) sound.creature(this, this.state === CSTATE.CHASE ? 'rugido' : 'chamado');
 
     // idade: filhote cresce; velho morre (não vale para o convidado no co-op)
     if (!this.netControlled && !this.species.ambiente) {
-      this.age += dt;
+      this.age += this.tamed ? dt * 0.25 : dt; // domado vive bem mais
       if (this.growth < 1) {
         const g = Math.min(1, 0.3 + 0.7 * this.age / (BALANCE.criaturas.crescer_min * 60));
         if (g - this.growth > 0.01 || g === 1) this.setGrowth(g);
@@ -248,7 +346,8 @@ export class Creature {
       this._think(ctx);
     }
 
-    if (this.flies) this._updateFlying(dt, ctx);
+    if (this.rider) this._updateRidden(dt);
+    else if (this.flies) this._updateFlying(dt, ctx);
     else this._updateGround(dt, ctx);
 
     const yawVel = angleDelta(prevYaw, this.yaw) / Math.max(dt, 1e-3);
@@ -273,6 +372,10 @@ export class Creature {
           player = p;
         }
       }
+    }
+    if (this.tamed) {
+      this._thinkTamed();
+      return;
     }
     const temp = sp.temperamento;
     const dPlayer = player.dead ? Infinity : this._dist2D(player.position);
@@ -324,6 +427,48 @@ export class Creature {
     if (this.state !== CSTATE.RETURN && this.home.distanceTo(new THREE.Vector2(this.pos.x, this.pos.z)) > 110) {
       this._setState(CSTATE.RETURN);
     }
+  }
+
+  // Domado: defende o dono e vai atrás dele (se mandado seguir).
+  _thinkTamed() {
+    if (this.rider) return;
+    const o = this.owner;
+    if (this.state === CSTATE.CHASE || this.state === CSTATE.ATTACK) {
+      const t = this.target;
+      const far = t && this._dist2D(t.position) > 45;
+      const leftOwner = this.follow && o && this._dist2D(o.position) > 60;
+      if (!t || t.alive === false || t.dead || far || leftOwner || this.blockedTime > 5 || t === o) {
+        this.target = null;
+        this._setState(CSTATE.IDLE);
+        this.idleFor = 1;
+      }
+      return;
+    }
+    if (this.state === CSTATE.FLEE) this._setState(CSTATE.IDLE);
+    if (!this.follow || !o || o.dead) {
+      if (this.state === CSTATE.FOLLOW) this._setState(CSTATE.IDLE);
+      return;
+    }
+    const d = this._dist2D(o.position);
+    const near = BALANCE.domar.seguir_m + this.radius;
+    if (d > near + 2 && this.state !== CSTATE.FOLLOW) this._setState(CSTATE.FOLLOW);
+    else if (d <= near && this.state === CSTATE.FOLLOW) {
+      this._setState(CSTATE.IDLE);
+      this.idleFor = 1e9;
+    }
+  }
+
+  // Montado: quem anda é o jogador (rideInput vem do Player).
+  _updateRidden(dt) {
+    const inp = this.rideInput ?? { x: 0, z: 0, mag: 0, run: false };
+    if (inp.mag > 0.05) {
+      const speed = (inp.run ? this.runSpeed : this.walkSpeed * 1.4) * inp.mag;
+      this._steer(dt, this.pos.x + inp.x * 20, this.pos.z + inp.z * 20, speed);
+    } else {
+      this._brake(dt);
+    }
+    const g = this._groundY(this.pos.x, this.pos.z);
+    this.pos.y += (g - this.pos.y) * Math.min(1, dt * 10);
   }
 
   // Dá para alcançar? (bichos da água só pegam quem está na água/beira)
@@ -400,6 +545,13 @@ export class Creature {
         this._brake(dt);
         if (this.stateTime > (this.idleFor ?? 4)) this._setState(CSTATE.WANDER);
         break;
+      case CSTATE.FOLLOW: {
+        const o = this.owner;
+        if (!o) break;
+        const d = this._dist2D(o.position);
+        this._steer(dt, o.position.x, o.position.z, d > 14 ? this.runSpeed : this.walkSpeed * 1.5);
+        break;
+      }
       case CSTATE.RETURN:
         if (this._steer(dt, this.home.x, this.home.y, this.walkSpeed * 1.3) || this._dist2DXY(this.home.x, this.home.y) < 10) {
           this._setState(CSTATE.WANDER);
@@ -564,6 +716,13 @@ export class Creature {
     this.blockedTime = Math.max(0, this.blockedTime - dt);
     this.pos.x = nx;
     this.pos.z = nz;
+    // paredes construídas seguram os bichos (menos os voadores)
+    if (!flying && this.world.structures.length) {
+      const bx = this.pos.x;
+      const bz = this.pos.z;
+      for (const s of this.world.structures) if (s.isBuild && !s.removed) s.collide(this.pos, Math.min(this.radius, 1.5) * 0.8, this.pos.y, this.height);
+      if (Math.hypot(this.pos.x - bx, this.pos.z - bz) > 0.01) this.blockedTime += dt * 0.5;
+    }
     // desvia de troncos e pedras (os gigantes passam por cima de tudo)
     if (!flying && this.radius < 1.6) {
       const bx = this.pos.x;
@@ -591,7 +750,7 @@ export class Creature {
   }
 
   _groundY(x, z) {
-    const g = this.world.heightAt(x, z);
+    const g = this.aquatic ? this.world.heightAt(x, z) : this.world.groundAt(x, z, this.pos.y + 0.3);
     const w = this.world.waterAt(x, z);
     if (this.aquatic && w) return Math.max(g + this.height, (w.level + g) * 0.5);
     if (this.swims && w) return Math.max(g, w.level - this.height * 0.75);
@@ -648,6 +807,12 @@ export class Creature {
     }
     const sp = this.species;
     sound.creature(this, 'dor');
+    if (this.state === CSTATE.KO) return; // desmaiado não reage
+    if (this.tamed) {
+      // domado: revida quem bateu (menos o dono)
+      if (attacker && attacker !== this.owner && !this.rider && this.damage > 0) this._chase(attacker);
+      return;
+    }
     if (sp.temperamento === 'agressivo' || sp.revida) {
       this._chase(attacker);
       if (sp.temperamento === 'agressivo') this.manager.alertPack(this, attacker);
@@ -869,6 +1034,7 @@ export class Creature {
       this.speed += (moved - this.speed) * Math.min(1, dt * 6);
     }
     if (this.state === CSTATE.DEAD) this.speed = 0;
+    this.koAnim = clamp((this.koAnim ?? 0) + (this.state === CSTATE.KO ? dt * 1.5 : -dt * 1.2), 0, 1);
     const yawVel = angleDelta(prevYaw, this.yaw) / Math.max(dt, 1e-3);
     this._animate(dt, ctx, yawVel);
     this._sync(dt);
@@ -892,6 +1058,13 @@ export class Creature {
       return;
     }
     m.position.copy(this.pos);
+    const ko = this.koAnim ?? 0;
+    if (ko > 0) {
+      // desmaiado: deita de lado
+      const side = ['snake', 'croc', 'fish', 'spider'].includes(this.spec.body) ? Math.PI * 0.5 : Math.PI * 0.45;
+      m.rotation.set(this.pitch, this.yaw, this.roll + side * ko * ko * (3 - 2 * ko), 'YXZ');
+      return;
+    }
     m.rotation.set(this.pitch, this.yaw, this.roll, 'YXZ');
   }
 }

@@ -17,6 +17,8 @@ export const EV = {
   XP_GAINED: 'xp_gained',                 // { amount }
   LEVEL_UP: 'level_up',                   // { level, points }
   SKILLS_CHANGED: 'skills_changed',       // { key } ponto de habilidade gasto
+  CREATURE_TAMED: 'creature_tamed',       // { creature }
+  STRUCTURE_REMOVED: 'structure_removed', // { structure } (desmontada)
   SETTINGS_CHANGED: 'settings_changed',   // { key, value, settings }
   CAMERA_MODE: 'camera_mode',             // { mode }
   PLAYER_HURT: 'player_hurt',             // { amount, source }
