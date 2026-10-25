@@ -63,6 +63,7 @@ export default {
   movimento: {
     andar: 4.2,
     correr: 7.5,
+    agachar_intervalo_seg: 0.45, // tempo mínimo entre agachar e levantar
     agachado: 2.0,
     na_agua_rasa: 0.7,         // andando com água pela cintura: 70% da velocidade
     nadar: 3.0,
@@ -180,6 +181,7 @@ export default {
   // Criaturas (dados de cada espécie: data/creatures/criaturas.json)
   // ---------------------------------------------------------
   criaturas: {
+    carnivoro_cansado: 1.12,   // carnívoro sem fôlego ainda corre 12% mais que você andando
     raio_spawn_min_m: 55,      // nascem a pelo menos X m do jogador
     raio_spawn_max_m: 130,     // e no máximo a Y m
     raio_despawn_m: 190,       // somem quando ficam mais longe que isso

@@ -275,7 +275,11 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     ctx.player.stats.water = 40;
   });
   await frames(page, 20);
-  await gameWait(page, 400);
+  for (let t = 0; t < 10; t++) {
+    await gameWait(page, 400);
+    const pr = await page.evaluate(() => document.querySelector('.prompt:not([hidden])')?.textContent ?? '');
+    if (/salgada|beber/i.test(pr)) break;
+  }
   await page.keyboard.press('KeyE');
   await gameWait(page, 400);
   const seaMsg = await page.evaluate(() => [...document.querySelectorAll('.msg')].map((m) => m.textContent).join(' | '));
@@ -355,7 +359,14 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     await gameWait(page, 520);
   }
   const stones = await page.evaluate(() => window.__t.count('pedra'));
-  check('Coleta: socar pedra dá pedra', stones >= 2, `pedra ${stones}`);
+  check('Coleta: pedra grande não dá pedra na mão (só com ferramenta)', stones === 0, `pedra ${stones}`);
+  // pedra vem das pedrinhas do chão (Interagir)
+  await page.evaluate(() => window.__t.faceRec('pedrinhas'));
+  await frames(page, 6);
+  await page.keyboard.press('KeyE');
+  await gameWait(page, 500);
+  const pebbles = await page.evaluate(() => window.__t.count('pedra'));
+  check('Coleta: pedrinhas do chão dão pedra', pebbles >= 2, `pedra ${pebbles}`);
 
   // Colher bagas (Interagir)
   await page.evaluate(() => window.__t.faceRec('arbusto_mejo'));
@@ -504,7 +515,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   await gameWait(page, 400);
   const firePrompt = await page.evaluate(() => document.querySelector('.prompt:not([hidden])')?.textContent ?? '');
   await page.keyboard.press('KeyE');
-  await gameWait(page, 13500);
+  await gameWait(page, 17000);
   const cooked = await page.evaluate(() => {
     const c = window.__ilha.ctx;
     const f = c.world.structures.find((x) => x.type === 'fogueira');

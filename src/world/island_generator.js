@@ -427,6 +427,13 @@ export class IslandMap {
         lvl = Math.min(lvl, hAt(p.x, p.z) - C.profundidade_m * 0.45);
         p.level = Math.max(lvl, 0.15);
       }
+      // suaviza: média com os vizinhos, sem subir (a água só desce)
+      for (let pass = 0; pass < 3; pass++) {
+        for (let k = 1; k < pts.length - 1; k++) {
+          const m = (pts[k - 1].level + pts[k].level + pts[k + 1].level) / 3;
+          pts[k].level = Math.min(pts[k - 1].level, Math.max(m, pts[k + 1].level));
+        }
+      }
       this.streams.push({ pts, halfW, end });
     }
     // cava o leito: perto da linha do córrego o chão desce até o fundo
@@ -447,10 +454,21 @@ export class IslandMap {
           const xx = i * this.cell - this.half;
           const q = this._nearestStreamPoint(st, xx, zz);
           if (q.d > R) continue;
-          const bed = q.level - C.profundidade_m * 0.6;
-          const k = smoothstep(R, halfW * 0.6, q.d); // 1 no meio, 0 na margem
           const idx = j * v + i;
-          H[idx] = Math.min(H[idx], lerp(H[idx], bed, k));
+          const bed = q.level - C.profundidade_m * 0.6;
+          // a grade do chão tem 5 m: o leito precisa ter pelo menos uma
+          // célula de largura para a água não aparecer fora dele
+          const inner = Math.max(halfW, this.cell * 0.8);
+          if (q.d < inner) {
+            // leito: fundo liso, um pouco mais fundo no meio
+            H[idx] = Math.min(H[idx], lerp(bed, q.level - 0.3, q.d / inner));
+          } else {
+            // margem: barranco suave que sempre fica acima da água (a água
+            // não "flutua" sobre chão mais baixo) e emenda no terreno
+            const bank = q.level + 0.4;
+            const k = smoothstep(R + inner - halfW, inner, q.d);
+            H[idx] = lerp(H[idx], Math.max(bank, Math.min(H[idx], bank + (q.d - inner) * 0.55)), k);
+          }
         }
       }
     }
@@ -470,7 +488,7 @@ export class IslandMap {
       const d = Math.hypot(x - a.x - ex * t, z - a.z - ez * t);
       if (d < best) {
         best = d;
-        level = t < 0.5 ? a.level : b.level;
+        level = a.level + (b.level - a.level) * t; // água desce em rampa
       }
     }
     return { d: best, level };

@@ -206,6 +206,12 @@ export class World {
       camera.far = want + 40;
       camera.updateProjectionMatrix();
     }
+    // neblina leve nos morros da mata (chão alto, fora da neve)
+    const ground = Math.max(this.heightAt(camera.position.x, camera.position.z), 0);
+    const hill = Math.min(1, Math.max(0, (ground - 14) / 26));
+    const mist = hill * hill * (3 - 2 * hill) * (1 - cold);
+    this.sky.mist = (this.sky.mist ?? 0) + (mist - (this.sky.mist ?? 0)) * Math.min(1, dt * 0.5);
+    if (!this.sky.underwater) this.sky.scene.fog.density = (2.0 / this.viewDistance) * (1 + this.sky.mist * 1.6);
   }
 
   setQuality(q) {

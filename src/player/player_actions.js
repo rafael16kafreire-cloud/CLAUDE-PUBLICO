@@ -108,6 +108,12 @@ export class PlayerActions {
       shakeAt(rec.x, rec.z, 0.4);
       return false;
     }
+    // pedra grande: com a mão não sai nada (pedra vem das pedrinhas do chão)
+    if (res.so_ferramenta && (mode === 'mao' || mode === 'colher')) {
+      if (mode === 'mao') events.emit(EV.MESSAGE, { text: `${res.nome}: precisa de picareta ou machado. Pegue pedrinhas no chão.`, kind: 'warn' });
+      sound.play('pedra', new THREE.Vector3(rec.x, this.player.position.y + 1, rec.z), { volume: 0.5 });
+      return false;
+    }
     const table = res[mode] ?? res.mao;
     if (!table) return false;
     const got = {};

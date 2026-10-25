@@ -184,7 +184,11 @@ export class Creature {
 
   // correndo gasta stamina; sem stamina só anda até recuperar
   get runSpeed() {
-    if (this.tired) return this.walkSpeed * 1.2;
+    if (this.tired) {
+      // carnívoro cansado ainda é mais rápido que você andando (corra!)
+      const hunter = this.species.dieta === 'carnivoro' && !this.flies && !this.aquatic && this.radius > 0.4;
+      return Math.max(this.walkSpeed * 1.2, hunter ? BALANCE.movimento.andar * BALANCE.criaturas.carnivoro_cansado : 0);
+    }
     if (this.landed && this.species.vel_chao) return this.species.vel_chao[1] * this.speedMul;
     return this.species.vel_correr * this.speedMul;
   }

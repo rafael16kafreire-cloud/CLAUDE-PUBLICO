@@ -58,8 +58,10 @@ export class Player {
     return RADIUS;
   }
 
+  // altura dos olhos: desce/sobe devagar ao agachar (não "pula")
   get eyeHeight() {
-    return this.crouching && !this.swimming ? EYE_CROUCH : EYE_STAND;
+    if (this.swimming) return EYE_STAND;
+    return this._eye ?? (this.crouching ? EYE_CROUCH : EYE_STAND);
   }
 
   spawnAt(point) {
@@ -113,7 +115,14 @@ export class Player {
     if (this.swimming) {
       this._swim(dt, input, cam, mv, mag, runRequest, body);
     } else {
-      if (input.wasPressed('crouch')) this.crouching = !this.crouching;
+      // agachar/levantar tem um tempinho (não dá para ficar "piscando")
+      this._crouchCD = Math.max(0, (this._crouchCD ?? 0) - dt);
+      const eyeTarget = this.crouching ? EYE_CROUCH : EYE_STAND;
+      this._eye = (this._eye ?? eyeTarget) + (eyeTarget - (this._eye ?? eyeTarget)) * Math.min(1, dt * 8);
+      if (input.wasPressed('crouch') && this._crouchCD <= 0) {
+        this.crouching = !this.crouching;
+        this._crouchCD = BALANCE.movimento.agachar_intervalo_seg;
+      }
       this._walk(dt, input, dirX, dirZ, mag, runRequest, body ? depth : 0);
     }
 

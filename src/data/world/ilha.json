@@ -98,7 +98,7 @@
   },
 
   "_corregos": "Córregos na mata: nascem em morros (altura_nascente_m) entre z_min e z_max, descem até o pântano/mar/baixada. largura_m = largura da água; margem_m = barranco em volta; profundidade_m = fundura do leito.",
-  "corregos": { "quantidade": 9, "largura_m": 5, "margem_m": 6, "profundidade_m": 1.6, "altura_nascente_m": 14, "comprimento_min_m": 150, "comprimento_max_m": 1100, "z_min": -650, "z_max": 1400 },
+  "corregos": { "quantidade": 9, "largura_m": 5, "margem_m": 9, "profundidade_m": 1.3, "altura_nascente_m": 14, "comprimento_min_m": 150, "comprimento_max_m": 1100, "z_min": -650, "z_max": 1400 },
 
   "pantano": {
     "nivel_agua_m": 4.2,
@@ -149,14 +149,14 @@
         "sumauma": 0.045, "arvore_dossel": 0.17, "arvore_media": 0.12, "acai": 0.07,
         "samambaia_gigante": 0.08, "bananeira": 0.035, "samambaia": 0.16,
         "arbusto_mejo": 0.025, "arbusto_escura": 0.02, "arbusto_frutas": 0.015,
-        "tronco_caido": 0.025, "pedra_musgo": 0.022, "arvore_folhosa": 0.03, "arvore_folhosa2": 0.03, "arvore_agar": 0.035
+        "tronco_caido": 0.025, "pedra_musgo": 0.022, "arvore_folhosa": 0.022, "arvore_folhosa2": 0.022, "arvore_agar": 0.025
       },
       "igapo": {
         "arvore_dossel": 0.1, "acai": 0.12, "mangue": 0.1, "samambaia_gigante": 0.06,
         "samambaia": 0.12, "bananeira": 0.03, "arbusto_mejo": 0.02, "tronco_caido": 0.03, "junco": 0.12
       },
       "neve": {
-        "pinheiro_neve": 0.12, "arvore_seca": 0.012, "arvore_morta_neve": 0.008, "rochedo": 0.05, "minerio_ferro": 0.012, "pedrinhas": 0.03, "gravetos": 0.025
+        "pinheiro_neve": 0.12, "arvore_seca": 0.012, "arvore_morta_neve": 0.008, "rochedo": 0.05, "minerio_ferro": 0.012, "pedrinhas": 0.06, "gravetos": 0.025
       },
       "pantano": {
         "mangue": 0.09, "arvore_morta": 0.04, "junco": 0.22, "taboa": 0.12,
@@ -167,9 +167,9 @@
     "sub_bosque": {
       "passo_m": 3,
       "biomas": {
-        "selva": { "capim": 0.1, "samambaia": 0.34, "arbusto": 0.08, "pedrinhas": 0.03, "gravetos": 0.05, "samambaia_gigante": 0.045, "arvore_media": 0.03, "acai": 0.015, "arbusto_mejo": 0.008, "arbusto_escura": 0.006 },
-        "igapo": { "samambaia": 0.22, "junco": 0.1, "arbusto": 0.04, "gravetos": 0.03, "pedrinhas": 0.01 },
-        "praia": { "capim_praia": 0.05, "arbusto": 0.02, "pedrinhas": 0.03, "gravetos": 0.025 },
+        "selva": { "capim": 0.1, "samambaia": 0.34, "arbusto": 0.08, "pedrinhas": 0.07, "gravetos": 0.05, "samambaia_gigante": 0.045, "arvore_media": 0.03, "acai": 0.015, "arbusto_mejo": 0.008, "arbusto_escura": 0.006 },
+        "igapo": { "samambaia": 0.22, "junco": 0.1, "arbusto": 0.04, "gravetos": 0.03, "pedrinhas": 0.03 },
+        "praia": { "capim_praia": 0.05, "arbusto": 0.02, "pedrinhas": 0.06, "gravetos": 0.025 },
         "neve": { "arbusto_neve": 0.16, "capim": 0.04 }
       }
     }

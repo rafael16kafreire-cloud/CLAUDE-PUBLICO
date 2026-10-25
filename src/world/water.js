@@ -90,11 +90,11 @@ export class WaterSystem {
     const idx = [];
     for (const st of streams) {
       const P = st.pts;
-      const w = st.halfW + 1.5; // a fita entra um pouco no barranco
+      const w = st.halfW; // a fita encontra o barranco (o chão cobre a borda)
       for (let k = 0; k < P.length - 1; k++) {
         const a = P[k];
         const b = P[k + 1];
-        const body = new WaterBody({ id: 'corrego', name: 'Córrego', fresh: true, level: a.level });
+        const body = new WaterBody({ id: 'corrego', name: 'Córrego', fresh: true, level: (a.level + b.level) / 2 });
         body.wave = 0;
         body.under = { color: '#3d6a5e', density: 0.18, rays: false };
         body.seg = { ax: a.x, az: a.z, bx: b.x, bz: b.z, r: st.halfW };
@@ -113,9 +113,11 @@ export class WaterSystem {
         const nz = dx / l * w;
         const ex = dx / l * 0.8;
         const ez = dz / l * 0.8;
-        const y = a.level;
+        // água em rampa: cada ponta na altura do seu ponto
+        const ya = a.level;
+        const yb = b.level;
         const i0 = pos.length / 3;
-        pos.push(a.x - ex + nx, y, a.z - ez + nz, a.x - ex - nx, y, a.z - ez - nz, b.x + ex + nx, y, b.z + ez + nz, b.x + ex - nx, y, b.z + ez - nz);
+        pos.push(a.x - ex + nx, ya, a.z - ez + nz, a.x - ex - nx, ya, a.z - ez - nz, b.x + ex + nx, yb, b.z + ez + nz, b.x + ex - nx, yb, b.z + ez - nz);
         idx.push(i0, i0 + 2, i0 + 1, i0 + 1, i0 + 2, i0 + 3);
       }
     }
