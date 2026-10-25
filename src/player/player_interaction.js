@@ -75,31 +75,41 @@ export class PlayerInteraction {
     const cr = this._creatureTarget(camPos, f);
     if (cr) return cr;
 
-    // 2) Planta para colher (bagas, bananas, fibra)
+    // 2) Água onde o jogador está ou na mira (distância até ela)
+    let water = null;
+    let waterD = Infinity;
+    const here = this.world.waterAt(p.x, p.z);
+    if (here && here.level > p.y + 0.15) {
+      water = here;
+      waterD = 0;
+    } else {
+      const camDist = camPos.distanceTo(p);
+      for (let t = 0.3; t < camDist + WATER_REACH; t += 0.3) {
+        const q = this._q.copy(camPos).addScaledVector(f, t);
+        const ground = this.world.heightAt(q.x, q.z);
+        const body = this.world.waterAt(q.x, q.z);
+        if (body && q.y <= body.level + 0.05) {
+          const d = Math.hypot(q.x - p.x, q.z - p.z);
+          if (d <= WATER_REACH) {
+            water = body;
+            waterD = d;
+          }
+          break;
+        }
+        if (q.y < ground) break;
+      }
+    }
+
+    // 3) Planta para colher (bagas, bananas, fibra) – se a água não
+    //    estiver mais perto (na beira da água, beber ganha)
     const rec = this.actions.findHarvestable(f);
-    if (rec) {
+    if (rec && !(water && waterD <= Math.hypot(rec.x - p.x, rec.z - p.z))) {
       const res = this.world.vegetation.resourceOf(rec);
       const first = Object.keys(res.colher)[0];
       const label = res.rotulo ?? (first === 'banana' ? 'Pegar bananas' : `Colher ${itemName(first)}`);
       return { kind: 'plant', rec, text: label };
     }
-
-    // 3) Água onde o jogador está
-    const here = this.world.waterAt(p.x, p.z);
-    if (here && here.level > p.y + 0.15) return this._waterTarget(here);
-
-    // 4) Água na mira
-    const camDist = camPos.distanceTo(p);
-    for (let t = 0.3; t < camDist + WATER_REACH; t += 0.3) {
-      const q = this._q.copy(camPos).addScaledVector(f, t);
-      const ground = this.world.heightAt(q.x, q.z);
-      const body = this.world.waterAt(q.x, q.z);
-      if (body && q.y <= body.level + 0.05) {
-        if (Math.hypot(q.x - p.x, q.z - p.z) <= WATER_REACH) return this._waterTarget(body);
-        break;
-      }
-      if (q.y < ground) break;
-    }
+    if (water) return this._waterTarget(water);
 
     // 5) Dica do que sai batendo (árvore, pedra, tronco, carcaça)
     const corpse = this.world.creatures?.findCorpse(p, f, 3);
