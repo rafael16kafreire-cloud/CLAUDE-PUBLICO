@@ -19,6 +19,8 @@ import { PlayerInteraction } from './player/player_interaction.js';
 import { Hud } from './ui/hud.js';
 import { InspectPanel } from './ui/inspect_panel.js';
 import { BuildGhost } from './world/building.js';
+import { saddleFor } from './creatures/saddle.js';
+import { itemName } from './items/items.js';
 import { loadGame, saveGame, clearSave, saveSlot, useSlot } from './core/save.js';
 import { Messages } from './ui/messages.js';
 import { TouchControls } from './ui/touch_controls.js';
@@ -128,6 +130,7 @@ function boot(hotData = {}) {
     composer.setSize(window.innerWidth, window.innerHeight);
   }
 
+  let baseFov = 70;
   function resize() {
     const w = window.innerWidth;
     const h = window.innerHeight;
@@ -135,7 +138,8 @@ function boot(hotData = {}) {
     composer?.setPixelRatio(renderer.getPixelRatio());
     composer?.setSize(w, h);
     camera.aspect = w / h;
-    camera.fov = w < h ? 82 : 70; // celular em pé: campo de visão maior
+    baseFov = w < h ? 82 : 70; // celular em pé: campo de visão maior
+    camera.fov = baseFov;
     camera.updateProjectionMatrix();
   }
   window.addEventListener('resize', resize);
@@ -209,9 +213,11 @@ function boot(hotData = {}) {
     player.onImpact = (k = 0.7) => camCtl.shake(k);
     player.onPunch = (kind) => {
       hands.swing(kind);
-      camCtl.shake(0.3);
-      sound.play('esforco');
-      sound.play('golpe');
+      camCtl.shake(kind === 'pistola' ? 0.9 : 0.3);
+      if (kind !== 'arco' && kind !== 'pistola') {
+        sound.play('esforco');
+        sound.play('golpe');
+      }
       ctx?.net.noteSwing();
     };
     const hotbar = new Hotbar(ui, inventory, (i) => actions.pressHotbar(i));
@@ -468,6 +474,8 @@ function boot(hotData = {}) {
       id: c.species.id, level: c.level, seed: c.statSeed, sex: c.sex, x: +c.pos.x.toFixed(2), z: +c.pos.z.toFixed(2),
       yaw: +c.yaw.toFixed(2), follow: !!c.follow, growth: +c.growth.toFixed(3), age: Math.round(c.age),
       hp: Math.round(c.health), name: c.name ?? null, adult: +c.adultScale.toFixed(4), saddled: !!c.saddled,
+      saddle: c.saddleKind ?? null, imprint: c.imprint ?? 0, st: c.inherited ? c.stats : null, mut: c.mutations ?? 0,
+      gestation: c.gestation > 0 ? Math.round(c.gestation) : 0, unborn: c.unborn ?? null,
     };
   }
 
@@ -476,6 +484,13 @@ function boot(hotData = {}) {
     if (!c) return;
     c.rollStats(t.seed);
     c.sex = t.sex ?? c.sex;
+    c.imprint = t.imprint ?? 0;
+    c.mutations = t.mut ?? 0;
+    if (t.st) c.applyStats(t.st);
+    if (t.gestation > 0) {
+      c.gestation = t.gestation;
+      c.unborn = t.unborn;
+    }
     if (t.adult) c.adultScale = t.adult;
     c.age = t.age ?? 0;
     c.setGrowth(t.growth ?? 1);
@@ -485,8 +500,8 @@ function boot(hotData = {}) {
     c.owner = ctx.player;
     c.follow = t.follow;
     c.name = t.name ?? c.species.nome;
-    c.saddled = !!t.saddled;
     c.home.set(c.pos.x, c.pos.z);
+    if (t.saddled) c.setSaddle(t.saddle ?? saddleFor(c));
     c._setState('parado');
     c.idleFor = c.follow ? 0.5 : 1e9;
   }
@@ -522,7 +537,7 @@ function boot(hotData = {}) {
     else if (ctx.creatures.tamedBy(p).length) {
       const near = ctx.creatures.tamedBy(p).find((o) => o.species.pode_montar && !o.flies && Math.hypot(o.pos.x - p.position.x, o.pos.z - p.position.z) - o.radius < 5);
       events.emit(EV.MESSAGE, {
-        text: near && !near.saddled ? 'Precisa de uma Sela: crie no Inventário, segure na mão e use Interagir no bicho.' : 'Chegue perto de um bicho domado que dá para montar.',
+        text: near && !near.saddled ? `Precisa de ${itemName(near.saddleNeed)}: crie no Inventário, segure na mão e use Interagir no bicho.` : 'Chegue perto de um bicho domado que dá para montar.',
         kind: 'info',
       });
     }
@@ -862,6 +877,14 @@ function boot(hotData = {}) {
     camera.rotation.z += wob;
     // com SMAA são várias passadas: conta os triângulos de todas
     renderer.info.reset();
+    // luneta: vista 4x mais perto (só com ela na mão)
+    const p0 = player;
+    if (p0?.zoom && p0.actions?.tool.tipo !== 'luneta') p0.zoom = false;
+    const wantFov = p0?.zoom ? baseFov / 4 : baseFov;
+    if (Math.abs(camera.fov - wantFov) > 0.05) {
+      camera.fov += (wantFov - camera.fov) * Math.min(1, dt * 10);
+      camera.updateProjectionMatrix();
+    }
     if (composer) composer.render(dt);
     else renderer.render(scene, camera);
     camera.rotation.z -= wob;

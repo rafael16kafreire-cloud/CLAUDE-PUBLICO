@@ -8,12 +8,15 @@
 import * as THREE from 'three';
 import { BALANCE } from '../core/balance.js';
 import { events, EV } from '../core/event_bus.js';
+import { saddleFor } from '../creatures/saddle.js';
 import { ITEMS, itemName } from '../items/items.js';
 import { sound } from '../audio/audio.js';
 import { game } from '../core/game_manager.js';
 
 const REACH = 3.4;        // alcance para objetos (m)
 const WATER_REACH = 4.5;  // alcance para beber (m)
+
+const SADDLES = ['sela', 'sela_media', 'sela_grande'];
 
 export class PlayerInteraction {
   constructor(player, world, cameraCtl, actions, inventory) {
@@ -173,9 +176,16 @@ export class PlayerInteraction {
     }
     if (c.tamed && c.owner === this.player) {
       const rideable = c.species.pode_montar && !c.flies && !c.isBaby;
-      // sela: com a Sela na mão, Interagir põe a sela
-      if (rideable && !c.saddled && BALANCE.sela.precisa && this.inv.equipped?.id === 'sela') {
-        return { kind: 'saddle', c, text: `Pôr a sela em ${c.name ?? c.species.nome}` };
+      // filhote pedindo carinho (impressão)
+      if (c.isBaby && c.wantsCare) {
+        return { kind: 'care', c, text: `Cuidar do filhote de ${c.species.nome} (impressão ${Math.round((c.imprint ?? 0) * 100)}%)` };
+      }
+      // sela: com a sela do porte certo na mão, Interagir põe a sela
+      const held = this.inv.equipped?.id;
+      if (rideable && !c.saddled && BALANCE.sela.precisa && SADDLES.includes(held)) {
+        const need = saddleFor(c);
+        if (held !== need) return { kind: 'hint', key: 'interact', text: `${c.species.nome} precisa de ${itemName(need)}` };
+        return { kind: 'saddle', c, item: held, text: `Pôr a ${itemName(held)} em ${c.name ?? c.species.nome}` };
       }
       const ride = rideable ? (c.saddled || !BALANCE.sela.precisa ? (game.isTouch ? ' · botão Montar' : ' · F: montar') : ' · sem sela') : '';
       return { kind: 'tame-order', c, text: `${c.name ?? c.species.nome}: ${c.follow ? 'mandar ficar' : 'mandar seguir'}${ride}` };
@@ -195,7 +205,7 @@ export class PlayerInteraction {
   _waterTarget(body) {
     const held = this.inv.equipped;
     const filling = body.fresh && held && ITEMS[held.id]?.cantil;
-    return { kind: 'water', body, text: filling ? 'Encher o cantil' : body.fresh ? 'Beber água' : 'Água do mar (salgada)' };
+    return { kind: 'water', body, text: filling ? `Encher: ${ITEMS[held.id].nome}` : body.fresh ? 'Beber água' : 'Água do mar (salgada)' };
   }
 
   _interact(target) {
@@ -212,10 +222,19 @@ export class PlayerInteraction {
       this._timer = 0;
       return;
     }
+    if (target.kind === 'care') {
+      const c = target.c;
+      if (c.care()) {
+        events.emit(EV.MESSAGE, { text: `Filhote de ${c.species.nome}: impressão ${Math.round(c.imprint * 100)}%`, kind: 'gain' });
+        sound.play('pegar');
+      }
+      this._timer = 0;
+      return;
+    }
     if (target.kind === 'saddle') {
       const c = target.c;
-      this.inv.remove('sela', 1);
-      c.saddled = true;
+      this.inv.remove(target.item ?? 'sela', 1);
+      c.setSaddle(target.item ?? 'sela');
       events.emit(EV.MESSAGE, { text: `Sela colocada em ${c.name ?? c.species.nome}. Agora dá para montar!`, kind: 'gain' });
       this._timer = 0;
       return;

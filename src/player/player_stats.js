@@ -168,7 +168,9 @@ export class PlayerStats {
 
   // Receita já sabida? (custo 0 = sabe desde o começo)
   knows(recipe) {
-    return !recipe.engrama || this.learned.has(recipe.id);
+    // engrama_id: receitas diferentes do mesmo item (ex.: Pasta de Cimento
+    // com quitina ou queratina) se aprendem juntas
+    return !recipe.engrama || this.learned.has(recipe.engrama_id ?? recipe.id);
   }
 
   // Dá para aprender agora? Devolve o motivo se não der.
@@ -182,7 +184,7 @@ export class PlayerStats {
   learn(recipe) {
     if (this.learnBlock(recipe)) return false;
     this.engramPoints -= recipe.engrama;
-    this.learned.add(recipe.id);
+    this.learned.add(recipe.engrama_id ?? recipe.id);
     events.emit(EV.SKILLS_CHANGED, { key: 'engrama' });
     return true;
   }

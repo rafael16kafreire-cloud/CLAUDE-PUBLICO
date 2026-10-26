@@ -156,7 +156,12 @@ export class InspectPanel {
     }
     // situação muda com o tempo (filhote, desmaiado, domado)
     const len = c.species.comprimento_m ? ` · ${(c.scale * (c.mesh.geometry.boundingBox.max.z - c.mesh.geometry.boundingBox.min.z)).toFixed(1)} m` : '';
-    const status = c.tamed ? 'Domado' : c.knockedOut ? `Desmaiado · domando ${Math.floor((c.tameProgress ?? 0) * 100)}%` : 'Selvagem';
+    let status = c.tamed ? 'Domado' : c.knockedOut ? `Desmaiado · domando ${Math.floor((c.tameProgress ?? 0) * 100)}%` : 'Selvagem';
+    // criação: impressão do filhote, mutações, prenhe
+    if (c.tamed && c.isBaby) status += ` · impressão ${Math.round((c.imprint ?? 0) * 100)}%`;
+    if (c.mutations) status += ` · mutações ${c.mutations}`;
+    if (c.gestation > 0) status += ` · prenhe (${Math.ceil(c.gestation / 60)} min)`;
+    if (c.tamed && c.saddleKind) status += ' · com sela';
     r.tags.textContent = `${c.sex}${c.isBaby ? ' · Filhote' : ''} · ${status} · ${TEMPER[c.species.temperamento] ?? ''}${len}`;
     const bar = (k, v, max) => {
       r[`b-${k}`].style.transform = `scaleX(${Math.max(0, Math.min(1, v / max)).toFixed(3)})`;

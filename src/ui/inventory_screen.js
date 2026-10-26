@@ -444,7 +444,7 @@ export class InventoryScreen {
         ${def.equipamento ? '<button type="button" class="btn btn-primary" id="it-wear">Vestir</button>' : ''}
         ${def.colocavel ? '<button type="button" class="btn btn-primary" id="it-place">Colocar no chão</button>' : ''}
         ${f ? `<button type="button" class="btn btn-primary" id="it-equip">${this.inv.selected === i ? 'Guardar' : 'Usar na mão'}</button>` : ''}
-        ${f?.tipo === 'arco' ? `<button type="button" class="btn" id="it-ammo">Trocar flecha (${this.actions.arrowType ? itemName(this.actions.arrowType) : 'sem flechas'})</button>` : ''}
+        ${f?.projetil && (f.municoes ?? [1, 2]).length > 1 ? `<button type="button" class="btn" id="it-ammo">Trocar munição (${this.actions.arrowType ? itemName(this.actions.arrowType) : 'sem flechas'})</button>` : ''}
         ${i >= HOTBAR ? '<button type="button" class="btn" id="it-hot">Pôr na barra</button>' : ''}
         ${s.qty > 1 ? '<button type="button" class="btn" id="it-split">Dividir</button>' : ''}
         <button type="button" class="btn" id="it-drop">Largar</button>

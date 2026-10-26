@@ -223,7 +223,9 @@ export class Player {
     this.moving = mag > 0.05;
     c.rideInput = { x: dx, z: dz, mag, run: input.isHeld('run') || input.runToggle };
     // sentado nas costas
-    this.position.set(c.pos.x, c.pos.y + c.height * 0.62, c.pos.z);
+    const seat = c.seat;
+    // modelo olha para -z: z do assento vai para a frente/trás pelo yaw
+    this.position.set(c.pos.x + Math.sin(c.yaw) * seat.z, c.pos.y + seat.y, c.pos.z + Math.cos(c.yaw) * seat.z);
     this.velocity.set(0, 0, 0);
     this.onGround = true;
     this.facing = this.firstPerson ? cam.yaw : c.yaw;
@@ -257,11 +259,16 @@ export class Player {
       } else if (actions?.selectedPiece) {
         actions.placeBuild(cam.yaw);
         this._attackTimer = 0.3;
-      } else if (actions?.tool.tipo === 'arco') {
-        // arco: atira na hora para onde a câmera olha
+      } else if (actions?.tool.tipo === 'luneta') {
+        // luneta: aproxima/afasta a vista
+        this.zoom = !this.zoom;
+        this._attackTimer = 0.3;
+      } else if (actions?.tool.projetil) {
+        // arco/pistola: atira na hora para onde a câmera olha
+        const tool = actions.tool;
         if (actions.shootArrow(cam)) {
-          this._attackTimer = BALANCE.arco.intervalo_seg;
-          this.onPunch?.('arco');
+          this._attackTimer = tool.tipo === 'arco' ? BALANCE.arco.intervalo_seg : tool.intervalo;
+          this.onPunch?.(tool.tipo);
         } else this._attackTimer = 0.4;
       } else if (this.stats.useStamina(C.soco_stamina)) {
         const tool = actions?.tool ?? { tipo: 'mao', intervalo: C.soco_intervalo_seg };

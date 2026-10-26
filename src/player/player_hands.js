@@ -142,6 +142,23 @@ function makeTool(kind) {
     string.position.z = tipZ;
     const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.1, 6), ROPE);
     g.add(bow, string, grip);
+  } else if (kind === 'pistola') {
+    // cabo na mão, cano apontando para frente
+    const metal = new THREE.MeshLambertMaterial({ color: '#4a4e56' });
+    const grip = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.11, 0.05), WOOD);
+    grip.rotation.x = 0.25;
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.05, 0.12), metal);
+    body.position.set(0, 0.07, -0.03);
+    const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.16, 8).rotateX(Math.PI / 2), metal);
+    barrel.position.set(0, 0.08, -0.15);
+    g.add(grip, body, barrel);
+  } else if (kind === 'luneta') {
+    const brass = new THREE.MeshLambertMaterial({ color: '#b08a40' });
+    const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.03, 0.3, 10).rotateX(Math.PI / 2), brass);
+    tube.position.set(0, 0.04, -0.08);
+    const wrap = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.08, 10).rotateX(Math.PI / 2), ROPE);
+    wrap.position.set(0, 0.04, 0.02);
+    g.add(tube, wrap);
   } else if (kind === 'clava') {
     g.add(handle(0.42, 0.025));
     const head = new THREE.Mesh(new THREE.SphereGeometry(0.075, 8, 6), WOOD);
@@ -160,11 +177,12 @@ export class PlayerHands {
     this.left = new THREE.Group();
     this.root.add(this.right);
     this.tools = {};
-    for (const k of ['machado', 'picareta', 'lanca', 'clava', 'tocha', 'arco']) {
+    for (const k of ['machado', 'picareta', 'lanca', 'clava', 'tocha', 'arco', 'pistola', 'luneta']) {
       const t = makeTool(k);
       t.visible = false;
       t.position.z = -0.26;
-      t.rotation.x = k === 'arco' ? -0.1 : -1.2; // inclinado para frente (arco quase em pé)
+      // inclinado para frente (arco quase em pé; pistola e luneta já apontam para frente)
+      t.rotation.x = k === 'arco' ? -0.1 : k === 'pistola' || k === 'luneta' ? 0 : -1.2;
       if (k === 'arco') t.rotation.z = 0.35;
       this.right.add(t);
       this.tools[k] = t;
@@ -279,6 +297,11 @@ export class PlayerHands {
         // tiro: recua um pouco (coice da corda)
         const k = Math.sin(t * Math.PI);
         this.right.position.z += k * 0.08;
+      } else if (this._kind === 'pistola') {
+        // coice: sobe e volta
+        const k = Math.sin(Math.min(1, t * 2) * Math.PI) * (1 - t);
+        this.right.position.z += k * 0.12;
+        this.right.rotation.x = this.restRotR.x + k * 0.5;
       } else if (this._kind === 'lanca') {
         const k = Math.sin(t * Math.PI);
         this.right.position.z -= k * 0.35;

@@ -39,15 +39,24 @@ export class WaterSystem {
     this.swamp.under = { color: '#3a3a22', density: 0.28, rays: false };
 
     // ----- Mar -----
-    const seaMat = makeWaterMaterial({
-      shallow: '#4fb3b0', deep: '#13506d', sky: '#b9d3dc', sunDir: SUN_DIR, map, level: 0,
+    // duas malhas: perto da câmera bem dividida (ondas de verdade) e o
+    // resto do mar simples; o shader corta cada uma no raio NEAR
+    const NEAR = 300;
+    const seaOpts = {
+      shallow: '#3fb0aa', deep: '#0e4766', sky: '#a9c9d6', sunDir: SUN_DIR, map, level: 0,
       opacityShallow: 0.25, opacityDeep: 0.9, deepAt: 7, waveHeight: BALANCE.agua.altura_onda_mar_m / 2, reflect: 0.6,
-    });
-    const seaMesh = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000, 80, 80), seaMat);
+    };
+    const seaMesh = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000, 80, 80), makeWaterMaterial({ ...seaOpts, ring: [NEAR, 1e9] }));
     seaMesh.rotation.x = -Math.PI / 2;
     seaMesh.name = 'Mar';
     seaMesh.renderOrder = 1;
     scene.add(seaMesh);
+    this.seaNear = new THREE.Mesh(new THREE.PlaneGeometry(NEAR * 2 + 16, NEAR * 2 + 16, 152, 152), makeWaterMaterial({ ...seaOpts, ring: [0, NEAR] }));
+    this.seaNear.rotation.x = -Math.PI / 2;
+    this.seaNear.name = 'MarPerto';
+    this.seaNear.renderOrder = 1;
+    this.seaNear.frustumCulled = false;
+    scene.add(this.seaNear);
 
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(6000, 6000), new THREE.MeshBasicMaterial({ color: '#1d3f48' }));
     floor.rotation.x = -Math.PI / 2;
@@ -70,7 +79,7 @@ export class WaterSystem {
     swampMesh.renderOrder = 1;
     scene.add(swampMesh);
 
-    this.meshes = [seaMesh, swampMesh];
+    this.meshes = [seaMesh, this.seaNear, swampMesh];
     this._buildStreams(map, scene);
   }
 
@@ -156,7 +165,7 @@ export class WaterSystem {
   // Altura da onda aqui (mesma conta do desenho da água).
   waveAt(body, x, z, t) {
     if (!body || !body.wave) return 0;
-    return (Math.sin(x * 0.09 + t * 1.1) + Math.cos(z * 0.08 + t * 0.85)) * body.wave;
+    return (Math.sin(x * 0.09 + t * 1.1) + Math.cos(z * 0.08 + t * 0.85) + 0.45 * Math.sin((x + z) * 0.16 + t * 1.7)) * body.wave;
   }
 
   bodyAt(x, z) {
@@ -167,5 +176,10 @@ export class WaterSystem {
     return this._streamAt(x, z, ground);
   }
 
-  update() {}
+  // A malha de perto anda com a câmera (em passos da grade, sem tremer).
+  update(camera) {
+    if (!camera || !this.seaNear) return;
+    const step = (this.seaNear.geometry.parameters.width) / 152;
+    this.seaNear.position.set(Math.round(camera.position.x / step) * step, 0, Math.round(camera.position.z / step) * step);
+  }
 }

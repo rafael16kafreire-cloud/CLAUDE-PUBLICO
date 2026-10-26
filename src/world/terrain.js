@@ -34,8 +34,8 @@ export function buildTerrain(map, chunkCells) {
 
 // terra de verdade: floresta toda, igapó e pântano um pouco menos; praia e mar nada;
 // -1 = rocha de montanha (Lapônia): textura de pedra no shader
-// (índices = BIOME: mar, praia, floresta, igapó, pântano, neve)
-const DIRT_BY_BIOME = [0, 0, 1, 0.8, 0.6, -1];
+// (índices = BIOME: mar, praia, floresta, igapó, pântano, neve, serra, campos)
+const DIRT_BY_BIOME = [0, 0, 1, 0.8, 0.6, -1, -1, 0.35];
 
 function buildChunkGeometry(map, i0, j0, size) {
   const cellsX = Math.min(size, map.cells - i0);

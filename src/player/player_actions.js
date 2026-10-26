@@ -14,8 +14,8 @@ import { sound } from '../audio/audio.js';
 import { snapPiece } from '../world/building.js';
 
 const FIST = { tipo: 'mao', dano: null, alcance: null, intervalo: null };
-const INTERVAL = { mao: 0.45, machado: 0.6, picareta: 0.6, lanca: 0.7, clava: 0.62, tocha: 0.5, arco: 0.9 };
-const ARROWS = ['flecha_pedra', 'flecha_tranq'];
+const INTERVAL = { mao: 0.45, machado: 0.6, picareta: 0.6, lanca: 0.7, clava: 0.62, tocha: 0.5, arco: 0.9, pistola: 1.1 };
+const ARROWS = ['flecha_pedra', 'flecha_tranq', 'flecha_obsidiana'];
 
 function rnd([a, b]) {
   return a + Math.floor(Math.random() * (b - a + 1));
@@ -34,33 +34,40 @@ export class PlayerActions {
     const f = s && ITEMS[s.id]?.ferramenta;
     const C = BALANCE.combate;
     if (!f) return { ...FIST, dano: C.soco_dano, alcance: C.soco_alcance_m, intervalo: C.soco_intervalo_seg };
-    return { tipo: f.tipo, dano: f.dano, alcance: f.alcance, intervalo: INTERVAL[f.tipo] ?? 0.6, id: s.id, rende: f.rende ?? 1 };
+    return { tipo: f.tipo, dano: f.dano, alcance: f.alcance, intervalo: INTERVAL[f.tipo] ?? 0.6, id: s.id, rende: f.rende ?? 1, projetil: !!f.projetil };
   }
 
-  // Flecha que o arco vai usar: a escolhida (se tiver) ou a que tiver.
+  // Munições que a arma na mão usa (arco: flechas; pistola: balas).
+  get ammoList() {
+    const s = this.inv.equipped;
+    return ITEMS[s?.id]?.ferramenta?.municoes ?? ARROWS;
+  }
+
+  // Munição que a arma vai usar: a escolhida (se tiver) ou a que tiver.
   get arrowType() {
-    if (this.ammo && this.inv.count(this.ammo) > 0) return this.ammo;
-    return ARROWS.find((a) => this.inv.count(a) > 0) ?? null;
+    const list = this.ammoList;
+    if (this.ammo && list.includes(this.ammo) && this.inv.count(this.ammo) > 0) return this.ammo;
+    return list.find((a) => this.inv.count(a) > 0) ?? null;
   }
 
-  // Troca entre Flecha de Pedra e Tranquilizante.
+  // Troca a munição (Flecha de Pedra, Tranquilizante, Obsidiana...).
   cycleArrow() {
-    const have = ARROWS.filter((a) => this.inv.count(a) > 0);
+    const have = this.ammoList.filter((a) => this.inv.count(a) > 0);
     if (!have.length) {
-      events.emit(EV.MESSAGE, { text: 'Sem flechas. Crie Flechas de Pedra.', kind: 'warn' });
+      events.emit(EV.MESSAGE, { text: `Sem munição. Crie ${itemName(this.ammoList[0])}.`, kind: 'warn' });
       return null;
     }
     const cur = this.arrowType;
     this.ammo = have[(have.indexOf(cur) + 1) % have.length];
-    events.emit(EV.MESSAGE, { text: `Arco: ${itemName(this.ammo)} (${this.inv.count(this.ammo)})`, kind: 'info' });
+    events.emit(EV.MESSAGE, { text: `${itemName(this.inv.equipped?.id ?? 'arco')}: ${itemName(this.ammo)} (${this.inv.count(this.ammo)})`, kind: 'info' });
     return this.ammo;
   }
 
-  // Atira uma flecha para onde a câmera olha. Devolve false se não tiver flecha.
+  // Atira (flecha ou bala) para onde a câmera olha. Devolve false se não tiver munição.
   shootArrow(cam) {
     const type = this.arrowType;
     if (!type) {
-      events.emit(EV.MESSAGE, { text: 'Sem flechas! Crie Flechas de Pedra (Inventário → Criar).', kind: 'warn' });
+      events.emit(EV.MESSAGE, { text: `Sem munição! Crie ${itemName(this.ammoList[0])} (Inventário → Criar).`, kind: 'warn' });
       return false;
     }
     this.inv.remove(type, 1);
@@ -68,7 +75,10 @@ export class PlayerActions {
     origin.y -= 0.08;
     const dir = cam.forward.clone().normalize();
     this.world.projectiles.fire(origin, dir, ITEMS[type].municao, this.player, this.player.stats.damageMul);
-    sound.play('golpe');
+    if (ITEMS[type].municao.bala) {
+      sound.play('tiro');
+      this.world.effects?.burst(origin.clone().addScaledVector(dir, 0.4), 'fumaca', 4, 1.2);
+    } else sound.play('golpe');
     this._wear();
     return true;
   }
@@ -174,13 +184,14 @@ export class PlayerActions {
     this.player.model?.gather?.();
     if (mode === 'colher') this.player.onGather?.();
     // efeito visual
-    const kind = res.key === 'pedra' ? 'pedra' : ['arvore', 'arvore_gigante', 'tronco', 'palmeira'].includes(res.key) ? 'madeira' : 'folha';
+    // efeito = tipo de pedacinho (recursos.json); rochas soltam pó de pedra
+    const kind = res.efeito ?? (res.key === 'pedra' ? 'pedra' : ['arvore', 'arvore_gigante', 'tronco', 'palmeira'].includes(res.key) ? 'madeira' : 'folha');
     const fx = this.player.position.clone();
     fx.x += (rec.x - fx.x) * 0.8;
     fx.z += (rec.z - fx.z) * 0.8;
     fx.y = this.player.position.y + 1.2;
     this.world.effects.burst(fx, kind, kind === 'folha' ? 10 : 8, 2.6);
-    sound.play(kind === 'folha' ? 'folhas' : kind, fx);
+    sound.play(kind === 'folha' ? 'folhas' : kind === 'madeira' ? 'madeira' : 'pedra', fx);
     if (kind === 'madeira') {
       this.world.effects.burst(fx.clone().setY(fx.y + 3), 'folha', 6, 1.5);
       // marca de corte na casca, do lado de quem bateu

@@ -16,6 +16,8 @@ import { BALANCE } from '../core/balance.js';
 import { sound } from '../audio/audio.js';
 import { mulberry32 } from '../core/math.js';
 import { shakeAt } from '../world/materials.js';
+import { backSpot, buildSaddle, saddleFor } from './saddle.js';
+import { events, EV } from '../core/event_bus.js';
 
 // O que cada herbívoro come (tipos de vegetação). Bicho alto (pescoço
 // comprido) come folha de árvore; os outros, arbustos e plantas baixas.
@@ -169,15 +171,61 @@ export class Creature {
       velocidade: Math.round(pick('velocidade', [100, 100])),
       torpor: Math.round(pick('torpor', [100, 100]) * (1 + 0.06 * L)),
     };
+    this._deriveStats();
+  }
+
+  // Atributos herdados dos pais (criação): troca os sorteados.
+  applyStats(st) {
+    this.stats = { ...this.stats, ...st };
+    this.inherited = true;
+    this._deriveStats();
+  }
+
+  // Vida, dano e velocidade a partir dos atributos (+ bônus da impressão).
+  _deriveStats() {
     const ratio = this.maxHealth ? this.health / this.maxHealth : 1;
-    this.maxHealth = this.stats.vida;
+    const imp = 1 + (this.imprint ?? 0) * BALANCE.cria.bonus_impressao;
+    this.maxHealth = Math.round(this.stats.vida * imp * (0.25 + 0.75 * (this.growth ?? 1)));
     this.health = Math.max(1, Math.round(this.maxHealth * ratio));
-    this.baseDamage = sp.dano * this.stats.forca / 100;
+    this.baseDamage = this.species.dano * this.stats.forca / 100 * imp;
     this.damage = this.baseDamage * (this.growth ?? 1);
     this.speedMul = this.stats.velocidade / 100;
     this.stamina = this.stats.stamina;
     this.torpor = 0;
     this.tired = false;
+  }
+
+  // Onde o jogador senta (altura e quanto para a frente/trás, em metros).
+  get seat() {
+    const sp = backSpot(this);
+    return { y: (sp.y + (this.saddled ? 0.15 / this.adultScale : 0)) * this.scale, z: sp.z * this.scale };
+  }
+
+  // Sela que serve neste bicho (pelo porte).
+  get saddleNeed() {
+    return saddleFor(this);
+  }
+
+  // Sela nas costas (kind = 'sela', 'sela_media', 'sela_grande' ou null).
+  setSaddle(kind) {
+    if (this._saddleMesh) this._saddleMesh.parent?.remove(this._saddleMesh);
+    this._saddleMesh = null;
+    this.saddled = !!kind;
+    this.saddleKind = kind || null;
+    if (kind) {
+      this.mesh.updateMatrixWorld(true);
+      this._saddleMesh = buildSaddle(this, kind);
+    }
+  }
+
+  // Filhote domado: carinho/comida aumenta a impressão (fica mais forte).
+  care() {
+    if (!this.wantsCare) return false;
+    this.wantsCare = false;
+    this.careT = BALANCE.cria.cuidado_min * 60;
+    this.imprint = Math.min(1, (this.imprint ?? 0) + BALANCE.cria.impressao_por_cuidado);
+    this._deriveStats();
+    return true;
   }
 
   // Filhote: tamanho, força e vida crescem junto (0.3 = recém-nascido, 1 = adulto)
@@ -186,7 +234,8 @@ export class Creature {
     this.growth = clamp(g, 0.2, 1);
     this.scale = this.adultScale * this.growth;
     this.mesh.scale.setScalar(this.scale);
-    this.maxHealth = Math.max(1, Math.round(this.stats.vida * (0.25 + 0.75 * this.growth)));
+    const imp = 1 + (this.imprint ?? 0) * BALANCE.cria.bonus_impressao;
+    this.maxHealth = Math.max(1, Math.round(this.stats.vida * imp * (0.25 + 0.75 * this.growth)));
     this.health = Math.max(1, this.maxHealth * ratio);
     this.damage = this.baseDamage * this.growth;
   }
@@ -353,10 +402,18 @@ export class Creature {
 
     // idade: filhote cresce; velho morre (não vale para o convidado no co-op)
     if (!this.netControlled && !this.species.ambiente) {
-      this.age += this.tamed ? dt * 0.25 : dt; // domado vive bem mais
+      this.age += this.tamed && this.growth >= 1 ? dt * 0.25 : dt; // domado adulto vive bem mais
       if (this.growth < 1) {
         const g = Math.min(1, 0.3 + 0.7 * this.age / (BALANCE.criaturas.crescer_min * 60));
         if (g - this.growth > 0.01 || g === 1) this.setGrowth(g);
+        // filhote domado pede carinho de tempos em tempos (impressão)
+        if (this.tamed && !this.wantsCare) {
+          this.careT = (this.careT ?? BALANCE.cria.cuidado_min * 60) - dt;
+          if (this.careT <= 0) {
+            this.wantsCare = true;
+            events.emit(EV.MESSAGE, { text: `Filhote de ${this.species.nome} quer carinho! (Interagir nele)`, kind: 'info' });
+          }
+        }
       }
       if (this.age > this.lifespan) {
         this.health = 0;
@@ -366,6 +423,12 @@ export class Creature {
         this.manager.onDeath(this, null);
         return;
       }
+    }
+
+    // gestação (mamífero domado): o filhote nasce quando acaba
+    if (this.gestation > 0 && !this.netControlled) {
+      this.gestation -= dt;
+      if (this.gestation <= 0) this.manager.birth?.(this);
     }
 
     // stamina: correr cansa; cansado só anda até recuperar 40%
@@ -697,6 +760,14 @@ export class Creature {
           break;
         }
         this._steer(dt, t.position.x, t.position.z, this.runSpeed);
+        // peça construída no caminho: morde até quebrar (se tiver força)
+        const bp = this._blockPiece;
+        if (bp && !bp.removed && this.blockedTime > 0.4 && this.attackCooldown <= 0) {
+          this.attackCooldown = sp.intervalo_ataque ?? 1.2;
+          this.attackAnim = 1;
+          sound.creature(this, 'ataque');
+          if (!bp.damage(this.damage * BALANCE.construcao.dano_bicho_mult, this)) this._noBreak = (this._noBreak ?? 0) + 1;
+        }
         break;
       }
       case CSTATE.ATTACK: {
@@ -907,7 +978,8 @@ export class Creature {
     if (!flying && this.world.structures.length) {
       const bx = this.pos.x;
       const bz = this.pos.z;
-      for (const s of this.world.structures) if (s.isBuild && !s.removed) s.collide(this.pos, Math.min(this.radius, 1.5) * 0.8, this.pos.y, this.height);
+      this._blockPiece = null;
+      for (const s of this.world.structures) if (s.isBuild && !s.removed && s.collide(this.pos, Math.min(this.radius, 1.5) * 0.8, this.pos.y, this.height)) this._blockPiece = s;
       if (Math.hypot(this.pos.x - bx, this.pos.z - bz) > 0.01) this.blockedTime += dt * 0.5;
     }
     // desvia de troncos e pedras (os gigantes passam por cima de tudo)

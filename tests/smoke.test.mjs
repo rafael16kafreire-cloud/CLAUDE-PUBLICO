@@ -1038,16 +1038,18 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   const saddle = await page.evaluate(() => {
     const c = window.__ilha.ctx; const d = window.__pet;
     const before = !!c.creatures.findMountable(c.player, d.pos, 8);
-    c.inventory.add('sela', 1);
-    c.inventory.selected = c.inventory.slots.findIndex((x) => x && x.id === 'sela');
+    // sela do porte certo (parassauro = Sela Média)
+    const need = d.saddleNeed;
+    c.inventory.add(need, 1);
+    c.inventory.selected = c.inventory.slots.findIndex((x) => x && x.id === need);
     c.player.position.set(d.pos.x + d.radius + 1, d.pos.y, d.pos.z);
     // o alvo de Interagir agora é "pôr a sela"
-    const t = c.interaction._creatureTarget(c.camCtl.camera.position, c.camCtl.forward) ?? { kind: 'saddle', c: d };
-    c.interaction._interact(t.kind === 'saddle' ? t : { kind: 'saddle', c: d });
-    return { before, kind: t.kind };
+    const t = c.interaction._creatureTarget(c.camCtl.camera.position, c.camCtl.forward) ?? { kind: 'saddle', c: d, item: need };
+    c.interaction._interact(t.kind === 'saddle' ? t : { kind: 'saddle', c: d, item: need });
+    return { before, kind: t.kind, need };
   });
-  const saddle2 = await page.evaluate(() => ({ saddled: !!window.__pet.saddled, sela: window.__ilha.ctx.inventory.count('sela') }));
-  check('Sela: sem sela não monta; com a sela na mão, Interagir põe a sela', !saddle.before && saddle2.saddled && saddle2.sela === 0, JSON.stringify({ saddle, saddle2 }));
+  const saddle2 = await page.evaluate((need) => ({ saddled: !!window.__pet.saddled, sela: window.__ilha.ctx.inventory.count(need), mesh: !!window.__pet._saddleMesh }), saddle.need);
+  check('Sela: sem sela não monta; com a sela do porte certo na mão, Interagir põe a sela (com modelo nas costas)', !saddle.before && saddle2.saddled && saddle2.sela === 0 && saddle2.mesh, JSON.stringify({ saddle, saddle2 }));
   const ride0 = await page.evaluate(() => {
     const c = window.__ilha.ctx; const d = window.__pet;
     d.saddled = true;
@@ -1417,11 +1419,13 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   };
   const A = await openP('A');
   const B = await openP('B');
+  await A.click('#tab-coop');
   await A.fill('#coop-name', 'Rafa');
   await A.click('#btn-host');
   await A.waitForFunction(() => window.__ilha.net?.active, null, { timeout: 20000 }).catch(() => {});
   const code = await A.evaluate(() => window.__ilha.net?.code ?? '');
   check('Co-op: criar partida dá um código de 6 letras', /^[A-Z0-9]{6}$/.test(code), code);
+  await B.click('#tab-coop');
   await B.fill('#coop-name', 'Amigo');
   await B.click('#btn-join-open');
   await B.fill('#coop-code', code);

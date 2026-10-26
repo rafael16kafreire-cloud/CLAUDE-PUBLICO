@@ -118,16 +118,22 @@
     "igapo": { "nome": "Igapó", "descricao": "Floresta alagada na beira do pântano.", "temperatura_c": 2 },
     "pantano": { "nome": "Pântano", "descricao": "Água parada, lama e predadores escondidos.", "temperatura_c": 2 },
     "mar": { "nome": "Mar", "descricao": "Água salgada. Não beba.", "temperatura_c": 0 },
-    "neve": { "nome": "Lapônia", "descricao": "Montanhas geladas, pinheiros e minério de ferro.", "temperatura_c": -20 }
+    "neve": { "nome": "Lapônia", "descricao": "Montanhas geladas, pinheiros e minério de ferro.", "temperatura_c": -20 },
+    "serra": { "nome": "Serra Rochosa", "descricao": "Morros de pedra: metal, obsidiana e cristal no alto.", "temperatura_c": -4 },
+    "campos": { "nome": "Campos", "descricao": "Planície aberta de capim. Manadas e predadores à vista.", "temperatura_c": 4 }
   },
 
   "_rotulos_mapa": "Nomes escritos no mapa da tela de morte (posição em metros).",
   "rotulos_mapa": [
     { "nome": "Pântano", "x": 0, "z": 840 },
     { "nome": "Floresta", "x": 90, "z": -225 },
-    { "nome": "Floresta", "x": 300, "z": 375 },
+    { "nome": "Floresta", "x": 150, "z": 330 },
     { "nome": "Igapó", "x": 262, "z": 810 },
-    { "nome": "Lapônia", "x": 60, "z": -1330 }
+    { "nome": "Lapônia", "x": 60, "z": -1330 },
+    { "nome": "Serra Rochosa", "x": 400, "z": -60 },
+    { "nome": "Serra Rochosa", "x": -440, "z": 560 },
+    { "nome": "Campos", "x": -20, "z": 180 },
+    { "nome": "Campos", "x": 330, "z": 470 }
   ],
 
   "pontos_renascer": [
@@ -156,12 +162,22 @@
         "samambaia": 0.12, "bananeira": 0.03, "arbusto_mejo": 0.02, "tronco_caido": 0.03, "junco": 0.12
       },
       "neve": {
-        "pinheiro_neve": 0.12, "arvore_seca": 0.012, "arvore_morta_neve": 0.008, "rochedo": 0.05, "minerio_ferro": 0.012, "pedrinhas": 0.06, "gravetos": 0.025
+        "pinheiro_neve": 0.12, "arvore_seca": 0.012, "arvore_morta_neve": 0.008, "rochedo": 0.05, "minerio_ferro": 0.012, "pedrinhas": 0.06, "gravetos": 0.025,
+        "rocha_petroleo": 0.006, "rocha_obsidiana": 0.006, "cristal": 0.006
       },
       "pantano": {
         "mangue": 0.09, "arvore_morta": 0.04, "junco": 0.22, "taboa": 0.12,
         "vitoria_regia": 0.16, "tronco_caido": 0.02, "pedra_musgo": 0.01
-      }
+      },
+      "serra": {
+        "rochedo": 0.06, "rocha_metal": 0.03, "rocha_obsidiana": 0.012, "cristal": 0.012, "pedra_musgo": 0.02,
+        "pinheiro": 0.03, "arvore_seca": 0.01, "arvore_media": 0.02, "pedrinhas": 0.05, "gravetos": 0.02
+      },
+      "campos": {
+        "arvore_folhosa": 0.008, "arvore_folhosa2": 0.01, "arbusto_frutas": 0.02, "arbusto_mejo": 0.025, "arbusto_escura": 0.015,
+        "pedra_musgo": 0.012, "tronco_caido": 0.004, "bananeira": 0.006, "pedrinhas": 0.04, "gravetos": 0.02
+      },
+      "mar": { "concha": 0.03, "rocha_petroleo": 0.004 }
     },
     "_sub_bosque": "Plantas baixas do chão da mata, numa grade mais fina (passo_m menor).",
     "sub_bosque": {
@@ -170,8 +186,20 @@
         "selva": { "capim": 0.1, "samambaia": 0.34, "arbusto": 0.08, "pedrinhas": 0.07, "gravetos": 0.05, "samambaia_gigante": 0.045, "arvore_media": 0.03, "acai": 0.015, "arbusto_mejo": 0.008, "arbusto_escura": 0.006 },
         "igapo": { "samambaia": 0.22, "junco": 0.1, "arbusto": 0.04, "gravetos": 0.03, "pedrinhas": 0.03 },
         "praia": { "capim_praia": 0.05, "arbusto": 0.02, "pedrinhas": 0.06, "gravetos": 0.025 },
-        "neve": { "arbusto_neve": 0.16, "capim": 0.04 }
+        "neve": { "arbusto_neve": 0.16, "capim": 0.04 },
+        "campos": { "capim": 0.5, "arbusto": 0.04, "pedrinhas": 0.02 },
+        "serra": { "capim": 0.12, "arbusto": 0.05, "pedrinhas": 0.05 }
       }
     }
-  }
+  },
+
+  "_serras_campos": "Biomas novos (como no ARK): serras = morros de pedra com metal, obsidiana e cristal; campos = planícies de capim com manadas. x/z = centro, raio_m, altura_m (serra).",
+  "serras": [
+    { "x": 400, "z": -60, "raio_m": 170, "altura_m": 55 },
+    { "x": -440, "z": 560, "raio_m": 150, "altura_m": 48 }
+  ],
+  "campos": [
+    { "x": -20, "z": 180, "raio_m": 190 },
+    { "x": 330, "z": 470, "raio_m": 170 }
+  ]
 }

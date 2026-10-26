@@ -11,6 +11,7 @@ import * as THREE from 'three';
 import { BALANCE } from '../core/balance.js';
 import { events, EV } from '../core/event_bus.js';
 import { Inventory } from '../inventory/inventory.js';
+import creatureData from '../data/creatures/criaturas.json';
 
 const STONE_MAT = new THREE.MeshLambertMaterial({ color: '#7d7a72' });
 const LOG_MAT = new THREE.MeshLambertMaterial({ color: '#5a3e26' });
@@ -421,6 +422,65 @@ export class StorageBox extends Structure {
   }
 }
 
+// ------------------------------------------------------------
+// OVO FERTILIZADO (criação de bichos domados): choca sozinho no chão
+// se a temperatura estiver boa (fogueira por perto ajuda no frio).
+export class Egg extends Structure {
+  constructor(world, position, rotY, id, d) {
+    super(world, 'ovo', position, rotY, id);
+    this.especie = d.especie;
+    this.nivel = d.nivel ?? 1;
+    this.gene = d.gene ?? null;
+    this.progress = d.progress ?? 0; // 0..1
+    const sp = creatureData.especies.find((e) => e.id === this.especie);
+    const size = 0.25 + Math.min(0.35, (sp?.comprimento_m?.[0] ?? 4) * 0.02);
+    const shell = new THREE.Mesh(new THREE.SphereGeometry(size, 12, 9), new THREE.MeshLambertMaterial({ color: '#e8dcc0' }));
+    shell.scale.set(0.8, 1.05, 0.8);
+    shell.position.y = size * 0.9;
+    shell.castShadow = true;
+    // pintinhas da espécie
+    const spots = new THREE.Mesh(new THREE.SphereGeometry(size * 1.01, 8, 6, 0, Math.PI * 2, 0.3, 1.2), new THREE.MeshLambertMaterial({ color: '#8a6a4a', transparent: true, opacity: 0.35 }));
+    spots.scale.copy(shell.scale);
+    spots.position.copy(shell.position);
+    this.root.add(shell, spots);
+    this.shell = shell;
+    this.name = `Ovo de ${sp?.nome ?? 'bicho'}`;
+    this.interactRadius = 0.8;
+  }
+
+  get tempOk() {
+    const [lo, hi] = BALANCE.cria.ovo_temp_c;
+    const t = this.world.temperatureAt(this.position, false);
+    return t >= lo && t <= hi;
+  }
+
+  update(dt) {
+    if (this.removed) return;
+    const rate = (this.tempOk ? 1 : 0.25) / (BALANCE.cria.chocar_min * 60);
+    this.progress = Math.min(1, this.progress + rate * dt);
+    // treme quando está quase chocando
+    this.shell.rotation.z = this.progress > 0.85 ? Math.sin(performance.now() * 0.02) * 0.08 : 0;
+    if (this.progress >= 1) {
+      const owner = this.world.creatures?.localPlayer;
+      this.world.creatures?.hatch(this.especie, this.position.x, this.position.z, this.nivel, this.gene, owner);
+      this.world.removeStructure(this);
+    }
+  }
+
+  promptText() {
+    const t = Math.round(this.world.temperatureAt(this.position, false));
+    return `${this.name}: chocando ${Math.floor(this.progress * 100)}% · ${t} °C${this.tempOk ? '' : ' (frio/calor demais: devagar)'}`;
+  }
+
+  use() {
+    return false;
+  }
+
+  toJSON() {
+    return { ...super.toJSON(), especie: this.especie, nivel: this.nivel, gene: this.gene, progress: +this.progress.toFixed(4) };
+  }
+}
+
 export function createStructure(world, d) {
   if (d.type === 'bancada') return new Workbench(world, new THREE.Vector3(d.x, d.y, d.z), d.rot, d.id);
   if (d.type === 'pilao') return new Mortar(world, new THREE.Vector3(d.x, d.y, d.z), d.rot, d.id);
@@ -437,6 +497,7 @@ export function createStructure(world, d) {
     return s;
   }
   if (d.type === 'saco_dormir') return new SleepingBag(world, pos, d.rot, d.id, d.owner);
+  if (d.type === 'ovo') return new Egg(world, pos, d.rot, d.id, d);
   return null;
 }
 

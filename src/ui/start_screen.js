@@ -37,8 +37,22 @@ function creditsHtml() {
     rows.push(`<li><b>${esc(what)}</b>: “${esc(title)}” por ${esc(author)} (Sketchfab), CC-BY-4.0 — adaptado.</li>`);
   }
   rows.push('<li><b>Sons de passos, coleta e interface</b>: Kenney.nl (CC0).</li>');
-  return `<details class="credits"><summary>Créditos dos modelos 3D e sons</summary><ul>${rows.join('')}</ul></details>`;
+  return `<div class="credits"><p>Modelos 3D e sons usados no jogo (licença pede o nome do autor):</p><ul>${rows.join('')}</ul></div>`;
 }
+
+// Dicas que vão passando embaixo do botão Jogar
+const TIPS = [
+  'Metal e cristal saem das rochas da Serra Rochosa: leve uma picareta.',
+  'Mergulhe no mar raso: as conchas do fundo têm pérolas de sílica.',
+  'Paredes de pedra só quebram com bicho grande; de metal, só com gigante.',
+  'Macho e fêmea domados, parados perto um do outro, têm filhote.',
+  'Ovo precisa de calor para chocar: uma fogueira perto ajuda no frio.',
+  'Filhote domado pede carinho: cada cuidado deixa ele mais forte.',
+  'Cada bicho usa a sela do seu porte: Pequena, Média ou Grande.',
+  'Carne estraga: guarde no baú para durar mais.',
+  'Ao subir de nível você ganha pontos para aprender receitas novas.',
+  'A luneta deixa ver longe: segure e use Atacar para aproximar.',
+];
 
 export class StartScreen {
   constructor(root, { onPlay, onHost, onJoin, onNewGame, onLoadSlot, playerName = '' }) {
@@ -46,12 +60,22 @@ export class StartScreen {
     el.className = 'overlay start';
     el.innerHTML = `
       <div class="start-panel">
-        <p class="eyebrow">Protótipo · v0.16.1 · sobreviver, domar e construir</p>
-        <h1 class="title">Ilha<br>Primordial</h1>
+        <p class="eyebrow">Protótipo · v0.17.0 · sobreviver, domar e construir</p>
+        <h1 class="title"><span>Ilha</span><br><span>Primordial</span></h1>
         <p class="tagline">Você acordou na beira da mata sem nada. Pegue madeira, crie ferramentas e sobreviva aos predadores da floresta.</p>
+        <nav class="menu-tabs" role="tablist">
+          <button type="button" class="menu-tab" id="tab-jogar" data-page="jogar" aria-selected="true">Jogar</button>
+          <button type="button" class="menu-tab" id="tab-coop" data-page="coop">Co-op</button>
+          <button type="button" class="menu-tab" id="tab-ajuda" data-page="ajuda">Como jogar</button>
+          <button type="button" class="menu-tab" id="tab-creditos" data-page="creditos">Créditos</button>
+        </nav>
+        <section class="menu-page" data-page="jogar">
         <button type="button" class="btn btn-primary btn-play" id="btn-play" disabled>Gerando a ilha…</button>
         <button type="button" class="btn btn-small btn-new" id="btn-new" hidden>Novo jogo (apaga o salvo)</button>
         <details class="load-box" id="load-box" hidden><summary>Carregar jogo salvo</summary><div class="save-list" id="start-slots"></div></details>
+        <p class="menu-tip" id="menu-tip"></p>
+        </section>
+        <section class="menu-page" data-page="coop" hidden>
         <div class="coop-box">
           <label class="coop-name">Seu nome <input id="coop-name" maxlength="16" autocomplete="off" placeholder="Jogador"></label>
           <div class="coop-row">
@@ -64,8 +88,9 @@ export class StartScreen {
           </div>
           <p class="coop-status" id="coop-status">Co-op: até 4 jogadores pela internet.</p>
         </div>
+        </section>
+        <section class="menu-page" data-page="ajuda" hidden>
         <p class="rotate-hint">Vire o celular na horizontal para jogar melhor.</p>
-        ${creditsHtml()}
         <dl class="howto howto-touch">
           <dt>Andar</dt><dd>joystick à esquerda</dd>
           <dt>Olhar</dt><dd>arraste o lado direito</dd>
@@ -81,11 +106,35 @@ export class StartScreen {
           <dt>Clique</dt><dd>bater (coleta e ataque)</dd>
           <dt>Tab / I · 1–8</dt><dd>inventário e crafting · barra rápida</dd>
           <dt>V / F3 / Esc</dt><dd>câmera / FPS / pausa</dd>
+          <dt>Q</dt><dd>trocar munição (arco)</dd>
         </dl>
+        </section>
+        <section class="menu-page" data-page="creditos" hidden>${creditsHtml()}</section>
       </div>
     `;
     root.appendChild(el);
     this.el = el;
+    // abas do menu (a página nova entra deslizando)
+    const tabs = [...el.querySelectorAll('.menu-tab')];
+    const pages = [...el.querySelectorAll('.menu-page')];
+    for (const t of tabs) {
+      t.addEventListener('click', () => {
+        for (const o of tabs) o.setAttribute('aria-selected', String(o === t));
+        for (const pg of pages) pg.hidden = pg.dataset.page !== t.dataset.page;
+      });
+    }
+    // dicas passando
+    const tip = el.querySelector('#menu-tip');
+    let k = Math.floor(Math.random() * TIPS.length);
+    const nextTip = () => {
+      tip.classList.remove('show');
+      setTimeout(() => {
+        tip.textContent = `Dica: ${TIPS[k++ % TIPS.length]}`;
+        tip.classList.add('show');
+      }, 250);
+    };
+    nextTip();
+    this._tipTimer = setInterval(() => { if (!el.hidden) nextTip(); }, 6000);
     this.button = el.querySelector('#btn-play');
     this.button.addEventListener('click', () => onPlay());
     this.onLoadSlot = onLoadSlot;

@@ -96,6 +96,7 @@ export class CreatureManager {
 
   // ---------------------------------------------------------
   update(dt, player, camera) {
+    this.localPlayer = player;
     const players = [player, ...this.remotePlayers];
     const ctx = { player, players, world: this.world, camPos: camera.position };
     for (const c of this.list) {
@@ -226,6 +227,15 @@ export class CreatureManager {
       const dad = this.list.find((o) => o !== mom && o.species.id === mom.species.id && o.sex === 'Macho'
         && calm(o) && o.pos.distanceTo(mom.pos) < C.distancia_casal_m);
       if (!dad || this.rand() > C.chance_cria) continue;
+      // domados: só cruzam parados (sem seguir); ovo ou gestação
+      if (mom.tamed || dad.tamed) {
+        if (!mom.tamed || !dad.tamed || mom.follow || dad.follow || mom.gestation > 0) continue;
+        this.breedTamed(mom, dad, players);
+        const wait = () => 60 * (C.intervalo_cria_min[0] + this.rand() * (C.intervalo_cria_min[1] - C.intervalo_cria_min[0]));
+        mom.nextBreed = mom.age + wait();
+        dad.nextBreed = dad.age + wait();
+        return null;
+      }
       const a = this.rand() * Math.PI * 2;
       const d = mom.radius + 1;
       const baby = this.spawn(mom.species.id, mom.pos.x + Math.sin(a) * d, mom.pos.z + Math.cos(a) * d, Math.max(1, Math.round((mom.level + dad.level) / 2)));
@@ -249,6 +259,75 @@ export class CreatureManager {
       return baby;
     }
     return null;
+  }
+
+  // Atributos do filhote: cada um vem do pai ou da mãe (mais chance do
+  // maior) e às vezes muta (+10%).
+  inheritStats(mom, dad) {
+    const B = BALANCE.cria;
+    const st = {};
+    let mut = 0;
+    for (const k of Object.keys(mom.stats)) {
+      const hi = Math.max(mom.stats[k], dad.stats[k]);
+      const lo = Math.min(mom.stats[k], dad.stats[k]);
+      st[k] = this.rand() < B.chance_maior ? hi : lo;
+    }
+    if (this.rand() < B.mutacao) {
+      const keys = ['vida', 'forca', 'stamina', 'peso', 'velocidade'];
+      const k = keys[Math.floor(this.rand() * keys.length)];
+      st[k] = Math.round(st[k] * 1.1);
+      mut = 1;
+    }
+    return { st, mut: (mom.mutations ?? 0) + (dad.mutations ?? 0) + mut };
+  }
+
+  // Casal domado: ovo (choca no chão) ou gestação (mamífero).
+  breedTamed(mom, dad, players) {
+    const B = BALANCE.cria;
+    const gene = this.inheritStats(mom, dad);
+    const level = Math.max(1, Math.round((mom.level + dad.level) / 2));
+    const name = mom.name ?? mom.species.nome;
+    if (B.mamiferos.includes(mom.species.id)) {
+      mom.gestation = B.gestacao_min * 60;
+      mom.unborn = { gene, level };
+      events.emit(EV.MESSAGE, { text: `${name} está prenhe! O filhote nasce em ${B.gestacao_min} min.`, kind: 'gain' });
+      return;
+    }
+    const a = this.rand() * Math.PI * 2;
+    const d = mom.radius + 0.8;
+    const x = mom.pos.x + Math.sin(a) * d;
+    const z = mom.pos.z + Math.cos(a) * d;
+    this.world.addStructure({ type: 'ovo', x, y: this.world.groundAt(x, z, mom.pos.y + 1), z, rot: 0, especie: mom.species.id, nivel: level, gene });
+    events.emit(EV.MESSAGE, { text: `${name} botou um ovo fertilizado! Deixe no quentinho (${B.ovo_temp_c[0]}–${B.ovo_temp_c[1]} °C) para chocar.`, kind: 'gain' });
+  }
+
+  // Nasce um filhote domado (do ovo ou da gestação).
+  hatch(id, x, z, level, gene, owner) {
+    const baby = this.spawn(id, x, z, level);
+    if (!baby) return null;
+    if (gene?.st) baby.applyStats(gene.st);
+    baby.mutations = gene?.mut ?? 0;
+    baby.age = 0;
+    baby.setGrowth(0.3);
+    baby.tamed = true;
+    baby.owner = owner;
+    baby.follow = true;
+    baby.name = baby.species.nome;
+    baby.imprint = 0;
+    baby.careT = 20; // logo pede o primeiro carinho
+    baby._setState(CSTATE.IDLE);
+    events.emit(EV.MESSAGE, { text: `Nasceu um filhote de ${baby.species.nome}!${baby.mutations ? ` (mutações: ${baby.mutations})` : ''}`, kind: 'gain' });
+    return baby;
+  }
+
+  // Fim da gestação do mamífero.
+  birth(mom) {
+    const u = mom.unborn;
+    mom.unborn = null;
+    mom.gestation = 0;
+    const a = this.rand() * Math.PI * 2;
+    const d = mom.radius + 1;
+    return this.hatch(mom.species.id, mom.pos.x + Math.sin(a) * d, mom.pos.z + Math.cos(a) * d, u?.level ?? mom.level, u?.gene, mom.owner);
   }
 
   // Moradores do pântano: perto do pântano sempre tem jacaré gigante

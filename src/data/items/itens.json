@@ -55,11 +55,11 @@
   },
   {
    "id": "minerio_ferro",
-   "nome": "Minério de Ferro",
+   "nome": "Minério de Metal",
    "tipo": "recurso",
    "peso": 1.0,
    "pilha": 100,
-   "descricao": "Pedra com ferro, das montanhas da Lapônia. Sai bem com picareta.",
+   "descricao": "Metal bruto. Sai bem com picareta nas Rochas de metal da Serra Rochosa (e no alto da Lapônia). Vira Lingote na Forja.",
    "icone": {
     "forma": "pedra",
     "cor": "#8c4a26",
@@ -460,7 +460,7 @@
    "peso": 6,
    "pilha": 20,
    "peca": "piso",
-   "descricao": "Base da casa (3×3 m). Selecione e Atacar para colocar; os próximos encaixam do lado.",
+   "descricao": "Base da casa (3×3 m). Selecione e Atacar para colocar; os próximos encaixam do lado. Vida 900.",
    "icone": {
     "forma": "piso",
     "cor": "#8a6438",
@@ -474,7 +474,7 @@
    "peso": 5,
    "pilha": 20,
    "peca": "parede",
-   "descricao": "Encaixa na beira de um piso ou teto. Segura bichos do lado de fora.",
+   "descricao": "Encaixa na beira de um piso ou teto. Segura bichos do lado de fora. Vida 900.",
    "icone": {
     "forma": "parede",
     "cor": "#8a6438",
@@ -488,7 +488,7 @@
    "peso": 6,
    "pilha": 20,
    "peca": "porta",
-   "descricao": "Parede com uma porta. Interagir abre e fecha.",
+   "descricao": "Parede com uma porta. Interagir abre e fecha. Vida 900.",
    "icone": {
     "forma": "porta",
     "cor": "#8a6438",
@@ -502,7 +502,7 @@
    "peso": 4,
    "pilha": 20,
    "peca": "teto",
-   "descricao": "Vai em cima de um piso (3 m acima). Dá para andar em cima: é o chão do segundo andar.",
+   "descricao": "Vai em cima de um piso (3 m acima) ou de pilares. Dá para andar em cima. Vida 720.",
    "icone": {
     "forma": "teto",
     "cor": "#a08848",
@@ -516,7 +516,7 @@
    "peso": 5,
    "pilha": 20,
    "peca": "rampa",
-   "descricao": "Em cima de um piso: sobe 3 m até o teto (segundo andar). Sobe para o lado que você olha.",
+   "descricao": "Em cima de um piso: sobe 3 m até o segundo andar. Sobe para o lado que você olha. Vida 900.",
    "icone": {
     "forma": "rampa",
     "cor": "#8a6438",
@@ -601,13 +601,18 @@
    "tipo": "ferramenta",
    "peso": 1,
    "pilha": 1,
-   "descricao": "Arma de longe: atire com Atacar. Gasta Flechas da mochila. Para trocar entre Flecha de Pedra e Tranquilizante, toque no Arco no Inventário (Item → Trocar flecha).",
+   "descricao": "Arma de longe: atire com Atacar. Gasta Flechas da mochila. Para trocar de flecha (Pedra, Tranquilizante, Obsidiana) aperte Q ou toque no Arco no Inventário (Trocar munição).",
    "ferramenta": {
     "tipo": "arco",
     "dano": 0,
     "alcance": 2,
     "durabilidade": 120,
-    "projetil": true
+    "projetil": true,
+    "municoes": [
+     "flecha_pedra",
+     "flecha_tranq",
+     "flecha_obsidiana"
+    ]
    },
    "icone": {
     "forma": "arco",
@@ -749,11 +754,11 @@
   },
   {
    "id": "sela",
-   "nome": "Sela",
+   "nome": "Sela Pequena",
    "tipo": "consumivel",
    "peso": 4,
    "pilha": 1,
-   "descricao": "Para montar num bicho domado: com a Sela na mão, olhe para ele e use Interagir. Sem sela não dá para montar.",
+   "descricao": "Sela para bichos pequenos (até 5 m, como o Raptor). Com ela na mão, olhe para o bicho domado e use Interagir. Sem sela não dá para montar.",
    "icone": {
     "forma": "sela",
     "cor": "#7a4a2a",
@@ -853,6 +858,827 @@
     "forma": "botas",
     "cor": "#8a6a48",
     "cor2": "#5a4430"
+   }
+  },
+  {
+   "id": "obsidiana",
+   "nome": "Obsidiana",
+   "tipo": "recurso",
+   "peso": 1,
+   "pilha": 100,
+   "descricao": "Vidro vulcânico preto, do alto das montanhas. Pontas de flecha cortantes.",
+   "icone": {
+    "forma": "cristal",
+    "cor": "#2a2034",
+    "cor2": "#5a4a72"
+   }
+  },
+  {
+   "id": "cristal",
+   "nome": "Cristal",
+   "tipo": "recurso",
+   "peso": 1,
+   "pilha": 100,
+   "descricao": "Cristal transparente da Serra Rochosa e do alto da Lapônia. Para luneta e pote.",
+   "icone": {
+    "forma": "cristal",
+    "cor": "#9ad8f4",
+    "cor2": "#e8faff"
+   }
+  },
+  {
+   "id": "petroleo",
+   "nome": "Petróleo",
+   "tipo": "recurso",
+   "peso": 1,
+   "pilha": 100,
+   "descricao": "Óleo grosso das rochas escuras (montanha e fundo do mar). Na Forja derrete metal em dobro.",
+   "icone": {
+    "forma": "gota",
+    "cor": "#1a1612",
+    "cor2": "#5a5048"
+   }
+  },
+  {
+   "id": "perola_silica",
+   "nome": "Pérola de Sílica",
+   "tipo": "recurso",
+   "peso": 0.02,
+   "pilha": 100,
+   "descricao": "Pérola das conchas do fundo do mar. Mergulhe e pegue.",
+   "icone": {
+    "forma": "perola",
+    "cor": "#f0ece4",
+    "cor2": "#c8bca8"
+   }
+  },
+  {
+   "id": "quitina",
+   "nome": "Quitina",
+   "tipo": "recurso",
+   "peso": 0.1,
+   "pilha": 100,
+   "descricao": "Casca dura das aranhas-gigantes. Armadura e Pasta de Cimento.",
+   "icone": {
+    "forma": "couro",
+    "cor": "#4a3a2a",
+    "cor2": "#8a7050"
+   }
+  },
+  {
+   "id": "queratina",
+   "nome": "Queratina",
+   "tipo": "recurso",
+   "peso": 0.1,
+   "pilha": 100,
+   "descricao": "Placa de chifre/casco de dinos encouraçados e do Deinosuchus. Para Pasta de Cimento.",
+   "icone": {
+    "forma": "couro",
+    "cor": "#c8b48a",
+    "cor2": "#8a7448"
+   }
+  },
+  {
+   "id": "pelo",
+   "nome": "Pelo",
+   "tipo": "recurso",
+   "peso": 0.1,
+   "pilha": 100,
+   "descricao": "Pelo grosso do Mamute-lanoso. A roupa mais quente.",
+   "icone": {
+    "forma": "couro",
+    "cor": "#8a6a4a",
+    "cor2": "#d8c4a4"
+   }
+  },
+  {
+   "id": "carvao",
+   "nome": "Carvão",
+   "tipo": "recurso",
+   "peso": 0.1,
+   "pilha": 100,
+   "descricao": "Madeira queimada na Forja. Para Pólvora.",
+   "icone": {
+    "forma": "pedra",
+    "cor": "#2a2826",
+    "cor2": "#4a4644"
+   }
+  },
+  {
+   "id": "po_faisca",
+   "nome": "Pó de Faísca",
+   "tipo": "recurso",
+   "peso": 0.02,
+   "pilha": 100,
+   "descricao": "Sílex e pedra moídos no Pilão. Faz fogo e pólvora.",
+   "icone": {
+    "forma": "po",
+    "cor": "#c8c0b0",
+    "cor2": "#f0e070"
+   }
+  },
+  {
+   "id": "polvora",
+   "nome": "Pólvora",
+   "tipo": "recurso",
+   "peso": 0.02,
+   "pilha": 100,
+   "descricao": "Carvão e Pó de Faísca no Pilão. Munição de armas de fogo.",
+   "icone": {
+    "forma": "po",
+    "cor": "#3a3634",
+    "cor2": "#6a6460"
+   }
+  },
+  {
+   "id": "pasta_cimento",
+   "nome": "Pasta de Cimento",
+   "tipo": "recurso",
+   "peso": 0.01,
+   "pilha": 100,
+   "descricao": "Quitina ou Queratina com pedra, no Pilão. Para construir de pedra e para o Pote.",
+   "icone": {
+    "forma": "po",
+    "cor": "#a8a49a",
+    "cor2": "#d8d4c8"
+   }
+  },
+  {
+   "id": "luneta",
+   "nome": "Luneta",
+   "tipo": "ferramenta",
+   "peso": 0.5,
+   "pilha": 1,
+   "descricao": "Para ver longe: com ela na mão, use Atacar para aproximar ou afastar a vista.",
+   "ferramenta": {
+    "tipo": "luneta",
+    "dano": 0,
+    "alcance": 1,
+    "durabilidade": 9999,
+    "zoom": true
+   },
+   "icone": {
+    "forma": "luneta",
+    "cor": "#8a6440",
+    "cor2": "#9ad8f4"
+   }
+  },
+  {
+   "id": "pote_agua",
+   "nome": "Pote de Água",
+   "tipo": "consumivel",
+   "peso": 2,
+   "pilha": 1,
+   "descricao": "Pote de cimento que guarda muita água (3 cantis). Encha olhando para água doce com ele na mão (Interagir) e beba com Usar.",
+   "cantil": {
+    "capacidade": 300,
+    "gole": 25
+   },
+   "icone": {
+    "forma": "pote",
+    "cor": "#a8a49a",
+    "cor2": "#4a90c0"
+   }
+  },
+  {
+   "id": "pistola",
+   "nome": "Pistola Simples",
+   "tipo": "ferramenta",
+   "peso": 3,
+   "pilha": 1,
+   "descricao": "Arma de fogo feita na Bancada. Gasta Balas Simples: muito dano de longe, mas faz barulho.",
+   "ferramenta": {
+    "tipo": "pistola",
+    "dano": 0,
+    "alcance": 2,
+    "durabilidade": 150,
+    "projetil": true,
+    "municoes": [
+     "bala_simples"
+    ]
+   },
+   "icone": {
+    "forma": "pistola",
+    "cor": "#5a5e66",
+    "cor2": "#6a4a30"
+   }
+  },
+  {
+   "id": "bala_simples",
+   "nome": "Bala Simples",
+   "tipo": "municao",
+   "peso": 0.02,
+   "pilha": 100,
+   "descricao": "Munição da Pistola. Dano 60.",
+   "municao": {
+    "dano": 60,
+    "torpor": 0,
+    "bala": true,
+    "velocidade": 160,
+    "alcance": 160
+   },
+   "icone": {
+    "forma": "bala",
+    "cor": "#b08a40",
+    "cor2": "#5a5e66"
+   }
+  },
+  {
+   "id": "flecha_obsidiana",
+   "nome": "Flecha de Obsidiana",
+   "tipo": "municao",
+   "peso": 0.05,
+   "pilha": 100,
+   "descricao": "Munição do Arco com ponta de obsidiana. Dano 34.",
+   "municao": {
+    "dano": 34,
+    "torpor": 0,
+    "obsidiana": true
+   },
+   "icone": {
+    "forma": "flecha",
+    "cor": "#8a6440",
+    "cor2": "#2a2034"
+   }
+  },
+  {
+   "id": "capuz_pelo",
+   "nome": "Capuz de Pelo",
+   "tipo": "equipamento",
+   "peso": 0.96,
+   "pilha": 1,
+   "descricao": "Roupa de pelo de mamute: a mais quente (frio da Lapônia). Vista no Inventário (Vestir): protege 8% do dano.",
+   "equipamento": {
+    "slot": "cabeca",
+    "armadura": 8,
+    "frio": 12,
+    "durabilidade": 180
+   },
+   "icone": {
+    "forma": "capuz",
+    "cor": "#8a6a4a",
+    "cor2": "#d8c4a4"
+   }
+  },
+  {
+   "id": "camisa_pelo",
+   "nome": "Camisa de Pelo",
+   "tipo": "equipamento",
+   "peso": 1.44,
+   "pilha": 1,
+   "descricao": "Roupa de pelo de mamute: a mais quente (frio da Lapônia). Vista no Inventário (Vestir): protege 8% do dano.",
+   "equipamento": {
+    "slot": "peito",
+    "armadura": 8,
+    "frio": 12,
+    "durabilidade": 180
+   },
+   "icone": {
+    "forma": "casaco",
+    "cor": "#8a6a4a",
+    "cor2": "#d8c4a4"
+   }
+  },
+  {
+   "id": "luvas_pelo",
+   "nome": "Luvas de Pelo",
+   "tipo": "equipamento",
+   "peso": 0.58,
+   "pilha": 1,
+   "descricao": "Roupa de pelo de mamute: a mais quente (frio da Lapônia). Vista no Inventário (Vestir): protege 8% do dano.",
+   "equipamento": {
+    "slot": "maos",
+    "armadura": 8,
+    "frio": 12,
+    "durabilidade": 180
+   },
+   "icone": {
+    "forma": "luvas",
+    "cor": "#8a6a4a",
+    "cor2": "#d8c4a4"
+   }
+  },
+  {
+   "id": "calca_pelo",
+   "nome": "Calça de Pelo",
+   "tipo": "equipamento",
+   "peso": 1.2,
+   "pilha": 1,
+   "descricao": "Roupa de pelo de mamute: a mais quente (frio da Lapônia). Vista no Inventário (Vestir): protege 8% do dano.",
+   "equipamento": {
+    "slot": "pernas",
+    "armadura": 8,
+    "frio": 12,
+    "durabilidade": 180
+   },
+   "icone": {
+    "forma": "calca",
+    "cor": "#8a6a4a",
+    "cor2": "#d8c4a4"
+   }
+  },
+  {
+   "id": "botas_pelo",
+   "nome": "Botas de Pelo",
+   "tipo": "equipamento",
+   "peso": 0.62,
+   "pilha": 1,
+   "descricao": "Roupa de pelo de mamute: a mais quente (frio da Lapônia). Vista no Inventário (Vestir): protege 8% do dano.",
+   "equipamento": {
+    "slot": "pes",
+    "armadura": 8,
+    "frio": 12,
+    "durabilidade": 180
+   },
+   "icone": {
+    "forma": "botas",
+    "cor": "#8a6a4a",
+    "cor2": "#d8c4a4"
+   }
+  },
+  {
+   "id": "capuz_quitina",
+   "nome": "Capuz de Quitina",
+   "tipo": "equipamento",
+   "peso": 1.28,
+   "pilha": 1,
+   "descricao": "Armadura de quitina: protege muito, mas esquenta pouco. Vista no Inventário (Vestir): protege 22% do dano.",
+   "equipamento": {
+    "slot": "cabeca",
+    "armadura": 22,
+    "frio": 2,
+    "durabilidade": 300
+   },
+   "icone": {
+    "forma": "capuz",
+    "cor": "#4a3a2a",
+    "cor2": "#8a7050"
+   }
+  },
+  {
+   "id": "camisa_quitina",
+   "nome": "Camisa de Quitina",
+   "tipo": "equipamento",
+   "peso": 1.92,
+   "pilha": 1,
+   "descricao": "Armadura de quitina: protege muito, mas esquenta pouco. Vista no Inventário (Vestir): protege 22% do dano.",
+   "equipamento": {
+    "slot": "peito",
+    "armadura": 22,
+    "frio": 2,
+    "durabilidade": 300
+   },
+   "icone": {
+    "forma": "casaco",
+    "cor": "#4a3a2a",
+    "cor2": "#8a7050"
+   }
+  },
+  {
+   "id": "luvas_quitina",
+   "nome": "Luvas de Quitina",
+   "tipo": "equipamento",
+   "peso": 0.77,
+   "pilha": 1,
+   "descricao": "Armadura de quitina: protege muito, mas esquenta pouco. Vista no Inventário (Vestir): protege 22% do dano.",
+   "equipamento": {
+    "slot": "maos",
+    "armadura": 22,
+    "frio": 2,
+    "durabilidade": 300
+   },
+   "icone": {
+    "forma": "luvas",
+    "cor": "#4a3a2a",
+    "cor2": "#8a7050"
+   }
+  },
+  {
+   "id": "calca_quitina",
+   "nome": "Calça de Quitina",
+   "tipo": "equipamento",
+   "peso": 1.6,
+   "pilha": 1,
+   "descricao": "Armadura de quitina: protege muito, mas esquenta pouco. Vista no Inventário (Vestir): protege 22% do dano.",
+   "equipamento": {
+    "slot": "pernas",
+    "armadura": 22,
+    "frio": 2,
+    "durabilidade": 300
+   },
+   "icone": {
+    "forma": "calca",
+    "cor": "#4a3a2a",
+    "cor2": "#8a7050"
+   }
+  },
+  {
+   "id": "botas_quitina",
+   "nome": "Botas de Quitina",
+   "tipo": "equipamento",
+   "peso": 0.83,
+   "pilha": 1,
+   "descricao": "Armadura de quitina: protege muito, mas esquenta pouco. Vista no Inventário (Vestir): protege 22% do dano.",
+   "equipamento": {
+    "slot": "pes",
+    "armadura": 22,
+    "frio": 2,
+    "durabilidade": 300
+   },
+   "icone": {
+    "forma": "botas",
+    "cor": "#4a3a2a",
+    "cor2": "#8a7050"
+   }
+  },
+  {
+   "id": "piso_palha",
+   "nome": "Piso de Palha",
+   "tipo": "estrutura",
+   "peso": 4.2,
+   "pilha": 20,
+   "peca": "piso_palha",
+   "descricao": "Base da casa (3×3 m). Selecione e Atacar para colocar; os próximos encaixam do lado. Vida 250. Frágil.",
+   "icone": {
+    "forma": "piso",
+    "cor": "#a08848",
+    "cor2": "#7a6430"
+   }
+  },
+  {
+   "id": "parede_palha",
+   "nome": "Parede de Palha",
+   "tipo": "estrutura",
+   "peso": 3.5,
+   "pilha": 20,
+   "peca": "parede_palha",
+   "descricao": "Encaixa na beira de um piso ou teto. Segura bichos do lado de fora. Vida 250. Frágil.",
+   "icone": {
+    "forma": "parede",
+    "cor": "#a08848",
+    "cor2": "#7a6430"
+   }
+  },
+  {
+   "id": "porta_palha",
+   "nome": "Parede com Porta de Palha",
+   "tipo": "estrutura",
+   "peso": 4.2,
+   "pilha": 20,
+   "peca": "porta_palha",
+   "descricao": "Parede com uma porta. Interagir abre e fecha. Vida 250. Frágil.",
+   "icone": {
+    "forma": "porta",
+    "cor": "#a08848",
+    "cor2": "#7a6430"
+   }
+  },
+  {
+   "id": "teto_palha",
+   "nome": "Teto de Palha",
+   "tipo": "estrutura",
+   "peso": 2.8,
+   "pilha": 20,
+   "peca": "teto_palha",
+   "descricao": "Vai em cima de um piso (3 m acima) ou de pilares. Dá para andar em cima. Vida 200. Frágil.",
+   "icone": {
+    "forma": "teto",
+    "cor": "#a08848",
+    "cor2": "#7a6430"
+   }
+  },
+  {
+   "id": "pilar",
+   "nome": "Pilar de Madeira",
+   "tipo": "estrutura",
+   "peso": 2,
+   "pilha": 20,
+   "peca": "pilar",
+   "descricao": "Coluna de 3 m: no canto de um piso ou solta no chão. Segura teto em cima. Vida 540.",
+   "icone": {
+    "forma": "parede",
+    "cor": "#8a6438",
+    "cor2": "#5e4226"
+   }
+  },
+  {
+   "id": "janela",
+   "nome": "Janela de Madeira",
+   "tipo": "estrutura",
+   "peso": 5,
+   "pilha": 20,
+   "peca": "janela",
+   "descricao": "Parede com janela para olhar lá fora (encaixa como parede). Vida 900.",
+   "icone": {
+    "forma": "parede",
+    "cor": "#8a6438",
+    "cor2": "#5e4226"
+   }
+  },
+  {
+   "id": "telhado",
+   "nome": "Telhado de Madeira",
+   "tipo": "estrutura",
+   "peso": 4,
+   "pilha": 20,
+   "peca": "telhado",
+   "descricao": "Teto inclinado: encaixa como o teto e cai para o lado que você olha. Vida 720.",
+   "icone": {
+    "forma": "teto",
+    "cor": "#8a6438",
+    "cor2": "#5e4226"
+   }
+  },
+  {
+   "id": "cerca",
+   "nome": "Cerca de Madeira",
+   "tipo": "estrutura",
+   "peso": 2,
+   "pilha": 20,
+   "peca": "cerca",
+   "descricao": "Muro baixo (1,3 m) na beira de um piso ou solto no chão; as próximas emendam. Vida 450.",
+   "icone": {
+    "forma": "parede",
+    "cor": "#8a6438",
+    "cor2": "#5e4226"
+   }
+  },
+  {
+   "id": "piso_pedra",
+   "nome": "Piso de Pedra",
+   "tipo": "estrutura",
+   "peso": 10.8,
+   "pilha": 20,
+   "peca": "piso_pedra",
+   "descricao": "Base da casa (3×3 m). Selecione e Atacar para colocar; os próximos encaixam do lado. Vida 3000. Só bichos grandes (8 m+) quebram.",
+   "icone": {
+    "forma": "piso",
+    "cor": "#8f8b82",
+    "cor2": "#5e5a54"
+   }
+  },
+  {
+   "id": "parede_pedra",
+   "nome": "Parede de Pedra",
+   "tipo": "estrutura",
+   "peso": 9.0,
+   "pilha": 20,
+   "peca": "parede_pedra",
+   "descricao": "Encaixa na beira de um piso ou teto. Segura bichos do lado de fora. Vida 3000. Só bichos grandes (8 m+) quebram.",
+   "icone": {
+    "forma": "parede",
+    "cor": "#8f8b82",
+    "cor2": "#5e5a54"
+   }
+  },
+  {
+   "id": "porta_pedra",
+   "nome": "Parede com Porta de Pedra",
+   "tipo": "estrutura",
+   "peso": 10.8,
+   "pilha": 20,
+   "peca": "porta_pedra",
+   "descricao": "Parede com uma porta. Interagir abre e fecha. Vida 3000. Só bichos grandes (8 m+) quebram.",
+   "icone": {
+    "forma": "porta",
+    "cor": "#8f8b82",
+    "cor2": "#5e5a54"
+   }
+  },
+  {
+   "id": "teto_pedra",
+   "nome": "Teto de Pedra",
+   "tipo": "estrutura",
+   "peso": 7.2,
+   "pilha": 20,
+   "peca": "teto_pedra",
+   "descricao": "Vai em cima de um piso (3 m acima) ou de pilares. Dá para andar em cima. Vida 2400. Só bichos grandes (8 m+) quebram.",
+   "icone": {
+    "forma": "teto",
+    "cor": "#8f8b82",
+    "cor2": "#5e5a54"
+   }
+  },
+  {
+   "id": "rampa_pedra",
+   "nome": "Rampa de Pedra",
+   "tipo": "estrutura",
+   "peso": 9.0,
+   "pilha": 20,
+   "peca": "rampa_pedra",
+   "descricao": "Em cima de um piso: sobe 3 m até o segundo andar. Sobe para o lado que você olha. Vida 3000. Só bichos grandes (8 m+) quebram.",
+   "icone": {
+    "forma": "rampa",
+    "cor": "#8f8b82",
+    "cor2": "#5e5a54"
+   }
+  },
+  {
+   "id": "pilar_pedra",
+   "nome": "Pilar de Pedra",
+   "tipo": "estrutura",
+   "peso": 3.6,
+   "pilha": 20,
+   "peca": "pilar_pedra",
+   "descricao": "Coluna de 3 m: no canto de um piso ou solta no chão. Segura teto em cima. Vida 1800. Só bichos grandes (8 m+) quebram.",
+   "icone": {
+    "forma": "parede",
+    "cor": "#8f8b82",
+    "cor2": "#5e5a54"
+   }
+  },
+  {
+   "id": "janela_pedra",
+   "nome": "Janela de Pedra",
+   "tipo": "estrutura",
+   "peso": 9.0,
+   "pilha": 20,
+   "peca": "janela_pedra",
+   "descricao": "Parede com janela para olhar lá fora (encaixa como parede). Vida 3000. Só bichos grandes (8 m+) quebram.",
+   "icone": {
+    "forma": "parede",
+    "cor": "#8f8b82",
+    "cor2": "#5e5a54"
+   }
+  },
+  {
+   "id": "telhado_pedra",
+   "nome": "Telhado de Pedra",
+   "tipo": "estrutura",
+   "peso": 7.2,
+   "pilha": 20,
+   "peca": "telhado_pedra",
+   "descricao": "Teto inclinado: encaixa como o teto e cai para o lado que você olha. Vida 2400. Só bichos grandes (8 m+) quebram.",
+   "icone": {
+    "forma": "teto",
+    "cor": "#8f8b82",
+    "cor2": "#5e5a54"
+   }
+  },
+  {
+   "id": "cerca_pedra",
+   "nome": "Cerca de Pedra",
+   "tipo": "estrutura",
+   "peso": 3.6,
+   "pilha": 20,
+   "peca": "cerca_pedra",
+   "descricao": "Muro baixo (1,3 m) na beira de um piso ou solto no chão; as próximas emendam. Vida 1500. Só bichos grandes (8 m+) quebram.",
+   "icone": {
+    "forma": "parede",
+    "cor": "#8f8b82",
+    "cor2": "#5e5a54"
+   }
+  },
+  {
+   "id": "piso_metal",
+   "nome": "Piso de Metal",
+   "tipo": "estrutura",
+   "peso": 13.2,
+   "pilha": 20,
+   "peca": "piso_metal",
+   "descricao": "Base da casa (3×3 m). Selecione e Atacar para colocar; os próximos encaixam do lado. Vida 8000. Só gigantes (14 m+) quebram.",
+   "icone": {
+    "forma": "piso",
+    "cor": "#8c939c",
+    "cor2": "#4c5258"
+   }
+  },
+  {
+   "id": "parede_metal",
+   "nome": "Parede de Metal",
+   "tipo": "estrutura",
+   "peso": 11.0,
+   "pilha": 20,
+   "peca": "parede_metal",
+   "descricao": "Encaixa na beira de um piso ou teto. Segura bichos do lado de fora. Vida 8000. Só gigantes (14 m+) quebram.",
+   "icone": {
+    "forma": "parede",
+    "cor": "#8c939c",
+    "cor2": "#4c5258"
+   }
+  },
+  {
+   "id": "porta_metal",
+   "nome": "Parede com Porta de Metal",
+   "tipo": "estrutura",
+   "peso": 13.2,
+   "pilha": 20,
+   "peca": "porta_metal",
+   "descricao": "Parede com uma porta. Interagir abre e fecha. Vida 8000. Só gigantes (14 m+) quebram.",
+   "icone": {
+    "forma": "porta",
+    "cor": "#8c939c",
+    "cor2": "#4c5258"
+   }
+  },
+  {
+   "id": "teto_metal",
+   "nome": "Teto de Metal",
+   "tipo": "estrutura",
+   "peso": 8.8,
+   "pilha": 20,
+   "peca": "teto_metal",
+   "descricao": "Vai em cima de um piso (3 m acima) ou de pilares. Dá para andar em cima. Vida 6400. Só gigantes (14 m+) quebram.",
+   "icone": {
+    "forma": "teto",
+    "cor": "#8c939c",
+    "cor2": "#4c5258"
+   }
+  },
+  {
+   "id": "rampa_metal",
+   "nome": "Rampa de Metal",
+   "tipo": "estrutura",
+   "peso": 11.0,
+   "pilha": 20,
+   "peca": "rampa_metal",
+   "descricao": "Em cima de um piso: sobe 3 m até o segundo andar. Sobe para o lado que você olha. Vida 8000. Só gigantes (14 m+) quebram.",
+   "icone": {
+    "forma": "rampa",
+    "cor": "#8c939c",
+    "cor2": "#4c5258"
+   }
+  },
+  {
+   "id": "pilar_metal",
+   "nome": "Pilar de Metal",
+   "tipo": "estrutura",
+   "peso": 4.4,
+   "pilha": 20,
+   "peca": "pilar_metal",
+   "descricao": "Coluna de 3 m: no canto de um piso ou solta no chão. Segura teto em cima. Vida 4800. Só gigantes (14 m+) quebram.",
+   "icone": {
+    "forma": "parede",
+    "cor": "#8c939c",
+    "cor2": "#4c5258"
+   }
+  },
+  {
+   "id": "janela_metal",
+   "nome": "Janela de Metal",
+   "tipo": "estrutura",
+   "peso": 11.0,
+   "pilha": 20,
+   "peca": "janela_metal",
+   "descricao": "Parede com janela para olhar lá fora (encaixa como parede). Vida 8000. Só gigantes (14 m+) quebram.",
+   "icone": {
+    "forma": "parede",
+    "cor": "#8c939c",
+    "cor2": "#4c5258"
+   }
+  },
+  {
+   "id": "telhado_metal",
+   "nome": "Telhado de Metal",
+   "tipo": "estrutura",
+   "peso": 8.8,
+   "pilha": 20,
+   "peca": "telhado_metal",
+   "descricao": "Teto inclinado: encaixa como o teto e cai para o lado que você olha. Vida 6400. Só gigantes (14 m+) quebram.",
+   "icone": {
+    "forma": "teto",
+    "cor": "#8c939c",
+    "cor2": "#4c5258"
+   }
+  },
+  {
+   "id": "cerca_metal",
+   "nome": "Cerca de Metal",
+   "tipo": "estrutura",
+   "peso": 4.4,
+   "pilha": 20,
+   "peca": "cerca_metal",
+   "descricao": "Muro baixo (1,3 m) na beira de um piso ou solto no chão; as próximas emendam. Vida 4000. Só gigantes (14 m+) quebram.",
+   "icone": {
+    "forma": "parede",
+    "cor": "#8c939c",
+    "cor2": "#4c5258"
+   }
+  },
+  {
+   "id": "sela_media",
+   "nome": "Sela Média",
+   "tipo": "consumivel",
+   "peso": 8,
+   "pilha": 1,
+   "descricao": "Sela para bichos médios (5 a 11 m: Parassauro, Trike, Mamute...). Com ela na mão, Interagir no bicho domado.",
+   "icone": {
+    "forma": "sela",
+    "cor": "#6a3e20",
+    "cor2": "#c8a060"
+   }
+  },
+  {
+   "id": "sela_grande",
+   "nome": "Sela Grande",
+   "tipo": "consumivel",
+   "peso": 15,
+   "pilha": 1,
+   "descricao": "Sela com plataforma para gigantes (11 m ou mais: T-Rex, Braquio, Espinossauro...). Com ela na mão, Interagir no bicho domado.",
+   "icone": {
+    "forma": "sela",
+    "cor": "#5a3418",
+    "cor2": "#a8acb4"
    }
   }
  ]

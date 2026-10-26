@@ -63,10 +63,12 @@ export const BIOME = {
   IGAPO: 3,   // floresta alagada na beira do pântano
   SWAMP: 4,
   SNOW: 5,    // Lapônia: neve, rocha, pinheiros
+  HIGHLAND: 6, // Serra Rochosa: morros de pedra (metal, obsidiana, cristal)
+  PLAINS: 7,   // Campos: planície aberta de capim (manadas)
 };
 
 // Chave de cada bioma no arquivo data/world/ilha.json
-export const BIOME_KEYS = ['mar', 'praia', 'selva', 'igapo', 'pantano', 'neve'];
+export const BIOME_KEYS = ['mar', 'praia', 'selva', 'igapo', 'pantano', 'neve', 'serra', 'campos'];
 
 const C = (hex) => new THREE.Color(hex);
 const COLORS = {
@@ -84,6 +86,11 @@ const COLORS = {
   rock: C('#5f6164'),
   rockDark: C('#3e3f42'),
   tundra: C('#6f6a5c'),
+  serraRock: C('#7a7064'),
+  serraDark: C('#4f4840'),
+  serraGrass: C('#5e6a3a'),
+  plainsGrass: C('#7a8a3e'),
+  plainsDry: C('#9a8e52'),
 };
 
 export class IslandMap {
@@ -214,6 +221,34 @@ export class IslandMap {
     return lerp(h, terr, 0.18 * rough);
   }
 
+  // Regiões dos biomas novos (círculos do ilha.json com borda irregular):
+  // > 0 dentro, < 0 fora.
+  _regionField(list, x, z, seedOff) {
+    if (!list?.length) return -1;
+    let s = -Infinity;
+    for (const c of list) s = Math.max(s, 1 - Math.hypot(x - c.x, z - c.z) / c.raio_m);
+    return s + fbm(this.nRegion, x * 0.006 + seedOff, z * 0.006 - seedOff, 3) * 0.22;
+  }
+
+  highlandField(x, z) {
+    return this._regionField(this.L.serras, x, z, 31);
+  }
+
+  plainsField(x, z) {
+    return this._regionField(this.L.campos, x, z, 77);
+  }
+
+  // Altura extra da Serra Rochosa: morros de pedra com cristas
+  highlandHeight(x, z) {
+    const f = this.highlandField(x, z);
+    if (f <= 0) return 0;
+    const k = smoothstep(0, 0.45, f);
+    const ridge = 1 - Math.abs(fbm(this.nRidge, x * 0.012 + 5, z * 0.012 - 9, 4));
+    const bumps = fbm(this.nRock, x * 0.03, z * 0.03, 3);
+    const top = (this.L.serras.find((c) => Math.hypot(x - c.x, z - c.z) < c.raio_m * 1.3)?.altura_m) ?? 50;
+    return k * (top * (0.35 + 0.65 * ridge * ridge) + bumps * 4);
+  }
+
   // "Quanto dentro do pântano": > 0 dentro, < 0 fora (com borda irregular).
   swampField(x, z) {
     let s = -Infinity;
@@ -254,6 +289,10 @@ export class IslandMap {
       const ridge = 1 - Math.abs(fbm(this.nRidge, x * 0.009, z * 0.009, 3));
       const grotas = -Math.pow(ridge, 4) * 7;
       h = praia + planicie + (colinas + grotas) * inland;
+      // Campos: planície mais lisa (menos morro)
+      const pf = this.plainsField(x, z);
+      if (pf > 0) h -= (colinas + grotas) * inland * smoothstep(0, 0.4, pf) * 0.6;
+      h += this.highlandHeight(x, z) * inland;
       h += this.mountainHeight(x, z, d);
       h = this._plateaus(x, z, h);
     }
@@ -501,6 +540,8 @@ export class IslandMap {
     const S = this.swampField(x, z);
     if (S > 0.08) return BIOME.SWAMP;
     if (S > -0.3 && h < this.swamp.level + 4) return BIOME.IGAPO;
+    if (this.highlandField(x, z) > 0.12) return BIOME.HIGHLAND;
+    if (this.plainsField(x, z) > 0.05) return BIOME.PLAINS;
     return BIOME.JUNGLE;
   }
 
@@ -544,6 +585,16 @@ export class IslandMap {
         // camadas de rocha (estratos) nos paredões
         out.multiplyScalar(0.82 + 0.3 * (0.5 + 0.5 * Math.sin(h * 0.55 + n1 * 3)));
         out.lerp(COLORS.tundra, smoothstep(30, 8, h) * 0.6);
+        break;
+      case BIOME.HIGHLAND:
+        // pedra com capim nas partes planas e veios escuros nos paredões
+        out.copy(COLORS.serraRock).lerp(COLORS.serraDark, clamp(n2 * 0.8 + 0.4, 0, 1));
+        out.multiplyScalar(0.85 + 0.25 * (0.5 + 0.5 * Math.sin(h * 0.7 + n1 * 3)));
+        out.lerp(COLORS.serraGrass, smoothstep(0.82, 0.95, normalY) * smoothstep(55, 25, h) * 0.75);
+        break;
+      case BIOME.PLAINS:
+        out.copy(COLORS.plainsGrass).lerp(COLORS.plainsDry, clamp(n2 * 0.9 + 0.4, 0, 1));
+        out.lerp(COLORS.soil, clamp(n1 * 0.6, 0, 0.35));
         break;
       case BIOME.SWAMP:
         out.copy(COLORS.swampMoss).lerp(COLORS.mud, smoothstep(this.swamp.level + 0.8, this.swamp.level, h));

@@ -18,6 +18,8 @@ const BY_BIOME = {
   [BIOME.IGAPO]: { capim: 0.45, folha: 0.15, broto: 0.12, tint: [0.9, 0.95, 0.75] },
   [BIOME.SWAMP]: { capim: 0.5, folha: 0.05, broto: 0.04, tint: [1.0, 0.95, 0.7] },
   [BIOME.BEACH]: { capim: 0.05, folha: 0.0, broto: 0.0, tint: [1.15, 1.1, 0.8] },
+  [BIOME.HIGHLAND]: { capim: 0.12, folha: 0.0, broto: 0.03, tint: [0.95, 0.95, 0.8] },
+  [BIOME.PLAINS]: { capim: 0.7, folha: 0.03, broto: 0.02, tint: [1.1, 1.05, 0.7] },
 };
 
 function cellHash(ix, iz, s = 0) {

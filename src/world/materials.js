@@ -258,7 +258,7 @@ export function addWind(material, bend = 0.012, flutter = 0.05) {
 export function makeWaterMaterial({
   shallow, deep, foam = '#e8efe6', sky = '#bcd8e4', sunDir, map, level,
   opacityShallow = 0.35, opacityDeep = 0.93, deepAt = 6, waveHeight = 0.1,
-  reflect = 0.65, foamAmount = 1,
+  reflect = 0.65, foamAmount = 1, ring = [0, 1e9], zenith = '#5f95c4',
 }) {
   const uniforms = THREE.UniformsUtils.merge([
     THREE.UniformsLib.fog,
@@ -278,6 +278,8 @@ export function makeWaterMaterial({
       uWave: { value: waveHeight },
       uReflect: { value: reflect },
       uFoamAmt: { value: foamAmount },
+      uRing: { value: new THREE.Vector2(ring[0], ring[1]) },
+      uZenith: { value: new THREE.Color(zenith) },
     },
   ]);
   uniforms.uTime = sharedTime;
@@ -296,9 +298,14 @@ export function makeWaterMaterial({
       uniform float uTime;
       uniform float uWave;
       varying vec3 vWorld;
+      varying float vCrest;
       void main() {
         vec4 wp = modelMatrix * vec4(position, 1.0);
-        wp.y += (sin(wp.x * 0.09 + uTime * 1.1) + cos(wp.z * 0.08 + uTime * 0.85)) * uWave;
+        // ondas: 2 grandes + 1 cruzada menor (mesma conta de WaterSystem.waveAt)
+        float w = sin(wp.x * 0.09 + uTime * 1.1) + cos(wp.z * 0.08 + uTime * 0.85)
+          + 0.45 * sin((wp.x + wp.z) * 0.16 + uTime * 1.7);
+        wp.y += w * uWave;
+        vCrest = w / 2.45; // -1..1: crista da onda
         vWorld = wp.xyz;
         vec4 mvPosition = viewMatrix * wp;
         gl_Position = projectionMatrix * mvPosition;
@@ -307,14 +314,19 @@ export function makeWaterMaterial({
     fragmentShader: /* glsl */ `
       #include <common>
       #include <fog_pars_fragment>
-      uniform vec3 uShallow, uDeep, uFoam, uSky, uSunColor, uSunDir;
-      uniform float uLevel, uMapSize, uMapHalf, uOpS, uOpD, uDeepAt, uReflect, uTime, uFoamAmt, uDay;
+      uniform vec3 uShallow, uDeep, uFoam, uSky, uSunColor, uSunDir, uZenith;
+      uniform float uLevel, uMapSize, uMapHalf, uOpS, uOpD, uDeepAt, uReflect, uTime, uFoamAmt, uDay, uWave;
+      uniform vec2 uRing;
       uniform sampler2D uHeight;
       uniform sampler2D uNoise;
       varying vec3 vWorld;
+      varying float vCrest;
       float nz(vec2 p) { return texture2D(uNoise, p).r; }
       void main() {
         vec2 p = vWorld.xz;
+        // mar em 2 malhas: detalhada perto da câmera, simples longe
+        float camD = length(p - cameraPosition.xz);
+        if (camD < uRing.x || camD >= uRing.y) discard;
         float t = uTime;
         // profundidade: nível da água menos a altura do chão
         vec2 huv = (p + uMapHalf) / uMapSize;
@@ -324,26 +336,36 @@ export function makeWaterMaterial({
         // ondinhas: duas camadas de ruído andando em direções diferentes
         vec2 uv1 = p * 0.055 + vec2(t * 0.018, t * 0.011);
         vec2 uv2 = p * 0.091 - vec2(t * 0.012, -t * 0.016);
+        vec2 uv3 = p * 0.23 + vec2(-t * 0.035, t * 0.028); // marolinha fina
         float e = 0.004;
-        float h1 = nz(uv1) + nz(uv2);
-        float hx = nz(uv1 + vec2(e, 0.0)) + nz(uv2 + vec2(e, 0.0));
-        float hz = nz(uv1 + vec2(0.0, e)) + nz(uv2 + vec2(0.0, e));
-        vec3 n = normalize(vec3((h1 - hx) * 9.0, 1.0, (h1 - hz) * 9.0));
+        float h1 = nz(uv1) + nz(uv2) + 0.5 * nz(uv3);
+        float hx = nz(uv1 + vec2(e, 0.0)) + nz(uv2 + vec2(e, 0.0)) + 0.5 * nz(uv3 + vec2(e, 0.0));
+        float hz = nz(uv1 + vec2(0.0, e)) + nz(uv2 + vec2(0.0, e)) + 0.5 * nz(uv3 + vec2(0.0, e));
+        // longe a água fica mais lisa (sem chuvisco de pixels)
+        float bump = 9.0 * (1.0 - smoothstep(60.0, 400.0, camD) * 0.7);
+        vec3 n = normalize(vec3((h1 - hx) * bump, 1.0, (h1 - hz) * bump));
         if (!gl_FrontFacing) n = -n;
 
         vec3 V = normalize(cameraPosition - vWorld);
-        float fres = pow(1.0 - clamp(abs(dot(n, V)), 0.0, 1.0), 4.0);
+        float fres = 0.02 + 0.98 * pow(1.0 - clamp(abs(dot(n, V)), 0.0, 1.0), 5.0);
         float dk = smoothstep(0.0, uDeepAt, depth);
         vec3 col = mix(uShallow, uDeep, dk) * uDay;
-        col = mix(col, uSky * uDay, fres * uReflect);
+        // luz passando pela crista da onda (verde-água mais claro)
+        col += uShallow * uDay * smoothstep(0.35, 1.0, vCrest) * 0.35 * dk * step(0.001, uWave);
+        // reflexo do céu: perto do horizonte claro, para cima azul
+        vec3 Rv = reflect(-V, n);
+        vec3 skyCol = mix(uSky, uZenith, smoothstep(0.0, 0.6, Rv.y)) * uDay;
+        col = mix(col, skyCol, clamp(fres * uReflect * 1.15, 0.0, 0.75));
         vec3 R = reflect(-uSunDir, n);
         float s = max(dot(R, V), 0.0);
-        col += uSunColor * (pow(s, 160.0) * 1.8 + pow(s, 20.0) * 0.1) * max(uDay, 0.35);
+        col += uSunColor * (pow(s, 220.0) * 2.2 + pow(s, 24.0) * 0.12) * max(uDay, 0.35);
 
         // espuma na beira
         float foamLine = 1.0 - smoothstep(0.0, 0.5, depth);
         float foamNoise = smoothstep(0.45, 0.7, nz(p * 0.35 + vec2(t * 0.03, 0.0)) + 0.25 * sin(depth * 18.0 - t * 2.0));
-        float foam = foamLine * foamNoise * uFoamAmt;
+        // espuma nas cristas das ondas do mar aberto (carneirinhos)
+        float caps = smoothstep(0.78, 0.95, vCrest) * smoothstep(0.55, 0.75, nz(p * 0.12 + vec2(t * 0.02, -t * 0.015))) * step(0.001, uWave);
+        float foam = (foamLine * foamNoise + caps * 0.7) * uFoamAmt;
         col = mix(col, uFoam * uDay, clamp(foam, 0.0, 0.85));
 
         float alpha = mix(uOpS, uOpD, dk) + fres * 0.2 + foam * 0.5;

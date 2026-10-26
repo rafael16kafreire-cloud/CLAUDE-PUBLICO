@@ -854,6 +854,74 @@ export function makeIronOre() {
   return m;
 }
 
+// Rocha com veios coloridos (metal, obsidiana, petróleo). veio = cores do
+// veio, base = cor da pedra, snow = neve em cima, gloss = parte "molhada".
+function oreRock(base, veio, { seed = 4, snow = false, veia = 0.55, stretch = [1.1, 0.75, 1] } = {}) {
+  const g = new THREE.IcosahedronGeometry(1, 1).toNonIndexed();
+  const pos = g.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i);
+    const y = pos.getY(i);
+    const z = pos.getZ(i);
+    const f = 0.8 + hash3(Math.round(x * 50), Math.round(y * 50), Math.round(z * 50), seed) * 0.35;
+    pos.setXYZ(i, x * f * stretch[0], Math.max(-0.3, y * f * stretch[1]), z * f * stretch[2]);
+  }
+  g.translate(0, 0.25, 0);
+  g.computeVertexNormals();
+  const m = merge([paintFn(g, (c, x, y, z, nx, ny) => {
+    const h = hash3(Math.round(x * 6), Math.round(y * 6), Math.round(z * 6), seed + 2);
+    if (snow && ny > 0.75) c.set(SNOW_HEX);
+    else if (h > veia) c.set(veio[h > (1 + veia) / 2 ? 1 : 0]);
+    else c.set(base).multiplyScalar(0.85 + h * 0.4);
+  })]);
+  const uv = m.attributes.uv;
+  for (let i = 0; i < uv.count; i++) uv.setXY(i, WHITE_UV[0], 0.55);
+  return m;
+}
+
+// Serra: rocha cinza com veios de metal brilhante
+export const makeMetalRock = () => oreRock('#56524c', ['#9ea4ac', '#d4d8de'], { seed: 9, veia: 0.6 });
+// Obsidiana: vidro vulcânico preto-arroxeado
+export const makeObsidianRock = () => oreRock('#2a2630', ['#120e18', '#4a3a62'], { seed: 13, veia: 0.35, stretch: [1, 1.05, 0.9] });
+// Petróleo: pedra escura com manchas pretas e lisas
+export const makeOilRock = () => oreRock('#4a4640', ['#0c0a08', '#1e1a16'], { seed: 21, veia: 0.5 });
+
+// Cristal: ponta de prismas transparentes azulados saindo de uma base
+export function makeCrystal() {
+  const parts = [];
+  const base = blob(0.55, [0, 0.1, 0], [1.2, 0.5, 1], [7, 4], 0.4, 31);
+  base.computeVertexNormals();
+  parts.push(paint(base, '#5a5650', 0.3));
+  const spikes = [[0, 0, 1.6, 0, 0], [0.28, 0.1, 1.1, 0.35, 0.2], [-0.25, -0.15, 1.2, -0.4, -0.1], [0.05, 0.3, 0.9, 0.1, 0.45], [-0.1, -0.35, 0.8, -0.2, -0.5]];
+  spikes.forEach(([x, z, h, tx, tz], i) => {
+    const g = new THREE.CylinderGeometry(0, 0.16 + 0.04 * (i % 2), h, 6, 1).translate(0, h / 2, 0);
+    g.rotateX(tz * 0.6).rotateZ(-tx * 0.6).translate(x, 0.15, z);
+    parts.push(paintFn(g.toNonIndexed(), (c, px, py, pz, nx) => c.set(nx > 0.2 ? '#e4f8ff' : '#7cc8ea').multiplyScalar(0.95 + py * 0.08)));
+  });
+  const m = merge(parts);
+  const uv = m.attributes.uv;
+  for (let i = 0; i < uv.count; i++) uv.setXY(i, WHITE_UV[0], 0.55);
+  return m;
+}
+
+// Concha do fundo do mar (pérola de sílica dentro)
+export function makeShell() {
+  const g = new THREE.SphereGeometry(0.32, 9, 5, 0, Math.PI * 2, 0, Math.PI / 2);
+  const pos = g.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const a = Math.atan2(pos.getZ(i), pos.getX(i));
+    const f = 1 + 0.08 * Math.cos(a * 9); // gomos da concha
+    pos.setXYZ(i, pos.getX(i) * f, pos.getY(i) * 0.45, pos.getZ(i) * f * 0.9);
+  }
+  g.computeVertexNormals();
+  const shell = paintFn(g, (c, x, y, z) => c.set(Math.cos(Math.atan2(z, x) * 9) > 0 ? '#e8d4c0' : '#c49a80'));
+  const pearl = paint(new THREE.SphereGeometry(0.07, 6, 4).translate(0.18, 0.04, 0.12), '#f4f0ea');
+  const m = merge([shell, pearl]);
+  const uv = m.attributes.uv;
+  for (let i = 0; i < uv.count; i++) uv.setXY(i, WHITE_UV[0], 0.55);
+  return m;
+}
+
 // Pedrinhas soltas no chão (pega com Interagir)
 export function makePebbles() {
   const parts = [];

@@ -74,6 +74,13 @@ const TYPES = {
   arvore_seca: { foot: 0.4, hi: () => P.makeSnowDeadTree(false, 5), lo: () => P.makeSnowDeadTree(true, 5), collider: 0.25, shadow: true, scale: [0.9, 1.4], res: 'arvore', cold: true, maxDist: 320 },
   arbusto_neve: { hi: P.makeSnowShrub, collider: 0, shadow: false, scale: [0.7, 1.4], res: 'arbusto', maxDist: 90 },
   rochedo: { foot: 1.6, hi: snowRockGeometry, mat: snowRockMaterial, lo: P.makeBoulderLow, collider: 1.0, shadow: true, scale: [1.8, 9], res: 'rochedo', maxDist: 320, rock: true, textured: true },
+  // recursos por região (como no ARK): metal e cristal na serra, obsidiana
+  // e petróleo nas montanhas, conchas com pérolas no fundo do mar
+  rocha_metal: { foot: 0.8, hi: P.makeMetalRock, collider: 0.9, shadow: true, scale: [1.0, 1.8], res: 'metal', maxDist: 160, rock: true },
+  rocha_obsidiana: { foot: 0.7, hi: P.makeObsidianRock, collider: 0.8, shadow: true, scale: [0.8, 1.4], res: 'obsidiana', maxDist: 160, rock: true },
+  rocha_petroleo: { foot: 0.7, hi: P.makeOilRock, collider: 0.8, shadow: false, scale: [0.8, 1.4], res: 'petroleo', maxDist: 140, rock: true },
+  cristal: { foot: 0.5, hi: P.makeCrystal, collider: 0.5, shadow: false, scale: [0.8, 1.4], res: 'cristal', maxDist: 140, rock: true },
+  concha: { foot: 0.1, hi: P.makeShell, collider: 0, shadow: false, scale: [0.8, 1.5], res: 'concha', maxDist: 40 },
   minerio_ferro: { foot: 0.8, hi: P.makeIronOre, collider: 0.9, shadow: false, scale: [0.9, 1.6], res: 'ferro', maxDist: 140, rock: true },
   pedra_musgo: { foot: 0.85, hi: P.makeMossRock, lo: P.makeMossRockLow, collider: 1.0, shadow: false, scale: [0.6, 2.2], res: 'pedra', maxDist: 160 },
   mangue: { foot: 1.2, hi: P.makeMangrove, lo: P.makeMangroveLow, imp: true, collider: 0.6, shadow: true, scale: [0.8, 1.2], res: 'arvore', water: true },
@@ -192,8 +199,9 @@ export class Vegetation {
         const r3 = rand();
         const r4 = rand();
         const h = map.heightAt(x, z);
-        if (h < 0.4) continue;
         const key = BIOME_KEYS[map.biomeAt(x, z)];
+        // no mar só nasce coisa no fundo raso (dá para mergulhar até lá)
+        if (key === 'mar' ? h > -2 || h < -16 : h < 0.4) continue;
         const table = tables[key];
         if (!table) continue;
         if (avoidPoints.some((pt) => Math.hypot(pt.x - x, pt.z - z) < 9)) continue;
@@ -215,7 +223,7 @@ export class Vegetation {
         const depth = wb ? wb.level - h : 0;
         if (def.surface) {
           if (!wb || depth < 0.4) continue;
-        } else if (wb && (!def.water || depth > 0.9)) {
+        } else if (key !== 'mar' && wb && (!def.water || depth > 0.9)) {
           continue;
         }
         const ny = map.normalAt(x, z, normal).y;
@@ -223,6 +231,7 @@ export class Vegetation {
         // pinheiro não sobe nos picos (linha das árvores); minério só no alto
         if (def.cold && h > 75) continue;
         if (type === 'minerio_ferro' && h < 30) continue;
+        if (key === 'neve' && (type === 'rocha_obsidiana' || type === 'cristal') && h < 60) continue; // no alto da montanha
         if (def.rock && ny < 0.3) continue;
         if (map.onPlateau(x, z)) continue; // topo dos platôs: livre para construir
         // sub-bosque: não nasce dentro de troncos e pedras

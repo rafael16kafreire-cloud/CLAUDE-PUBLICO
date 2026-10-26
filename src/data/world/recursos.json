@@ -1,5 +1,5 @@
 {
-  "_explicacao": "so_machado = só dá para tirar algo com machado (com a mão você se machuca). infinita = nunca acaba. O que cada planta/pedra dá quando você bate (mao = sem ferramenta, machado, picareta, lanca, clava) ou colhe com Interagir (colher). Valores = [mínimo, máximo] por golpe. capacidade = quantos golpes até acabar. esvazia = vira outro tipo quando acaba (ex.: arbusto sem bagas). Recursos voltam depois de 'reaparece_min' minutos, se você não estiver perto.",
+  "_explicacao": "efeito = pedacinhos que voam ao bater (pedra, madeira, folha, cristal, obsidiana, agua). so_machado = só dá para tirar algo com machado (com a mão você se machuca). infinita = nunca acaba. O que cada planta/pedra dá quando você bate (mao = sem ferramenta, machado, picareta, lanca, clava) ou colhe com Interagir (colher). Valores = [mínimo, máximo] por golpe. capacidade = quantos golpes até acabar. esvazia = vira outro tipo quando acaba (ex.: arbusto sem bagas). Recursos voltam depois de 'reaparece_min' minutos, se você não estiver perto.",
   "reaparece_min": 8,
   "tipos": {
     "arvore": {
@@ -45,7 +45,7 @@
       "colher": { "graveto": [2, 3] }
     },
     "rochedo": {
-      "nome": "Rochedo", "capacidade": 80, "xp": 1, "infinita": true,
+      "efeito": "pedra", "nome": "Rochedo", "capacidade": 80, "xp": 1, "infinita": true,
       "so_ferramenta": true, "mao": {},
       "machado": { "pedra": [2, 4], "silex": [0, 1] },
       "picareta": { "pedra": [2, 3], "silex": [1, 3] },
@@ -53,15 +53,52 @@
       "clava": { "pedra": [1, 1] }
     },
     "ferro": {
-      "nome": "Minério de ferro", "capacidade": 30, "xp": 2,
+      "efeito": "pedra", "nome": "Minério de ferro", "capacidade": 30, "xp": 2,
       "so_ferramenta": true, "mao": {},
       "machado": { "pedra": [1, 2], "minerio_ferro": [0, 1] },
       "picareta": { "minerio_ferro": [2, 3], "pedra": [0, 2] },
       "lanca": { "pedra": [0, 1] },
       "clava": { "pedra": [1, 1] }
     },
+    "metal": {
+      "efeito": "pedra", "nome": "Rocha de metal", "capacidade": 40, "xp": 3,
+      "so_ferramenta": true, "mao": {},
+      "machado": { "pedra": [1, 2], "minerio_ferro": [0, 1] },
+      "picareta": { "minerio_ferro": [3, 5], "pedra": [0, 1] },
+      "lanca": { "pedra": [0, 1] },
+      "clava": { "pedra": [1, 1] }
+    },
+    "obsidiana": {
+      "efeito": "obsidiana", "nome": "Obsidiana", "capacidade": 25, "xp": 3,
+      "so_ferramenta": true, "mao": {},
+      "machado": { "pedra": [1, 2], "obsidiana": [0, 1] },
+      "picareta": { "obsidiana": [2, 3], "pedra": [0, 1] },
+      "lanca": { "pedra": [0, 1] },
+      "clava": { "pedra": [0, 1] }
+    },
+    "cristal": {
+      "efeito": "cristal", "nome": "Cristal", "capacidade": 20, "xp": 3,
+      "so_ferramenta": true, "mao": {},
+      "machado": { "cristal": [0, 1], "pedra": [0, 1] },
+      "picareta": { "cristal": [2, 3] },
+      "lanca": { "cristal": [0, 1] },
+      "clava": { "pedra": [0, 1] }
+    },
+    "petroleo": {
+      "efeito": "obsidiana", "nome": "Rocha de petróleo", "capacidade": 22, "xp": 3,
+      "so_ferramenta": true, "mao": {},
+      "machado": { "pedra": [1, 2], "petroleo": [0, 1] },
+      "picareta": { "petroleo": [2, 3], "pedra": [0, 1] },
+      "lanca": { "pedra": [0, 1] },
+      "clava": { "pedra": [0, 1] }
+    },
+    "concha": {
+      "efeito": "agua", "nome": "Concha do fundo do mar", "capacidade": 2, "xp": 2, "rotulo": "Pegar pérolas",
+      "mao": { "perola_silica": [1, 2] },
+      "colher": { "perola_silica": [2, 4] }
+    },
     "pedra": {
-      "nome": "Pedra", "capacidade": 35, "xp": 1,
+      "efeito": "pedra", "nome": "Pedra", "capacidade": 35, "xp": 1,
       "so_ferramenta": true, "mao": {},
       "machado": { "pedra": [3, 5], "silex": [0, 1] },
       "picareta": { "pedra": [1, 2], "silex": [2, 4] },

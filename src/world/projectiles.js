@@ -12,6 +12,8 @@ const FLETCH = new THREE.BoxGeometry(0.07, 0.005, 0.12).translate(0, 0, 0.33);
 const WOOD = new THREE.MeshLambertMaterial({ color: '#8a6440' });
 const STONE = new THREE.MeshLambertMaterial({ color: '#7a7a80' });
 const TRANQ = new THREE.MeshLambertMaterial({ color: '#7a4ac8' });
+const BULLET = new THREE.CapsuleGeometry(0.012, 0.03, 2, 5).rotateX(Math.PI / 2);
+const OBSID = new THREE.MeshLambertMaterial({ color: '#2a2034' });
 const FEATHER = new THREE.MeshLambertMaterial({ color: '#e8e0c8', side: THREE.DoubleSide });
 
 export class Projectiles {
@@ -25,8 +27,13 @@ export class Projectiles {
 
   _mesh(ammo) {
     const g = new THREE.Group();
+    if (ammo.bala) {
+      g.add(new THREE.Mesh(BULLET, STONE));
+      this.world.scene.add(g);
+      return g;
+    }
     g.add(new THREE.Mesh(SHAFT, WOOD));
-    g.add(new THREE.Mesh(TIP, ammo.torpor > 0 ? TRANQ : STONE));
+    g.add(new THREE.Mesh(TIP, ammo.torpor > 0 ? TRANQ : ammo.obsidiana ? OBSID : STONE));
     const f1 = new THREE.Mesh(FLETCH, FEATHER);
     const f2 = f1.clone();
     f2.rotation.z = Math.PI / 2;
@@ -38,7 +45,8 @@ export class Projectiles {
   // Atira: origem, direção (normalizada), munição { dano, torpor }, quem atirou
   fire(origin, dir, ammo, owner, damageMul = 1) {
     const A = BALANCE.arco;
-    const p = { pos: origin.clone(), vel: dir.clone().multiplyScalar(A.velocidade_m_s), ammo, owner, mul: damageMul, life: A.alcance_m / A.velocidade_m_s + 1, stuck: 0 };
+    const v = ammo.velocidade ?? A.velocidade_m_s; // bala é bem mais rápida
+    const p = { pos: origin.clone(), vel: dir.clone().multiplyScalar(v), ammo, owner, mul: damageMul, life: (ammo.alcance ?? A.alcance_m) / v + 1, stuck: 0 };
     p.mesh = this._mesh(ammo);
     p.mesh.position.copy(p.pos);
     this.list.push(p);
@@ -90,7 +98,7 @@ export class Projectiles {
           done = true;
         } else if (p.pos.y < g) {
           p.pos.y = g + 0.05;
-          p.stuck = 15; // fica espetada no chão
+          p.stuck = p.ammo.bala ? 0.01 : 15; // flecha fica espetada no chão
           done = true;
         }
       }

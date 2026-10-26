@@ -183,6 +183,30 @@ const SHAPES = {
     <path d="M8 8 H20 V30 L30 32 C34 33 34 40 30 40 H8 Z" fill="${a}"/>
     <path d="M8 36 H32 V40 H8 Z" fill="${b}"/>
     <path d="M24 10 H34 V28 L42 30 C45 31 44 37 41 37 H34" fill="${a}" opacity=".7"/>`,
+  cristal: (a, b) => `
+    <path d="M24 4 L31 16 L28 42 H20 L17 16 Z" fill="${a}"/>
+    <path d="M24 4 L31 16 L24 20 L17 16 Z" fill="${b}" opacity=".8"/>
+    <path d="M12 20 L17 28 L15 42 H9 L8 28 Z" fill="${a}" opacity=".8"/><path d="M36 22 L41 30 L39 42 H33 L32 30 Z" fill="${a}" opacity=".8"/>`,
+  gota: (a, b) => `
+    <path d="M24 6 C30 18 36 24 36 31 C36 38 30 42 24 42 C18 42 12 38 12 31 C12 24 18 18 24 6 Z" fill="${a}"/>
+    <path d="M18 30 C18 26 20 23 22 21" stroke="${b}" stroke-width="2.5" fill="none" stroke-linecap="round"/>`,
+  perola: (a, b) => `
+    <path d="M6 30 C8 16 40 16 42 30 Z" fill="${b}"/>
+    <circle cx="24" cy="28" r="8" fill="${a}"/><circle cx="21" cy="25" r="2.4" fill="#fff" opacity=".8"/>`,
+  po: (a, b) => `
+    <path d="M8 40 C10 28 18 22 24 22 C30 22 38 28 40 40 Z" fill="${a}"/>
+    <circle cx="18" cy="32" r="1.6" fill="${b}"/><circle cx="27" cy="29" r="1.4" fill="${b}"/><circle cx="31" cy="35" r="1.6" fill="${b}"/><circle cx="22" cy="37" r="1.3" fill="${b}"/>`,
+  luneta: (a, b) => `
+    <path d="M6 30 L38 12 L42 19 L10 37 Z" fill="${a}"/>
+    <path d="M30 16 L38 12 L42 19 L34 23 Z" fill="#b08a40"/>
+    <ellipse cx="40" cy="15.5" rx="2.2" ry="4" transform="rotate(-30 40 15.5)" fill="${b}"/>`,
+  pistola: (a, b) => `
+    <path d="M6 14 H40 V22 H20 L18 26 H14 Z" fill="${a}"/>
+    <path d="M14 22 H24 L20 42 H10 Z" fill="${b}"/>
+    <path d="M22 22 C22 30 28 30 28 22" stroke="${a}" stroke-width="2" fill="none"/>`,
+  bala: (a, b) => `
+    <path d="M18 18 C18 8 30 8 30 18 Z" fill="${b}"/><rect x="18" y="18" width="12" height="22" fill="${a}"/>
+    <rect x="17" y="38" width="14" height="3" fill="${a}" opacity=".7"/>`,
 
 };
 

@@ -557,6 +557,14 @@ class Sound {
         this._noise(t, 0.7, out, { f: 300, fTo: 2500, q: 0.8, peak: 0.5, attack: 0.15, brown: true, type: 'lowpass' });
         break;
       }
+      case 'tiro': { // estampido da pistola: estalo forte + eco grave
+        if (!this._voice(0.5)) return;
+        const out = this._dest(pos, 0.9 * v);
+        this._noise(t, 0.05, out, { f: 2400, q: 0.5, peak: 1, attack: 0.001 });
+        this._noise(t + 0.01, 0.45, out, { f: 500, fTo: 120, q: 0.7, peak: 0.45, brown: true, type: 'lowpass' });
+        this._osc('sine', 90, t, 0.18, out, 0.5, 0.002, 40);
+        break;
+      }
       case 'colocar': {
         if (!this._voice(0.3)) return;
         const out = this._dest(pos, 0.5 * v);

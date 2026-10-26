@@ -132,6 +132,7 @@ export class World {
     if (PIECES.includes(d.type)) {
       s = new BuildPiece(this, d.type, new THREE.Vector3(d.x, d.y, d.z), d.rot, d.id);
       if (d.open) s.applyState({ open: true }); // porta aberta
+      if (typeof d.hp === 'number') s.hp = Math.min(s.maxHp, d.hp);
     } else s = createStructure(this, d);
     if (s) this.structures.push(s);
     return s;
@@ -272,6 +273,7 @@ export class World {
     this.vegetation.update(dt, camera, this.viewDistance);
     this.effects.update(dt);
 
+    this.water.update(camera);
     const body = this.water.bodyAt(camera.position.x, camera.position.z);
     const surf = body ? body.level + this.water.waveAt(body, camera.position.x, camera.position.z, sharedTime.value) : 0;
     const under = !!body && camera.position.y < surf - 0.05;

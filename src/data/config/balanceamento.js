@@ -152,9 +152,30 @@ export default {
     desgaste_por_golpe: 1,     // durabilidade que cada peça perde por golpe levado
   },
 
+  // Construção (peças com vida; bichos mordem as que estão no caminho)
+  construcao: {
+    dano_bicho_mult: 3,        // bicho faz 3x mais dano em parede do que em gente
+  },
+
   // Montaria
   sela: {
     precisa: true,             // só monta bicho com sela (como no ARK)
+    porte_m: [5, 11],          // até 5 m: Sela; até 11 m: Sela Média; maior: Sela Grande
+  },
+
+  // Criação de bichos domados (como no ARK): macho e fêmea domados,
+  // parados perto um do outro, cruzam. Répteis e aves botam ovo (precisa
+  // ficar quentinho para chocar); mamíferos ficam prenhes.
+  cria: {
+    chocar_min: 4,             // ovo choca em X min (no calor certo)
+    ovo_temp_c: [18, 38],      // temperatura boa para o ovo; fora dela choca 4x mais devagar
+    gestacao_min: 5,           // mamífero: filhote nasce depois de X min
+    mamiferos: ['mamute', 'onca', 'capivara'],
+    chance_maior: 0.55,        // cada atributo do filhote: chance de vir o MAIOR dos pais
+    mutacao: 0.03,             // chance de um atributo vir 10% maior (mutação)
+    cuidado_min: 2,            // filhote domado pede carinho a cada X min
+    impressao_por_cuidado: 0.2, // cada carinho dá 20% de impressão
+    bonus_impressao: 0.3,      // 100% de impressão = +30% de vida e dano
   },
 
   nivel: {
