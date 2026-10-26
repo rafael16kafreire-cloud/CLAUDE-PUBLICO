@@ -38,6 +38,40 @@ for (let m = 0; m < byMat.length; m++) {
   if (target < I.length) {
     idx = MeshoptSimplifier.simplify(I, P, 3, target, 0.02, [])[0];
     if (idx.length > target * 1.2) idx = MeshoptSimplifier.simplify(I, P, 3, target, 0.08, [])[0];
+    // malha cheia de pedacinhos soltos (penas, dentes): aceita erro maior
+    for (const err of [0.2, 0.5, 1]) if (idx.length > target * 1.5) idx = MeshoptSimplifier.simplify(I, P, 3, target, err, [])[0];
+    // ainda grande (malha com milhares de pedacinhos soltos, ex.: penas):
+    // junta vértices numa grade 3D; cada célula fica com um vértice
+    // original (com a textura e os pesos dele)
+    if (idx.length > target * 1.5) {
+      const lo = [Infinity, Infinity, Infinity];
+      const hi = [-Infinity, -Infinity, -Infinity];
+      for (const v of I) for (let q = 0; q < 3; q++) { lo[q] = Math.min(lo[q], P[v * 3 + q]); hi[q] = Math.max(hi[q], P[v * 3 + q]); }
+      const ext = Math.max(hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]);
+      for (let cells = 220; cells >= 40; cells = Math.floor(cells * 0.88)) {
+        const size = ext / cells;
+        const rep = new Map();
+        const cellOf = (v) => {
+          const k = `${Math.floor((P[v * 3] - lo[0]) / size)},${Math.floor((P[v * 3 + 1] - lo[1]) / size)},${Math.floor((P[v * 3 + 2] - lo[2]) / size)}`;
+          if (!rep.has(k)) rep.set(k, v);
+          return rep.get(k);
+        };
+        const out = [];
+        const seen = new Set();
+        for (let t = 0; t < I.length; t += 3) {
+          const a = cellOf(I[t]);
+          const b = cellOf(I[t + 1]);
+          const c = cellOf(I[t + 2]);
+          if (a === b || b === c || a === c) continue;
+          const key = [a, b, c].sort((x, y) => x - y).join(',');
+          if (seen.has(key)) continue;
+          seen.add(key);
+          out.push(a, b, c);
+        }
+        idx = Uint32Array.from(out);
+        if (idx.length <= target * 1.2) break;
+      }
+    }
   }
   parts.push({ m, idx });
   console.log('material', m, 'triângulos', I.length / 3, '->', idx.length / 3);
