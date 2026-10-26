@@ -1058,6 +1058,8 @@ export class Creature {
     }
     this.health -= amount;
     this.hurtAnim = 1;
+    // número do dano flutuando (só o que o jogador daqui fez)
+    if (attacker && attacker === this.manager.localPlayer) events.emit(EV.DAMAGE_NUMBER, { pos: this.center(), amount });
     if (this.health <= 0) {
       this.health = 0;
       this._setState(CSTATE.DEAD);
@@ -1121,6 +1123,22 @@ export class Creature {
     if (active) cp.apply();
   }
 
+  _footfall(camDist, step) {
+    const size = (this.bodyFront + this.bodyBack) * this.scale;
+    if (size < 7) return;
+    const side = step % 2 ? 1 : -1;
+    const w = this.radius * 0.5 * side;
+    const x = this.pos.x + Math.cos(this.yaw) * w;
+    const z = this.pos.z - Math.sin(this.yaw) * w;
+    const fx = new THREE.Vector3(x, this.world.heightAt(x, z) + 0.15, z);
+    this.world.effects?.burst(fx, 'poeira', Math.min(10, Math.round(size / 2)), 1.6 + size * 0.05);
+    const near = Math.max(0, 1 - camDist / (12 + size * 2.5));
+    if (near > 0) {
+      sound.play('pisada', fx, { volume: Math.min(1, size / 16) });
+      if (size >= 10) this.manager.localPlayer?.onImpact?.(Math.min(0.7, size / 35) * near);
+    }
+  }
+
   _animateCode(dt, ctx, yawVel) {
     const b = this.bones;
     const spec = this.spec;
@@ -1143,6 +1161,12 @@ export class Creature {
     const amp = moving * (0.34 + 0.36 * A.run);
     const stride = spec.body === 'spider' ? legLen * 1.4 : Math.max(0.3, 4 * legLen * Math.sin(Math.max(0.2, amp)) * 0.85);
     this.phase += (adt * this.speed) / stride;
+    // pisada dos gigantes: poeira, barulho surdo e o chão treme
+    const step = Math.floor(this.phase * 2);
+    if (step !== this._lastStep) {
+      this._lastStep = step;
+      if (!dead && !this.flies && !this.aquatic && this.speed > 0.3 && camDist < 90) this._footfall(camDist, step);
+    }
 
     // ---------- voadores ----------
     if (spec.body === 'flyer' && this.landed && !dead) {

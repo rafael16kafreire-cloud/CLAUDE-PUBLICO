@@ -557,6 +557,13 @@ class Sound {
         this._noise(t, 0.7, out, { f: 300, fTo: 2500, q: 0.8, peak: 0.5, attack: 0.15, brown: true, type: 'lowpass' });
         break;
       }
+      case 'pisada': { // passo de gigante: baque grave
+        if (!this._voice(0.5)) return;
+        const out = this._dest(pos, 0.9 * v, 8, 160);
+        this._osc('sine', 48, t, 0.35, out, 0.9, 0.004, 30);
+        this._noise(t, 0.25, out, { f: 220, q: 0.6, peak: 0.35, brown: true, type: 'lowpass' });
+        break;
+      }
       case 'tiro': { // estampido da pistola: estalo forte + eco grave
         if (!this._voice(0.5)) return;
         const out = this._dest(pos, 0.9 * v);

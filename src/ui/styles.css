@@ -1184,3 +1184,17 @@ body.underwater-swamp .uw-overlay {
 @media (prefers-reduced-motion: reduce) {
   .start-panel > *, .menu-page, .title span, .btn-play:not(:disabled) { animation: none; }
 }
+
+/* Números de dano e brilho de nível */
+.dmg-layer { position: fixed; inset: 0; pointer-events: none; z-index: 6; overflow: hidden; }
+.dmg-num {
+  position: absolute; left: 0; top: 0; font: 400 22px var(--font-display); color: #ffe7b0;
+  text-shadow: 0 2px 0 #7a2a10, 0 0 8px rgba(0, 0, 0, 0.6); will-change: transform, opacity;
+}
+.dmg-num[hidden] { display: none; }
+body.level-flash::after {
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 7;
+  background: radial-gradient(circle at 50% 60%, rgba(255, 214, 110, 0.35), rgba(255, 214, 110, 0) 60%);
+  animation: level-flash 1.2s ease-out forwards;
+}
+@keyframes level-flash { from { opacity: 1; } to { opacity: 0; } }

@@ -21,6 +21,7 @@ import { InspectPanel } from './ui/inspect_panel.js';
 import { BuildGhost } from './world/building.js';
 import { saddleFor } from './creatures/saddle.js';
 import { itemName } from './items/items.js';
+import { DamageNumbers } from './ui/damage_numbers.js';
 import { loadGame, saveGame, clearSave, saveSlot, useSlot } from './core/save.js';
 import { Messages } from './ui/messages.js';
 import { TouchControls } from './ui/touch_controls.js';
@@ -221,6 +222,7 @@ function boot(hotData = {}) {
       ctx?.net.noteSwing();
     };
     const hotbar = new Hotbar(ui, inventory, (i) => actions.pressHotbar(i));
+    const damageNumbers = new DamageNumbers(ui);
     const invScreen = new InventoryScreen(ui, {
       inventory,
       crafting,
@@ -254,7 +256,7 @@ function boot(hotData = {}) {
     game.world = world;
     game.player = player;
     ctx = {
-      world, player, camCtl, interaction, hud, minimap, mapScreen, inspect, buildGhost, messages, touch, death, debug, pause, creatures, hands,
+      world, player, camCtl, interaction, hud, minimap, mapScreen, inspect, buildGhost, messages, touch, death, debug, pause, creatures, hands, damageNumbers,
       inventory, crafting, actions, hotbar, invScreen,
     };
     ctx.net = new Multiplayer({ world, player, creatures, inventory, actions, camCtl });
@@ -699,10 +701,22 @@ function boot(hotData = {}) {
   events.on(EV.PLAYER_DIED, () => sound.play('morte'));
   events.on(EV.LEVEL_UP, ({ level }) => {
     sound.play('nivel');
+    // brilho dourado subindo em volta do jogador
+    if (ctx) {
+      const p0 = ctx.player.position;
+      for (let i = 0; i < 3; i++) ctx.world.effects.burst(new THREE.Vector3(p0.x, p0.y + 0.4 + i * 0.5, p0.z), 'ouro', 10, 2.2);
+      document.body.classList.remove('level-flash');
+      void document.body.offsetWidth;
+      document.body.classList.add('level-flash');
+    }
     const ep = ctx?.player.stats.engramsForLevel(level) ?? 0;
     events.emit(EV.MESSAGE, { text: `Nível ${level}! +1 habilidade e +${ep} pontos de engrama (Inventário → Criar → Aprender)`, kind: 'gain' });
   });
-  events.on(EV.PLACED, ({ structure }) => sound.play('colocar', structure.position));
+  events.on(EV.PLACED, ({ structure }) => {
+    sound.play('colocar', structure.position);
+    // poeirinha ao assentar a peça
+    ctx?.world.effects.burst(structure.position.clone().setY(structure.position.y + 0.2), 'poeira', 8, 2);
+  });
   events.on(EV.STRUCTURE_USED, ({ structure }) => structure.type === 'fogueira' && sound.play('acender', structure.position));
   events.on(EV.SETTINGS_CHANGED, ({ key, value }) => {
     if (key === 'volume') sound.setVolume(value);
@@ -756,7 +770,7 @@ function boot(hotData = {}) {
 
     handleActions();
     autoQuality(dt);
-    const { world, player, camCtl, interaction, hud, minimap, inspect, buildGhost, touch, debug, creatures, hands, crafting, invScreen, actions } = ctx;
+    const { world, player, camCtl, interaction, hud, minimap, inspect, buildGhost, touch, debug, creatures, hands, damageNumbers, crafting, invScreen, actions } = ctx;
     const look = input.consumeLook();
     const sens = settings.get('sensitivity');
 
@@ -862,6 +876,7 @@ function boot(hotData = {}) {
       world.torchLight.intensity = 0;
     }
     if (hands.toolKind !== toolKind) hands.setTool(toolKind);
+    damageNumbers.update(dt, camera);
     hands.update(dt, {
       visible: !photo && game.state === STATE.PLAYING && camCtl.mode === 'primeira' && !player.dead,
       speed: Math.hypot(player.velocity.x, player.velocity.z),

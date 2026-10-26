@@ -460,7 +460,8 @@ export class Egg extends Structure {
     this.progress = Math.min(1, this.progress + rate * dt);
     // treme quando está quase chocando
     this.shell.rotation.z = this.progress > 0.85 ? Math.sin(performance.now() * 0.02) * 0.08 : 0;
-    if (this.progress >= 1) {
+    // co-op: só quem criou a partida faz o filhote nascer
+    if (this.progress >= 1 && !(this.world.multiplayer && !this.world.multiplayer.isHost)) {
       const owner = this.world.creatures?.localPlayer;
       this.world.creatures?.hatch(this.especie, this.position.x, this.position.z, this.nivel, this.gene, owner);
       this.world.removeStructure(this);

@@ -17,6 +17,7 @@ export const EV = {
   XP_GAINED: 'xp_gained',                 // { amount }
   ITEM_SPOILED: 'item_spoiled',           // { id } (comida estragou)
   LEVEL_UP: 'level_up',                   // { level, points }
+  DAMAGE_NUMBER: 'damage_number',         // { pos, amount, kind }  número de dano flutuando
   SKILLS_CHANGED: 'skills_changed',       // { key } ponto de habilidade gasto
   CREATURE_TAMED: 'creature_tamed',       // { creature }
   STRUCTURE_REMOVED: 'structure_removed', // { structure } (desmontada)
