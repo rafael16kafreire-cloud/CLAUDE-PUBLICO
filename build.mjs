@@ -70,6 +70,10 @@ const js = await esbuild.build({
 // Licença: SIL Open Font License (ver src/ui/fonts/OFL-*.txt).
 const FONTS = [
   ['Lilita One', 400, 'lilita-one-400.woff2'],
+  // Rajdhani: letra "técnica" parecida com a da interface do ARK
+  ['Rajdhani', 500, 'rajdhani-medium.woff2'],
+  ['Rajdhani', 600, 'rajdhani-semibold.woff2'],
+  ['Rajdhani', 700, 'rajdhani-bold.woff2'],
   ['Barlow Semi Condensed', 500, 'barlow-semi-condensed-500.woff2'],
   ['Barlow Semi Condensed', 600, 'barlow-semi-condensed-600.woff2'],
   ['Barlow Semi Condensed', 700, 'barlow-semi-condensed-700.woff2'],

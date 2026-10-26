@@ -75,6 +75,7 @@ export class Hud {
         <button type="button" class="corner-btn ark-btn" data-action="inventory" aria-label="Inventário"><span class="ab-ico">${ICONS.backpack}</span><span class="ab-txt">Inventário</span></button>
         <button type="button" class="corner-btn ark-btn" data-action="build" aria-label="Construir"><span class="ab-ico">${ICONS.hammer}</span><span class="ab-txt">Construir</span></button>
         <button type="button" class="corner-btn ark-btn" data-action="mount" aria-label="Montar"><span class="ab-ico">${ICONS.saddle}</span><span class="ab-txt">Montar</span></button>
+        <button type="button" class="corner-btn ark-btn" data-action="whistle" aria-label="Assovios"><span class="ab-ico">${ICONS.whistle}</span><span class="ab-txt">Assovio</span></button>
       </div>
 
       <div class="hud-corner">

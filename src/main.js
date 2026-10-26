@@ -23,6 +23,7 @@ import { saddleFor } from './creatures/saddle.js';
 import { itemName } from './items/items.js';
 import { DamageNumbers } from './ui/damage_numbers.js';
 import { CreatureMenu } from './ui/creature_menu.js';
+import { WhistleWheel } from './ui/whistle_wheel.js';
 import { loadGame, saveGame, clearSave, saveSlot, useSlot } from './core/save.js';
 import { Messages } from './ui/messages.js';
 import { TouchControls } from './ui/touch_controls.js';
@@ -162,7 +163,7 @@ function boot(hotData = {}) {
     camera.far = vd + 40;
     camera.updateProjectionMatrix();
     const inGame = [STATE.PLAYING, STATE.PAUSED, STATE.DEAD].includes(game.state);
-    ctx.touch.setVisible((game.isTouch && inGame && !ctx.invScreen.visible && !ctx.creatureMenu.visible) || ctx.touch.editing);
+    ctx.touch.setVisible((game.isTouch && inGame && !ctx.invScreen.visible && !ctx.creatureMenu.visible && !ctx.whistle.visible) || ctx.touch.editing);
     ctx.touch.applySettings(settings.get('buttonOpacity'), settings.get('buttonSize'));
     if (!ctx.touch.editing) ctx.touch.applyLayout(settings.get('buttonLayout'));
     ctx.debug.setVisible(settings.get('showDebug'));
@@ -224,6 +225,7 @@ function boot(hotData = {}) {
     };
     const hotbar = new Hotbar(ui, inventory, (i) => actions.pressHotbar(i));
     const damageNumbers = new DamageNumbers(ui);
+    const whistle = new WhistleWheel(ui, { creatures, player, camCtl, onClose: () => closeCreatureMenu() });
     const creatureMenu = new CreatureMenu(ui, {
       inventory,
       onClose: () => closeCreatureMenu(),
@@ -238,6 +240,8 @@ function boot(hotData = {}) {
       stats: player.stats,
       onDrop: (stack) => dropStack(stack),
       onClose: () => closeInventory(),
+      world: () => world,
+      tamedCount: () => creatures.tamedBy(player).length,
     });
     const pause = new PauseMenu(ui, {
       onResume: () => resume(),
@@ -265,7 +269,7 @@ function boot(hotData = {}) {
     game.player = player;
     ctx = {
       world, player, camCtl, interaction, hud, minimap, mapScreen, inspect, buildGhost, messages, touch, death, debug, pause, creatures, hands, damageNumbers,
-      inventory, crafting, actions, hotbar, invScreen, creatureMenu,
+      inventory, crafting, actions, hotbar, invScreen, creatureMenu, whistle,
     };
     ctx.net = new Multiplayer({ world, player, creatures, inventory, actions, camCtl });
 
@@ -434,6 +438,16 @@ function boot(hotData = {}) {
     input.exitPointerLock();
   }
 
+  // Roda de assovios (T / botão de apito)
+  function openWhistle() {
+    if (game.state !== STATE.PLAYING || ctx.player.dead || ctx.invScreen.visible || ctx.creatureMenu.visible) return;
+    input.clear();
+    input.blocked = true;
+    ctx.touch.setVisible(false);
+    ctx.whistle.open();
+    input.exitPointerLock();
+  }
+
   function closeCreatureMenu() {
     input.blocked = false;
     input.clear();
@@ -470,6 +484,7 @@ function boot(hotData = {}) {
     closeInventory();
     game.setState(STATE.PAUSED);
     ctx.creatureMenu.close();
+    ctx.whistle.close();
     input.clear();
     input.exitPointerLock();
     ctx.pause.setCoop(ctx.net.active ? ctx.net.code : null, ctx.net.playerNames);
@@ -579,6 +594,11 @@ function boot(hotData = {}) {
       else resume();
       return;
     }
+    if (action === 'whistle') {
+      if (ctx.whistle.visible) ctx.whistle.close();
+      else openWhistle();
+      return;
+    }
     if (action === 'inspect') {
       if (game.state === STATE.PLAYING) ctx.inspect.toggle();
       return;
@@ -635,7 +655,7 @@ function boot(hotData = {}) {
   // Mouse solto com Esc no PC = pausa.
   document.addEventListener('pointerlockchange', () => {
     if (document.pointerLockElement || game.state !== STATE.PLAYING || game.isTouch) return;
-    if (ctx?.invScreen.visible || ctx?.creatureMenu.visible) {
+    if (ctx?.invScreen.visible || ctx?.creatureMenu.visible || ctx?.whistle.visible) {
       input.selfUnlock = false; // soltou com o inventário/menu aberto: tudo certo
       return;
     }
@@ -670,6 +690,7 @@ function boot(hotData = {}) {
       if (ctx.mapScreen.visible) ctx.mapScreen.hide();
       else if (ctx.invScreen.visible) closeInventory();
       else if (ctx.creatureMenu.visible) ctx.creatureMenu.close();
+      else if (ctx.whistle.visible) ctx.whistle.close();
       else if (game.state === STATE.PLAYING) pauseGame();
       else if (game.state === STATE.PAUSED && !justUnlocked) resume();
     }
@@ -682,6 +703,10 @@ function boot(hotData = {}) {
     if (input.wasPressed('inspect')) ctx.inspect.toggle();
     if (input.wasPressed('map')) ctx.mapScreen.toggle(ctx.player, ctx.camCtl.yaw);
     if (input.wasPressed('ammo')) ctx.actions.cycleArrow(); // Q: troca a flecha do arco
+    if (input.wasPressed('whistle')) { // T: roda de assovios (abre/fecha)
+      if (ctx.whistle.visible) ctx.whistle.close();
+      else openWhistle();
+    }
     if (ctx.mapScreen.visible) ctx.mapScreen.update(ctx.player, ctx.camCtl.yaw);
     if (input.wasPressed('camera')) settings.set('cameraMode', ctx.camCtl.mode === 'primeira' ? 'terceira' : 'primeira');
     for (let i = 0; i < 8; i++) if (input.wasPressed(`slot${i + 1}`)) ctx.actions.pressHotbar(i);

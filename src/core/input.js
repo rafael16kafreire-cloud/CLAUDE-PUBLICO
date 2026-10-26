@@ -26,12 +26,13 @@ const KEYMAP = {
   KeyR: 'inspect',
   KeyM: 'map',
   KeyQ: 'ammo',
+  KeyT: 'whistle',
   Digit1: 'slot1', Digit2: 'slot2', Digit3: 'slot3', Digit4: 'slot4',
   Digit5: 'slot5', Digit6: 'slot6', Digit7: 'slot7', Digit8: 'slot8',
 };
 
 // Ações que continuam valendo com uma tela aberta (inventário).
-const ALWAYS = new Set(['inventory', 'pause', 'debug']);
+const ALWAYS = new Set(['inventory', 'pause', 'debug', 'whistle']);
 
 // Teclas que o navegador usaria para outra coisa (rolar página etc.)
 const PREVENT = new Set(['Space', 'Tab', 'F3', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);

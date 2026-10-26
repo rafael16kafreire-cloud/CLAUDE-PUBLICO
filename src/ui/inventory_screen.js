@@ -18,23 +18,35 @@ import { STAT_ICONS } from './inspect_panel.js';
 
 // Habilidades (Inventário → Habilidades): gasta os pontos de nível.
 const SKILLS = [
-  { key: 'vida', nome: 'Vida', icon: ICONS.health, cls: 'health' },
-  { key: 'stamina', nome: 'Stamina', icon: ICONS.stamina, cls: 'stamina' },
+  { key: 'vida', nome: 'Saúde', icon: ICONS.health, cls: 'health' },
+  { key: 'stamina', nome: 'Estamina', icon: ICONS.stamina, cls: 'stamina' },
+  { key: 'folego', nome: 'Oxigênio', icon: ICONS.oxygen, cls: 'oxygen' },
   { key: 'fome', nome: 'Comida', icon: ICONS.food, cls: 'food' },
   { key: 'sede', nome: 'Água', icon: ICONS.water, cls: 'water' },
-  { key: 'folego', nome: 'Fôlego', icon: ICONS.oxygen, cls: 'oxygen' },
   { key: 'peso', nome: 'Peso', icon: STAT_ICONS.peso, cls: 'weight', unit: ' kg' },
-  { key: 'forca', nome: 'Força', icon: STAT_ICONS.forca, cls: 'melee', unit: '%' },
-  { key: 'velocidade', nome: 'Velocidade', icon: STAT_ICONS.velocidade, cls: 'speed', unit: '%' },
-  { key: 'fortitude', nome: 'Fortitude (frio)', icon: STAT_ICONS.fortitude, cls: 'fort', unit: ' °C' },
+  { key: 'forca', nome: 'Dano de combate', icon: STAT_ICONS.forca, cls: 'melee', unit: '%' },
+  { key: 'velocidade', nome: 'Velocidade de movimento', icon: STAT_ICONS.velocidade, cls: 'speed', unit: '%' },
+  { key: 'fortitude', nome: 'Fortaleza', icon: STAT_ICONS.fortitude, cls: 'fort', unit: ' °C' },
 ];
+
+// valor atual de cada barra do corpo (ficha "Você")
+const CUR = {
+  vida: (st) => st.health,
+  stamina: (st) => st.stamina,
+  fome: (st) => st.food,
+  sede: (st) => st.water,
+  folego: (st) => st.oxygen,
+  peso: (st, inv) => inv.weight(),
+};
 
 const CATS = ['Tudo', 'Aprender', 'Ferramentas', 'Armas', 'Roupas', 'Estruturas', 'Construção', 'Cura'];
 const STATION_NAME = STATION_NAMES;
 const TYPE_LABEL = { recurso: 'Recurso', comida: 'Comida', ferramenta: 'Ferramenta', consumivel: 'Uso', estrutura: 'Estrutura', equipamento: 'Roupa', municao: 'Munição' };
 
 export class InventoryScreen {
-  constructor(root, { inventory, crafting, actions, stats, onDrop, onClose }) {
+  constructor(root, { inventory, crafting, actions, stats, onDrop, onClose, world, tamedCount }) {
+    this.youWorld = world;
+    this.youTamed = tamedCount;
     this.inv = inventory;
     this.stats = stats;
     this.crafting = crafting;
@@ -52,7 +64,7 @@ export class InventoryScreen {
       <div class="inv-panel" role="dialog" aria-label="Inventário">
         <section class="inv-left">
           <header class="inv-head">
-            <h2>Mochila</h2>
+            <h2>Inventário</h2>
             <div class="inv-wbar" title="Peso"><i data-ref="wfill"></i><span class="inv-weight" data-ref="weight"></span></div>
             <button type="button" class="btn btn-small" id="inv-sort">Organizar</button>
           </header>
@@ -65,9 +77,10 @@ export class InventoryScreen {
         </section>
         <section class="inv-right">
           <div class="inv-tabs">
-            <button type="button" class="tab" data-tab="craft">Criar</button>
+            <button type="button" class="tab" data-tab="craft">Fabricação</button>
             <button type="button" class="tab" data-tab="item">Item</button>
-            <button type="button" class="tab" data-tab="skills" id="tab-skills">Habilidades<b class="tab-dot" data-ref="sdot" hidden></b></button>
+            <button type="button" class="tab" data-tab="skills" id="tab-skills">Você<b class="tab-dot" data-ref="sdot" hidden></b></button>
+            <button type="button" class="tab" data-tab="engrams" id="tab-engrams">Engramas</button>
             <button type="button" class="tab" data-tab="box" id="tab-box" hidden>Baú</button>
             <button type="button" class="btn btn-small inv-close" id="inv-close" aria-label="Fechar">Fechar</button>
           </div>
@@ -89,8 +102,16 @@ export class InventoryScreen {
             <div class="rd-actions"><button type="button" class="btn btn-small" id="box-all">Guardar tudo da mochila</button><button type="button" class="btn btn-small" id="box-take">Pegar tudo</button></div>
             <div class="inv-grid box-grid" data-ref="box"></div>
           </div>
+          <div class="tab-body" data-tab-body="engrams" hidden>
+            <div class="eg-grid" data-ref="egrid"></div>
+            <div class="eg-foot">
+              <span class="eg-pts">PONTOS DISPONÍVEIS: <b data-ref="egpts">0</b></span>
+              <div class="eg-detail" data-ref="egdetail"></div>
+            </div>
+          </div>
           <div class="tab-body" data-tab-body="skills" hidden>
-            <p class="skill-points">Pontos para gastar: <b data-ref="spoints">0</b> <span>· ganha ${BALANCE.habilidades.pontos_por_nivel} a cada nível</span></p>
+            <div class="you-info" data-ref="youinfo"></div>
+            <p class="skill-points you-xp"><span data-ref="youxp"></span><span>PONTOS: <b data-ref="spoints">0</b></span></p>
             <div class="skill-list">
               ${SKILLS.map((s) => `
                 <div class="skill-row skill-${s.cls}">
@@ -252,6 +273,7 @@ export class InventoryScreen {
 
   showTab(tab) {
     this.tab = tab;
+    if (tab === 'engrams') this._renderEngrams();
     this.el.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.tab === tab));
     this.el.querySelectorAll('[data-tab-body]').forEach((b) => { b.hidden = b.dataset.tabBody !== tab; });
   }
@@ -263,10 +285,90 @@ export class InventoryScreen {
     this.refs.sdot.hidden = st.points <= 0;
     this.refs.sdot.textContent = String(st.points);
     for (const s of SKILLS) {
-      this.refs[`sv-${s.key}`].textContent = `${Math.round(st.skillValue(s.key))}${s.unit ?? ''}`;
+      // como no ARK: atual/máximo nas barras do corpo
+      const cur = CUR[s.key]?.(st, this.inv);
+      this.refs[`sv-${s.key}`].textContent = cur !== undefined
+        ? `${cur.toFixed(1)}/${st.skillValue(s.key).toFixed(1)}`
+        : `${Math.round(st.skillValue(s.key))}${s.unit ?? ''}`;
       this.refs[`sl-${s.key}`].textContent = st.skills[s.key] ? `+${st.skills[s.key]}` : '';
     }
     this.el.querySelectorAll('.sk-plus').forEach((b) => { b.disabled = st.points <= 0; });
+    // ficha "Você" (nível, dia, hora, temperatura, proteção...)
+    const w = this.youWorld?.();
+    const mins = w ? Math.floor(w.time * 24 * 60) : 0;
+    const hora = `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`;
+    const temp = st.temperature ?? 0;
+    const rows = [
+      ['NÍVEL', st.level],
+      ['DIA', w?.day ?? 1],
+      ['HORA', hora],
+      ['TEMP', `${Math.round(temp)} °C`],
+      ['BICHOS DOMADOS', this.youTamed?.() ?? 0],
+      ['PROTEÇÃO', `${Math.round(Math.min(BALANCE.armadura.max_reducao, this.inv.armor) * 100)}%`],
+      ['HIPOTÉRMICO', (st.skillValue('fortitude') + this.inv.warmth).toFixed(1)],
+    ];
+    this.refs.youinfo.innerHTML = `<p class="you-name">Humano · Sobrevivente</p>${rows.map(([k, v]) => `<div><span>${k}:</span><b>${v}</b></div>`).join('')}`;
+    this.refs.youxp.textContent = `XP: ${Math.floor(st.xp)}/${st.xpToNext()}`;
+  }
+
+  // ---------- Engramas: grade por nível (como no ARK) ----------
+  _renderEngrams() {
+    const st = this.stats;
+    if (!st) return;
+    this.refs.egpts.textContent = String(st.engramPoints);
+    const g = this.refs.egrid;
+    if (!g.children.length) {
+      const byLevel = new Map();
+      for (const r of RECIPES) {
+        if (r.engrama_id && RECIPES.find((o) => o.id === r.engrama_id && o !== r)) continue; // mesma receita, outro material
+        const lv = r.nivel ?? 1;
+        if (!byLevel.has(lv)) byLevel.set(lv, []);
+        byLevel.get(lv).push(r);
+      }
+      for (const lv of [...byLevel.keys()].sort((a, b) => a - b)) {
+        const row = document.createElement('div');
+        row.className = 'eg-row';
+        row.innerHTML = `<span class="eg-lvl">${lv}</span><div class="eg-tiles"></div>`;
+        const tiles = row.lastElementChild;
+        for (const r of byLevel.get(lv)) {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'eg-tile';
+          b.dataset.id = r.id;
+          b.innerHTML = `<span class="eg-icon">${itemIcon(r.resultado)}</span><span class="eg-name">${itemName(r.resultado)}</span>`;
+          b.addEventListener('click', () => {
+            this.selEngram = r;
+            this._renderEngrams();
+          });
+          tiles.appendChild(b);
+        }
+        g.appendChild(row);
+      }
+    }
+    for (const b of g.querySelectorAll('.eg-tile')) {
+      const r = RECIPES.find((x) => x.id === b.dataset.id);
+      const known = st.knows(r);
+      const block = st.learnBlock(r);
+      b.classList.toggle('known', known);
+      b.classList.toggle('learnable', !known && !block);
+      b.classList.toggle('dark', !known && st.level < (r.nivel ?? 1));
+      b.classList.toggle('selected', r === this.selEngram);
+    }
+    const r = this.selEngram;
+    const d = this.refs.egdetail;
+    if (!r) {
+      d.innerHTML = '<span class="muted">Toque num engrama para ver e aprender.</span>';
+      return;
+    }
+    const block = st.learnBlock(r);
+    d.innerHTML = `<b>${itemName(r.resultado)}</b> · nível ${r.nivel ?? 1} · ${r.engrama ? `${r.engrama} pts` : 'grátis'}
+      ${st.knows(r) ? '<span class="eg-ok">✓ aprendido</span>' : `<button type="button" class="btn btn-small btn-primary" id="eg-learn" ${block ? 'disabled' : ''}>${block ? `Aprender (${block})` : 'Aprender'}</button>`}`;
+    d.querySelector('#eg-learn')?.addEventListener('click', () => {
+      if (st.learn(r)) {
+        events.emit(EV.MESSAGE, { text: `Aprendeu: ${itemName(r.resultado)}`, kind: 'gain' });
+        this.refresh();
+      }
+    });
   }
 
   // ---------------------------------------------------------
@@ -341,6 +443,7 @@ export class InventoryScreen {
     this._renderQueue();
     this._renderItem();
     this._renderBox();
+    if (this.tab === 'engrams') this._renderEngrams();
   }
 
   _renderRecipe() {

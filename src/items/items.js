@@ -220,7 +220,44 @@ export function itemIcon(id) {
   }
   const it = ITEMS[id];
   const ic = it?.icone ?? { forma: 'pedra', cor: '#888', cor2: '#555' };
-  const draw = SHAPES[ic.forma] ?? SHAPES.pedra;
-  iconCache[id] = `<svg viewBox="0 0 48 48" aria-hidden="true">${draw(ic.cor, ic.cor2 ?? ic.cor)}</svg>`;
+  const draw = (SHAPES[ic.forma] ?? SHAPES.pedra)(ic.cor, ic.cor2 ?? ic.cor);
+  addIconDefs();
+  // "pintado" como os ícones do ARK: contorno escuro + sombra, luz de cima
+  // para baixo e uma textura leve (só dentro do desenho)
+  const m = `icm-${id}`;
+  iconCache[id] = `<svg class="item-svg" viewBox="0 0 48 48" aria-hidden="true">
+    <defs><mask id="${m}" maskUnits="userSpaceOnUse" x="0" y="0" width="48" height="48"><g filter="url(#ic-white)">${draw}</g></mask></defs>
+    <g filter="url(#ic-drop)">${draw}</g>
+    <rect width="48" height="48" fill="url(#ic-light)" mask="url(#${m})"/>
+    <rect width="48" height="48" filter="url(#ic-grain)" mask="url(#${m})" opacity=".22"/>
+  </svg>`;
   return iconCache[id];
+}
+
+// Definições usadas por todos os ícones (uma vez na página).
+function addIconDefs() {
+  if (typeof document === 'undefined' || document.getElementById('ic-defs')) return;
+  const box = document.createElement('div');
+  box.innerHTML = `<svg id="ic-defs" width="0" height="0" style="position:absolute;width:0;height:0" aria-hidden="true">
+    <defs>
+      <filter id="ic-white" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0"/></filter>
+      <filter id="ic-drop" x="-15%" y="-15%" width="130%" height="140%" color-interpolation-filters="sRGB">
+        <feMorphology in="SourceAlpha" operator="dilate" radius="0.9" result="fat"/>
+        <feFlood flood-color="#0b0906" flood-opacity=".85"/><feComposite in2="fat" operator="in" result="line"/>
+        <feGaussianBlur in="SourceAlpha" stdDeviation="1.4" result="b"/><feOffset in="b" dx="0.8" dy="1.6" result="o"/>
+        <feFlood flood-color="#000" flood-opacity=".55"/><feComposite in2="o" operator="in" result="shadow"/>
+        <feMerge><feMergeNode in="shadow"/><feMergeNode in="line"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <linearGradient id="ic-light" gradientUnits="userSpaceOnUse" x1="10" y1="4" x2="36" y2="46">
+        <stop offset="0" stop-color="#fff" stop-opacity=".42"/>
+        <stop offset=".45" stop-color="#fff" stop-opacity=".05"/>
+        <stop offset=".6" stop-color="#000" stop-opacity=".05"/>
+        <stop offset="1" stop-color="#000" stop-opacity=".42"/>
+      </linearGradient>
+      <filter id="ic-grain" x="0" y="0" width="100%" height="100%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="3"/>
+        <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.6 1.1"/>
+      </filter>
+    </defs></svg>`;
+  document.body.appendChild(box.firstElementChild);
 }

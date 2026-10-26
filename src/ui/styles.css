@@ -1478,3 +1478,125 @@ body.is-touch .hud-gauges { bottom: calc(var(--safe-b) + 72px); }
   .ark-action svg { width: 26px; height: 26px; }
   .hud-left { top: calc(var(--safe-t) + 64px); }
 }
+
+/* ---------- Pausa no estilo ARK: botões largos no meio ---------- */
+.pause { background: rgba(2, 14, 22, 0.5); }
+.pause .panel { display: none; }
+.pause-main { display: flex; flex-direction: column; align-items: center; gap: 14px; width: min(470px, 92vw); }
+.pause-main[hidden] { display: none; }
+.ark-big {
+  width: 100%; min-height: 52px; padding: 0 12px;
+  border: 1px solid rgba(110, 215, 245, 0.55);
+  background: linear-gradient(180deg, rgba(36, 132, 168, 0.92), rgba(16, 86, 116, 0.92));
+  color: #bff1ff; font: 800 clamp(20px, 3.6vw, 30px) var(--font-ui); letter-spacing: 0.03em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35); cursor: pointer;
+}
+.ark-big:hover { filter: brightness(1.15); }
+.ark-big:active { transform: scale(0.98); }
+.ark-big[hidden] { display: none; }
+@media (max-height: 460px) { .pause-main { gap: 8px; } .ark-big { min-height: 40px; } }
+.pause-opts-panel, .pause-saves-panel {
+  width: min(980px, 100%); height: min(560px, 100%); box-sizing: border-box; padding: 12px 16px 14px;
+  display: flex; flex-direction: column; color: var(--ark-text);
+}
+.pause-opts-panel[hidden], .pause-saves-panel[hidden] { display: none; }
+.pause-saves-panel { height: auto; max-height: 100%; width: min(620px, 100%); }
+.po-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.po-head h2 { flex: 1; margin: 0; font: 800 26px var(--font-ui); letter-spacing: 0.04em; color: #bff1ff; }
+.ark-x { font-size: 22px; font-weight: 900; }
+.po-body { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(150px, 0.34fr) 1fr; gap: 14px; }
+.po-cats { display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
+.po-cat {
+  min-height: 52px; border: 1px solid rgba(110, 215, 245, 0.3); background: rgba(6, 40, 58, 0.75);
+  color: #bff1ff; font: 800 clamp(16px, 2.6vw, 24px) var(--font-ui); letter-spacing: 0.04em; cursor: pointer;
+}
+.po-cat.on { background: rgba(40, 130, 160, 0.55); border-color: var(--ark-cyan); box-shadow: inset 0 0 14px rgba(127, 227, 255, 0.25); }
+.po-content { min-height: 0; overflow-y: auto; padding: 12px 16px; background: rgba(4, 18, 28, 0.7); border: 1px solid rgba(110, 215, 245, 0.2); }
+.po-page[hidden] { display: none !important; }
+.po-page { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; align-items: center; }
+.po-page h3 { grid-column: 1 / -1; margin: 0 0 4px; text-align: center; font: 800 20px var(--font-ui); letter-spacing: 0.05em; color: #fff; }
+.po-page .btn { grid-column: 1 / -1; }
+.po-controls { grid-template-columns: 1fr; }
+.po-ctrl { display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 10px; padding: 9px 12px; background: rgba(30, 110, 140, 0.45); }
+.po-ctrl b { color: #bff1ff; }
+@media (max-width: 640px), (max-height: 460px) {
+  .po-body { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  .po-cats { flex-direction: row; overflow-x: auto; }
+  .po-cat { min-height: 36px; padding: 0 10px; font-size: 14px; flex: none; }
+  .po-page { grid-template-columns: 1fr; }
+}
+
+/* ---------- Inventário: aba VOCÊ e ENGRAMAS ---------- */
+.you-info {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 2px 14px; margin-bottom: 6px; padding: 8px 10px;
+  background: rgba(4, 18, 28, 0.55); border: 1px solid rgba(110, 215, 245, 0.2); font-size: 12px;
+}
+.you-info .you-name { grid-column: 1 / -1; margin: 0 0 4px; text-align: center; font-weight: 800; color: #fff; }
+.you-info div { display: flex; justify-content: space-between; gap: 6px; }
+.you-info span { color: var(--bone-dim); font-weight: 700; }
+.you-xp { display: flex; justify-content: space-between; padding: 5px 9px; background: rgba(30, 110, 140, 0.55); font-weight: 800; color: #bff1ff; }
+.skill-row {
+  border-radius: 0 !important; background: rgba(30, 110, 140, 0.4) !important; border: 0 !important;
+  grid-template-columns: 22px 1fr auto auto 32px !important;
+}
+.skill-row .sk-name { text-transform: uppercase; font-weight: 800; font-size: 13px; color: var(--ark-text); }
+.skill-row .sk-val { font-variant-numeric: tabular-nums; }
+.sk-plus {
+  width: 30px; height: 30px; border-radius: 0 !important; border: 0 !important;
+  background: #2fb8e0 !important; color: #04202e !important; font: 900 22px/1 var(--font-ui) !important;
+}
+.sk-plus:disabled { background: rgba(47, 184, 224, 0.3) !important; color: rgba(4, 32, 46, 0.6) !important; }
+.skill-row .ico { color: var(--ark-text) !important; }
+.eg-grid { display: flex; flex-direction: column; gap: 6px; }
+.eg-row { display: flex; align-items: flex-start; gap: 3px; }
+.eg-tiles { flex: 1; display: flex; flex-wrap: wrap; gap: 3px; }
+.eg-lvl { align-self: stretch; }
+.eg-lvl { width: 34px; flex: none; display: grid; place-items: center; font: 800 20px var(--font-ui); color: #bff1ff; }
+.eg-tile {
+  position: relative; width: 70px; height: 70px; padding: 4px 2px 2px; display: grid; justify-items: center; align-content: start;
+  border: 1px solid rgba(110, 215, 245, 0.32); background: rgba(8, 44, 62, 0.65); cursor: pointer; color: #fff;
+}
+.eg-icon { width: 42px; height: 42px; display: block; }
+.eg-icon svg { width: 100%; height: 100%; display: block; }
+.eg-name { font-size: 9.5px; font-weight: 700; line-height: 1.05; text-align: center; text-shadow: 0 1px 2px #000; max-height: 21px; overflow: hidden; }
+.eg-tile.dark .eg-icon { filter: brightness(0) opacity(0.75); }
+.eg-tile.dark .eg-name { visibility: hidden; }
+.eg-tile:not(.known):not(.dark) .eg-icon { filter: grayscale(0.7) brightness(0.75); }
+.eg-tile.learnable { border-color: #c38cff; box-shadow: inset 0 0 12px rgba(195, 140, 255, 0.35); }
+.eg-tile.known { background: rgba(30, 110, 140, 0.55); }
+.eg-tile.selected { border: 2px solid var(--ark-cyan); }
+.eg-foot { position: sticky; bottom: 0; margin-top: 8px; padding: 7px 9px; background: rgba(4, 30, 46, 0.95); border: 1px solid rgba(110, 215, 245, 0.35); display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; font-size: 13px; }
+.eg-pts { font-weight: 800; color: #bff1ff; }
+.eg-detail { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.eg-ok { color: var(--ark-green); font-weight: 800; }
+
+/* ---------- Roda de assovios ---------- */
+.wheel { background: rgba(0, 0, 0, 0.25); z-index: 16; }
+.wheel-ring {
+  position: relative; width: min(84vh, 92vw, 560px); aspect-ratio: 1; border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 0, 0, 0) 0 21%, rgba(40, 30, 20, 0.82) 21.5% 100%);
+  box-shadow: 0 0 0 2px rgba(200, 190, 170, 0.3);
+}
+.wheel-hole { position: absolute; inset: 29%; border-radius: 50%; border: 4px solid rgba(60, 182, 216, 0.75); pointer-events: none; }
+.wheel-line { position: absolute; left: 50%; top: 0; width: 2px; height: 50%; margin-left: -1px; background: rgba(220, 210, 190, 0.35); transform-origin: 50% 100%; pointer-events: none; }
+.wheel-item {
+  position: absolute; width: 23%; transform: translate(-50%, -50%); padding: 6px 2px;
+  border: 0; background: transparent; color: #fff; font: 700 clamp(11px, 2.4vh, 16px) var(--font-ui);
+  line-height: 1.15; text-shadow: 0 1px 2px #000; cursor: pointer; border-radius: 8px;
+}
+.wheel-item:hover, .wheel-item:focus-visible { background: rgba(60, 182, 216, 0.35); }
+
+.po-content.opts { display: block; max-width: none; }
+.po-page { width: 100%; align-content: start; }
+
+/* ---------- Fonte do ARK (Rajdhani) em toda a interface ---------- */
+:root {
+  --font-ui: "Rajdhani", "Barlow Semi Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-display: "Rajdhani", "Barlow Semi Condensed", "Arial Narrow", system-ui, sans-serif;
+}
+body { font-weight: 600; }
+/* Rajdhani é mais "baixinha": um pouco maior para ler bem no celular */
+#ui { font-size: 105%; }
+.title { font-family: "Lilita One", var(--font-ui); } /* logo do jogo continua igual */
+.stat .num, .hb-qty, .is-qty, .sk-val, .target-name b { font-weight: 700; font-variant-numeric: tabular-nums; }
+.item-svg { overflow: visible; }
