@@ -801,7 +801,7 @@ export function makeSnowShrub() {
 
 // Rochedo grande e quebrado (não liso), com neve em cima
 export function makeBoulder(seed = 3) {
-  const g = new THREE.IcosahedronGeometry(1, 2).toNonIndexed();
+  const g = new THREE.IcosahedronGeometry(1, 2);
   const pos = g.attributes.position;
   // cada vértice vai para fora/dentro de um jeito diferente: facetas e lascas
   const key = (x, y, z) => `${x.toFixed(3)},${y.toFixed(3)},${z.toFixed(3)}`;
@@ -832,7 +832,7 @@ export const makeBoulderLow = () => makeBoulder(3);
 
 // Veio de minério de ferro: rocha escura com manchas cor de ferrugem
 export function makeIronOre() {
-  const g = new THREE.IcosahedronGeometry(1, 1).toNonIndexed();
+  const g = new THREE.IcosahedronGeometry(1, 1);
   const pos = g.attributes.position;
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i);
@@ -857,7 +857,7 @@ export function makeIronOre() {
 // Rocha com veios coloridos (metal, obsidiana, petróleo). veio = cores do
 // veio, base = cor da pedra, snow = neve em cima, gloss = parte "molhada".
 function oreRock(base, veio, { seed = 4, snow = false, veia = 0.55, stretch = [1.1, 0.75, 1] } = {}) {
-  const g = new THREE.IcosahedronGeometry(1, 1).toNonIndexed();
+  const g = new THREE.IcosahedronGeometry(1, 1); // já vem sem índice (cada face com seus vértices)
   const pos = g.attributes.position;
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i);

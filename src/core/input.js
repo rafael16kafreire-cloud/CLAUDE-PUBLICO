@@ -100,6 +100,7 @@ class Input {
     document.addEventListener('pointerlockchange', () => {
       const locked = document.pointerLockElement === canvas;
       if (this.pointerLocked && !locked) this.lastUnlockTime = performance.now();
+      if (locked) this.selfUnlock = false;
       this.pointerLocked = locked;
     });
   }
@@ -120,7 +121,7 @@ class Input {
   exitPointerLock() {
     try {
       // soltar o mouse por conta do jogo (inventário, pausa): não é o Esc do jogador
-      if (document.pointerLockElement) this.selfUnlockTime = performance.now();
+      if (document.pointerLockElement) this.selfUnlock = true;
       if (document.pointerLockElement) document.exitPointerLock();
     } catch {
       /* nada */

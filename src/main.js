@@ -606,10 +606,15 @@ function boot(hotData = {}) {
 
   // Mouse solto com Esc no PC = pausa.
   document.addEventListener('pointerlockchange', () => {
-    if (document.pointerLockElement || game.state !== STATE.PLAYING || game.isTouch || ctx?.invScreen.visible) return;
+    if (document.pointerLockElement || game.state !== STATE.PLAYING || game.isTouch) return;
+    if (ctx?.invScreen.visible) {
+      input.selfUnlock = false; // soltou com o inventário aberto: tudo certo
+      return;
+    }
     // o próprio jogo soltou o mouse (abriu e fechou o inventário rápido):
     // não pausa, só prende de novo
-    if (performance.now() - (input.selfUnlockTime ?? -1e9) < 1500) {
+    if (input.selfUnlock) {
+      input.selfUnlock = false;
       input.requestPointerLock();
       return;
     }
