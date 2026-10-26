@@ -47,10 +47,10 @@ const TYPES = {
   planta_praia: { hi: () => vegGeometry('planta_praia', 1.1), mat: () => vegMaterial('planta_praia'), collider: 0, shadow: false, scale: [0.7, 1.4], res: 'arbusto', maxDist: 80, textured: true },
   capim_praia: { hi: () => vegGeometry('capim_praia', 0.9), mat: () => vegMaterial('capim_praia'), collider: 0, shadow: false, scale: [0.7, 1.4], res: null, maxDist: 60, textured: true },
   // floresta (Low Poly Tree Scene Free): árvores folhosas e tufos de capim
-  arvore_folhosa: { foot: 0.5, hi: () => vegGeometry('arvore_folhosa', 15), lo: P.makeCanopyTreeLow, mat: () => vegMaterial('arvore_folhosa'), collider: 0.45, shadow: true, scale: [0.8, 1.3], res: 'arvore', textured: true, maxDist: 320 },
+  arvore_folhosa: { hiDist: 26, foot: 0.5, hi: () => vegGeometry('arvore_folhosa', 15), lo: P.makeCanopyTreeLow, mat: () => vegMaterial('arvore_folhosa'), collider: 0.45, shadow: true, scale: [0.8, 1.3], res: 'arvore', textured: true, maxDist: 320 },
   arvore_folhosa2: { foot: 0.35, hi: () => vegGeometry('arvore_folhosa2', 11), lo: P.makeUnderstoryTreeLow, mat: () => vegMaterial('arvore_folhosa2'), collider: 0.35, shadow: true, scale: [0.8, 1.3], res: 'arvore', textured: true, maxDist: 320 },
   // árvore alta da mata (Agarwood): tronco liso, copa no alto e cipós
-  arvore_agar: { foot: 0.45, hi: () => vegGeometry('arvore_agar', 24), lo: P.makeCanopyTreeLow, mat: () => vegMaterial('arvore_agar'), collider: 0.45, shadow: true, scale: [0.8, 1.25], res: 'arvore', textured: true, maxDist: 320 },
+  arvore_agar: { hiDist: 24, foot: 0.45, hi: () => vegGeometry('arvore_agar', 24), lo: P.makeCanopyTreeLow, mat: () => vegMaterial('arvore_agar'), collider: 0.45, shadow: true, scale: [0.8, 1.25], res: 'arvore', textured: true, maxDist: 320 },
   capim: { hi: () => vegGeometry('capim', 0.8), mat: () => vegMaterial('capim'), collider: 0, shadow: false, scale: [0.7, 1.5], res: null, maxDist: 55, textured: true },
   samambaia_gigante: { foot: 0.3, hi: P.makeTreeFern, lo: P.makeTreeFernLow, imp: true, collider: 0.2, shadow: true, scale: [0.8, 1.3], res: 'samambaia_gigante' },
   bananeira: { foot: 0.45, hi: P.makeBananaTree, lo: P.makeBananaTreeLow, collider: 0.22, shadow: false, scale: [0.85, 1.25], res: 'bananeira', maxDist: 110 },
@@ -420,7 +420,7 @@ export class Vegetation {
         const d = Math.hypot(rec.x - cp.x, rec.z - cp.z);
         if (d > viewDistance || d > (ts.def.maxDist ?? Infinity)) continue;
         let band = 'hi';
-        if (d > hi && ts.meshes.lo) band = 'lo';
+        if (d > Math.min(hi, ts.def.hiDist ?? Infinity) && ts.meshes.lo) band = 'lo';
         if (d > lo && ts.meshes.imp) band = 'imp';
         const mesh = ts.meshes[band];
         const n = ts.n[band]++;
@@ -481,7 +481,9 @@ export class Vegetation {
   // Coleta
   // ---------------------------------------------------------
   // Planta na frente do jogador (dirX, dirZ = para onde olha).
-  findTarget(px, pz, dirX, dirZ, reach, needColher = false) {
+  // py = altura dos pés de quem procura (não alcança coisa muito acima ou
+  // abaixo, ex.: concha no fundo do mar nadando na superfície).
+  findTarget(px, pz, dirX, dirZ, reach, needColher = false, py = null) {
     let best = null;
     let bestScore = Infinity;
     const len = Math.hypot(dirX, dirZ) || 1;
@@ -493,6 +495,7 @@ export class Vegetation {
       if (!def.res) return;
       const res = recursos.tipos[def.res];
       if (needColher && !res.colher) return;
+      if (py !== null && Math.abs(rec.y - py) > 4.5) return;
       let cx = rec.x;
       let cz = rec.z;
       let rad = rec.r ?? 0.55 * rec.scale;

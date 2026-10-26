@@ -46,12 +46,14 @@ export class WaterSystem {
       shallow: '#3fb0aa', deep: '#0e4766', sky: '#a9c9d6', sunDir: SUN_DIR, map, level: 0,
       opacityShallow: 0.25, opacityDeep: 0.9, deepAt: 7, waveHeight: BALANCE.agua.altura_onda_mar_m / 2, reflect: 0.6,
     };
+    this.NEAR = NEAR;
     const seaMesh = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000, 80, 80), makeWaterMaterial({ ...seaOpts, ring: [NEAR, 1e9] }));
+    this.seaFar = seaMesh;
     seaMesh.rotation.x = -Math.PI / 2;
     seaMesh.name = 'Mar';
     seaMesh.renderOrder = 1;
     scene.add(seaMesh);
-    this.seaNear = new THREE.Mesh(new THREE.PlaneGeometry(NEAR * 2 + 16, NEAR * 2 + 16, 152, 152), makeWaterMaterial({ ...seaOpts, ring: [0, NEAR] }));
+    this.seaNear = new THREE.Mesh(new THREE.PlaneGeometry(NEAR * 2 + 16, NEAR * 2 + 16, 120, 120), makeWaterMaterial({ ...seaOpts, ring: [0, NEAR] }));
     this.seaNear.rotation.x = -Math.PI / 2;
     this.seaNear.name = 'MarPerto';
     this.seaNear.renderOrder = 1;
@@ -177,9 +179,22 @@ export class WaterSystem {
   }
 
   // A malha de perto anda com a câmera (em passos da grade, sem tremer).
+  // Longe do mar (no meio da ilha) a malha de perto some e a de longe
+  // cobre tudo (economiza ~29 mil triângulos).
   update(camera) {
     if (!camera || !this.seaNear) return;
-    const step = (this.seaNear.geometry.parameters.width) / 152;
-    this.seaNear.position.set(Math.round(camera.position.x / step) * step, 0, Math.round(camera.position.z / step) * step);
+    const cp = camera.position;
+    const step = (this.seaNear.geometry.parameters.width) / 120;
+    this.seaNear.position.set(Math.round(cp.x / step) * step, 0, Math.round(cp.z / step) * step);
+    this._seaT = (this._seaT ?? 0) - 1;
+    if (this._seaT > 0) return;
+    this._seaT = 20; // olha de novo a cada 20 quadros
+    let sea = this.map.heightAt(cp.x, cp.z) < 0.5;
+    for (let k = 0; k < 16 && !sea; k++) {
+      const a = (k / 16) * Math.PI * 2;
+      for (const r of [this.NEAR * 0.5, this.NEAR]) if (this.map.heightAt(cp.x + Math.cos(a) * r, cp.z + Math.sin(a) * r) < 0.5) sea = true;
+    }
+    this.seaNear.visible = sea;
+    this.seaFar.material.uniforms.uRing.value.x = sea ? this.NEAR : 0;
   }
 }

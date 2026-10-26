@@ -130,7 +130,7 @@ export class PlayerActions {
     }
     // 3) planta, tronco ou pedra
     const veg = this.world.vegetation;
-    const rec = veg.findTarget(p.position.x, p.position.z, forward.x, forward.z, t.alcance);
+    const rec = veg.findTarget(p.position.x, p.position.z, forward.x, forward.z, t.alcance, false, p.position.y);
     if (rec) {
       p.onImpact?.(0.6);
       this.harvest(rec, t.tipo);
@@ -208,7 +208,7 @@ export class PlayerActions {
   // Colher (botão Interagir) a planta mais perto na frente.
   findHarvestable(forward) {
     const p = this.player.position;
-    return this.world.vegetation.findTarget(p.x, p.z, forward.x, forward.z, 2.4, true);
+    return this.world.vegetation.findTarget(p.x, p.z, forward.x, forward.z, 2.4, true, p.y);
   }
 
   colher(rec) {
@@ -321,7 +321,7 @@ export class PlayerActions {
     const p = this.player;
     const f = this.forward ?? { x: -Math.sin(p.facing), z: -Math.cos(p.facing) };
     const len = Math.hypot(f.x, f.z) || 1;
-    const dist = type === 'piso' ? 3.4 : 2.6;
+    const dist = type.startsWith('piso') ? 3.4 : 2.6;
     const aim = { x: p.position.x + (f.x / len) * dist, z: p.position.z + (f.z / len) * dist };
     return { type, ...snapPiece(this.world, type, p, aim, camYaw ?? p.facing) };
   }

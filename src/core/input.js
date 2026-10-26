@@ -119,6 +119,8 @@ class Input {
 
   exitPointerLock() {
     try {
+      // soltar o mouse por conta do jogo (inventário, pausa): não é o Esc do jogador
+      if (document.pointerLockElement) this.selfUnlockTime = performance.now();
       if (document.pointerLockElement) document.exitPointerLock();
     } catch {
       /* nada */

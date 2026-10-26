@@ -121,7 +121,7 @@ export class PlayerInteraction {
     const corpse = this.world.creatures?.findCorpse(p, f, 3);
     if (corpse) return { kind: 'hint', key: 'attack', text: `Bater: carne e couro (${corpse.species.nome})` };
     const tool = this.actions.tool;
-    const hit = this.world.vegetation.findTarget(p.x, p.z, f.x, f.z, tool.alcance);
+    const hit = this.world.vegetation.findTarget(p.x, p.z, f.x, f.z, tool.alcance, false, p.y);
     if (hit) {
       const res = this.world.vegetation.resourceOf(hit);
       if (res.so_machado && tool.tipo !== 'machado') return { kind: 'hint', key: 'attack', text: `${res.nome}: precisa de machado` };
