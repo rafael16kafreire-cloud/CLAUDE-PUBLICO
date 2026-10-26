@@ -55,7 +55,7 @@ const TYPES = {
   samambaia_gigante: { foot: 0.3, hi: P.makeTreeFern, lo: P.makeTreeFernLow, imp: true, collider: 0.2, shadow: true, scale: [0.8, 1.3], res: 'samambaia_gigante' },
   bananeira: { foot: 0.45, hi: P.makeBananaTree, lo: P.makeBananaTreeLow, collider: 0.22, shadow: false, scale: [0.85, 1.25], res: 'bananeira', maxDist: 110 },
   bananeira_vazia: { foot: 0.45, hi: P.makeBananaTreeEmpty, lo: P.makeBananaTreeEmptyLow, collider: 0.22, shadow: false, scale: [0.85, 1.25], res: 'planta', maxDist: 110 },
-  samambaia: { hi: P.makeFern, collider: 0, shadow: false, scale: [0.8, 1.5], res: 'samambaia', maxDist: 40 },
+  samambaia: { hi: P.makeFern, collider: 0, shadow: false, scale: [0.8, 1.5], res: 'samambaia', maxDist: 34 },
   arbusto_mejo: { hi: () => vegGeometry('arbusto_bagas', 1.3), lo: P.makeMejoBush, mat: () => vegMaterial('arbusto_bagas', '#4b3a9a'), textured: true, collider: 0, shadow: false, scale: [0.8, 1.2], res: 'baga_mejo', maxDist: 75 },
   arbusto_escura: { hi: () => vegGeometry('arbusto_bagas', 1.3), lo: P.makeDarkBush, mat: () => vegMaterial('arbusto_bagas', '#1e1430'), textured: true, collider: 0, shadow: false, scale: [0.8, 1.2], res: 'baga_escura', maxDist: 75 },
   arbusto_frutas: { hi: () => vegGeometry('arbusto_bagas', 1.3), lo: P.makeFruitBush, mat: () => vegMaterial('arbusto_bagas', '#c0282a'), textured: true, collider: 0, shadow: false, scale: [0.8, 1.2], res: 'frutas', maxDist: 75 },

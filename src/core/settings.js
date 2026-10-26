@@ -20,7 +20,7 @@ export const QUALITY_PRESETS = {
   },
   media: {
     pixelRatio: 1.0, shadows: true, shadowMap: 1024, shadowRange: 55, viewDistance: 180,
-    lodHi: 36, lodLo: 85, grassRadius: 26, grassDensity: 1.0, creatures: 45,
+    lodHi: 34, lodLo: 75, grassRadius: 26, grassDensity: 1.0, creatures: 45,
   },
   alta: {
     pixelRatio: 2, shadows: true, shadowMap: 4096, shadowRange: 110, viewDistance: 320,
