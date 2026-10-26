@@ -10,3 +10,4 @@ __pycache__/
 
 # versão de PC (vai junto para o usuário baixar)
 !dist/ilha-primordial-windows.zip
+.blender-env/
