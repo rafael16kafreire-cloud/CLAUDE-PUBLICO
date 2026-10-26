@@ -56,6 +56,10 @@ export const CSTATE = {
 const TAU = Math.PI * 2;
 let nextId = 1;
 
+// Opções do menu do bicho domado
+export const FOLLOW_DIST = { curto: 0.5, medio: 1, longo: 2.2 };   // x distância de seguir
+export const TARGET_RANGE = { curto: 12, medio: 25, longo: 45 }; // m (agressivo)
+
 export class Creature {
   constructor({ species, spec, mesh, bones, level, x, z, world, manager, rand }) {
     this.id = nextId++;
@@ -290,6 +294,7 @@ export class Creature {
     this.speed = 0;
     this.tamer = by;
     this.tameProgress = this.tameProgress ?? 0;
+    this.tameEff = this.tameEff ?? 1; // efetividade: cai se apanhar desmaiado
     this.tameFood = this.tameFood ?? {};
     this._eatT = 1;
     sound.creature(this, 'dor');
@@ -338,6 +343,13 @@ export class Creature {
   }
 
   _tame(owner) {
+    // bônus de níveis pela efetividade (como no ARK: até +50%)
+    const bonus = Math.floor(this.level * BALANCE.domar.bonus_niveis * (this.tameEff ?? 1));
+    if (bonus > 0) {
+      this.level += bonus;
+      this.rollStats(this.statSeed);
+    }
+    this.tameBonus = bonus;
     this.tamed = true;
     this.owner = owner;
     this.follow = true;
@@ -572,12 +584,36 @@ export class Creature {
       return;
     }
     if (this.state === CSTATE.FLEE) this._setState(CSTATE.IDLE);
+    // Agressivo: ataca bicho selvagem que chegar no alcance de alvo
+    if (this.aggression === 'agressivo' && this.damage > 0) {
+      this._scanT = (this._scanT ?? 0) - 1;
+      if (this._scanT <= 0) {
+        this._scanT = 30;
+        const range = TARGET_RANGE[this.targetRange ?? 'medio'];
+        const prey = this.manager.list.find((c) => c !== this && c.alive && !c.tamed && !c.knockedOut && !c.species.ambiente
+          && this._dist2D(c.pos) < range);
+        if (prey) {
+          this._chase(prey);
+          return;
+        }
+      }
+    }
     if (!this.follow || !o || o.dead) {
       if (this.state === CSTATE.FOLLOW) this._setState(CSTATE.IDLE);
+      // Vagar: passeia perto de onde foi deixado
+      if (this.wander) {
+        if (this.state === CSTATE.IDLE && this.idleFor > 1e8) this.idleFor = 4 + this.rand() * 8;
+        if (this.state === CSTATE.WANDER && this.home.distanceTo(new THREE.Vector2(this.pos.x, this.pos.z)) > 20) {
+          this.goal = new THREE.Vector2(this.home.x + (this.rand() - 0.5) * 16, this.home.y + (this.rand() - 0.5) * 16);
+        }
+      } else if (this.state === CSTATE.WANDER) {
+        this._setState(CSTATE.IDLE);
+        this.idleFor = 1e9;
+      }
       return;
     }
     const d = this._dist2D(o.position);
-    const near = BALANCE.domar.seguir_m + this.radius;
+    const near = BALANCE.domar.seguir_m * (FOLLOW_DIST[this.followDist ?? 'medio'] ?? 1) + this.radius;
     if (d > near + 2 && this.state !== CSTATE.FOLLOW) this._setState(CSTATE.FOLLOW);
     else if (d <= near && this.state === CSTATE.FOLLOW) {
       this._setState(CSTATE.IDLE);
@@ -1058,6 +1094,8 @@ export class Creature {
     }
     this.health -= amount;
     this.hurtAnim = 1;
+    // apanhar desmaiado estraga a doma (efetividade cai)
+    if (this.state === CSTATE.KO && !this.tamed) this.tameEff = Math.max(0, (this.tameEff ?? 1) - (amount / this.maxHealth) * BALANCE.domar.efetividade_por_dano);
     // número do dano flutuando (só o que o jogador daqui fez)
     if (attacker && attacker === this.manager.localPlayer) events.emit(EV.DAMAGE_NUMBER, { pos: this.center(), amount });
     if (this.health <= 0) {
@@ -1072,7 +1110,7 @@ export class Creature {
     if (this.state === CSTATE.KO) return; // desmaiado não reage
     if (this.tamed) {
       // domado: revida quem bateu (menos o dono)
-      if (attacker && attacker !== this.owner && !this.rider && this.damage > 0) this._chase(attacker);
+      if (attacker && attacker !== this.owner && !this.rider && this.damage > 0 && this.aggression !== 'passivo') this._chase(attacker);
       return;
     }
     if (sp.temperamento === 'agressivo' || sp.revida) {

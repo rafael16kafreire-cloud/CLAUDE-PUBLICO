@@ -224,6 +224,8 @@ export default {
   // domar encher. Se o torpor acabar antes, ele acorda.
   // ---------------------------------------------------------
   domar: {
+    bonus_niveis: 0.5,         // domado ganha até +50% de nível (efetividade 100%)
+    efetividade_por_dano: 1.5, // bater no bicho desmaiado: perde efetividade (dano/vida x 1,5)
     torpor_por_dano: { mao: 1.6, clava: 3.0, outro: 0.2 }, // torpor = dano × isto
     torpor_cai_seg: 0.03,      // acordado: torpor cai X do máximo por segundo
     desmaio_cai_seg: 0.005,    // desmaiado: cai X do máximo por segundo (~3 min)

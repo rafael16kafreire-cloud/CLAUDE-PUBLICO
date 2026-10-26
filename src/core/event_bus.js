@@ -31,6 +31,7 @@ export const EV = {
   ITEM_GAINED: 'item_gained',             // { id, amount }
   CRAFTED: 'crafted',                     // { id }  item ficou pronto
   STRUCTURE_USED: 'structure_used',       // { structure }  acendeu fogueira, dormiu...
+  OPEN_CREATURE_MENU: 'open_creature_menu', // { creature }  menu do bicho domado
   OPEN_STORAGE: 'open_storage',           // { box }  abriu um baú
   OPEN_CRAFTING: 'open_crafting',         // { station }  abriu a bancada
   PLACED: 'placed',                       // { type, structure }  fogueira, saco de dormir...

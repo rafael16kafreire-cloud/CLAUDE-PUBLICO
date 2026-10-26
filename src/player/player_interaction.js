@@ -188,7 +188,7 @@ export class PlayerInteraction {
         return { kind: 'saddle', c, item: held, text: `Pôr a ${itemName(held)} em ${c.name ?? c.species.nome}` };
       }
       const ride = rideable ? (c.saddled || !BALANCE.sela.precisa ? (game.isTouch ? ' · botão Montar' : ' · F: montar') : ' · sem sela') : '';
-      return { kind: 'tame-order', c, text: `${c.name ?? c.species.nome}: ${c.follow ? 'mandar ficar' : 'mandar seguir'}${ride}` };
+      return { kind: 'tame-menu', c, text: `${c.name ?? c.species.nome}: opções (${c.follow ? 'seguindo' : 'parado'})${ride}` };
     }
     return null;
   }
@@ -246,6 +246,11 @@ export class PlayerInteraction {
       const D = BALANCE.domar;
       c.torpor = Math.min(c.stats.torpor, c.torpor + c.stats.torpor * (it === 'narcotico' ? D.narcotico_torpor : D.baga_escura_torpor));
       events.emit(EV.MESSAGE, { text: `${c.species.nome} dormiu mais um pouco`, kind: 'info' });
+      this._timer = 0;
+      return;
+    }
+    if (target.kind === 'tame-menu') {
+      events.emit(EV.OPEN_CREATURE_MENU, { creature: target.c });
       this._timer = 0;
       return;
     }

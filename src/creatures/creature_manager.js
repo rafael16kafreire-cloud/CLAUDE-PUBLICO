@@ -217,7 +217,7 @@ export class CreatureManager {
   // e cresce até virar adulto (creature.setGrowth).
   tryBreed(players) {
     const C = this.cfg;
-    const calm = (c) => c.alive && !c.isBaby && !c.species.ambiente && !c.netControlled
+    const calm = (c) => c.alive && !c.isBaby && !c.species.ambiente && !c.netControlled && !c.neutered
       && (c.state === CSTATE.WANDER || c.state === CSTATE.IDLE || c.state === CSTATE.EAT)
       && c.age > (c.nextBreed ?? 0);
     const alive = this.list.filter((c) => c.alive && !c.species.ambiente).length;
@@ -628,7 +628,7 @@ export class CreatureManager {
   defendOwner(owner, enemy) {
     if (!enemy || enemy === owner || !enemy.alive || enemy.tamed || enemy.knockedOut) return;
     for (const c of this.list) {
-      if (!c.tamed || c.owner !== owner || !c.alive || c.rider || c.damage <= 0) continue;
+      if (!c.tamed || c.owner !== owner || !c.alive || c.rider || c.damage <= 0 || c.aggression === 'passivo') continue;
       if (c.target || c.pos.distanceTo(enemy.pos ?? enemy.position) > 40) continue;
       c._chase(enemy);
     }

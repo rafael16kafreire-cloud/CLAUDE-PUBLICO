@@ -14,7 +14,7 @@ export class Hotbar {
     el.className = 'hotbar';
     el.innerHTML = Array.from({ length: HOTBAR }, (_, i) => `
       <button type="button" class="hb-slot" data-i="${i}" aria-label="Espaço ${i + 1}">
-        <span class="hb-key">${i + 1}</span><span class="hb-icon"></span><b class="hb-qty"></b><i class="hb-dur"></i>
+        <span class="hb-key">${i + 1}</span><span class="hb-icon"></span><b class="hb-qty"></b><b class="hb-ammo"></b><i class="hb-dur"></i>
       </button>`).join('');
     root.appendChild(el);
     this.el = el;
@@ -42,6 +42,9 @@ export class Hotbar {
       b.classList.toggle('empty', !s);
       b.querySelector('.hb-icon').innerHTML = s ? itemIcon(s.id) : '';
       b.querySelector('.hb-qty').textContent = s && s.qty > 1 ? String(s.qty) : '';
+      // arma de longe: munição que tem na mochila (como o "1/0" do ARK)
+      const am = s && ITEMS[s.id]?.ferramenta?.projetil ? (ITEMS[s.id].ferramenta.municoes ?? ['flecha_pedra', 'flecha_tranq', 'flecha_obsidiana']) : null;
+      b.querySelector('.hb-ammo').textContent = am ? String(am.reduce((n, id) => n + this.inv.count(id), 0)) : '';
       const dur = b.querySelector('.hb-dur');
       // barrinha: durabilidade (ferramenta), frescor (comida) ou água (cantil)
       const def = s && ITEMS[s.id];

@@ -13,9 +13,10 @@ import { ICONS } from './icons.js';
 import { STAT_ICONS } from './inspect_panel.js';
 import { BUTTON_ICONS } from './button_icons.js';
 
+// Ordem do ARK Mobile (embaixo, no meio): stamina, vida, fome, sede, fôlego
 const BARS = [
-  { key: 'health', label: 'Vida' },
   { key: 'stamina', label: 'Stamina' },
+  { key: 'health', label: 'Vida' },
   { key: 'food', label: 'Fome' },
   { key: 'water', label: 'Sede' },
   { key: 'oxygen', label: 'Fôlego' },
@@ -56,25 +57,44 @@ export class Hud {
           </span>
         </div>
         <div class="hud-clock" data-ref="clock" title="Hora do dia"></div>
+      </div>
+
+      <!-- status como no ARK Mobile: ícones que enchem de baixo para cima -->
+      <div class="hud-gauges">
         ${BARS.map((b) => `
           <div class="stat stat-${b.key}" data-stat="${b.key}" title="${b.label}" ${b.key === 'oxygen' ? 'hidden' : ''}>
-            <span class="ico">${ICONS[b.key]}</span>
             <div class="track"><i class="fill"></i></div>
+            <span class="ico">${ICONS[b.key]}</span>
             <b class="num">100</b>
           </div>`).join('')}
       </div>
 
+      <p class="hud-levelup" data-ref="levelup" hidden>NOVO NÍVEL DISPONÍVEL! Acesse o inventário para aplicar!</p>
+
+      <div class="hud-left touch-only">
+        <button type="button" class="corner-btn ark-btn" data-action="inventory" aria-label="Inventário"><span class="ab-ico">${ICONS.backpack}</span><span class="ab-txt">Inventário</span></button>
+        <button type="button" class="corner-btn ark-btn" data-action="build" aria-label="Construir"><span class="ab-ico">${ICONS.hammer}</span><span class="ab-txt">Construir</span></button>
+        <button type="button" class="corner-btn ark-btn" data-action="mount" aria-label="Montar"><span class="ab-ico">${ICONS.saddle}</span><span class="ab-txt">Montar</span></button>
+      </div>
+
       <div class="hud-corner">
-        <button type="button" class="corner-btn touch-only" data-action="inventory">Inventário</button>
-        <button type="button" class="corner-btn touch-only" data-action="build">Construir</button>
-        <button type="button" class="corner-btn touch-only" data-action="mount">Montar</button>
         <button type="button" class="corner-btn icon-btn inspect-btn" data-action="inspect" aria-label="Inspecionar bicho" title="Inspecionar bicho (R)">${STAT_ICONS.lupa}</button>
         <button type="button" class="corner-btn icon-btn" data-action="pause" aria-label="Pausar">${ICONS.pause}</button>
       </div>
 
+      <!-- criatura na mira, como os "medidores" do ARK Mobile -->
       <div class="target" data-ref="target" hidden>
-        <div class="target-name"><span data-ref="tname"></span><em data-ref="tlvl"></em></div>
-        <div class="target-track"><i data-ref="tfill"></i></div>
+        <div class="target-box">
+          <div class="target-name"><span data-ref="tname"></span> - <em data-ref="tlvl"></em>: <b data-ref="thp"></b></div>
+          <div class="target-line" data-ref="teff" hidden></div>
+          <div class="target-line" data-ref="tsex"></div>
+          <div class="target-track"><i data-ref="tfill"></i></div>
+        </div>
+        <div class="target-meter" data-ref="tmeter" hidden>
+          <div class="tm-state" data-ref="tstate">Inconsciente</div>
+          <div class="tm-label" data-ref="ttame"></div>
+          <div class="tm-bar"><i data-ref="ttamefill"></i></div>
+        </div>
         <div class="target-sub" data-ref="tsub"></div>
       </div>
 
@@ -104,6 +124,7 @@ export class Hud {
       };
     });
 
+    this.gaugesEl = el.querySelector('.hud-gauges');
     el.querySelectorAll('.corner-btn').forEach((btn) => {
       btn.addEventListener('pointerdown', (e) => e.stopPropagation());
       btn.addEventListener('click', (e) => {
@@ -148,7 +169,8 @@ export class Hud {
     h.classList.add('on');
   }
 
-  // Criatura na mira: nome, nível e vida.
+  // Criatura na mira: "Nome - Nv 7: 120/150", gênero e, desmaiada,
+  // a barra rosa "Inconsciente" com quanto já domou (como no ARK).
   setTarget(c) {
     const t = this.refs.target;
     if (!c) {
@@ -156,16 +178,29 @@ export class Hud {
       this._target = null;
       return;
     }
+    const R = this.refs;
     if (this._target !== c) {
       this._target = c;
-      this.refs.tname.textContent = c.species.nome;
-      this.refs.tlvl.textContent = `Nv ${c.level}`;
       t.dataset.temper = c.species.temperamento;
     }
+    R.tname.textContent = c.tamed && c.name && c.name !== c.species.nome ? `${c.name} (${c.species.nome})` : c.species.nome;
+    R.tlvl.textContent = `Nv ${c.level}`;
+    R.thp.textContent = c.alive ? `${Math.ceil(c.health)}/${c.maxHealth}` : 'Abatido';
     const ratio = Math.max(0, c.health / c.maxHealth);
-    this.refs.tfill.style.transform = `scaleX(${ratio.toFixed(3)})`;
+    R.tfill.style.transform = `scaleX(${ratio.toFixed(3)})`;
+    R.tsex.textContent = `Gênero: ${c.sex ?? '?'}${c.isBaby ? ' · Filhote' : ''}`;
+    const taming = c.knockedOut && !c.tamed;
+    R.tmeter.hidden = !taming;
+    R.teff.hidden = !taming;
+    if (taming) {
+      const pct = (c.tameProgress ?? 0) * 100;
+      const eff = c.tameEff ?? 1;
+      R.teff.textContent = `Efetividade da doma: ${(eff * 100).toFixed(1)}% (+${Math.floor(c.level * BALANCE.domar.bonus_niveis * eff)} Nv)`;
+      R.ttame.textContent = `Domando: ${pct.toFixed(1)}%`;
+      R.ttamefill.style.transform = `scaleX(${Math.min(1, pct / 100).toFixed(3)})`;
+    }
     const status = c.tamed ? 'Domado' : c.knockedOut ? 'Desmaiado' : (TEMPER[c.species.temperamento] ?? '');
-    this.refs.tsub.textContent = c.alive ? `${status} · ${Math.ceil(c.health)}/${c.maxHealth}` : 'Abatido';
+    R.tsub.textContent = c.alive && !taming ? status : '';
     t.hidden = false;
   }
 
@@ -192,6 +227,7 @@ export class Hud {
     this._timer = 0.1;
 
     const st = this.player.stats;
+    this.refs.levelup.hidden = !(st.points > 0);
     for (const b of BARS) {
       const r = this.rows[b.key];
       const value = st[b.key];
@@ -205,7 +241,7 @@ export class Hud {
         r.num.textContent = String(shown);
       }
       const ratio = Math.max(0, Math.min(1, value / max));
-      r.fill.style.transform = `scaleX(${ratio.toFixed(3)})`;
+      r.fill.style.transform = `scaleY(${ratio.toFixed(3)})`;
       r.row.classList.toggle('low', ratio < 0.2);
     }
 
