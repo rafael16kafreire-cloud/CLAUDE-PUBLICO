@@ -411,7 +411,11 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   // ---------- Crafting ----------
   await page.evaluate(() => {
     const inv = window.__ilha.ctx.inventory;
-    inv.add('madeira', 6); inv.add('graveto', 6); inv.add('pedra', 4); inv.add('silex', 2); inv.add('fibra', 20);
+    inv.add('madeira', 6); inv.add('graveto', 6); inv.add('pedra', 4); inv.add('silex', 2); inv.add('fibra', 20); inv.add('palha', 12);
+    // Machado de Pedra (como no ARK): nível 2 e 3 pontos de engrama
+    const st = window.__ilha.ctx.player.stats;
+    if (st.level < 2) st.addXP(st.xpToNext() - st.xp);
+    st.learned.add('machado_pedra');
   });
   await page.keyboard.press('Tab');
   await frames(page, 4);
@@ -420,7 +424,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   await page.click('#receita-machado_pedra');
   await frames(page, 2);
   const reqs = await page.evaluate(() => [...document.querySelectorAll('.reqs li')].map((li) => li.textContent.replace(/\s+/g, ' ').trim()));
-  check('Crafting: clicar no machado mostra o que precisa', reqs.length === 3 && reqs.some((r) => /Graveto/.test(r)), reqs.join(' | '));
+  check('Crafting: clicar no machado mostra o que precisa', reqs.length === 3 && reqs.some((r) => /Palha/.test(r)), reqs.join(' | '));
   await page.screenshot({ path: `${SHOTS}/08-pc-crafting.png` });
   await page.click('#craft-1');
   await gameWait(page, 3600);

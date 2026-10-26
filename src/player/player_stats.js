@@ -142,7 +142,8 @@ export class PlayerStats {
   // ---- XP e níveis
   xpToNext() {
     const N = BALANCE.nivel;
-    return Math.round(N.xp_base * Math.pow(N.xp_crescimento, this.level - 1));
+    const T = N.xp_por_nivel;
+    return T[Math.min(this.level - 1, T.length - 1)];
   }
 
   addXP(amount) {
@@ -162,8 +163,8 @@ export class PlayerStats {
 
   // ---- Engramas (receitas aprendidas com pontos)
   engramsForLevel(level) {
-    const E = BALANCE.engramas;
-    return E.pontos_por_nivel + Math.floor((level - 1) / 10) * E.mais_a_cada_10_niveis;
+    const T = BALANCE.engramas.por_nivel;
+    return T[Math.min(Math.max(level - 2, 0), T.length - 1)];
   }
 
   // Receita já sabida? (custo 0 = sabe desde o começo)

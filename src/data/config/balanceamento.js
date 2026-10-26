@@ -127,8 +127,18 @@ export default {
   // APRENDER receitas. Cada receita pede um nível mínimo e um custo
   // (data/crafting/receitas.json: nivel e engrama).
   engramas: {
-    pontos_por_nivel: 8,       // pontos de engrama a cada nível…
-    mais_a_cada_10_niveis: 4,  // …e +4 a cada 10 níveis (nível 11+: 12, 21+: 16…)
+    // pontos de engrama ganhos ao CHEGAR em cada nível (igual ao ARK):
+    // 1º número = nível 2, 2º = nível 3 … até o nível 105.
+    por_nivel: [
+      8, 8, 8, 8, 8, 8, 8, 8, 12, 12, 12, 12, 12, 12,
+      12, 12, 12, 12, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16,
+      20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 24, 24, 24, 24,
+      24, 24, 24, 24, 24, 24, 28, 28, 28, 28, 28, 28, 28, 28,
+      28, 28, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40,
+      40, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50,
+      50, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 70,
+      70, 70, 70, 70, 70, 70,
+    ],
   },
 
   // Comida estraga com o tempo (minutos por unidade: "estraga_min" em
@@ -148,7 +158,7 @@ export default {
 
   // Armadura (roupas de pele vestidas): cada peça tira X% do dano
   armadura: {
-    max_reducao: 0.6,          // nunca tira mais que 60% do dano
+    max_reducao: 0.95,         // nunca tira mais que 95% do dano
     desgaste_por_golpe: 1,     // durabilidade que cada peça perde por golpe levado
   },
 
@@ -179,9 +189,20 @@ export default {
   },
 
   nivel: {
-    max: 60,
-    xp_base: 60,               // XP para ir do nível 1 ao 2
-    xp_crescimento: 1.18,      // cada nível pede 18% a mais que o anterior
+    max: 105,                  // nível máximo do jogador (igual ao ARK)
+    // XP para passar de cada nível ao próximo (tabela do ARK):
+    // 1º número = do 1 ao 2, 2º = do 2 ao 3 … até chegar no 105.
+    xp_por_nivel: [
+      5, 15, 20, 30, 50, 70, 80, 90, 90, 100, 110, 120,
+      130, 140, 150, 160, 170, 180, 190, 200, 210, 220, 230, 240,
+      250, 260, 270, 280, 290, 300, 310, 320, 330, 340, 350, 360,
+      370, 380, 390, 400, 410, 420, 430, 440, 450, 460, 470, 480,
+      490, 500, 510, 520, 530, 540, 550, 560, 570, 580, 590, 1150,
+      2228, 1370, 1460, 1554, 2037, 2750, 4537, 5218, 6801, 7957, 8952, 9286,
+      12000, 13000, 14000, 15500, 17000, 19000, 21000, 23000, 25070, 27326, 29785, 33508,
+      37697, 42432, 48166, 54702, 60172, 66189, 72807, 80088, 88096, 98000, 112000, 130000,
+      155000, 190000, 240000, 300000, 370000, 450000, 540000, 640000,
+    ],
   },
 
   // ---------------------------------------------------------

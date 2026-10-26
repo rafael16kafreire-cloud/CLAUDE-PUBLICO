@@ -5,27 +5,27 @@
    "id": "machado_pedra",
    "resultado": "machado_pedra",
    "quantidade": 1,
-   "tempo": 3,
+   "tempo": 5,
    "xp": 6,
    "categoria": "Ferramentas",
    "ingredientes": {
-    "graveto": 3,
-    "pedra": 2,
-    "silex": 1
+    "palha": 10,
+    "silex": 1,
+    "madeira": 1
    },
-   "nivel": 1,
-   "engrama": 0
+   "nivel": 2,
+   "engrama": 3
   },
   {
    "id": "picareta_pedra",
    "resultado": "picareta_pedra",
    "quantidade": 1,
-   "tempo": 3,
+   "tempo": 5,
    "xp": 6,
    "categoria": "Ferramentas",
    "ingredientes": {
-    "graveto": 2,
-    "pedra": 2,
+    "pedra": 1,
+    "madeira": 1,
     "palha": 10
    },
    "nivel": 1,
@@ -35,16 +35,16 @@
    "id": "lanca",
    "resultado": "lanca",
    "quantidade": 1,
-   "tempo": 4,
+   "tempo": 5,
    "xp": 8,
    "categoria": "Armas",
    "ingredientes": {
-    "madeira": 8,
     "silex": 2,
+    "madeira": 8,
     "fibra": 12
    },
-   "nivel": 1,
-   "engrama": 0
+   "nivel": 2,
+   "engrama": 3
   },
   {
    "id": "clava",
@@ -54,11 +54,11 @@
    "xp": 6,
    "categoria": "Armas",
    "ingredientes": {
-    "madeira": 5,
+    "madeira": 4,
     "fibra": 15
    },
-   "nivel": 2,
-   "engrama": 3
+   "nivel": 8,
+   "engrama": 4
   },
   {
    "id": "bandagem",
@@ -96,9 +96,9 @@
    "xp": 3,
    "categoria": "Ferramentas",
    "ingredientes": {
-    "graveto": 1,
-    "palha": 4,
-    "silex": 1
+    "silex": 1,
+    "madeira": 1,
+    "pedra": 1
    },
    "nivel": 1,
    "engrama": 0
@@ -111,13 +111,13 @@
    "xp": 8,
    "categoria": "Estruturas",
    "ingredientes": {
-    "pedra": 12,
-    "graveto": 6,
-    "palha": 8,
-    "silex": 1
+    "palha": 12,
+    "silex": 1,
+    "pedra": 16,
+    "madeira": 2
    },
-   "nivel": 1,
-   "engrama": 0
+   "nivel": 2,
+   "engrama": 3
   },
   {
    "id": "saco_dormir",
@@ -127,11 +127,10 @@
    "xp": 10,
    "categoria": "Estruturas",
    "ingredientes": {
-    "fibra": 15,
-    "palha": 10,
-    "couro": 3
+    "couro": 25,
+    "fibra": 15
    },
-   "nivel": 3,
+   "nivel": 4,
    "engrama": 3
   },
   {
@@ -142,28 +141,13 @@
    "xp": 12,
    "categoria": "Estruturas",
    "ingredientes": {
-    "madeira": 20,
-    "pedra": 10,
-    "fibra": 12,
-    "palha": 8
+    "lingote_metal": 5,
+    "pedra": 50,
+    "madeira": 30,
+    "couro": 20
    },
-   "nivel": 5,
-   "engrama": 6
-  },
-  {
-   "id": "casaco_pele",
-   "resultado": "casaco_pele",
-   "quantidade": 1,
-   "tempo": 5,
-   "xp": 10,
-   "categoria": "Roupas",
-   "ingredientes": {
-    "couro": 6,
-    "fibra": 15,
-    "ossos": 2
-   },
-   "nivel": 8,
-   "engrama": 6
+   "nivel": 20,
+   "engrama": 18
   },
   {
    "id": "piso",
@@ -173,11 +157,12 @@
    "xp": 5,
    "categoria": "Construção",
    "ingredientes": {
-    "madeira": 10,
-    "fibra": 4
+    "madeira": 80,
+    "palha": 20,
+    "fibra": 15
    },
-   "nivel": 4,
-   "engrama": 3
+   "nivel": 11,
+   "engrama": 6
   },
   {
    "id": "parede",
@@ -187,11 +172,12 @@
    "xp": 5,
    "categoria": "Construção",
    "ingredientes": {
-    "madeira": 8,
-    "fibra": 3
+    "madeira": 40,
+    "palha": 10,
+    "fibra": 7
    },
-   "nivel": 4,
-   "engrama": 3
+   "nivel": 11,
+   "engrama": 7
   },
   {
    "id": "porta",
@@ -201,12 +187,12 @@
    "xp": 6,
    "categoria": "Construção",
    "ingredientes": {
-    "madeira": 10,
-    "fibra": 5,
-    "couro": 1
+    "madeira": 30,
+    "palha": 8,
+    "fibra": 6
    },
-   "nivel": 5,
-   "engrama": 3
+   "nivel": 11,
+   "engrama": 6
   },
   {
    "id": "teto",
@@ -216,11 +202,12 @@
    "xp": 5,
    "categoria": "Construção",
    "ingredientes": {
-    "madeira": 6,
-    "palha": 14
+    "madeira": 60,
+    "palha": 15,
+    "fibra": 10
    },
-   "nivel": 6,
-   "engrama": 3
+   "nivel": 11,
+   "engrama": 6
   },
   {
    "id": "rampa",
@@ -230,117 +217,65 @@
    "xp": 5,
    "categoria": "Construção",
    "ingredientes": {
-    "madeira": 8,
-    "fibra": 4
+    "madeira": 60,
+    "palha": 15,
+    "fibra": 10
    },
-   "nivel": 6,
-   "engrama": 2
-  },
-  {
-   "id": "machado_silex",
-   "resultado": "machado_silex",
-   "quantidade": 1,
-   "tempo": 5,
-   "xp": 14,
-   "categoria": "Ferramentas",
-   "estacao": "bancada",
-   "ingredientes": {
-    "madeira": 4,
-    "silex": 6,
-    "fibra": 10,
-    "couro": 2
-   },
-   "nivel": 8,
-   "engrama": 6
-  },
-  {
-   "id": "picareta_silex",
-   "resultado": "picareta_silex",
-   "quantidade": 1,
-   "tempo": 5,
-   "xp": 14,
-   "categoria": "Ferramentas",
-   "estacao": "bancada",
-   "ingredientes": {
-    "madeira": 4,
-    "silex": 6,
-    "fibra": 10,
-    "couro": 2
-   },
-   "nivel": 8,
-   "engrama": 6
-  },
-  {
-   "id": "lanca_osso",
-   "resultado": "lanca_osso",
-   "quantidade": 1,
-   "tempo": 6,
-   "xp": 18,
-   "categoria": "Armas",
-   "estacao": "bancada",
-   "ingredientes": {
-    "madeira": 6,
-    "ossos": 8,
-    "fibra": 12,
-    "couro": 3
-   },
-   "nivel": 10,
-   "engrama": 8
+   "nivel": 12,
+   "engrama": 3
   },
   {
    "id": "arco",
    "resultado": "arco",
    "quantidade": 1,
-   "tempo": 4,
+   "tempo": 10,
    "xp": 10,
    "categoria": "Armas",
-   "nivel": 6,
-   "engrama": 8,
+   "nivel": 10,
+   "engrama": 11,
    "ingredientes": {
-    "madeira": 4,
-    "fibra": 30,
-    "couro": 3
+    "madeira": 15,
+    "fibra": 50
    }
   },
   {
    "id": "flecha_pedra",
    "resultado": "flecha_pedra",
    "quantidade": 3,
-   "tempo": 2,
+   "tempo": 1,
    "xp": 2,
    "categoria": "Armas",
-   "nivel": 6,
-   "engrama": 3,
+   "nivel": 10,
+   "engrama": 2,
    "ingredientes": {
     "palha": 2,
-    "silex": 1,
-    "fibra": 2
+    "fibra": 2,
+    "silex": 1
    }
   },
   {
    "id": "pilao",
    "resultado": "pilao",
    "quantidade": 1,
-   "tempo": 4,
+   "tempo": 5,
    "xp": 8,
    "categoria": "Estruturas",
    "nivel": 6,
    "engrama": 6,
    "ingredientes": {
-    "pedra": 30,
-    "madeira": 10,
-    "couro": 5
+    "pedra": 65,
+    "couro": 15
    }
   },
   {
    "id": "narcotico",
    "resultado": "narcotico",
    "quantidade": 1,
-   "tempo": 2,
+   "tempo": 5,
    "xp": 3,
    "categoria": "Cura",
    "nivel": 6,
-   "engrama": 3,
+   "engrama": 6,
    "estacao": "pilao",
    "ingredientes": {
     "baga_escura": 5,
@@ -351,14 +286,14 @@
    "id": "flecha_tranq",
    "resultado": "flecha_tranq",
    "quantidade": 1,
-   "tempo": 2,
+   "tempo": 1,
    "xp": 3,
    "categoria": "Armas",
-   "nivel": 12,
-   "engrama": 9,
+   "nivel": 21,
+   "engrama": 8,
    "ingredientes": {
     "flecha_pedra": 1,
-    "narcotico": 2
+    "narcotico": 1
    }
   },
   {
@@ -368,8 +303,8 @@
    "tempo": 3,
    "xp": 6,
    "categoria": "Ferramentas",
-   "nivel": 4,
-   "engrama": 4,
+   "nivel": 3,
+   "engrama": 6,
    "ingredientes": {
     "couro": 4,
     "fibra": 12
@@ -383,9 +318,9 @@
    "xp": 8,
    "categoria": "Estruturas",
    "nivel": 4,
-   "engrama": 4,
+   "engrama": 6,
    "ingredientes": {
-    "madeira": 15,
+    "madeira": 25,
     "palha": 20,
     "fibra": 10
    }
@@ -397,12 +332,12 @@
    "tempo": 5,
    "xp": 15,
    "categoria": "Ferramentas",
-   "nivel": 8,
-   "engrama": 10,
+   "nivel": 18,
+   "engrama": 9,
    "ingredientes": {
-    "couro": 20,
-    "fibra": 20,
-    "madeira": 6
+    "couro": 110,
+    "fibra": 65,
+    "madeira": 20
    }
   },
   {
@@ -412,14 +347,14 @@
    "tempo": 6,
    "xp": 20,
    "categoria": "Estruturas",
-   "nivel": 14,
-   "engrama": 12,
-   "estacao": "bancada",
+   "nivel": 20,
+   "engrama": 21,
    "ingredientes": {
-    "pedra": 40,
-    "silex": 10,
-    "couro": 10,
-    "madeira": 10
+    "pedra": 125,
+    "silex": 5,
+    "couro": 65,
+    "madeira": 20,
+    "fibra": 40
    }
   },
   {
@@ -433,8 +368,7 @@
    "engrama": 0,
    "estacao": "forja",
    "ingredientes": {
-    "minerio_ferro": 2,
-    "madeira": 1
+    "minerio_ferro": 2
    }
   },
   {
@@ -444,13 +378,13 @@
    "tempo": 6,
    "xp": 25,
    "categoria": "Ferramentas",
-   "nivel": 18,
-   "engrama": 14,
+   "nivel": 20,
+   "engrama": 6,
    "estacao": "bancada",
    "ingredientes": {
-    "lingote_metal": 4,
-    "madeira": 2,
-    "couro": 4
+    "lingote_metal": 8,
+    "madeira": 1,
+    "couro": 10
    }
   },
   {
@@ -460,13 +394,13 @@
    "tempo": 6,
    "xp": 25,
    "categoria": "Ferramentas",
-   "nivel": 18,
-   "engrama": 14,
+   "nivel": 20,
+   "engrama": 6,
    "estacao": "bancada",
    "ingredientes": {
-    "lingote_metal": 4,
-    "madeira": 2,
-    "couro": 4
+    "lingote_metal": 1,
+    "madeira": 1,
+    "couro": 10
    }
   },
   {
@@ -476,11 +410,11 @@
    "tempo": 3,
    "xp": 8,
    "categoria": "Roupas",
-   "nivel": 7,
-   "engrama": 4,
+   "nivel": 15,
+   "engrama": 9,
    "ingredientes": {
-    "couro": 6,
-    "fibra": 4
+    "couro": 15,
+    "fibra": 6
    }
   },
   {
@@ -490,10 +424,10 @@
    "tempo": 3,
    "xp": 8,
    "categoria": "Roupas",
-   "nivel": 7,
-   "engrama": 4,
+   "nivel": 15,
+   "engrama": 6,
    "ingredientes": {
-    "couro": 10,
+    "couro": 20,
     "fibra": 8
    }
   },
@@ -504,11 +438,11 @@
    "tempo": 3,
    "xp": 8,
    "categoria": "Roupas",
-   "nivel": 7,
-   "engrama": 4,
+   "nivel": 15,
+   "engrama": 7,
    "ingredientes": {
-    "couro": 4,
-    "fibra": 3
+    "couro": 10,
+    "fibra": 4
    }
   },
   {
@@ -518,11 +452,11 @@
    "tempo": 3,
    "xp": 8,
    "categoria": "Roupas",
-   "nivel": 7,
-   "engrama": 4,
+   "nivel": 15,
+   "engrama": 9,
    "ingredientes": {
-    "couro": 8,
-    "fibra": 6
+    "couro": 25,
+    "fibra": 10
    }
   },
   {
@@ -532,11 +466,11 @@
    "tempo": 3,
    "xp": 8,
    "categoria": "Roupas",
-   "nivel": 7,
-   "engrama": 4,
+   "nivel": 15,
+   "engrama": 7,
    "ingredientes": {
-    "couro": 5,
-    "fibra": 4
+    "couro": 12,
+    "fibra": 5
    }
   },
   {
@@ -576,7 +510,7 @@
    "xp": 1,
    "categoria": "Ferramentas",
    "nivel": 6,
-   "engrama": 0,
+   "engrama": 3,
    "ingredientes": {
     "silex": 2,
     "pedra": 1
@@ -590,8 +524,8 @@
    "tempo": 1,
    "xp": 1,
    "categoria": "Armas",
-   "nivel": 16,
-   "engrama": 4,
+   "nivel": 15,
+   "engrama": 2,
    "ingredientes": {
     "po_faisca": 1,
     "carvao": 1
@@ -602,11 +536,11 @@
    "id": "pasta_cimento",
    "resultado": "pasta_cimento",
    "quantidade": 1,
-   "tempo": 2,
+   "tempo": 1,
    "xp": 2,
    "categoria": "Construção",
-   "nivel": 12,
-   "engrama": 4,
+   "nivel": 13,
+   "engrama": 3,
    "ingredientes": {
     "quitina": 4,
     "pedra": 8
@@ -617,11 +551,11 @@
    "id": "pasta_cimento_q",
    "resultado": "pasta_cimento",
    "quantidade": 1,
-   "tempo": 2,
+   "tempo": 1,
    "xp": 2,
    "categoria": "Construção",
-   "nivel": 12,
-   "engrama": 4,
+   "nivel": 13,
+   "engrama": 3,
    "engrama_id": "pasta_cimento",
    "ingredientes": {
     "queratina": 4,
@@ -633,16 +567,16 @@
    "id": "luneta",
    "resultado": "luneta",
    "quantidade": 1,
-   "tempo": 3,
+   "tempo": 5,
    "xp": 6,
    "categoria": "Ferramentas",
-   "nivel": 8,
-   "engrama": 4,
+   "nivel": 7,
+   "engrama": 2,
    "ingredientes": {
-    "cristal": 2,
-    "perola_silica": 2,
-    "couro": 4,
-    "madeira": 3
+    "madeira": 5,
+    "couro": 10,
+    "fibra": 10,
+    "cristal": 2
    }
   },
   {
@@ -652,8 +586,8 @@
    "tempo": 3,
    "xp": 6,
    "categoria": "Ferramentas",
-   "nivel": 20,
-   "engrama": 8,
+   "nivel": 26,
+   "engrama": 12,
    "ingredientes": {
     "pasta_cimento": 7,
     "couro": 5,
@@ -682,12 +616,12 @@
    "tempo": 6,
    "xp": 20,
    "categoria": "Armas",
-   "nivel": 22,
-   "engrama": 16,
+   "nivel": 34,
+   "engrama": 15,
    "ingredientes": {
-    "lingote_metal": 12,
+    "lingote_metal": 60,
     "madeira": 5,
-    "couro": 10
+    "couro": 15
    },
    "estacao": "bancada"
   },
@@ -698,11 +632,11 @@
    "tempo": 1,
    "xp": 2,
    "categoria": "Armas",
-   "nivel": 22,
+   "nivel": 34,
    "engrama": 6,
    "ingredientes": {
-    "polvora": 3,
-    "lingote_metal": 1
+    "lingote_metal": 1,
+    "polvora": 6
    },
    "estacao": "bancada"
   },
@@ -713,13 +647,15 @@
    "tempo": 3,
    "xp": 10,
    "categoria": "Roupas",
-   "nivel": 20,
-   "engrama": 6,
+   "nivel": 23,
+   "engrama": 14,
    "ingredientes": {
-    "pelo": 6,
-    "couro": 3,
+    "pelo": 56,
+    "lingote_metal": 10,
+    "couro": 7,
     "fibra": 3
-   }
+   },
+   "estacao": "bancada"
   },
   {
    "id": "camisa_pelo",
@@ -728,13 +664,15 @@
    "tempo": 3,
    "xp": 10,
    "categoria": "Roupas",
-   "nivel": 20,
-   "engrama": 6,
+   "nivel": 23,
+   "engrama": 16,
    "ingredientes": {
-    "pelo": 10,
-    "couro": 5,
-    "fibra": 5
-   }
+    "pelo": 80,
+    "lingote_metal": 13,
+    "couro": 10,
+    "fibra": 4
+   },
+   "estacao": "bancada"
   },
   {
    "id": "luvas_pelo",
@@ -743,13 +681,15 @@
    "tempo": 3,
    "xp": 10,
    "categoria": "Roupas",
-   "nivel": 20,
-   "engrama": 6,
+   "nivel": 23,
+   "engrama": 12,
    "ingredientes": {
-    "pelo": 4,
-    "couro": 2,
-    "fibra": 3
-   }
+    "pelo": 40,
+    "lingote_metal": 6,
+    "couro": 5,
+    "fibra": 2
+   },
+   "estacao": "bancada"
   },
   {
    "id": "calca_pelo",
@@ -758,13 +698,15 @@
    "tempo": 3,
    "xp": 10,
    "categoria": "Roupas",
-   "nivel": 20,
-   "engrama": 6,
+   "nivel": 23,
+   "engrama": 16,
    "ingredientes": {
-    "pelo": 8,
-    "couro": 4,
-    "fibra": 4
-   }
+    "pelo": 96,
+    "lingote_metal": 16,
+    "couro": 12,
+    "fibra": 5
+   },
+   "estacao": "bancada"
   },
   {
    "id": "botas_pelo",
@@ -773,13 +715,15 @@
    "tempo": 3,
    "xp": 10,
    "categoria": "Roupas",
-   "nivel": 20,
-   "engrama": 6,
+   "nivel": 23,
+   "engrama": 12,
    "ingredientes": {
-    "pelo": 5,
-    "couro": 2,
-    "fibra": 3
-   }
+    "pelo": 48,
+    "lingote_metal": 8,
+    "couro": 6,
+    "fibra": 4
+   },
+   "estacao": "bancada"
   },
   {
    "id": "capuz_quitina",
@@ -788,13 +732,14 @@
    "tempo": 3,
    "xp": 10,
    "categoria": "Roupas",
-   "nivel": 24,
-   "engrama": 8,
+   "nivel": 37,
+   "engrama": 18,
    "ingredientes": {
-    "quitina": 6,
-    "couro": 3,
+    "quitina": 15,
+    "couro": 7,
     "fibra": 3
-   }
+   },
+   "estacao": "bancada"
   },
   {
    "id": "camisa_quitina",
@@ -803,13 +748,14 @@
    "tempo": 3,
    "xp": 10,
    "categoria": "Roupas",
-   "nivel": 24,
-   "engrama": 8,
+   "nivel": 37,
+   "engrama": 18,
    "ingredientes": {
-    "quitina": 10,
-    "couro": 5,
-    "fibra": 5
-   }
+    "quitina": 20,
+    "couro": 10,
+    "fibra": 4
+   },
+   "estacao": "bancada"
   },
   {
    "id": "luvas_quitina",
@@ -818,13 +764,14 @@
    "tempo": 3,
    "xp": 10,
    "categoria": "Roupas",
-   "nivel": 24,
-   "engrama": 8,
+   "nivel": 37,
+   "engrama": 15,
    "ingredientes": {
-    "quitina": 4,
-    "couro": 2,
-    "fibra": 3
-   }
+    "quitina": 10,
+    "couro": 5,
+    "fibra": 2
+   },
+   "estacao": "bancada"
   },
   {
    "id": "calca_quitina",
@@ -833,13 +780,14 @@
    "tempo": 3,
    "xp": 10,
    "categoria": "Roupas",
-   "nivel": 24,
-   "engrama": 8,
+   "nivel": 37,
+   "engrama": 15,
    "ingredientes": {
-    "quitina": 8,
-    "couro": 4,
-    "fibra": 4
-   }
+    "quitina": 25,
+    "couro": 12,
+    "fibra": 5
+   },
+   "estacao": "bancada"
   },
   {
    "id": "botas_quitina",
@@ -848,13 +796,14 @@
    "tempo": 3,
    "xp": 10,
    "categoria": "Roupas",
-   "nivel": 24,
-   "engrama": 8,
+   "nivel": 37,
+   "engrama": 15,
    "ingredientes": {
-    "quitina": 5,
-    "couro": 2,
-    "fibra": 3
-   }
+    "quitina": 12,
+    "couro": 6,
+    "fibra": 4
+   },
+   "estacao": "bancada"
   },
   {
    "id": "piso_palha",
@@ -863,13 +812,13 @@
    "tempo": 2,
    "xp": 3,
    "categoria": "Construção",
-   "nivel": 2,
-   "engrama": 2,
+   "nivel": 4,
+   "engrama": 3,
    "engrama_id": "construcao_palha",
    "ingredientes": {
     "palha": 20,
-    "madeira": 3,
-    "fibra": 5
+    "madeira": 6,
+    "fibra": 15
    }
   },
   {
@@ -879,13 +828,13 @@
    "tempo": 2,
    "xp": 3,
    "categoria": "Construção",
-   "nivel": 2,
-   "engrama": 2,
+   "nivel": 4,
+   "engrama": 3,
    "engrama_id": "construcao_palha",
    "ingredientes": {
-    "palha": 16,
+    "palha": 10,
     "madeira": 2,
-    "fibra": 4
+    "fibra": 7
    }
   },
   {
@@ -895,13 +844,13 @@
    "tempo": 2,
    "xp": 3,
    "categoria": "Construção",
-   "nivel": 2,
-   "engrama": 2,
+   "nivel": 4,
+   "engrama": 3,
    "engrama_id": "construcao_palha",
    "ingredientes": {
-    "palha": 20,
-    "madeira": 3,
-    "fibra": 5
+    "palha": 8,
+    "madeira": 6,
+    "fibra": 6
    }
   },
   {
@@ -911,13 +860,13 @@
    "tempo": 2,
    "xp": 3,
    "categoria": "Construção",
-   "nivel": 2,
-   "engrama": 2,
+   "nivel": 5,
+   "engrama": 3,
    "engrama_id": "construcao_palha",
    "ingredientes": {
-    "palha": 12,
-    "madeira": 2,
-    "fibra": 3
+    "palha": 15,
+    "madeira": 4,
+    "fibra": 10
    }
   },
   {
@@ -927,12 +876,13 @@
    "tempo": 2,
    "xp": 3,
    "categoria": "Construção",
-   "nivel": 5,
-   "engrama": 3,
+   "nivel": 12,
+   "engrama": 9,
    "engrama_id": "construcao_madeira",
    "ingredientes": {
-    "madeira": 4,
-    "fibra": 2
+    "madeira": 40,
+    "palha": 10,
+    "fibra": 7
    }
   },
   {
@@ -942,27 +892,29 @@
    "tempo": 2,
    "xp": 3,
    "categoria": "Construção",
-   "nivel": 5,
-   "engrama": 3,
+   "nivel": 14,
+   "engrama": 9,
    "engrama_id": "construcao_madeira",
    "ingredientes": {
-    "madeira": 7,
-    "fibra": 3
+    "madeira": 36,
+    "palha": 9,
+    "fibra": 6
    }
   },
   {
    "id": "telhado",
    "resultado": "telhado",
    "quantidade": 1,
-   "tempo": 2,
+   "tempo": 5,
    "xp": 3,
    "categoria": "Construção",
-   "nivel": 5,
-   "engrama": 3,
+   "nivel": 14,
+   "engrama": 4,
    "engrama_id": "construcao_madeira",
    "ingredientes": {
-    "madeira": 6,
-    "fibra": 3
+    "madeira": 60,
+    "palha": 15,
+    "fibra": 10
    }
   },
   {
@@ -972,44 +924,45 @@
    "tempo": 2,
    "xp": 3,
    "categoria": "Construção",
-   "nivel": 5,
+   "nivel": 14,
    "engrama": 3,
    "engrama_id": "construcao_madeira",
    "ingredientes": {
-    "madeira": 4,
-    "fibra": 2
+    "madeira": 20,
+    "palha": 5,
+    "fibra": 3
    }
   },
   {
    "id": "piso_pedra",
    "resultado": "piso_pedra",
    "quantidade": 1,
-   "tempo": 3,
+   "tempo": 5,
    "xp": 3,
    "categoria": "Construção",
-   "nivel": 16,
-   "engrama": 8,
+   "nivel": 24,
+   "engrama": 6,
    "engrama_id": "construcao_pedra",
    "ingredientes": {
-    "pedra": 25,
-    "madeira": 5,
-    "palha": 5
+    "pedra": 80,
+    "madeira": 40,
+    "palha": 30
    }
   },
   {
    "id": "parede_pedra",
    "resultado": "parede_pedra",
    "quantidade": 1,
-   "tempo": 3,
+   "tempo": 2,
    "xp": 3,
    "categoria": "Construção",
-   "nivel": 16,
+   "nivel": 24,
    "engrama": 8,
    "engrama_id": "construcao_pedra",
    "ingredientes": {
-    "pedra": 20,
-    "madeira": 4,
-    "palha": 4
+    "pedra": 40,
+    "madeira": 20,
+    "palha": 15
    }
   },
   {
@@ -1019,45 +972,45 @@
    "tempo": 3,
    "xp": 3,
    "categoria": "Construção",
-   "nivel": 16,
-   "engrama": 8,
+   "nivel": 24,
+   "engrama": 6,
    "engrama_id": "construcao_pedra",
    "ingredientes": {
-    "pedra": 25,
-    "madeira": 5,
-    "palha": 5
+    "pedra": 30,
+    "madeira": 16,
+    "palha": 12
    }
   },
   {
    "id": "teto_pedra",
    "resultado": "teto_pedra",
    "quantidade": 1,
-   "tempo": 3,
+   "tempo": 4,
    "xp": 3,
    "categoria": "Construção",
-   "nivel": 16,
-   "engrama": 8,
+   "nivel": 24,
+   "engrama": 6,
    "engrama_id": "construcao_pedra",
    "ingredientes": {
-    "pedra": 15,
-    "madeira": 3,
-    "palha": 3
+    "pedra": 60,
+    "madeira": 30,
+    "palha": 20
    }
   },
   {
    "id": "rampa_pedra",
    "resultado": "rampa_pedra",
    "quantidade": 1,
-   "tempo": 3,
+   "tempo": 2,
    "xp": 3,
    "categoria": "Construção",
-   "nivel": 16,
-   "engrama": 8,
+   "nivel": 28,
+   "engrama": 15,
    "engrama_id": "construcao_pedra",
    "ingredientes": {
-    "pedra": 20,
-    "madeira": 4,
-    "palha": 4
+    "pedra": 200,
+    "madeira": 100,
+    "palha": 75
    }
   },
   {
@@ -1067,13 +1020,13 @@
    "tempo": 3,
    "xp": 3,
    "categoria": "Construção",
-   "nivel": 16,
+   "nivel": 25,
    "engrama": 8,
    "engrama_id": "construcao_pedra",
    "ingredientes": {
-    "pedra": 10,
-    "madeira": 2,
-    "palha": 2
+    "pedra": 30,
+    "madeira": 15,
+    "palha": 10
    }
   },
   {
@@ -1083,45 +1036,45 @@
    "tempo": 3,
    "xp": 3,
    "categoria": "Construção",
-   "nivel": 16,
-   "engrama": 8,
+   "nivel": 26,
+   "engrama": 11,
    "engrama_id": "construcao_pedra",
    "ingredientes": {
-    "pedra": 18,
-    "madeira": 3,
-    "palha": 3
+    "pedra": 35,
+    "madeira": 18,
+    "palha": 12
    }
   },
   {
    "id": "telhado_pedra",
    "resultado": "telhado_pedra",
    "quantidade": 1,
-   "tempo": 3,
+   "tempo": 4,
    "xp": 3,
    "categoria": "Construção",
-   "nivel": 16,
-   "engrama": 8,
+   "nivel": 27,
+   "engrama": 4,
    "engrama_id": "construcao_pedra",
    "ingredientes": {
-    "pedra": 15,
-    "madeira": 3,
-    "palha": 3
+    "pedra": 60,
+    "madeira": 30,
+    "palha": 20
    }
   },
   {
    "id": "cerca_pedra",
    "resultado": "cerca_pedra",
    "quantidade": 1,
-   "tempo": 3,
+   "tempo": 2,
    "xp": 3,
    "categoria": "Construção",
-   "nivel": 16,
-   "engrama": 8,
+   "nivel": 28,
+   "engrama": 4,
    "engrama_id": "construcao_pedra",
    "ingredientes": {
-    "pedra": 10,
-    "madeira": 2,
-    "palha": 2
+    "pedra": 20,
+    "madeira": 10,
+    "palha": 7
    }
   },
   {
@@ -1131,12 +1084,12 @@
    "tempo": 3,
    "xp": 6,
    "categoria": "Construção",
-   "nivel": 26,
-   "engrama": 12,
+   "nivel": 45,
+   "engrama": 24,
    "engrama_id": "construcao_metal",
    "ingredientes": {
-    "lingote_metal": 8,
-    "pasta_cimento": 3
+    "lingote_metal": 50,
+    "pasta_cimento": 15
    },
    "estacao": "bancada"
   },
@@ -1147,12 +1100,12 @@
    "tempo": 3,
    "xp": 6,
    "categoria": "Construção",
-   "nivel": 26,
-   "engrama": 12,
+   "nivel": 45,
+   "engrama": 15,
    "engrama_id": "construcao_metal",
    "ingredientes": {
-    "lingote_metal": 6,
-    "pasta_cimento": 2
+    "lingote_metal": 25,
+    "pasta_cimento": 7
    },
    "estacao": "bancada"
   },
@@ -1163,12 +1116,12 @@
    "tempo": 3,
    "xp": 6,
    "categoria": "Construção",
-   "nivel": 26,
-   "engrama": 12,
+   "nivel": 45,
+   "engrama": 24,
    "engrama_id": "construcao_metal",
    "ingredientes": {
-    "lingote_metal": 8,
-    "pasta_cimento": 3
+    "lingote_metal": 20,
+    "pasta_cimento": 6
    },
    "estacao": "bancada"
   },
@@ -1179,12 +1132,12 @@
    "tempo": 3,
    "xp": 6,
    "categoria": "Construção",
-   "nivel": 26,
-   "engrama": 12,
+   "nivel": 45,
+   "engrama": 15,
    "engrama_id": "construcao_metal",
    "ingredientes": {
-    "lingote_metal": 5,
-    "pasta_cimento": 2
+    "lingote_metal": 35,
+    "pasta_cimento": 10
    },
    "estacao": "bancada"
   },
@@ -1195,12 +1148,12 @@
    "tempo": 3,
    "xp": 6,
    "categoria": "Construção",
-   "nivel": 26,
+   "nivel": 47,
    "engrama": 12,
    "engrama_id": "construcao_metal",
    "ingredientes": {
-    "lingote_metal": 6,
-    "pasta_cimento": 2
+    "lingote_metal": 35,
+    "pasta_cimento": 10
    },
    "estacao": "bancada"
   },
@@ -1211,12 +1164,12 @@
    "tempo": 3,
    "xp": 6,
    "categoria": "Construção",
-   "nivel": 26,
-   "engrama": 12,
+   "nivel": 46,
+   "engrama": 18,
    "engrama_id": "construcao_metal",
    "ingredientes": {
-    "lingote_metal": 3,
-    "pasta_cimento": 1
+    "lingote_metal": 25,
+    "pasta_cimento": 7
    },
    "estacao": "bancada"
   },
@@ -1227,12 +1180,12 @@
    "tempo": 3,
    "xp": 6,
    "categoria": "Construção",
-   "nivel": 26,
-   "engrama": 12,
+   "nivel": 46,
+   "engrama": 18,
    "engrama_id": "construcao_metal",
    "ingredientes": {
-    "lingote_metal": 6,
-    "pasta_cimento": 2
+    "lingote_metal": 20,
+    "pasta_cimento": 6
    },
    "estacao": "bancada"
   },
@@ -1243,12 +1196,12 @@
    "tempo": 3,
    "xp": 6,
    "categoria": "Construção",
-   "nivel": 26,
-   "engrama": 12,
+   "nivel": 47,
+   "engrama": 10,
    "engrama_id": "construcao_metal",
    "ingredientes": {
-    "lingote_metal": 5,
-    "pasta_cimento": 2
+    "lingote_metal": 35,
+    "pasta_cimento": 10
    },
    "estacao": "bancada"
   },
@@ -1259,12 +1212,12 @@
    "tempo": 3,
    "xp": 6,
    "categoria": "Construção",
-   "nivel": 26,
-   "engrama": 12,
+   "nivel": 46,
+   "engrama": 7,
    "engrama_id": "construcao_metal",
    "ingredientes": {
-    "lingote_metal": 3,
-    "pasta_cimento": 1
+    "lingote_metal": 12,
+    "pasta_cimento": 3
    },
    "estacao": "bancada"
   },
@@ -1275,32 +1228,28 @@
    "tempo": 5,
    "xp": 20,
    "categoria": "Ferramentas",
-   "nivel": 18,
+   "nivel": 16,
    "engrama": 12,
-   "estacao": "bancada",
    "ingredientes": {
-    "couro": 40,
-    "fibra": 30,
-    "madeira": 10,
-    "lingote_metal": 4
+    "couro": 140,
+    "fibra": 80,
+    "madeira": 25
    }
   },
   {
    "id": "sela_grande",
    "resultado": "sela_grande",
    "quantidade": 1,
-   "tempo": 8,
+   "tempo": 12,
    "xp": 40,
    "categoria": "Ferramentas",
-   "nivel": 30,
-   "engrama": 18,
+   "nivel": 74,
+   "engrama": 40,
    "estacao": "bancada",
    "ingredientes": {
-    "couro": 80,
-    "fibra": 50,
-    "madeira": 30,
-    "lingote_metal": 20,
-    "pasta_cimento": 10
+    "couro": 380,
+    "fibra": 200,
+    "lingote_metal": 50
    }
   }
  ]

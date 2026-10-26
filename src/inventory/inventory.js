@@ -46,11 +46,18 @@ export class Inventory {
     return true;
   }
 
-  // Soma da proteção da roupa vestida (0..1) e do calor (graus).
-  get armor() {
+  // Pontos de armadura somados da roupa vestida (como no ARK).
+  get armorPoints() {
     let a = 0;
     for (const s of Object.values(this.equip)) if (s) a += ITEMS[s.id].equipamento.armadura ?? 0;
-    return a / 100;
+    return a;
+  }
+
+  // Quanto do dano a roupa tira (0..1). Fórmula do ARK:
+  // armadura / (armadura + 100). Ex.: 100 de armadura = metade do dano.
+  get armor() {
+    const a = this.armorPoints;
+    return a / (a + 100);
   }
 
   get warmth() {
