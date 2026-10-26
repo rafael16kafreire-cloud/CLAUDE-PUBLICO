@@ -101,7 +101,7 @@ export class CreatureManager {
     for (const c of this.list) {
       c.update(dt, ctx);
       // Sombra só para as que estão perto.
-      c.mesh.castShadow = c.pos.distanceTo(camera.position) < 45;
+      c.mesh.castShadow = c.pos.distanceTo(camera.position) < 32;
     }
     this._separate();
 

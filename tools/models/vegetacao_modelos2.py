@@ -42,7 +42,7 @@ def sample_cards(p, u, i, frac, grow, seed=1):
 def simplify(p, i, target):
     """Reduz por agrupamento em grade (vertex clustering) – sem dependências."""
     lo, hi = p.min(0), p.max(0)
-    for cells in (64, 48, 36, 28, 20, 14):
+    for cells in (64, 48, 36, 28, 20, 14, 11):
         size = (hi - lo).max() / cells
         key = np.floor((p - lo) / size).astype(np.int64)
         _, rep, inv = np.unique(key, axis=0, return_index=True, return_inverse=True)
@@ -64,15 +64,15 @@ def main(agar, bush, out):
     ids = lambda key: [k for k, n in enumerate(names) if key in n]
     # tronco: reduz por grade (perde a costura da textura em poucos lugares)
     p, u, i = mesh(d, ids('AgarwoodBark'))
-    rep, t = simplify(p, i, 2600)
+    rep, t = simplify(p, i, 2000)
     pb, ub, ib = p[rep], u[rep], t
     # folhas e cipós: só uma parte dos cartões
     p1, u1, i1 = mesh(d, ids('AgarwoodLeaf_1'))
-    p1, u1, i1 = sample_cards(p1, u1, i1, 0.032, 2.4, 1)
+    p1, u1, i1 = sample_cards(p1, u1, i1, 0.022, 2.8, 1)
     p2, u2, i2 = mesh(d, ids('AgarwoodLeaf_2'))
-    p2, u2, i2 = sample_cards(p2, u2, i2, 0.04, 2.4, 2)
+    p2, u2, i2 = sample_cards(p2, u2, i2, 0.028, 2.8, 2)
     pv, uv, iv = mesh(d, ids('AgarwoodVines'))
-    pv, uv, iv = sample_cards(pv, uv, iv, 0.06, 1.5, 3)
+    pv, uv, iv = sample_cards(pv, uv, iv, 0.04, 1.7, 3)
     M['arvore_agar'] = model([(pb, ub, ib, 'agar_casca'), (p1, u1, i1, 'agar_folha1'), (p2, u2, i2, 'agar_folha2'), (pv, uv, iv, 'agar_cipo')])
     T['agar_casca'] = img(f'{agar}/0/AgarwoodBark_diffuse_scale2.jpg', (512, 512), False)
     T['agar_folha1'] = img(f'{agar}/0/AgarwoodLeaf_1_diffuse_cutoff174.png', (256, 256), True)
@@ -88,9 +88,18 @@ def main(agar, bush, out):
     lat = np.arctan2(v[:, 1], np.hypot(v[:, 0], v[:, 2])) / np.pi + 0.5
     uvs = np.c_[lon * 3, lat * 1.5]  # repete a textura
     # bolas de folhas lisas: menos triângulos (o celular desenha muitos arbustos)
-    rep, i = simplify(p, i, 1400)
+    rep, i = simplify(p, i, 600)
     p, uvs = p[rep], uvs[rep]
     pb2, ub2, ib2 = mesh(d, [1])
+    # metade das bagas (cada baga é um pedaço separado): mais leve
+    comp = np.arange(len(pb2))
+    for _ in range(40):
+        for a, b, c in ib2:
+            m = min(comp[a], comp[b], comp[c])
+            comp[a] = comp[b] = comp[c] = m
+    ids2 = np.unique(comp)
+    keep_c = set(ids2[::2].tolist())
+    ib2 = np.array([t for t in ib2 if comp[t[0]] in keep_c])
     M['arbusto_bagas'] = model([(p, uvs, i, 'folhagem_arbusto'), (pb2, ub2 * 0, ib2, 'baga')])
     print({k: [x['n'] for x in v] for k, v in M.items()})
     with open(out, 'w') as f:
