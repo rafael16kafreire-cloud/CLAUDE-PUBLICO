@@ -799,7 +799,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     return count;
   });
   const land = (biomes.selva ?? 0) + (biomes.igapo ?? 0) + (biomes.pantano ?? 0) + (biomes.praia ?? 0);
-  check('Mapa: floresta, igapó, pântano, praia e a neve da Lapônia', Object.keys(biomes).every((k) => ['mar', 'praia', 'selva', 'igapo', 'pantano', 'neve'].includes(k)) && biomes.neve > 0, JSON.stringify(biomes));
+  check('Mapa: floresta, igapó, pântano, praia, neve da Lapônia, Serra Rochosa e Campos', Object.keys(biomes).every((k) => ['mar', 'praia', 'selva', 'igapo', 'pantano', 'neve', 'serra', 'campos'].includes(k)) && biomes.neve > 0 && biomes.serra > 0 && biomes.campos > 0, JSON.stringify(biomes));
   check('Mapa: a maior parte da terra é Floresta Amazônica', biomes.selva / land > 0.5 && biomes.pantano > 0, `${Math.round((biomes.selva / land) * 100)}% floresta`);
   const plants = await page.evaluate(() => window.__ilha.ctx.world.vegetation.countByType());
   check('Floresta: samambaias gigantes, bananeiras, bagas e troncos caídos', ['samambaia_gigante', 'bananeira', 'arbusto_mejo', 'arbusto_escura', 'tronco_caido', 'sumauma'].every((k) => plants[k] > 20), JSON.stringify(plants));
