@@ -756,6 +756,8 @@ body.is-touch .hb-key { display: none; }
   transform-origin: left center;
 }
 .hb-dur[hidden], .is-dur[hidden] { display: none; }
+.hb-dur.fresh, .is-dur.fresh { background: #e0a040; }
+.hb-dur.water, .is-dur.water { background: #4aa8e0; }
 
 /* Aviso de item ganho com ícone */
 .msg-item { display: flex; align-items: center; gap: 6px; padding-left: 5px; }
@@ -800,6 +802,12 @@ body.is-touch .hb-key { display: none; }
   touch-action: none;
 }
 .inv-hot .inv-slot { background: rgba(232, 135, 58, 0.08); }
+.inv-equip .eq-slot { background: rgba(120, 160, 220, 0.08); position: relative; }
+.inv-equip .eq-name { position: absolute; left: 0; right: 0; bottom: 5px; font-size: 8.5px; font-weight: 800; color: var(--bone-dim); text-align: center; pointer-events: none; }
+.inv-equip .eq-slot:not(.empty) .eq-name { display: none; }
+.armor-info { font-weight: 700; color: var(--bone-dim); text-transform: none; letter-spacing: 0; }
+.box-grid { grid-template-columns: repeat(6, var(--slot)); margin-top: 6px; }
+.box-help { margin: 0 0 4px; font-size: 12px; }
 .inv-slot.selected { border-color: var(--bone); box-shadow: inset 0 0 0 1px var(--bone); }
 .inv-slot.equipped { border: 2px solid var(--ember); }
 .inv-slot:not(.empty):hover { background: rgba(255, 255, 255, 0.08); }
@@ -834,6 +842,13 @@ body.is-touch .hb-key { display: none; }
 .cat.active { background: var(--bone); color: var(--basalt); border-color: var(--bone); }
 .station { font-size: 11.5px; font-weight: 700; color: var(--bone-dim); }
 .station.ok { color: var(--c-xp); }
+.engram-pts { font-size: 11.5px; font-weight: 800; color: var(--bone-dim); margin-left: auto; }
+.engram-pts.has { color: #d9a8ff; }
+.recipe.engram { opacity: 0.55; filter: grayscale(0.6); }
+.recipe.engram.learnable { opacity: 0.9; filter: none; border-color: rgba(190, 140, 255, 0.6); }
+.recipe.engram .rc-badge { color: #c9a0ff; }
+.rd-engram { margin: 8px 0; padding: 8px 10px; border-radius: 10px; background: rgba(150, 100, 230, 0.14); border: 1px solid rgba(190, 140, 255, 0.35); }
+.rd-engram p { margin: 0 0 6px; font-size: 12.5px; color: #e2ccff; font-weight: 700; }
 .recipe-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 5px; }
 .recipe {
   position: relative;

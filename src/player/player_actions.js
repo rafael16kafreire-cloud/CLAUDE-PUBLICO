@@ -14,7 +14,8 @@ import { sound } from '../audio/audio.js';
 import { snapPiece } from '../world/building.js';
 
 const FIST = { tipo: 'mao', dano: null, alcance: null, intervalo: null };
-const INTERVAL = { mao: 0.45, machado: 0.6, picareta: 0.6, lanca: 0.7, clava: 0.62, tocha: 0.5 };
+const INTERVAL = { mao: 0.45, machado: 0.6, picareta: 0.6, lanca: 0.7, clava: 0.62, tocha: 0.5, arco: 0.9 };
+const ARROWS = ['flecha_pedra', 'flecha_tranq'];
 
 function rnd([a, b]) {
   return a + Math.floor(Math.random() * (b - a + 1));
@@ -36,10 +37,46 @@ export class PlayerActions {
     return { tipo: f.tipo, dano: f.dano, alcance: f.alcance, intervalo: INTERVAL[f.tipo] ?? 0.6, id: s.id, rende: f.rende ?? 1 };
   }
 
+  // Flecha que o arco vai usar: a escolhida (se tiver) ou a que tiver.
+  get arrowType() {
+    if (this.ammo && this.inv.count(this.ammo) > 0) return this.ammo;
+    return ARROWS.find((a) => this.inv.count(a) > 0) ?? null;
+  }
+
+  // Troca entre Flecha de Pedra e Tranquilizante.
+  cycleArrow() {
+    const have = ARROWS.filter((a) => this.inv.count(a) > 0);
+    if (!have.length) {
+      events.emit(EV.MESSAGE, { text: 'Sem flechas. Crie Flechas de Pedra.', kind: 'warn' });
+      return null;
+    }
+    const cur = this.arrowType;
+    this.ammo = have[(have.indexOf(cur) + 1) % have.length];
+    events.emit(EV.MESSAGE, { text: `Arco: ${itemName(this.ammo)} (${this.inv.count(this.ammo)})`, kind: 'info' });
+    return this.ammo;
+  }
+
+  // Atira uma flecha para onde a câmera olha. Devolve false se não tiver flecha.
+  shootArrow(cam) {
+    const type = this.arrowType;
+    if (!type) {
+      events.emit(EV.MESSAGE, { text: 'Sem flechas! Crie Flechas de Pedra (Inventário → Criar).', kind: 'warn' });
+      return false;
+    }
+    this.inv.remove(type, 1);
+    const origin = cam.camera.position.clone().addScaledVector(cam.forward, 0.6);
+    origin.y -= 0.08;
+    const dir = cam.forward.clone().normalize();
+    this.world.projectiles.fire(origin, dir, ITEMS[type].municao, this.player, this.player.stats.damageMul);
+    sound.play('golpe');
+    this._wear();
+    return true;
+  }
+
   // Item de comer/usar selecionado na barra?
   get selectedIsConsumable() {
     const s = this.inv.equipped;
-    return !!(s && ITEMS[s.id]?.comida);
+    return !!(s && (ITEMS[s.id]?.comida || ITEMS[s.id]?.cantil));
   }
 
   // Peso: até o máximo anda normal; acima anda devagar; muito acima, para.
@@ -187,6 +224,24 @@ export class PlayerActions {
     const s = this.inv.slots[i];
     if (!s) return false;
     const def = ITEMS[s.id];
+    // cantil: bebe um gole da água guardada
+    if (def?.cantil) {
+      const st = this.player.stats;
+      if ((s.agua ?? 0) < 1) {
+        events.emit(EV.MESSAGE, { text: 'Cantil vazio. Encha olhando para água doce (Interagir).', kind: 'warn' });
+        return false;
+      }
+      const got = st.drink(Math.min(def.cantil.gole, s.agua));
+      if (got < 0.5) {
+        events.emit(EV.MESSAGE, { text: 'Você não está com sede.', kind: 'info' });
+        return false;
+      }
+      s.agua -= got;
+      sound.play('beber');
+      events.emit(EV.MESSAGE, { text: `+${Math.round(got)} Sede (cantil: ${Math.round(s.agua)})`, kind: 'gain' });
+      events.emit(EV.INVENTORY_CHANGED, { inventory: this.inv });
+      return true;
+    }
     const c = def?.comida;
     if (!c) return false;
     const st = this.player.stats;

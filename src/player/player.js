@@ -163,9 +163,11 @@ export class Player {
     this._updateModel(dt);
   }
 
-  // Roupa quente na mochila (Casaco de Pele) esquenta.
+  // Roupa quente: Casaco de Pele na mochila e as roupas de pele vestidas.
   clothingWarmth() {
-    return this.actions?.inv?.count('casaco_pele') > 0 ? BALANCE.temperatura.casaco_c : 0;
+    const inv = this.actions?.inv;
+    if (!inv) return 0;
+    return (inv.count('casaco_pele') > 0 ? BALANCE.temperatura.casaco_c : 0) + inv.warmth;
   }
 
   // ---------------------------------------------------------
@@ -253,6 +255,12 @@ export class Player {
       } else if (actions?.selectedPiece) {
         actions.placeBuild(cam.yaw);
         this._attackTimer = 0.3;
+      } else if (actions?.tool.tipo === 'arco') {
+        // arco: atira na hora para onde a câmera olha
+        if (actions.shootArrow(cam)) {
+          this._attackTimer = BALANCE.arco.intervalo_seg;
+          this.onPunch?.('arco');
+        } else this._attackTimer = 0.4;
       } else if (this.stats.useStamina(C.soco_stamina)) {
         const tool = actions?.tool ?? { tipo: 'mao', intervalo: C.soco_intervalo_seg };
         this._attackTimer = tool.intervalo;

@@ -9,8 +9,10 @@
 import { events, EV } from '../core/event_bus.js';
 import { BALANCE } from '../core/balance.js';
 import { ITEMS, itemIcon, itemName } from '../items/items.js';
-import { HOTBAR } from '../inventory/inventory.js';
-import { RECIPES } from '../crafting/crafting.js';
+import { HOTBAR, EQUIP_SLOTS } from '../inventory/inventory.js';
+
+const EQUIP_NAME = { cabeca: 'Cabeça', peito: 'Peito', maos: 'Mãos', pernas: 'Pernas', pes: 'Pés' };
+import { RECIPES, STATION_NAMES } from '../crafting/crafting.js';
 import { ICONS } from './icons.js';
 import { STAT_ICONS } from './inspect_panel.js';
 
@@ -25,9 +27,9 @@ const SKILLS = [
   { key: 'forca', nome: 'Força', icon: STAT_ICONS.forca, cls: 'melee', unit: '%' },
 ];
 
-const CATS = ['Tudo', 'Ferramentas', 'Armas', 'Roupas', 'Estruturas', 'Construção', 'Cura'];
-const STATION_NAME = { bancada: 'Bancada de Trabalho' };
-const TYPE_LABEL = { recurso: 'Recurso', comida: 'Comida', ferramenta: 'Ferramenta', consumivel: 'Cura', estrutura: 'Estrutura', equipamento: 'Roupa' };
+const CATS = ['Tudo', 'Aprender', 'Ferramentas', 'Armas', 'Roupas', 'Estruturas', 'Construção', 'Cura'];
+const STATION_NAME = STATION_NAMES;
+const TYPE_LABEL = { recurso: 'Recurso', comida: 'Comida', ferramenta: 'Ferramenta', consumivel: 'Uso', estrutura: 'Estrutura', equipamento: 'Roupa', municao: 'Munição' };
 
 export class InventoryScreen {
   constructor(root, { inventory, crafting, actions, stats, onDrop, onClose }) {
@@ -52,6 +54,8 @@ export class InventoryScreen {
             <div class="inv-wbar" title="Peso"><i data-ref="wfill"></i><span class="inv-weight" data-ref="weight"></span></div>
             <button type="button" class="btn btn-small" id="inv-sort">Organizar</button>
           </header>
+          <p class="inv-label">Roupa vestida <span class="armor-info" data-ref="armor"></span></p>
+          <div class="inv-grid inv-equip" data-ref="equip">${EQUIP_SLOTS.map((k) => `<button type="button" class="inv-slot eq-slot" data-part="${k}" title="${EQUIP_NAME[k]}"><span class="is-icon"></span><span class="eq-name">${EQUIP_NAME[k]}</span><i class="is-dur"></i></button>`).join('')}</div>
           <p class="inv-label">Barra rápida</p>
           <div class="inv-grid inv-hot" data-ref="hot"></div>
           <p class="inv-label">Mochila</p>
@@ -62,12 +66,14 @@ export class InventoryScreen {
             <button type="button" class="tab" data-tab="craft">Criar</button>
             <button type="button" class="tab" data-tab="item">Item</button>
             <button type="button" class="tab" data-tab="skills" id="tab-skills">Habilidades<b class="tab-dot" data-ref="sdot" hidden></b></button>
+            <button type="button" class="tab" data-tab="box" id="tab-box" hidden>Baú</button>
             <button type="button" class="btn btn-small inv-close" id="inv-close" aria-label="Fechar">Fechar</button>
           </div>
           <div class="tab-body" data-tab-body="craft">
             <div class="craft-top">
               <div class="cat-row" data-ref="cats">${CATS.map((c) => `<button type="button" class="cat" data-cat="${c}">${c}</button>`).join('')}</div>
               <span class="station" data-ref="station"></span>
+              <span class="engram-pts" data-ref="epts"></span>
             </div>
             <div class="recipe-grid" data-ref="recipes"></div>
             <div class="recipe-detail" data-ref="rdetail"></div>
@@ -75,6 +81,11 @@ export class InventoryScreen {
           </div>
           <div class="tab-body" data-tab-body="item" hidden>
             <div class="item-detail" data-ref="idetail"></div>
+          </div>
+          <div class="tab-body" data-tab-body="box" hidden>
+            <p class="muted box-help">Toque num item da mochila para guardar; toque num item do baú para pegar.</p>
+            <div class="rd-actions"><button type="button" class="btn btn-small" id="box-all">Guardar tudo da mochila</button><button type="button" class="btn btn-small" id="box-take">Pegar tudo</button></div>
+            <div class="inv-grid box-grid" data-ref="box"></div>
           </div>
           <div class="tab-body" data-tab-body="skills" hidden>
             <p class="skill-points">Pontos para gastar: <b data-ref="spoints">0</b> <span>· ganha ${BALANCE.habilidades.pontos_por_nivel} a cada nível</span></p>
@@ -139,7 +150,23 @@ export class InventoryScreen {
       if (this.stats?.spendPoint(b.dataset.skill)) this.refresh();
     }));
     events.on(EV.LEVEL_UP, () => this.visible && this.refresh());
+    events.on(EV.SKILLS_CHANGED, () => this.visible && this.refresh());
     el.querySelector('#inv-sort').addEventListener('click', () => this.inv.sort());
+    // tocar na roupa vestida: tira (volta para a mochila)
+    el.querySelectorAll('.eq-slot').forEach((b) => b.addEventListener('click', () => {
+      this.inv.undress(b.dataset.part);
+      this.refresh();
+    }));
+    // baú: guardar/pegar tudo
+    el.querySelector('#box-all').addEventListener('click', () => {
+      for (let i = HOTBAR; i < this.inv.size; i++) this._toBox(i);
+      this.refresh();
+    });
+    el.querySelector('#box-take').addEventListener('click', () => {
+      if (!this.box) return;
+      for (let i = 0; i < this.box.inv.size; i++) this._fromBox(i);
+      this.refresh();
+    });
     el.addEventListener('pointerdown', (e) => e.stopPropagation());
 
     events.on(EV.INVENTORY_CHANGED, () => this.visible && this.refresh());
@@ -158,6 +185,67 @@ export class InventoryScreen {
 
   hide() {
     this.el.hidden = true;
+    this.box = null;
+    this.el.querySelector('#tab-box').hidden = true;
+    if (this.tab === 'box') this.showTab('craft');
+  }
+
+  // Abre junto com um baú (aba Baú)
+  openBox(box) {
+    this.box = box;
+    this.el.querySelector('#tab-box').hidden = false;
+    this.show();
+    this.showTab('box');
+    this.refresh();
+  }
+
+  // move a pilha inteira da mochila para o baú
+  _toBox(i) {
+    const s = this.inv.slots[i];
+    if (!this.box || !s) return;
+    const moved = this.box.inv.add(s.id, s.qty, s);
+    if (moved > 0) {
+      if (this.inv.selected === i && moved >= s.qty) this.inv.selected = -1;
+      this.inv.takeFrom(i, moved);
+    }
+  }
+
+  // e do baú para a mochila
+  _fromBox(i) {
+    const s = this.box?.inv.slots[i];
+    if (!s) return;
+    const moved = this.inv.add(s.id, s.qty, s);
+    if (moved > 0) this.box.inv.takeFrom(i, moved);
+  }
+
+  _renderBox() {
+    const g = this.refs.box;
+    if (!this.box) {
+      g.innerHTML = '';
+      return;
+    }
+    const slots = this.box.inv.slots;
+    if (g.children.length !== slots.length) {
+      g.innerHTML = '';
+      slots.forEach((_, i) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'inv-slot';
+        b.innerHTML = '<span class="is-icon"></span><b class="is-qty"></b>';
+        b.addEventListener('click', () => {
+          this._fromBox(i);
+          this.refresh();
+        });
+        g.appendChild(b);
+      });
+    }
+    slots.forEach((s, i) => {
+      const b = g.children[i];
+      b.classList.toggle('empty', !s);
+      b.querySelector('.is-icon').innerHTML = s ? itemIcon(s.id) : '';
+      b.querySelector('.is-qty').textContent = s && s.qty > 1 ? String(s.qty) : '';
+      b.title = s ? `${ITEMS[s.id].nome} ×${s.qty}` : '';
+    });
   }
 
   showTab(tab) {
@@ -190,6 +278,16 @@ export class InventoryScreen {
     this.refs.wfill.style.transform = `scaleX(${Math.min(1, w / max).toFixed(3)})`;
     this.refs.wfill.parentElement.classList.toggle('over', w > max);
 
+    // roupa vestida
+    for (const b of this.refs.equip.children) {
+      const s = inv.equip[b.dataset.part];
+      b.classList.toggle('empty', !s);
+      b.querySelector('.is-icon').innerHTML = s ? itemIcon(s.id) : '';
+      const dur = b.querySelector('.is-dur');
+      dur.hidden = !s;
+      if (s) dur.style.transform = `scaleX(${Math.max(0, (s.dur ?? 1) / ITEMS[s.id].equipamento.durabilidade).toFixed(3)})`;
+    }
+    this.refs.armor.textContent = `· proteção ${Math.round(Math.min(BALANCE.armadura.max_reducao, inv.armor) * 100)}% · calor +${inv.warmth}°`;
     inv.slots.forEach((s, i) => {
       const b = this.slotEls[i];
       b.classList.toggle('empty', !s);
@@ -198,28 +296,41 @@ export class InventoryScreen {
       b.querySelector('.is-icon').innerHTML = s ? itemIcon(s.id) : '';
       b.querySelector('.is-qty').textContent = s && s.qty > 1 ? String(s.qty) : '';
       const dur = b.querySelector('.is-dur');
-      const f = s && ITEMS[s.id]?.ferramenta;
-      dur.hidden = !f;
+      const f = s && (ITEMS[s.id]?.ferramenta ?? ITEMS[s.id]?.equipamento);
+      const sp = s && ITEMS[s.id]?.comida?.estraga_min;
+      const cn = s && ITEMS[s.id]?.cantil;
+      dur.hidden = !f && !sp && !cn;
+      dur.classList.toggle('fresh', !!sp);
+      dur.classList.toggle('water', !!cn);
       if (f) dur.style.transform = `scaleX(${Math.max(0, s.dur / f.durabilidade).toFixed(3)})`;
+      else if (sp) dur.style.transform = `scaleX(${Math.max(0, (s.spoil ?? sp * 60) / (sp * 60)).toFixed(3)})`;
+      else if (cn) dur.style.transform = `scaleX(${Math.max(0, (s.agua ?? 0) / cn.capacidade).toFixed(3)})`;
       b.title = s ? `${ITEMS[s.id].nome} ×${s.qty}` : '';
     });
 
     // categorias e estação por perto
     this.el.querySelectorAll('.cat').forEach((c) => c.classList.toggle('active', c.dataset.cat === this.cat));
     const near = this.crafting.stationsNear();
-    this.refs.station.textContent = near.includes('bancada') ? '✓ Bancada por perto' : 'Sem bancada por perto';
-    this.refs.station.classList.toggle('ok', near.includes('bancada'));
+    this.refs.station.textContent = near.length ? `✓ Perto: ${near.map((k) => STATION_NAME[k] ?? k).join(', ')}` : 'Sem bancada por perto';
+    this.refs.station.classList.toggle('ok', near.length > 0);
+    const st0 = this.stats;
+    this.refs.epts.textContent = st0 ? `Engramas: ${st0.engramPoints} pts` : '';
+    this.refs.epts.classList.toggle('has', !!st0 && st0.engramPoints > 0);
     // receitas: o que dá para criar, o que falta e o que precisa de bancada
     for (const b of this.refs.recipes.children) {
       const r = RECIPES.find((x) => x.id === b.dataset.id);
       const n = this.crafting.maxTimes(r);
       const st = this.crafting.missingStation(r);
-      b.hidden = this.cat !== 'Tudo' && r.categoria !== this.cat;
-      b.classList.toggle('can', n > 0 && !st);
-      b.classList.toggle('locked', !!st);
+      const unknown = this.crafting.locked(r);
+      const learnable = unknown && !this.stats.learnBlock(r);
+      b.hidden = this.cat === 'Aprender' ? !unknown : this.cat !== 'Tudo' && r.categoria !== this.cat;
+      b.classList.toggle('can', n > 0 && !st && !unknown);
+      b.classList.toggle('locked', !!st || unknown);
+      b.classList.toggle('engram', unknown);
+      b.classList.toggle('learnable', learnable);
       b.classList.toggle('selected', r === this.selRecipe);
       const badge = b.querySelector('.rc-badge');
-      badge.textContent = st ? '🔒 Bancada' : n > 0 ? `×${n}` : '';
+      badge.textContent = unknown ? (learnable ? `✦ ${r.engrama} pts` : `Nv ${r.nivel}`) : st ? `🔒 ${STATION_NAME[st] ?? st}` : n > 0 ? `×${n}` : '';
       for (const ing of b.querySelectorAll('.rc-ing')) {
         ing.classList.toggle('miss', inv.count(ing.dataset.ing) < Number(ing.dataset.need));
       }
@@ -227,6 +338,7 @@ export class InventoryScreen {
     this._renderRecipe();
     this._renderQueue();
     this._renderItem();
+    this._renderBox();
   }
 
   _renderRecipe() {
@@ -239,7 +351,8 @@ export class InventoryScreen {
     const def = ITEMS[r.resultado];
     const reqs = this.crafting.requirements(r);
     const st = this.crafting.missingStation(r);
-    const can = st ? 0 : this.crafting.maxTimes(r);
+    const unknown = this.crafting.locked(r);
+    const can = st || unknown ? 0 : this.crafting.maxTimes(r);
     const f = def.ferramenta;
     const c = def.comida;
     const stats = [];
@@ -250,7 +363,9 @@ export class InventoryScreen {
     d.innerHTML = `
       <div class="rd-head">${itemIcon(r.resultado)}<div><h3>${def.nome}${r.quantidade > 1 ? ` ×${r.quantidade}` : ''}</h3><p>${def.descricao}</p>
         <p class="rd-stats">${stats.map((x) => `<span>${x}</span>`).join('')}</p></div></div>
-      ${st ? `<p class="rd-station">🔒 Precisa estar perto de uma ${STATION_NAME[st] ?? st}.</p>` : ''}
+      ${unknown ? `<div class="rd-engram"><p>✦ Engrama não aprendido · nível ${r.nivel} · ${r.engrama} pontos (você tem ${this.stats.engramPoints})</p>
+        <button type="button" class="btn btn-primary" id="learn" ${this.stats.learnBlock(r) ? 'disabled' : ''}>${this.stats.learnBlock(r) ? `Aprender (${this.stats.learnBlock(r)})` : `Aprender por ${r.engrama} pontos`}</button></div>` : ''}
+      ${st ? `<p class="rd-station">🔒 Precisa estar perto de: ${STATION_NAME[st] ?? st}.</p>` : ''}
       <p class="inv-label">Precisa de</p>
       <ul class="reqs">${reqs.map((q) => `
         <li class="${q.have >= q.need ? 'ok' : 'miss'}">${itemIcon(q.id)}<span>${itemName(q.id)}</span>
@@ -262,6 +377,12 @@ export class InventoryScreen {
         <button type="button" class="btn" id="craft-max" ${can < 2 ? 'disabled' : ''}>Máx (${can})</button>
         <span class="rd-time">⏱ ${r.tempo}s cada</span>
       </div>`;
+    d.querySelector('#learn')?.addEventListener('click', () => {
+      if (this.stats.learn(r)) {
+        events.emit(EV.MESSAGE, { text: `Aprendeu: ${def.nome}`, kind: 'gain' });
+        this.refresh();
+      }
+    });
     d.querySelector('#craft-1').addEventListener('click', () => this.crafting.craft(r, 1));
     d.querySelector('#craft-5').addEventListener('click', () => this.crafting.craft(r, Math.min(5, can)));
     d.querySelector('#craft-max').addEventListener('click', () => this.crafting.craft(r, Math.min(20, can)));
@@ -305,18 +426,37 @@ export class InventoryScreen {
     if (c) facts.push(Object.entries({ fome: 'Fome', sede: 'Sede', vida: 'Vida', stamina: 'Stamina' })
       .filter(([k]) => c[k]).map(([k, n]) => `${n} ${c[k] > 0 ? '+' : ''}${c[k]}`).join(' · '));
     if (f) facts.push(`Dano ${f.dano} · Durabilidade ${Math.max(0, Math.round(s.dur))}/${f.durabilidade}`);
+    if (def.equipamento) facts.push(`Proteção ${def.equipamento.armadura}% · Calor +${def.equipamento.frio}° · Durabilidade ${Math.round(s.dur ?? def.equipamento.durabilidade)}/${def.equipamento.durabilidade}`);
+    if (def.municao) facts.push(`Dano ${def.municao.dano}${def.municao.torpor ? ` · Sono (torpor) ${def.municao.torpor}` : ''}`);
+    if (def.cantil) facts.push(`Água ${Math.round(s.agua ?? 0)} / ${def.cantil.capacidade}`);
+    if (c?.estraga_min) {
+      const left = Math.max(0, s.spoil ?? c.estraga_min * 60);
+      facts.push(`Estraga 1 em ${Math.floor(left / 60)}:${String(Math.floor(left % 60)).padStart(2, '0')} (a cada ${c.estraga_min} min)`);
+    }
     d.innerHTML = `
       <div class="rd-head">${itemIcon(s.id)}<div><h3>${def.nome} ${s.qty > 1 ? `×${s.qty}` : ''}</h3><p>${def.descricao}</p></div></div>
       <p class="facts">${facts.join('<br>')}</p>
       <div class="rd-actions">
         ${c ? '<button type="button" class="btn btn-primary" id="it-use">' + (def.tipo === 'consumivel' ? 'Usar' : 'Comer') + '</button>' : ''}
+        ${def.cantil ? `<button type="button" class="btn btn-primary" id="it-use" ${(s.agua ?? 0) < 1 ? 'disabled' : ''}>Beber (${Math.round(s.agua ?? 0)}/${def.cantil.capacidade})</button>` : ''}
+        ${def.equipamento ? '<button type="button" class="btn btn-primary" id="it-wear">Vestir</button>' : ''}
         ${def.colocavel ? '<button type="button" class="btn btn-primary" id="it-place">Colocar no chão</button>' : ''}
         ${f ? `<button type="button" class="btn btn-primary" id="it-equip">${this.inv.selected === i ? 'Guardar' : 'Usar na mão'}</button>` : ''}
+        ${f?.tipo === 'arco' ? `<button type="button" class="btn" id="it-ammo">Trocar flecha (${this.actions.arrowType ? itemName(this.actions.arrowType) : 'sem flechas'})</button>` : ''}
         ${i >= HOTBAR ? '<button type="button" class="btn" id="it-hot">Pôr na barra</button>' : ''}
         ${s.qty > 1 ? '<button type="button" class="btn" id="it-split">Dividir</button>' : ''}
         <button type="button" class="btn" id="it-drop">Largar</button>
       </div>`;
     d.querySelector('#it-use')?.addEventListener('click', () => this.actions.useSlot(i));
+    d.querySelector('#it-wear')?.addEventListener('click', () => {
+      this.inv.dress(i);
+      this.selSlot = -1;
+      this.refresh();
+    });
+    d.querySelector('#it-ammo')?.addEventListener('click', () => {
+      this.actions.cycleArrow();
+      this.refresh();
+    });
     d.querySelector('#it-place')?.addEventListener('click', () => {
       if (this.actions.place(i)) this.onClose();
     });
@@ -384,6 +524,10 @@ export class InventoryScreen {
           const stack = this.inv.takeSlot(i);
           if (stack) this.onDrop(stack);
         }
+      } else if (this.box && this.tab === 'box') {
+        // baú aberto: tocar guarda a pilha
+        this._toBox(i);
+        this.refresh();
       } else {
         this.selSlot = i;
         this.showTab('item');

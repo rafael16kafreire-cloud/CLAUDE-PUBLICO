@@ -26,6 +26,9 @@ export class PlayerStats {
     this.level = 1;
     this.xp = 0;
     this.points = 0; // pontos para gastar ao subir de nível (Inventário → Habilidades)
+    // engramas: pontos para aprender receitas e as já aprendidas
+    this.engramPoints = 0;
+    this.learned = new Set();
     this.skills = { vida: 0, stamina: 0, fome: 0, sede: 0, folego: 0, peso: 0, forca: 0 };
 
     this.dead = false;
@@ -151,9 +154,37 @@ export class PlayerStats {
       this.xp -= this.xpToNext();
       this.level += 1;
       this.points += BALANCE.habilidades.pontos_por_nivel;
+      this.engramPoints += this.engramsForLevel(this.level);
       events.emit(EV.LEVEL_UP, { level: this.level, points: this.points });
     }
     if (this.level >= N.max) this.xp = 0;
+  }
+
+  // ---- Engramas (receitas aprendidas com pontos)
+  engramsForLevel(level) {
+    const E = BALANCE.engramas;
+    return E.pontos_por_nivel + Math.floor((level - 1) / 10) * E.mais_a_cada_10_niveis;
+  }
+
+  // Receita já sabida? (custo 0 = sabe desde o começo)
+  knows(recipe) {
+    return !recipe.engrama || this.learned.has(recipe.id);
+  }
+
+  // Dá para aprender agora? Devolve o motivo se não der.
+  learnBlock(recipe) {
+    if (this.knows(recipe)) return 'já sabe';
+    if (this.level < (recipe.nivel ?? 1)) return `precisa do nível ${recipe.nivel}`;
+    if (this.engramPoints < recipe.engrama) return `faltam ${recipe.engrama - this.engramPoints} pontos`;
+    return null;
+  }
+
+  learn(recipe) {
+    if (this.learnBlock(recipe)) return false;
+    this.engramPoints -= recipe.engrama;
+    this.learned.add(recipe.id);
+    events.emit(EV.SKILLS_CHANGED, { key: 'engrama' });
+    return true;
   }
 
   // ---- Habilidades (pontos ganhos ao subir de nível)
@@ -224,14 +255,23 @@ export class PlayerStats {
 
   // Para salvar/carregar (usado de verdade na Fase 12).
   toJSON() {
-    const { health, stamina, food, water, oxygen, temperature, level, xp, points } = this;
-    return { health, stamina, food, water, oxygen, temperature, level, xp, points, skills: { ...this.skills } };
+    const { health, stamina, food, water, oxygen, temperature, level, xp, points, engramPoints } = this;
+    return { health, stamina, food, water, oxygen, temperature, level, xp, points, engramPoints, learned: [...this.learned], skills: { ...this.skills } };
   }
 
   fromJSON(data) {
     if (!data) return;
     for (const key of ['health', 'stamina', 'food', 'water', 'oxygen', 'temperature', 'level', 'xp', 'points']) {
       if (typeof data[key] === 'number') this[key] = data[key];
+    }
+    if (Array.isArray(data.learned)) {
+      this.learned = new Set(data.learned);
+      if (typeof data.engramPoints === 'number') this.engramPoints = data.engramPoints;
+    } else {
+      // jogo salvo de antes dos engramas: ganha os pontos de todos os
+      // níveis que já tinha (aprende o que quiser na tela de Criar)
+      this.engramPoints = 0;
+      for (let l = 2; l <= this.level; l++) this.engramPoints += this.engramsForLevel(l);
     }
     if (data.skills) {
       for (const k of Object.keys(this.skills)) if (typeof data.skills[k] === 'number') this.skills[k] = data.skills[k];

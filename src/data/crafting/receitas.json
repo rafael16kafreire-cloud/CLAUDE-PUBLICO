@@ -1,43 +1,543 @@
 {
-  "_explicacao": "Receitas. ingredientes: id do item e quantidade. tempo em segundos. xp ganho ao criar. estacao: precisa estar perto dessa estrutura (ex.: bancada).",
-  "receitas": [
-    { "id": "machado_pedra", "resultado": "machado_pedra", "quantidade": 1, "tempo": 3, "xp": 6, "categoria": "Ferramentas",
-      "ingredientes": { "graveto": 3, "pedra": 2, "silex": 1 } },
-    { "id": "picareta_pedra", "resultado": "picareta_pedra", "quantidade": 1, "tempo": 3, "xp": 6, "categoria": "Ferramentas",
-      "ingredientes": { "graveto": 2, "pedra": 2, "palha": 10 } },
-    { "id": "lanca", "resultado": "lanca", "quantidade": 1, "tempo": 4, "xp": 8, "categoria": "Armas",
-      "ingredientes": { "madeira": 8, "silex": 2, "fibra": 12 } },
-    { "id": "clava", "resultado": "clava", "quantidade": 1, "tempo": 3, "xp": 6, "categoria": "Armas",
-      "ingredientes": { "madeira": 5, "fibra": 15 } },
-    { "id": "bandagem", "resultado": "bandagem", "quantidade": 1, "tempo": 1.5, "xp": 2, "categoria": "Cura",
-      "ingredientes": { "fibra": 6 } },
-    { "id": "unguento", "resultado": "unguento", "quantidade": 1, "tempo": 2.5, "xp": 4, "categoria": "Cura",
-      "ingredientes": { "baga_mejo": 10, "fruta_azul": 2, "fibra": 3 } },
-    { "id": "tocha", "resultado": "tocha", "quantidade": 1, "tempo": 2, "xp": 3, "categoria": "Ferramentas",
-      "ingredientes": { "graveto": 1, "palha": 4, "silex": 1 } },
-    { "id": "fogueira", "resultado": "fogueira", "quantidade": 1, "tempo": 3, "xp": 8, "categoria": "Estruturas",
-      "ingredientes": { "pedra": 12, "graveto": 6, "palha": 8, "silex": 1 } },
-    { "id": "saco_dormir", "resultado": "saco_dormir", "quantidade": 1, "tempo": 4, "xp": 10, "categoria": "Estruturas",
-      "ingredientes": { "fibra": 15, "palha": 10, "couro": 3 } },
-    { "id": "bancada", "resultado": "bancada", "quantidade": 1, "tempo": 5, "xp": 12, "categoria": "Estruturas",
-      "ingredientes": { "madeira": 20, "pedra": 10, "fibra": 12, "palha": 8 } },
-    { "id": "casaco_pele", "resultado": "casaco_pele", "quantidade": 1, "tempo": 5, "xp": 10, "categoria": "Roupas",
-      "ingredientes": { "couro": 6, "fibra": 15, "ossos": 2 } },
-    { "id": "piso", "resultado": "piso", "quantidade": 1, "tempo": 3, "xp": 5, "categoria": "Construção",
-      "ingredientes": { "madeira": 10, "fibra": 4 } },
-    { "id": "parede", "resultado": "parede", "quantidade": 1, "tempo": 3, "xp": 5, "categoria": "Construção",
-      "ingredientes": { "madeira": 8, "fibra": 3 } },
-    { "id": "porta", "resultado": "porta", "quantidade": 1, "tempo": 4, "xp": 6, "categoria": "Construção",
-      "ingredientes": { "madeira": 10, "fibra": 5, "couro": 1 } },
-    { "id": "teto", "resultado": "teto", "quantidade": 1, "tempo": 3, "xp": 5, "categoria": "Construção",
-      "ingredientes": { "madeira": 6, "palha": 14 } },
-    { "id": "rampa", "resultado": "rampa", "quantidade": 1, "tempo": 3, "xp": 5, "categoria": "Construção",
-      "ingredientes": { "madeira": 8, "fibra": 4 } },
-    { "id": "machado_silex", "resultado": "machado_silex", "quantidade": 1, "tempo": 5, "xp": 14, "categoria": "Ferramentas", "estacao": "bancada",
-      "ingredientes": { "madeira": 4, "silex": 6, "fibra": 10, "couro": 2 } },
-    { "id": "picareta_silex", "resultado": "picareta_silex", "quantidade": 1, "tempo": 5, "xp": 14, "categoria": "Ferramentas", "estacao": "bancada",
-      "ingredientes": { "madeira": 4, "silex": 6, "fibra": 10, "couro": 2 } },
-    { "id": "lanca_osso", "resultado": "lanca_osso", "quantidade": 1, "tempo": 6, "xp": 18, "categoria": "Armas", "estacao": "bancada",
-      "ingredientes": { "madeira": 6, "ossos": 8, "fibra": 12, "couro": 3 } }
-  ]
+ "_explicacao": "Receitas. ingredientes: id do item e quantidade. tempo em segundos. xp ganho ao criar. estacao: precisa estar perto dessa estrutura (ex.: bancada). nivel: nível mínimo para aprender. engrama: pontos de engrama para aprender (0 = já sabe desde o começo).",
+ "receitas": [
+  {
+   "id": "machado_pedra",
+   "resultado": "machado_pedra",
+   "quantidade": 1,
+   "tempo": 3,
+   "xp": 6,
+   "categoria": "Ferramentas",
+   "ingredientes": {
+    "graveto": 3,
+    "pedra": 2,
+    "silex": 1
+   },
+   "nivel": 1,
+   "engrama": 0
+  },
+  {
+   "id": "picareta_pedra",
+   "resultado": "picareta_pedra",
+   "quantidade": 1,
+   "tempo": 3,
+   "xp": 6,
+   "categoria": "Ferramentas",
+   "ingredientes": {
+    "graveto": 2,
+    "pedra": 2,
+    "palha": 10
+   },
+   "nivel": 1,
+   "engrama": 0
+  },
+  {
+   "id": "lanca",
+   "resultado": "lanca",
+   "quantidade": 1,
+   "tempo": 4,
+   "xp": 8,
+   "categoria": "Armas",
+   "ingredientes": {
+    "madeira": 8,
+    "silex": 2,
+    "fibra": 12
+   },
+   "nivel": 1,
+   "engrama": 0
+  },
+  {
+   "id": "clava",
+   "resultado": "clava",
+   "quantidade": 1,
+   "tempo": 3,
+   "xp": 6,
+   "categoria": "Armas",
+   "ingredientes": {
+    "madeira": 5,
+    "fibra": 15
+   },
+   "nivel": 2,
+   "engrama": 3
+  },
+  {
+   "id": "bandagem",
+   "resultado": "bandagem",
+   "quantidade": 1,
+   "tempo": 1.5,
+   "xp": 2,
+   "categoria": "Cura",
+   "ingredientes": {
+    "fibra": 6
+   },
+   "nivel": 1,
+   "engrama": 0
+  },
+  {
+   "id": "unguento",
+   "resultado": "unguento",
+   "quantidade": 1,
+   "tempo": 2.5,
+   "xp": 4,
+   "categoria": "Cura",
+   "ingredientes": {
+    "baga_mejo": 10,
+    "fruta_azul": 2,
+    "fibra": 3
+   },
+   "nivel": 4,
+   "engrama": 6
+  },
+  {
+   "id": "tocha",
+   "resultado": "tocha",
+   "quantidade": 1,
+   "tempo": 2,
+   "xp": 3,
+   "categoria": "Ferramentas",
+   "ingredientes": {
+    "graveto": 1,
+    "palha": 4,
+    "silex": 1
+   },
+   "nivel": 1,
+   "engrama": 0
+  },
+  {
+   "id": "fogueira",
+   "resultado": "fogueira",
+   "quantidade": 1,
+   "tempo": 3,
+   "xp": 8,
+   "categoria": "Estruturas",
+   "ingredientes": {
+    "pedra": 12,
+    "graveto": 6,
+    "palha": 8,
+    "silex": 1
+   },
+   "nivel": 1,
+   "engrama": 0
+  },
+  {
+   "id": "saco_dormir",
+   "resultado": "saco_dormir",
+   "quantidade": 1,
+   "tempo": 4,
+   "xp": 10,
+   "categoria": "Estruturas",
+   "ingredientes": {
+    "fibra": 15,
+    "palha": 10,
+    "couro": 3
+   },
+   "nivel": 3,
+   "engrama": 3
+  },
+  {
+   "id": "bancada",
+   "resultado": "bancada",
+   "quantidade": 1,
+   "tempo": 5,
+   "xp": 12,
+   "categoria": "Estruturas",
+   "ingredientes": {
+    "madeira": 20,
+    "pedra": 10,
+    "fibra": 12,
+    "palha": 8
+   },
+   "nivel": 5,
+   "engrama": 6
+  },
+  {
+   "id": "casaco_pele",
+   "resultado": "casaco_pele",
+   "quantidade": 1,
+   "tempo": 5,
+   "xp": 10,
+   "categoria": "Roupas",
+   "ingredientes": {
+    "couro": 6,
+    "fibra": 15,
+    "ossos": 2
+   },
+   "nivel": 8,
+   "engrama": 6
+  },
+  {
+   "id": "piso",
+   "resultado": "piso",
+   "quantidade": 1,
+   "tempo": 3,
+   "xp": 5,
+   "categoria": "Construção",
+   "ingredientes": {
+    "madeira": 10,
+    "fibra": 4
+   },
+   "nivel": 4,
+   "engrama": 3
+  },
+  {
+   "id": "parede",
+   "resultado": "parede",
+   "quantidade": 1,
+   "tempo": 3,
+   "xp": 5,
+   "categoria": "Construção",
+   "ingredientes": {
+    "madeira": 8,
+    "fibra": 3
+   },
+   "nivel": 4,
+   "engrama": 3
+  },
+  {
+   "id": "porta",
+   "resultado": "porta",
+   "quantidade": 1,
+   "tempo": 4,
+   "xp": 6,
+   "categoria": "Construção",
+   "ingredientes": {
+    "madeira": 10,
+    "fibra": 5,
+    "couro": 1
+   },
+   "nivel": 5,
+   "engrama": 3
+  },
+  {
+   "id": "teto",
+   "resultado": "teto",
+   "quantidade": 1,
+   "tempo": 3,
+   "xp": 5,
+   "categoria": "Construção",
+   "ingredientes": {
+    "madeira": 6,
+    "palha": 14
+   },
+   "nivel": 6,
+   "engrama": 3
+  },
+  {
+   "id": "rampa",
+   "resultado": "rampa",
+   "quantidade": 1,
+   "tempo": 3,
+   "xp": 5,
+   "categoria": "Construção",
+   "ingredientes": {
+    "madeira": 8,
+    "fibra": 4
+   },
+   "nivel": 6,
+   "engrama": 2
+  },
+  {
+   "id": "machado_silex",
+   "resultado": "machado_silex",
+   "quantidade": 1,
+   "tempo": 5,
+   "xp": 14,
+   "categoria": "Ferramentas",
+   "estacao": "bancada",
+   "ingredientes": {
+    "madeira": 4,
+    "silex": 6,
+    "fibra": 10,
+    "couro": 2
+   },
+   "nivel": 8,
+   "engrama": 6
+  },
+  {
+   "id": "picareta_silex",
+   "resultado": "picareta_silex",
+   "quantidade": 1,
+   "tempo": 5,
+   "xp": 14,
+   "categoria": "Ferramentas",
+   "estacao": "bancada",
+   "ingredientes": {
+    "madeira": 4,
+    "silex": 6,
+    "fibra": 10,
+    "couro": 2
+   },
+   "nivel": 8,
+   "engrama": 6
+  },
+  {
+   "id": "lanca_osso",
+   "resultado": "lanca_osso",
+   "quantidade": 1,
+   "tempo": 6,
+   "xp": 18,
+   "categoria": "Armas",
+   "estacao": "bancada",
+   "ingredientes": {
+    "madeira": 6,
+    "ossos": 8,
+    "fibra": 12,
+    "couro": 3
+   },
+   "nivel": 10,
+   "engrama": 8
+  },
+  {
+   "id": "arco",
+   "resultado": "arco",
+   "quantidade": 1,
+   "tempo": 4,
+   "xp": 10,
+   "categoria": "Armas",
+   "nivel": 6,
+   "engrama": 8,
+   "ingredientes": {
+    "madeira": 4,
+    "fibra": 30,
+    "couro": 3
+   }
+  },
+  {
+   "id": "flecha_pedra",
+   "resultado": "flecha_pedra",
+   "quantidade": 3,
+   "tempo": 2,
+   "xp": 2,
+   "categoria": "Armas",
+   "nivel": 6,
+   "engrama": 3,
+   "ingredientes": {
+    "palha": 2,
+    "silex": 1,
+    "fibra": 2
+   }
+  },
+  {
+   "id": "pilao",
+   "resultado": "pilao",
+   "quantidade": 1,
+   "tempo": 4,
+   "xp": 8,
+   "categoria": "Estruturas",
+   "nivel": 6,
+   "engrama": 6,
+   "ingredientes": {
+    "pedra": 30,
+    "madeira": 10,
+    "couro": 5
+   }
+  },
+  {
+   "id": "narcotico",
+   "resultado": "narcotico",
+   "quantidade": 1,
+   "tempo": 2,
+   "xp": 3,
+   "categoria": "Cura",
+   "nivel": 6,
+   "engrama": 3,
+   "estacao": "pilao",
+   "ingredientes": {
+    "baga_escura": 5,
+    "carne_estragada": 1
+   }
+  },
+  {
+   "id": "flecha_tranq",
+   "resultado": "flecha_tranq",
+   "quantidade": 1,
+   "tempo": 2,
+   "xp": 3,
+   "categoria": "Armas",
+   "nivel": 12,
+   "engrama": 9,
+   "ingredientes": {
+    "flecha_pedra": 1,
+    "narcotico": 2
+   }
+  },
+  {
+   "id": "cantil",
+   "resultado": "cantil",
+   "quantidade": 1,
+   "tempo": 3,
+   "xp": 6,
+   "categoria": "Ferramentas",
+   "nivel": 4,
+   "engrama": 4,
+   "ingredientes": {
+    "couro": 4,
+    "fibra": 12
+   }
+  },
+  {
+   "id": "bau",
+   "resultado": "bau",
+   "quantidade": 1,
+   "tempo": 4,
+   "xp": 8,
+   "categoria": "Estruturas",
+   "nivel": 4,
+   "engrama": 4,
+   "ingredientes": {
+    "madeira": 15,
+    "palha": 20,
+    "fibra": 10
+   }
+  },
+  {
+   "id": "sela",
+   "resultado": "sela",
+   "quantidade": 1,
+   "tempo": 5,
+   "xp": 15,
+   "categoria": "Ferramentas",
+   "nivel": 10,
+   "engrama": 10,
+   "ingredientes": {
+    "couro": 20,
+    "fibra": 20,
+    "madeira": 6
+   }
+  },
+  {
+   "id": "forja",
+   "resultado": "forja",
+   "quantidade": 1,
+   "tempo": 6,
+   "xp": 20,
+   "categoria": "Estruturas",
+   "nivel": 14,
+   "engrama": 12,
+   "estacao": "bancada",
+   "ingredientes": {
+    "pedra": 40,
+    "silex": 10,
+    "couro": 10,
+    "madeira": 10
+   }
+  },
+  {
+   "id": "lingote_metal",
+   "resultado": "lingote_metal",
+   "quantidade": 1,
+   "tempo": 5,
+   "xp": 3,
+   "categoria": "Ferramentas",
+   "nivel": 14,
+   "engrama": 0,
+   "estacao": "forja",
+   "ingredientes": {
+    "minerio_ferro": 2,
+    "madeira": 1
+   }
+  },
+  {
+   "id": "machado_metal",
+   "resultado": "machado_metal",
+   "quantidade": 1,
+   "tempo": 6,
+   "xp": 25,
+   "categoria": "Ferramentas",
+   "nivel": 18,
+   "engrama": 14,
+   "estacao": "bancada",
+   "ingredientes": {
+    "lingote_metal": 4,
+    "madeira": 2,
+    "couro": 4
+   }
+  },
+  {
+   "id": "picareta_metal",
+   "resultado": "picareta_metal",
+   "quantidade": 1,
+   "tempo": 6,
+   "xp": 25,
+   "categoria": "Ferramentas",
+   "nivel": 18,
+   "engrama": 14,
+   "estacao": "bancada",
+   "ingredientes": {
+    "lingote_metal": 4,
+    "madeira": 2,
+    "couro": 4
+   }
+  },
+  {
+   "id": "capuz_pele",
+   "resultado": "capuz_pele",
+   "quantidade": 1,
+   "tempo": 3,
+   "xp": 8,
+   "categoria": "Roupas",
+   "nivel": 7,
+   "engrama": 4,
+   "ingredientes": {
+    "couro": 6,
+    "fibra": 4
+   }
+  },
+  {
+   "id": "camisa_pele",
+   "resultado": "camisa_pele",
+   "quantidade": 1,
+   "tempo": 3,
+   "xp": 8,
+   "categoria": "Roupas",
+   "nivel": 7,
+   "engrama": 4,
+   "ingredientes": {
+    "couro": 10,
+    "fibra": 8
+   }
+  },
+  {
+   "id": "luvas_pele",
+   "resultado": "luvas_pele",
+   "quantidade": 1,
+   "tempo": 3,
+   "xp": 8,
+   "categoria": "Roupas",
+   "nivel": 7,
+   "engrama": 4,
+   "ingredientes": {
+    "couro": 4,
+    "fibra": 3
+   }
+  },
+  {
+   "id": "calca_pele",
+   "resultado": "calca_pele",
+   "quantidade": 1,
+   "tempo": 3,
+   "xp": 8,
+   "categoria": "Roupas",
+   "nivel": 7,
+   "engrama": 4,
+   "ingredientes": {
+    "couro": 8,
+    "fibra": 6
+   }
+  },
+  {
+   "id": "botas_pele",
+   "resultado": "botas_pele",
+   "quantidade": 1,
+   "tempo": 3,
+   "xp": 8,
+   "categoria": "Roupas",
+   "nivel": 7,
+   "engrama": 4,
+   "ingredientes": {
+    "couro": 5,
+    "fibra": 4
+   }
+  }
+ ]
 }

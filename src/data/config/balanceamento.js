@@ -120,6 +120,40 @@ export default {
     forca: 5,       // +5% de dano corpo a corpo
   },
 
+  // Engramas (como no ARK): ao subir de nível você ganha pontos para
+  // APRENDER receitas. Cada receita pede um nível mínimo e um custo
+  // (data/crafting/receitas.json: nivel e engrama).
+  engramas: {
+    pontos_por_nivel: 8,       // pontos de engrama a cada nível…
+    mais_a_cada_10_niveis: 4,  // …e +4 a cada 10 níveis (nível 11+: 12, 21+: 16…)
+  },
+
+  // Comida estraga com o tempo (minutos por unidade: "estraga_min" em
+  // data/items/itens.json). Carne crua estragada vira Carne Estragada.
+  estragar: {
+    no_bau_mult: 0.25,         // dentro do baú estraga 4× mais devagar
+  },
+
+  // Arco e flechas
+  arco: {
+    velocidade_m_s: 48,        // velocidade da flecha
+    gravidade: 9.8,            // a flecha cai com a distância
+    intervalo_seg: 0.9,        // tempo entre um tiro e outro
+    alcance_m: 120,            // depois disso a flecha some
+    xp_acerto: 1,
+  },
+
+  // Armadura (roupas de pele vestidas): cada peça tira X% do dano
+  armadura: {
+    max_reducao: 0.6,          // nunca tira mais que 60% do dano
+    desgaste_por_golpe: 1,     // durabilidade que cada peça perde por golpe levado
+  },
+
+  // Montaria
+  sela: {
+    precisa: true,             // só monta bicho com sela (como no ARK)
+  },
+
   nivel: {
     max: 60,
     xp_base: 60,               // XP para ir do nível 1 ao 2
@@ -174,6 +208,7 @@ export default {
     comidas_por_nivel: 0.2,    // + X por nível
     comida_qualquer: 0.35,     // comida que não é a preferida vale isso
     baga_escura_torpor: 0.15,  // cada baga-escura dada põe +15% de torpor
+    narcotico_torpor: 0.4,     // cada Narcótico dado põe +40% de torpor
     seguir_m: 4,               // distância que o bicho domado fica de você
   },
 

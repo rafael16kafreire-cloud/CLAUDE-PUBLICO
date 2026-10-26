@@ -8,6 +8,7 @@ import { events, EV } from '../core/event_bus.js';
 import { itemName } from '../items/items.js';
 
 export const RECIPES = data.receitas;
+export const STATION_NAMES = { bancada: 'Bancada de Trabalho', pilao: 'Pilão', forja: 'Forja' };
 
 export class Crafting {
   constructor(inventory, stats) {
@@ -39,10 +40,19 @@ export class Crafting {
     return n;
   }
 
+  // Engrama ainda não aprendido?
+  locked(recipe) {
+    return this.stats && !this.stats.knows(recipe);
+  }
+
   craft(recipe, times = 1) {
+    if (this.locked(recipe)) {
+      events.emit(EV.MESSAGE, { text: 'Aprenda este engrama primeiro (pontos de engrama).', kind: 'warn' });
+      return 0;
+    }
     const st = this.missingStation(recipe);
     if (st) {
-      events.emit(EV.MESSAGE, { text: 'Precisa estar perto de uma Bancada de Trabalho.', kind: 'warn' });
+      events.emit(EV.MESSAGE, { text: `Precisa estar perto de: ${STATION_NAMES[st] ?? st}.`, kind: 'warn' });
       return 0;
     }
     const n = Math.min(times, this.maxTimes(recipe));

@@ -456,6 +456,14 @@ export class CreatureManager {
       const p = game.player;
       if (p.dead) return;
       this.defendOwner(p, attacker);
+      // armadura vestida tira parte do dano (e se gasta)
+      const inv = game.player.actions?.inv;
+      const A = BALANCE.armadura;
+      if (inv) {
+        amount *= 1 - Math.min(A.max_reducao, inv.armor);
+        const torn = inv.wearArmor(A.desgaste_por_golpe);
+        if (torn) events.emit(EV.MESSAGE, { text: `${torn} rasgou!`, kind: 'warn' });
+      }
       p.stats.damage(amount, `criatura:${attacker.species.nome}`);
       // empurrão para trás
       const dx = p.position.x - attacker.pos.x;
@@ -587,6 +595,7 @@ export class CreatureManager {
     let bestD = maxD;
     for (const c of this.tamedBy(owner)) {
       if (!c.species.pode_montar || c.flies || c.isBaby) continue;
+      if (BALANCE.sela.precisa && !c.saddled) continue; // sem sela não monta
       const d = Math.hypot(c.pos.x - pos.x, c.pos.z - pos.z) - c.radius;
       if (d < bestD) {
         best = c;

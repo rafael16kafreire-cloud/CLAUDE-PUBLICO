@@ -43,13 +43,17 @@ export class Hotbar {
       b.querySelector('.hb-icon').innerHTML = s ? itemIcon(s.id) : '';
       b.querySelector('.hb-qty').textContent = s && s.qty > 1 ? String(s.qty) : '';
       const dur = b.querySelector('.hb-dur');
-      const f = s && ITEMS[s.id]?.ferramenta;
-      if (f) {
-        dur.hidden = false;
-        dur.style.transform = `scaleX(${Math.max(0, s.dur / f.durabilidade).toFixed(3)})`;
-      } else {
-        dur.hidden = true;
-      }
+      // barrinha: durabilidade (ferramenta), frescor (comida) ou água (cantil)
+      const def = s && ITEMS[s.id];
+      const f = def?.ferramenta;
+      const sp = def?.comida?.estraga_min;
+      const cn = def?.cantil;
+      dur.hidden = !f && !sp && !cn;
+      dur.classList.toggle('fresh', !!sp);
+      dur.classList.toggle('water', !!cn);
+      if (f) dur.style.transform = `scaleX(${Math.max(0, s.dur / f.durabilidade).toFixed(3)})`;
+      else if (sp) dur.style.transform = `scaleX(${Math.max(0, (s.spoil ?? sp * 60) / (sp * 60)).toFixed(3)})`;
+      else if (cn) dur.style.transform = `scaleX(${Math.max(0, (s.agua ?? 0) / cn.capacidade).toFixed(3)})`;
       b.title = s ? ITEMS[s.id].nome : '';
     }
   }

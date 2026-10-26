@@ -1,130 +1,859 @@
 {
-  "_explicacao": "Todos os itens. peso em kg. pilha = quantos cabem num espaço. comida: quanto recupera de fome/sede/vida/stamina. ferramenta: tipo (machado, picareta, lanca, clava), dano, alcance (m) e durabilidade (golpes). icone: forma do desenho e cores.",
-  "itens": [
-    { "id": "madeira", "nome": "Madeira", "tipo": "recurso", "peso": 0.5, "pilha": 100,
-      "descricao": "Tirada de árvores e troncos. Rende muito mais com um machado.",
-      "icone": { "forma": "tora", "cor": "#8a6440", "cor2": "#c49a64" } },
-    { "id": "palha", "nome": "Palha", "tipo": "recurso", "peso": 0.05, "pilha": 200,
-      "descricao": "Folhas secas e galhinhos. Sai fácil batendo em árvores com a mão.",
-      "icone": { "forma": "palha", "cor": "#c9ac5a", "cor2": "#8a6a2a" } },
-    { "id": "pedra", "nome": "Pedra", "tipo": "recurso", "peso": 0.5, "pilha": 100,
-      "descricao": "Base de quase toda ferramenta. Bata em rochas.",
-      "icone": { "forma": "pedra", "cor": "#8f8a80", "cor2": "#5f5b54" } },
-    { "id": "silex", "nome": "Sílex", "tipo": "recurso", "peso": 0.05, "pilha": 100,
-      "descricao": "Pedra afiada. Sai bem mais usando picareta nas rochas.",
-      "icone": { "forma": "silex", "cor": "#4a4e58", "cor2": "#8a92a2" } },
-    { "id": "minerio_ferro", "nome": "Minério de Ferro", "tipo": "recurso", "peso": 1.0, "pilha": 100,
-      "descricao": "Pedra com ferro, das montanhas da Lapônia. Sai bem com picareta.",
-      "icone": { "forma": "pedra", "cor": "#8c4a26", "cor2": "#3e3a36" } },
-    { "id": "graveto", "nome": "Graveto", "tipo": "recurso", "peso": 0.1, "pilha": 100,
-      "descricao": "Galho seco do chão. Pegue com Interagir. Serve de cabo para as primeiras ferramentas e de lenha.",
-      "icone": { "forma": "graveto", "cor": "#8a6a44", "cor2": "#5a4128" } },
-    { "id": "fibra", "nome": "Fibra", "tipo": "recurso", "peso": 0.01, "pilha": 300,
-      "descricao": "Colhida de samambaias, arbustos e juncos.",
-      "icone": { "forma": "fibra", "cor": "#6f9a3a", "cor2": "#3f6a22" } },
-    { "id": "couro", "nome": "Couro", "tipo": "recurso", "peso": 0.1, "pilha": 100,
-      "descricao": "Tirado de animais abatidos.",
-      "icone": { "forma": "couro", "cor": "#a8794a", "cor2": "#6e4a2a" } },
-    { "id": "ossos", "nome": "Ossos", "tipo": "recurso", "peso": 0.2, "pilha": 100,
-      "descricao": "Restos de animais grandes.",
-      "icone": { "forma": "osso", "cor": "#e8e0cc", "cor2": "#a89c80" } },
-    { "id": "carne_crua", "nome": "Carne Crua", "tipo": "comida", "peso": 0.1, "pilha": 40,
-      "descricao": "Mata a fome, mas faz mal crua. Fique perto de uma fogueira acesa para assar.",
-      "comida": { "fome": 10, "vida": -3 },
-      "icone": { "forma": "carne", "cor": "#b0413a", "cor2": "#e8d8c8" } },
-    { "id": "carne_assada", "nome": "Carne Assada", "tipo": "comida", "peso": 0.1, "pilha": 40,
-      "descricao": "Assada na fogueira. Mata bem a fome e recupera um pouco de vida.",
-      "comida": { "fome": 28, "vida": 8 },
-      "icone": { "forma": "carne", "cor": "#7a4422", "cor2": "#e8c898" } },
-    { "id": "baga_mejo", "nome": "Baga-Mejo", "tipo": "comida", "peso": 0.05, "pilha": 100,
-      "descricao": "Baga azulada e doce. Os herbívoros adoram (domesticação).",
-      "comida": { "fome": 5, "sede": 1 },
-      "icone": { "forma": "baga", "cor": "#4a4eb0", "cor2": "#2c2e78" } },
-    { "id": "baga_escura", "nome": "Baga-Escura", "tipo": "comida", "peso": 0.05, "pilha": 100,
-      "descricao": "Baga quase preta e amarga. Dá sono: comer cansa (perde stamina). Vai servir para manter animais dormindo.",
-      "comida": { "fome": 3, "stamina": -15 },
-      "icone": { "forma": "baga", "cor": "#2a2236", "cor2": "#120e18" } },
-    { "id": "fruta_rubra", "nome": "Fruta Rubra", "tipo": "comida", "peso": 0.1, "pilha": 60,
-      "descricao": "Fruta vermelha que enche a barriga.",
-      "comida": { "fome": 10 },
-      "icone": { "forma": "fruta", "cor": "#c23a2e", "cor2": "#4a7a2e" } },
-    { "id": "fruta_azul", "nome": "Fruta Azul", "tipo": "comida", "peso": 0.1, "pilha": 60,
-      "descricao": "Fruta suculenta: mata um pouco da sede.",
-      "comida": { "fome": 4, "sede": 8 },
-      "icone": { "forma": "fruta", "cor": "#3f72b8", "cor2": "#4a7a2e" } },
-    { "id": "banana", "nome": "Banana", "tipo": "comida", "peso": 0.15, "pilha": 50,
-      "descricao": "Pegue nas bananeiras. Matam bem a fome.",
-      "comida": { "fome": 16, "sede": 3 },
-      "icone": { "forma": "banana", "cor": "#e3c84a", "cor2": "#6a5a2a" } },
-    { "id": "unguento", "nome": "Unguento de Bagas", "tipo": "consumivel", "peso": 0.15, "pilha": 20,
-      "descricao": "Pasta de bagas amassadas com fibra. Cura bem mais que a bandagem.",
-      "comida": { "vida": 45, "sede": 4 },
-      "icone": { "forma": "pote", "cor": "#7a4fa8", "cor2": "#c9a46a" } },
-    { "id": "bandagem", "nome": "Bandagem", "tipo": "consumivel", "peso": 0.1, "pilha": 20,
-      "descricao": "Feita de fibra. Recupera vida.",
-      "comida": { "vida": 25 },
-      "icone": { "forma": "bandagem", "cor": "#e8e2cc", "cor2": "#b03a2e" } },
-    { "id": "fogueira", "nome": "Fogueira", "tipo": "estrutura", "peso": 4, "pilha": 5,
-      "colocavel": "fogueira",
-      "descricao": "Toque na barra rápida para colocar no chão. Acesa: assa carne, esquenta e ilumina à noite.",
-      "icone": { "forma": "fogueira", "cor": "#e8873a", "cor2": "#7a7a80" } },
-    { "id": "saco_dormir", "nome": "Saco de Dormir", "tipo": "estrutura", "peso": 3, "pilha": 3,
-      "colocavel": "saco_dormir",
-      "descricao": "Coloque no chão: vira um ponto para renascer e dá para dormir até de manhã.",
-      "icone": { "forma": "saco", "cor": "#6a7a4a", "cor2": "#c8b88a" } },
-    { "id": "tocha", "nome": "Tocha", "tipo": "ferramenta", "peso": 0.5, "pilha": 1,
-      "descricao": "Ilumina o caminho à noite. Também serve para bater (pouco dano).",
-      "ferramenta": { "tipo": "tocha", "dano": 9, "alcance": 2.3, "durabilidade": 60 },
-      "icone": { "forma": "tocha", "cor": "#7a5a3a", "cor2": "#f0a030" } },
-    { "id": "machado_pedra", "nome": "Machado de Pedra", "tipo": "ferramenta", "peso": 2, "pilha": 1,
-      "descricao": "Muito mais madeira das árvores e troncos.",
-      "ferramenta": { "tipo": "machado", "dano": 14, "alcance": 2.6, "durabilidade": 70 },
-      "icone": { "forma": "machado", "cor": "#7a5a3a", "cor2": "#8a8a90" } },
-    { "id": "picareta_pedra", "nome": "Picareta de Pedra", "tipo": "ferramenta", "peso": 2, "pilha": 1,
-      "descricao": "Mais sílex das pedras e mais palha das árvores.",
-      "ferramenta": { "tipo": "picareta", "dano": 13, "alcance": 2.6, "durabilidade": 70 },
-      "icone": { "forma": "picareta", "cor": "#7a5a3a", "cor2": "#8a8a90" } },
-    { "id": "lanca", "nome": "Lança", "tipo": "ferramenta", "peso": 1.5, "pilha": 1,
-      "descricao": "Arma de alcance maior e muito dano.",
-      "ferramenta": { "tipo": "lanca", "dano": 32, "alcance": 3.3, "durabilidade": 45 },
-      "icone": { "forma": "lanca", "cor": "#8a6440", "cor2": "#5a5e68" } },
-    { "id": "machado_silex", "nome": "Machado de Sílex", "tipo": "ferramenta", "peso": 2.2, "pilha": 1,
-      "descricao": "Feito na bancada. Corta mais rápido e rende metade a mais de madeira.",
-      "ferramenta": { "tipo": "machado", "dano": 19, "alcance": 2.7, "durabilidade": 160, "rende": 1.5 },
-      "icone": { "forma": "machado", "cor": "#6a4a2a", "cor2": "#4c505a" } },
-    { "id": "picareta_silex", "nome": "Picareta de Sílex", "tipo": "ferramenta", "peso": 2.2, "pilha": 1,
-      "descricao": "Feita na bancada. Rende metade a mais de pedra, sílex e palha.",
-      "ferramenta": { "tipo": "picareta", "dano": 17, "alcance": 2.7, "durabilidade": 160, "rende": 1.5 },
-      "icone": { "forma": "picareta", "cor": "#6a4a2a", "cor2": "#3c404a" } },
-    { "id": "lanca_osso", "nome": "Lança de Osso", "tipo": "ferramenta", "peso": 1.8, "pilha": 1,
-      "descricao": "Feita na bancada. Ponta de osso afiada: muito dano e dura mais.",
-      "ferramenta": { "tipo": "lanca", "dano": 46, "alcance": 3.4, "durabilidade": 90 },
-      "icone": { "forma": "lanca", "cor": "#6a4a2a", "cor2": "#e8dcc0" } },
-    { "id": "bancada", "nome": "Bancada de Trabalho", "tipo": "estrutura", "peso": 8, "pilha": 2,
-      "colocavel": "bancada",
-      "descricao": "Coloque no chão. Perto dela dá para criar ferramentas e armas melhores. Interagir abre o crafting.",
-      "icone": { "forma": "bancada", "cor": "#8a6438", "cor2": "#7a7a80" } },
-    { "id": "piso", "nome": "Piso de Madeira", "tipo": "estrutura", "peso": 6, "pilha": 20, "peca": "piso",
-      "descricao": "Base da casa (3×3 m). Selecione e Atacar para colocar; os próximos encaixam do lado.",
-      "icone": { "forma": "piso", "cor": "#8a6438", "cor2": "#5e4226" } },
-    { "id": "parede", "nome": "Parede de Madeira", "tipo": "estrutura", "peso": 5, "pilha": 20, "peca": "parede",
-      "descricao": "Encaixa na beira de um piso ou teto. Segura bichos do lado de fora.",
-      "icone": { "forma": "parede", "cor": "#8a6438", "cor2": "#5e4226" } },
-    { "id": "porta", "nome": "Parede com Porta", "tipo": "estrutura", "peso": 6, "pilha": 20, "peca": "porta",
-      "descricao": "Parede com uma porta. Interagir abre e fecha.",
-      "icone": { "forma": "porta", "cor": "#8a6438", "cor2": "#5e4226" } },
-    { "id": "teto", "nome": "Teto de Palha", "tipo": "estrutura", "peso": 4, "pilha": 20, "peca": "teto",
-      "descricao": "Vai em cima de um piso (3 m acima). Dá para andar em cima: é o chão do segundo andar.",
-      "icone": { "forma": "teto", "cor": "#a08848", "cor2": "#5e4226" } },
-    { "id": "rampa", "nome": "Rampa", "tipo": "estrutura", "peso": 5, "pilha": 20, "peca": "rampa",
-      "descricao": "Em cima de um piso: sobe 3 m até o teto (segundo andar). Sobe para o lado que você olha.",
-      "icone": { "forma": "rampa", "cor": "#8a6438", "cor2": "#5e4226" } },
-    { "id": "casaco_pele", "nome": "Casaco de Pele", "tipo": "equipamento", "peso": 3, "pilha": 1,
-      "descricao": "Couro e pele costurados. Na mochila, esquenta muito: precisa dele na neve da Lapônia.",
-      "icone": { "forma": "casaco", "cor": "#8a6a48", "cor2": "#e8dcc0" } },
-    { "id": "clava", "nome": "Clava", "tipo": "ferramenta", "peso": 2, "pilha": 1,
-      "descricao": "Pancada forte. Na Fase 8 vai deixar os animais desmaiados.",
-      "ferramenta": { "tipo": "clava", "dano": 16, "alcance": 2.5, "durabilidade": 60 },
-      "icone": { "forma": "clava", "cor": "#6e4e30", "cor2": "#4a3420" } }
-  ]
+ "_explicacao": "Todos os itens. peso em kg. pilha = quantos cabem num espaço. comida: quanto recupera de fome/sede/vida/stamina. ferramenta: tipo (machado, picareta, lanca, clava), dano, alcance (m) e durabilidade (golpes). icone: forma do desenho e cores. municao: dano e torpor de cada flecha. cantil: capacidade e gole. equipamento: slot (cabeca, peito, maos, pernas, pes), armadura (% de dano a menos), frio (graus a mais no frio), durabilidade. estraga_min (em comida): minutos até 1 unidade estragar.",
+ "itens": [
+  {
+   "id": "madeira",
+   "nome": "Madeira",
+   "tipo": "recurso",
+   "peso": 0.5,
+   "pilha": 100,
+   "descricao": "Tirada de árvores e troncos. Rende muito mais com um machado.",
+   "icone": {
+    "forma": "tora",
+    "cor": "#8a6440",
+    "cor2": "#c49a64"
+   }
+  },
+  {
+   "id": "palha",
+   "nome": "Palha",
+   "tipo": "recurso",
+   "peso": 0.05,
+   "pilha": 200,
+   "descricao": "Folhas secas e galhinhos. Sai fácil batendo em árvores com a mão.",
+   "icone": {
+    "forma": "palha",
+    "cor": "#c9ac5a",
+    "cor2": "#8a6a2a"
+   }
+  },
+  {
+   "id": "pedra",
+   "nome": "Pedra",
+   "tipo": "recurso",
+   "peso": 0.5,
+   "pilha": 100,
+   "descricao": "Base de quase toda ferramenta. Bata em rochas.",
+   "icone": {
+    "forma": "pedra",
+    "cor": "#8f8a80",
+    "cor2": "#5f5b54"
+   }
+  },
+  {
+   "id": "silex",
+   "nome": "Sílex",
+   "tipo": "recurso",
+   "peso": 0.05,
+   "pilha": 100,
+   "descricao": "Pedra afiada. Sai bem mais usando picareta nas rochas.",
+   "icone": {
+    "forma": "silex",
+    "cor": "#4a4e58",
+    "cor2": "#8a92a2"
+   }
+  },
+  {
+   "id": "minerio_ferro",
+   "nome": "Minério de Ferro",
+   "tipo": "recurso",
+   "peso": 1.0,
+   "pilha": 100,
+   "descricao": "Pedra com ferro, das montanhas da Lapônia. Sai bem com picareta.",
+   "icone": {
+    "forma": "pedra",
+    "cor": "#8c4a26",
+    "cor2": "#3e3a36"
+   }
+  },
+  {
+   "id": "graveto",
+   "nome": "Graveto",
+   "tipo": "recurso",
+   "peso": 0.1,
+   "pilha": 100,
+   "descricao": "Galho seco do chão. Pegue com Interagir. Serve de cabo para as primeiras ferramentas e de lenha.",
+   "icone": {
+    "forma": "graveto",
+    "cor": "#8a6a44",
+    "cor2": "#5a4128"
+   }
+  },
+  {
+   "id": "fibra",
+   "nome": "Fibra",
+   "tipo": "recurso",
+   "peso": 0.01,
+   "pilha": 300,
+   "descricao": "Colhida de samambaias, arbustos e juncos.",
+   "icone": {
+    "forma": "fibra",
+    "cor": "#6f9a3a",
+    "cor2": "#3f6a22"
+   }
+  },
+  {
+   "id": "couro",
+   "nome": "Couro",
+   "tipo": "recurso",
+   "peso": 0.1,
+   "pilha": 100,
+   "descricao": "Tirado de animais abatidos.",
+   "icone": {
+    "forma": "couro",
+    "cor": "#a8794a",
+    "cor2": "#6e4a2a"
+   }
+  },
+  {
+   "id": "ossos",
+   "nome": "Ossos",
+   "tipo": "recurso",
+   "peso": 0.2,
+   "pilha": 100,
+   "descricao": "Restos de animais grandes.",
+   "icone": {
+    "forma": "osso",
+    "cor": "#e8e0cc",
+    "cor2": "#a89c80"
+   }
+  },
+  {
+   "id": "carne_crua",
+   "nome": "Carne Crua",
+   "tipo": "comida",
+   "peso": 0.1,
+   "pilha": 40,
+   "descricao": "Mata a fome, mas faz mal crua. Fique perto de uma fogueira acesa para assar.",
+   "comida": {
+    "fome": 10,
+    "vida": -3,
+    "estraga_min": 10
+   },
+   "icone": {
+    "forma": "carne",
+    "cor": "#b0413a",
+    "cor2": "#e8d8c8"
+   }
+  },
+  {
+   "id": "carne_assada",
+   "nome": "Carne Assada",
+   "tipo": "comida",
+   "peso": 0.1,
+   "pilha": 40,
+   "descricao": "Assada na fogueira. Mata bem a fome e recupera um pouco de vida.",
+   "comida": {
+    "fome": 28,
+    "vida": 8,
+    "estraga_min": 20
+   },
+   "icone": {
+    "forma": "carne",
+    "cor": "#7a4422",
+    "cor2": "#e8c898"
+   }
+  },
+  {
+   "id": "baga_mejo",
+   "nome": "Baga-Mejo",
+   "tipo": "comida",
+   "peso": 0.05,
+   "pilha": 100,
+   "descricao": "Baga azulada e doce. Os herbívoros adoram (domesticação).",
+   "comida": {
+    "fome": 5,
+    "sede": 1,
+    "estraga_min": 12
+   },
+   "icone": {
+    "forma": "baga",
+    "cor": "#4a4eb0",
+    "cor2": "#2c2e78"
+   }
+  },
+  {
+   "id": "baga_escura",
+   "nome": "Baga-Escura",
+   "tipo": "comida",
+   "peso": 0.05,
+   "pilha": 100,
+   "descricao": "Baga quase preta e amarga. Dá sono: comer cansa (perde stamina). Vai servir para manter animais dormindo.",
+   "comida": {
+    "fome": 3,
+    "stamina": -15,
+    "estraga_min": 12
+   },
+   "icone": {
+    "forma": "baga",
+    "cor": "#2a2236",
+    "cor2": "#120e18"
+   }
+  },
+  {
+   "id": "fruta_rubra",
+   "nome": "Fruta Rubra",
+   "tipo": "comida",
+   "peso": 0.1,
+   "pilha": 60,
+   "descricao": "Fruta vermelha que enche a barriga.",
+   "comida": {
+    "fome": 10,
+    "estraga_min": 15
+   },
+   "icone": {
+    "forma": "fruta",
+    "cor": "#c23a2e",
+    "cor2": "#4a7a2e"
+   }
+  },
+  {
+   "id": "fruta_azul",
+   "nome": "Fruta Azul",
+   "tipo": "comida",
+   "peso": 0.1,
+   "pilha": 60,
+   "descricao": "Fruta suculenta: mata um pouco da sede.",
+   "comida": {
+    "fome": 4,
+    "sede": 8,
+    "estraga_min": 15
+   },
+   "icone": {
+    "forma": "fruta",
+    "cor": "#3f72b8",
+    "cor2": "#4a7a2e"
+   }
+  },
+  {
+   "id": "banana",
+   "nome": "Banana",
+   "tipo": "comida",
+   "peso": 0.15,
+   "pilha": 50,
+   "descricao": "Pegue nas bananeiras. Matam bem a fome.",
+   "comida": {
+    "fome": 16,
+    "sede": 3,
+    "estraga_min": 15
+   },
+   "icone": {
+    "forma": "banana",
+    "cor": "#e3c84a",
+    "cor2": "#6a5a2a"
+   }
+  },
+  {
+   "id": "unguento",
+   "nome": "Unguento de Bagas",
+   "tipo": "consumivel",
+   "peso": 0.15,
+   "pilha": 20,
+   "descricao": "Pasta de bagas amassadas com fibra. Cura bem mais que a bandagem.",
+   "comida": {
+    "vida": 45,
+    "sede": 4
+   },
+   "icone": {
+    "forma": "pote",
+    "cor": "#7a4fa8",
+    "cor2": "#c9a46a"
+   }
+  },
+  {
+   "id": "bandagem",
+   "nome": "Bandagem",
+   "tipo": "consumivel",
+   "peso": 0.1,
+   "pilha": 20,
+   "descricao": "Feita de fibra. Recupera vida.",
+   "comida": {
+    "vida": 25
+   },
+   "icone": {
+    "forma": "bandagem",
+    "cor": "#e8e2cc",
+    "cor2": "#b03a2e"
+   }
+  },
+  {
+   "id": "fogueira",
+   "nome": "Fogueira",
+   "tipo": "estrutura",
+   "peso": 4,
+   "pilha": 5,
+   "colocavel": "fogueira",
+   "descricao": "Toque na barra rápida para colocar no chão. Acesa: assa carne, esquenta e ilumina à noite.",
+   "icone": {
+    "forma": "fogueira",
+    "cor": "#e8873a",
+    "cor2": "#7a7a80"
+   }
+  },
+  {
+   "id": "saco_dormir",
+   "nome": "Saco de Dormir",
+   "tipo": "estrutura",
+   "peso": 3,
+   "pilha": 3,
+   "colocavel": "saco_dormir",
+   "descricao": "Coloque no chão: vira um ponto para renascer e dá para dormir até de manhã.",
+   "icone": {
+    "forma": "saco",
+    "cor": "#6a7a4a",
+    "cor2": "#c8b88a"
+   }
+  },
+  {
+   "id": "tocha",
+   "nome": "Tocha",
+   "tipo": "ferramenta",
+   "peso": 0.5,
+   "pilha": 1,
+   "descricao": "Ilumina o caminho à noite. Também serve para bater (pouco dano).",
+   "ferramenta": {
+    "tipo": "tocha",
+    "dano": 9,
+    "alcance": 2.3,
+    "durabilidade": 60
+   },
+   "icone": {
+    "forma": "tocha",
+    "cor": "#7a5a3a",
+    "cor2": "#f0a030"
+   }
+  },
+  {
+   "id": "machado_pedra",
+   "nome": "Machado de Pedra",
+   "tipo": "ferramenta",
+   "peso": 2,
+   "pilha": 1,
+   "descricao": "Muito mais madeira das árvores e troncos.",
+   "ferramenta": {
+    "tipo": "machado",
+    "dano": 14,
+    "alcance": 2.6,
+    "durabilidade": 70
+   },
+   "icone": {
+    "forma": "machado",
+    "cor": "#7a5a3a",
+    "cor2": "#8a8a90"
+   }
+  },
+  {
+   "id": "picareta_pedra",
+   "nome": "Picareta de Pedra",
+   "tipo": "ferramenta",
+   "peso": 2,
+   "pilha": 1,
+   "descricao": "Mais sílex das pedras e mais palha das árvores.",
+   "ferramenta": {
+    "tipo": "picareta",
+    "dano": 13,
+    "alcance": 2.6,
+    "durabilidade": 70
+   },
+   "icone": {
+    "forma": "picareta",
+    "cor": "#7a5a3a",
+    "cor2": "#8a8a90"
+   }
+  },
+  {
+   "id": "lanca",
+   "nome": "Lança",
+   "tipo": "ferramenta",
+   "peso": 1.5,
+   "pilha": 1,
+   "descricao": "Arma de alcance maior e muito dano.",
+   "ferramenta": {
+    "tipo": "lanca",
+    "dano": 32,
+    "alcance": 3.3,
+    "durabilidade": 45
+   },
+   "icone": {
+    "forma": "lanca",
+    "cor": "#8a6440",
+    "cor2": "#5a5e68"
+   }
+  },
+  {
+   "id": "machado_silex",
+   "nome": "Machado de Sílex",
+   "tipo": "ferramenta",
+   "peso": 2.2,
+   "pilha": 1,
+   "descricao": "Feito na bancada. Corta mais rápido e rende metade a mais de madeira.",
+   "ferramenta": {
+    "tipo": "machado",
+    "dano": 19,
+    "alcance": 2.7,
+    "durabilidade": 160,
+    "rende": 1.5
+   },
+   "icone": {
+    "forma": "machado",
+    "cor": "#6a4a2a",
+    "cor2": "#4c505a"
+   }
+  },
+  {
+   "id": "picareta_silex",
+   "nome": "Picareta de Sílex",
+   "tipo": "ferramenta",
+   "peso": 2.2,
+   "pilha": 1,
+   "descricao": "Feita na bancada. Rende metade a mais de pedra, sílex e palha.",
+   "ferramenta": {
+    "tipo": "picareta",
+    "dano": 17,
+    "alcance": 2.7,
+    "durabilidade": 160,
+    "rende": 1.5
+   },
+   "icone": {
+    "forma": "picareta",
+    "cor": "#6a4a2a",
+    "cor2": "#3c404a"
+   }
+  },
+  {
+   "id": "lanca_osso",
+   "nome": "Lança de Osso",
+   "tipo": "ferramenta",
+   "peso": 1.8,
+   "pilha": 1,
+   "descricao": "Feita na bancada. Ponta de osso afiada: muito dano e dura mais.",
+   "ferramenta": {
+    "tipo": "lanca",
+    "dano": 46,
+    "alcance": 3.4,
+    "durabilidade": 90
+   },
+   "icone": {
+    "forma": "lanca",
+    "cor": "#6a4a2a",
+    "cor2": "#e8dcc0"
+   }
+  },
+  {
+   "id": "bancada",
+   "nome": "Bancada de Trabalho",
+   "tipo": "estrutura",
+   "peso": 8,
+   "pilha": 2,
+   "colocavel": "bancada",
+   "descricao": "Coloque no chão. Perto dela dá para criar ferramentas e armas melhores. Interagir abre o crafting.",
+   "icone": {
+    "forma": "bancada",
+    "cor": "#8a6438",
+    "cor2": "#7a7a80"
+   }
+  },
+  {
+   "id": "piso",
+   "nome": "Piso de Madeira",
+   "tipo": "estrutura",
+   "peso": 6,
+   "pilha": 20,
+   "peca": "piso",
+   "descricao": "Base da casa (3×3 m). Selecione e Atacar para colocar; os próximos encaixam do lado.",
+   "icone": {
+    "forma": "piso",
+    "cor": "#8a6438",
+    "cor2": "#5e4226"
+   }
+  },
+  {
+   "id": "parede",
+   "nome": "Parede de Madeira",
+   "tipo": "estrutura",
+   "peso": 5,
+   "pilha": 20,
+   "peca": "parede",
+   "descricao": "Encaixa na beira de um piso ou teto. Segura bichos do lado de fora.",
+   "icone": {
+    "forma": "parede",
+    "cor": "#8a6438",
+    "cor2": "#5e4226"
+   }
+  },
+  {
+   "id": "porta",
+   "nome": "Parede com Porta",
+   "tipo": "estrutura",
+   "peso": 6,
+   "pilha": 20,
+   "peca": "porta",
+   "descricao": "Parede com uma porta. Interagir abre e fecha.",
+   "icone": {
+    "forma": "porta",
+    "cor": "#8a6438",
+    "cor2": "#5e4226"
+   }
+  },
+  {
+   "id": "teto",
+   "nome": "Teto de Palha",
+   "tipo": "estrutura",
+   "peso": 4,
+   "pilha": 20,
+   "peca": "teto",
+   "descricao": "Vai em cima de um piso (3 m acima). Dá para andar em cima: é o chão do segundo andar.",
+   "icone": {
+    "forma": "teto",
+    "cor": "#a08848",
+    "cor2": "#5e4226"
+   }
+  },
+  {
+   "id": "rampa",
+   "nome": "Rampa",
+   "tipo": "estrutura",
+   "peso": 5,
+   "pilha": 20,
+   "peca": "rampa",
+   "descricao": "Em cima de um piso: sobe 3 m até o teto (segundo andar). Sobe para o lado que você olha.",
+   "icone": {
+    "forma": "rampa",
+    "cor": "#8a6438",
+    "cor2": "#5e4226"
+   }
+  },
+  {
+   "id": "casaco_pele",
+   "nome": "Casaco de Pele",
+   "tipo": "equipamento",
+   "peso": 3,
+   "pilha": 1,
+   "descricao": "Couro e pele costurados. Na mochila, esquenta muito: precisa dele na neve da Lapônia.",
+   "icone": {
+    "forma": "casaco",
+    "cor": "#8a6a48",
+    "cor2": "#e8dcc0"
+   }
+  },
+  {
+   "id": "clava",
+   "nome": "Clava",
+   "tipo": "ferramenta",
+   "peso": 2,
+   "pilha": 1,
+   "descricao": "Pancada forte. Na Fase 8 vai deixar os animais desmaiados.",
+   "ferramenta": {
+    "tipo": "clava",
+    "dano": 16,
+    "alcance": 2.5,
+    "durabilidade": 60
+   },
+   "icone": {
+    "forma": "clava",
+    "cor": "#6e4e30",
+    "cor2": "#4a3420"
+   }
+  },
+  {
+   "id": "carne_estragada",
+   "nome": "Carne Estragada",
+   "tipo": "recurso",
+   "peso": 0.1,
+   "pilha": 40,
+   "descricao": "Carne que apodreceu. Não presta para comer, mas no Pilão vira Narcótico.",
+   "icone": {
+    "forma": "carne",
+    "cor": "#6a7a3a",
+    "cor2": "#c8c890"
+   }
+  },
+  {
+   "id": "narcotico",
+   "nome": "Narcótico",
+   "tipo": "consumivel",
+   "peso": 0.1,
+   "pilha": 50,
+   "descricao": "Feito no Pilão. Dá sono: dê para um bicho desmaiado (Interagir) para ele não acordar, ou use nas Flechas Tranquilizantes.",
+   "icone": {
+    "forma": "pote",
+    "cor": "#6a4a9a",
+    "cor2": "#2a1a3a"
+   }
+  },
+  {
+   "id": "pilao",
+   "nome": "Pilão",
+   "tipo": "estrutura",
+   "peso": 6,
+   "pilha": 3,
+   "colocavel": "pilao",
+   "descricao": "Coloque no chão. Perto dele dá para fazer Narcótico.",
+   "icone": {
+    "forma": "pilao",
+    "cor": "#8a8478",
+    "cor2": "#5a4a38"
+   }
+  },
+  {
+   "id": "arco",
+   "nome": "Arco",
+   "tipo": "ferramenta",
+   "peso": 1,
+   "pilha": 1,
+   "descricao": "Arma de longe: atire com Atacar. Gasta Flechas da mochila. Para trocar entre Flecha de Pedra e Tranquilizante, toque no Arco no Inventário (Item → Trocar flecha).",
+   "ferramenta": {
+    "tipo": "arco",
+    "dano": 0,
+    "alcance": 2,
+    "durabilidade": 120,
+    "projetil": true
+   },
+   "icone": {
+    "forma": "arco",
+    "cor": "#8a6440",
+    "cor2": "#e8e0c8"
+   }
+  },
+  {
+   "id": "flecha_pedra",
+   "nome": "Flecha de Pedra",
+   "tipo": "municao",
+   "peso": 0.05,
+   "pilha": 100,
+   "descricao": "Munição do Arco. Dano 22.",
+   "municao": {
+    "dano": 22,
+    "torpor": 0
+   },
+   "icone": {
+    "forma": "flecha",
+    "cor": "#8a6440",
+    "cor2": "#8a8a90"
+   }
+  },
+  {
+   "id": "flecha_tranq",
+   "nome": "Flecha Tranquilizante",
+   "tipo": "municao",
+   "peso": 0.06,
+   "pilha": 100,
+   "descricao": "Munição do Arco com Narcótico. Pouco dano e muito sono (torpor): para desmaiar e domar de longe.",
+   "municao": {
+    "dano": 9,
+    "torpor": 70
+   },
+   "icone": {
+    "forma": "flecha",
+    "cor": "#8a6440",
+    "cor2": "#8a5ac8"
+   }
+  },
+  {
+   "id": "cantil",
+   "nome": "Cantil",
+   "tipo": "consumivel",
+   "peso": 0.5,
+   "pilha": 1,
+   "descricao": "Bolsa de couro para levar água. Encha olhando para água doce com ele na mão (Interagir) e beba com Usar.",
+   "cantil": {
+    "capacidade": 100,
+    "gole": 25
+   },
+   "icone": {
+    "forma": "cantil",
+    "cor": "#8a6440",
+    "cor2": "#4a90c0"
+   }
+  },
+  {
+   "id": "bau",
+   "nome": "Baú de Madeira",
+   "tipo": "estrutura",
+   "peso": 5,
+   "pilha": 5,
+   "colocavel": "bau",
+   "descricao": "Coloque no chão e use Interagir para guardar coisas (30 espaços). Comida estraga 4× mais devagar dentro dele.",
+   "icone": {
+    "forma": "bau",
+    "cor": "#8a6440",
+    "cor2": "#4a3420"
+   }
+  },
+  {
+   "id": "forja",
+   "nome": "Forja",
+   "tipo": "estrutura",
+   "peso": 12,
+   "pilha": 2,
+   "colocavel": "forja",
+   "descricao": "Coloque no chão. Perto dela, Minério de Ferro vira Lingote de Metal.",
+   "icone": {
+    "forma": "forja",
+    "cor": "#6a6460",
+    "cor2": "#e8873a"
+   }
+  },
+  {
+   "id": "lingote_metal",
+   "nome": "Lingote de Metal",
+   "tipo": "recurso",
+   "peso": 1,
+   "pilha": 100,
+   "descricao": "Feito na Forja com Minério de Ferro. Para ferramentas de metal.",
+   "icone": {
+    "forma": "lingote",
+    "cor": "#a8acb4",
+    "cor2": "#5a5e66"
+   }
+  },
+  {
+   "id": "machado_metal",
+   "nome": "Machado de Metal",
+   "tipo": "ferramenta",
+   "peso": 2,
+   "pilha": 1,
+   "descricao": "Corta árvores muito melhor e dura muito.",
+   "ferramenta": {
+    "tipo": "machado",
+    "dano": 24,
+    "alcance": 2.7,
+    "durabilidade": 400,
+    "rende": 2.2
+   },
+   "icone": {
+    "forma": "machado",
+    "cor": "#6a4a30",
+    "cor2": "#c0c4cc"
+   }
+  },
+  {
+   "id": "picareta_metal",
+   "nome": "Picareta de Metal",
+   "tipo": "ferramenta",
+   "peso": 2,
+   "pilha": 1,
+   "descricao": "Tira muito mais pedra, sílex e minério.",
+   "ferramenta": {
+    "tipo": "picareta",
+    "dano": 22,
+    "alcance": 2.7,
+    "durabilidade": 400,
+    "rende": 2.2
+   },
+   "icone": {
+    "forma": "picareta",
+    "cor": "#6a4a30",
+    "cor2": "#c0c4cc"
+   }
+  },
+  {
+   "id": "sela",
+   "nome": "Sela",
+   "tipo": "consumivel",
+   "peso": 4,
+   "pilha": 1,
+   "descricao": "Para montar num bicho domado: com a Sela na mão, olhe para ele e use Interagir. Sem sela não dá para montar.",
+   "icone": {
+    "forma": "sela",
+    "cor": "#7a4a2a",
+    "cor2": "#c8a060"
+   }
+  },
+  {
+   "id": "capuz_pele",
+   "nome": "Capuz de Pele",
+   "tipo": "equipamento",
+   "peso": 1.5,
+   "pilha": 1,
+   "descricao": "Armadura de pele (capuz). Vista no Inventário (Vestir): protege 8% do dano e esquenta no frio.",
+   "equipamento": {
+    "slot": "cabeca",
+    "armadura": 8,
+    "frio": 3,
+    "durabilidade": 150
+   },
+   "icone": {
+    "forma": "capuz",
+    "cor": "#8a6a48",
+    "cor2": "#5a4430"
+   }
+  },
+  {
+   "id": "camisa_pele",
+   "nome": "Camisa de Pele",
+   "tipo": "equipamento",
+   "peso": 1.5,
+   "pilha": 1,
+   "descricao": "Armadura de pele (camisa). Vista no Inventário (Vestir): protege 12% do dano e esquenta no frio.",
+   "equipamento": {
+    "slot": "peito",
+    "armadura": 12,
+    "frio": 4,
+    "durabilidade": 150
+   },
+   "icone": {
+    "forma": "casaco",
+    "cor": "#8a6a48",
+    "cor2": "#5a4430"
+   }
+  },
+  {
+   "id": "luvas_pele",
+   "nome": "Luvas de Pele",
+   "tipo": "equipamento",
+   "peso": 1.5,
+   "pilha": 1,
+   "descricao": "Armadura de pele (luvas). Vista no Inventário (Vestir): protege 5% do dano e esquenta no frio.",
+   "equipamento": {
+    "slot": "maos",
+    "armadura": 5,
+    "frio": 2,
+    "durabilidade": 150
+   },
+   "icone": {
+    "forma": "luvas",
+    "cor": "#8a6a48",
+    "cor2": "#5a4430"
+   }
+  },
+  {
+   "id": "calca_pele",
+   "nome": "Calça de Pele",
+   "tipo": "equipamento",
+   "peso": 1.5,
+   "pilha": 1,
+   "descricao": "Armadura de pele (calça). Vista no Inventário (Vestir): protege 10% do dano e esquenta no frio.",
+   "equipamento": {
+    "slot": "pernas",
+    "armadura": 10,
+    "frio": 3,
+    "durabilidade": 150
+   },
+   "icone": {
+    "forma": "calca",
+    "cor": "#8a6a48",
+    "cor2": "#5a4430"
+   }
+  },
+  {
+   "id": "botas_pele",
+   "nome": "Botas de Pele",
+   "tipo": "equipamento",
+   "peso": 1.5,
+   "pilha": 1,
+   "descricao": "Armadura de pele (botas). Vista no Inventário (Vestir): protege 6% do dano e esquenta no frio.",
+   "equipamento": {
+    "slot": "pes",
+    "armadura": 6,
+    "frio": 2,
+    "durabilidade": 150
+   },
+   "icone": {
+    "forma": "botas",
+    "cor": "#8a6a48",
+    "cor2": "#5a4430"
+   }
+  }
+ ]
 }

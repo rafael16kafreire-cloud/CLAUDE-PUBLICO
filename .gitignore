@@ -7,3 +7,6 @@ android/app/src/main/assets/
 # pacotes zip gerados para enviar ao usuário
 *.zip
 __pycache__/
+
+# versão de PC (vai junto para o usuário baixar)
+!dist/ilha-primordial-windows.zip

@@ -8,7 +8,8 @@
 import * as THREE from 'three';
 import { BALANCE } from '../core/balance.js';
 import { events, EV } from '../core/event_bus.js';
-import { itemName } from '../items/items.js';
+import { ITEMS, itemName } from '../items/items.js';
+import { sound } from '../audio/audio.js';
 import { game } from '../core/game_manager.js';
 
 const REACH = 3.4;        // alcance para objetos (m)
@@ -161,16 +162,22 @@ export class PlayerInteraction {
       const pct = Math.floor((c.tameProgress ?? 0) * 100);
       const fav = c.species.comida_preferida;
       const plate = Object.values(c.tameFood ?? {}).reduce((a, n) => a + n, 0);
-      // pouco torpor e tem baga-escura: dar baga-escura primeiro
-      if (c.torpor < c.stats.torpor * 0.4 && this.inv.count('baga_escura') > 0) {
-        return { kind: 'tame-sleep', c, text: `Dar Baga-Escura (mais sono) · domando ${pct}%` };
+      // pouco torpor e tem narcótico/baga-escura: dar primeiro (não acorda)
+      if (c.torpor < c.stats.torpor * 0.4) {
+        const sleepy = this.inv.count('narcotico') > 0 ? 'narcotico' : this.inv.count('baga_escura') > 0 ? 'baga_escura' : null;
+        if (sleepy) return { kind: 'tame-sleep', c, item: sleepy, text: `Dar ${itemName(sleepy)} (mais sono) · domando ${pct}%` };
       }
       const food = this._tameFoodFor(c);
       if (!food) return { kind: 'hint', key: 'interact', text: `Domando ${pct}% · precisa de ${itemName(fav)}${plate ? ` (comendo: ${plate})` : ''}` };
       return { kind: 'tame-feed', c, food, text: `Dar ${itemName(food)} · domando ${pct}%${plate ? ` (no prato: ${plate})` : ''}` };
     }
     if (c.tamed && c.owner === this.player) {
-      const ride = c.species.pode_montar && !c.flies && !c.isBaby ? (game.isTouch ? ' · botão Montar' : ' · F: montar') : '';
+      const rideable = c.species.pode_montar && !c.flies && !c.isBaby;
+      // sela: com a Sela na mão, Interagir põe a sela
+      if (rideable && !c.saddled && BALANCE.sela.precisa && this.inv.equipped?.id === 'sela') {
+        return { kind: 'saddle', c, text: `Pôr a sela em ${c.name ?? c.species.nome}` };
+      }
+      const ride = rideable ? (c.saddled || !BALANCE.sela.precisa ? (game.isTouch ? ' · botão Montar' : ' · F: montar') : ' · sem sela') : '';
       return { kind: 'tame-order', c, text: `${c.name ?? c.species.nome}: ${c.follow ? 'mandar ficar' : 'mandar seguir'}${ride}` };
     }
     return null;
@@ -186,7 +193,9 @@ export class PlayerInteraction {
   }
 
   _waterTarget(body) {
-    return { kind: 'water', body, text: body.fresh ? 'Beber água' : 'Água do mar (salgada)' };
+    const held = this.inv.equipped;
+    const filling = body.fresh && held && ITEMS[held.id]?.cantil;
+    return { kind: 'water', body, text: filling ? 'Encher o cantil' : body.fresh ? 'Beber água' : 'Água do mar (salgada)' };
   }
 
   _interact(target) {
@@ -203,10 +212,20 @@ export class PlayerInteraction {
       this._timer = 0;
       return;
     }
+    if (target.kind === 'saddle') {
+      const c = target.c;
+      this.inv.remove('sela', 1);
+      c.saddled = true;
+      events.emit(EV.MESSAGE, { text: `Sela colocada em ${c.name ?? c.species.nome}. Agora dá para montar!`, kind: 'gain' });
+      this._timer = 0;
+      return;
+    }
     if (target.kind === 'tame-sleep') {
       const c = target.c;
-      this.inv.remove('baga_escura', 1);
-      c.torpor = Math.min(c.stats.torpor, c.torpor + c.stats.torpor * BALANCE.domar.baga_escura_torpor);
+      const it = target.item ?? 'baga_escura';
+      this.inv.remove(it, 1);
+      const D = BALANCE.domar;
+      c.torpor = Math.min(c.stats.torpor, c.torpor + c.stats.torpor * (it === 'narcotico' ? D.narcotico_torpor : D.baga_escura_torpor));
       events.emit(EV.MESSAGE, { text: `${c.species.nome} dormiu mais um pouco`, kind: 'info' });
       this._timer = 0;
       return;
@@ -228,6 +247,21 @@ export class PlayerInteraction {
       return;
     }
     if (target.kind === 'water') {
+      // com o cantil na mão: enche
+      const held = this.inv.equipped;
+      const cn = held && ITEMS[held.id]?.cantil;
+      if (cn && target.body.fresh) {
+        if ((held.agua ?? 0) >= cn.capacidade - 0.5) {
+          events.emit(EV.MESSAGE, { text: 'Cantil já está cheio.', kind: 'info' });
+        } else {
+          held.agua = cn.capacidade;
+          events.emit(EV.MESSAGE, { text: 'Cantil cheio de água.', kind: 'gain' });
+          events.emit(EV.INVENTORY_CHANGED, { inventory: this.inv });
+          sound.play('beber');
+        }
+        this._timer = 0;
+        return;
+      }
       if (!target.body.fresh) {
         events.emit(EV.MESSAGE, { text: 'Água salgada não mata a sede!', kind: 'warn' });
         return;

@@ -179,9 +179,10 @@ function boot(hotData = {}) {
     // Inventário, coleta e crafting
     const inventory = new Inventory();
     const crafting = new Crafting(inventory, player.stats);
-    // bancada a até 6 m libera as receitas avançadas
+    // bancada, pilão ou forja a até 6 m liberam as receitas delas
+    const STATIONS = ['bancada', 'pilao', 'forja'];
     crafting.stationsNear = () => world.structures
-      .filter((st) => !st.removed && st.type === 'bancada' && st.position.distanceTo(player.position) < 6)
+      .filter((st) => !st.removed && STATIONS.includes(st.type) && st.position.distanceTo(player.position) < 6)
       .map((st) => st.type);
     const actions = new PlayerActions(player, world, inventory);
     player.actions = actions;
@@ -448,7 +449,7 @@ function boot(hotData = {}) {
     return {
       id: c.species.id, level: c.level, seed: c.statSeed, sex: c.sex, x: +c.pos.x.toFixed(2), z: +c.pos.z.toFixed(2),
       yaw: +c.yaw.toFixed(2), follow: !!c.follow, growth: +c.growth.toFixed(3), age: Math.round(c.age),
-      hp: Math.round(c.health), name: c.name ?? null, adult: +c.adultScale.toFixed(4),
+      hp: Math.round(c.health), name: c.name ?? null, adult: +c.adultScale.toFixed(4), saddled: !!c.saddled,
     };
   }
 
@@ -466,6 +467,7 @@ function boot(hotData = {}) {
     c.owner = ctx.player;
     c.follow = t.follow;
     c.name = t.name ?? c.species.nome;
+    c.saddled = !!t.saddled;
     c.home.set(c.pos.x, c.pos.z);
     c._setState('parado');
     c.idleFor = c.follow ? 0.5 : 1e9;
@@ -500,7 +502,11 @@ function boot(hotData = {}) {
     const c = ctx.creatures.findMountable(p, p.position, 5);
     if (c) p.mount(c);
     else if (ctx.creatures.tamedBy(p).length) {
-      events.emit(EV.MESSAGE, { text: 'Chegue perto de um bicho domado que dá para montar.', kind: 'info' });
+      const near = ctx.creatures.tamedBy(p).find((o) => o.species.pode_montar && !o.flies && Math.hypot(o.pos.x - p.position.x, o.pos.z - p.position.z) - o.radius < 5);
+      events.emit(EV.MESSAGE, {
+        text: near && !near.saddled ? 'Precisa de uma Sela: crie no Inventário, segure na mão e use Interagir no bicho.' : 'Chegue perto de um bicho domado que dá para montar.',
+        kind: 'info',
+      });
     }
   }
 
@@ -598,6 +604,7 @@ function boot(hotData = {}) {
     }
     if (input.wasPressed('inspect')) ctx.inspect.toggle();
     if (input.wasPressed('map')) ctx.mapScreen.toggle(ctx.player, ctx.camCtl.yaw);
+    if (input.wasPressed('ammo')) ctx.actions.cycleArrow(); // Q: troca a flecha do arco
     if (ctx.mapScreen.visible) ctx.mapScreen.update(ctx.player, ctx.camCtl.yaw);
     if (input.wasPressed('camera')) settings.set('cameraMode', ctx.camCtl.mode === 'primeira' ? 'terceira' : 'primeira');
     for (let i = 0; i < 8; i++) if (input.wasPressed(`slot${i + 1}`)) ctx.actions.pressHotbar(i);
@@ -636,6 +643,10 @@ function boot(hotData = {}) {
   }
 
   // Interagir com a bancada abre o crafting.
+  events.on(EV.OPEN_STORAGE, ({ box }) => {
+    openInventory();
+    ctx.invScreen.openBox(box);
+  });
   events.on(EV.OPEN_CRAFTING, () => {
     openInventory();
     ctx.invScreen.showTab('craft');
@@ -655,7 +666,8 @@ function boot(hotData = {}) {
   events.on(EV.PLAYER_DIED, () => sound.play('morte'));
   events.on(EV.LEVEL_UP, ({ level }) => {
     sound.play('nivel');
-    events.emit(EV.MESSAGE, { text: `Nível ${level}! Ganhou ponto de habilidade (Inventário → Habilidades)`, kind: 'gain' });
+    const ep = ctx?.player.stats.engramsForLevel(level) ?? 0;
+    events.emit(EV.MESSAGE, { text: `Nível ${level}! +1 habilidade e +${ep} pontos de engrama (Inventário → Criar → Aprender)`, kind: 'gain' });
   });
   events.on(EV.PLACED, ({ structure }) => sound.play('colocar', structure.position));
   events.on(EV.STRUCTURE_USED, ({ structure }) => structure.type === 'fogueira' && sound.play('acender', structure.position));
@@ -724,6 +736,7 @@ function boot(hotData = {}) {
         interaction.update(dt, input);
         creatures.update(dt, player, camera);
         crafting.update(dt);
+        ctx.inventory.update(dt);
         if (invScreen.visible) invScreen.tick();
         break;
       case STATE.DEAD:

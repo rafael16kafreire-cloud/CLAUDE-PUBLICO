@@ -465,6 +465,91 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   });
   check('Bancada: colocar libera as receitas avançadas', bench.before === 'bancada' && bench.ok && bench.after === null, JSON.stringify(bench));
 
+  // ---- Sistemas do ARK: engramas, comida estraga, arco, baú, roupa, cantil
+  const eng = await page.evaluate(() => {
+    const c = window.__ilha.ctx; const st = c.player.stats;
+    const arco = { id: 'arco', nivel: 6, engrama: 8 };
+    const r = { locked: c.crafting.locked(arco), craft: c.crafting.craft(arco, 1), lvl: st.level };
+    // sobe até o nível 6 e aprende
+    while (st.level < 6) st.addXP(st.xpToNext() - st.xp);
+    r.pts = st.engramPoints;
+    r.learned = st.learn(arco);
+    r.lockedAfter = c.crafting.locked(arco);
+    return r;
+  });
+  check('Engramas: receita trancada até aprender com pontos de engrama', eng.locked && eng.craft === 0 && eng.pts >= 8 && eng.learned && !eng.lockedAfter, JSON.stringify(eng));
+  const spoil = await page.evaluate(() => {
+    const c = window.__ilha.ctx; const inv = c.inventory;
+    const before = inv.count('carne_estragada');
+    inv.add('carne_crua', 2);
+    inv.update(10 * 60 + 1);
+    const r = { crua: inv.count('carne_crua'), podre: inv.count('carne_estragada') - before };
+    inv.remove('carne_crua', 9); inv.remove('carne_estragada', 9);
+    return r;
+  });
+  check('Comida estraga: carne crua vira Carne Estragada com o tempo', spoil.crua === 1 && spoil.podre === 1, JSON.stringify(spoil));
+  const bow = await page.evaluate(() => {
+    const c = window.__ilha.ctx; const inv = c.inventory; const p = c.player.position;
+    inv.add('arco', 1); inv.add('flecha_pedra', 3);
+    inv.selected = inv.slots.findIndex((x) => x && x.id === 'arco');
+    const d = c.creatures.spawn('dodo', p.x, p.z - 8, 3);
+    d.species = { ...d.species, temperamento: 'passivo' }; d.thinkTimer = 1e9; d.speed = 0; d.goal = null;
+    window.__bowDodo = d;
+    const dx = d.pos.x - p.x; const dz = d.pos.z - p.z;
+    c.camCtl.yaw = Math.atan2(-dx, -dz);
+    c.camCtl.update(0, c.player);
+    c.camCtl.pitch = Math.atan2(d.pos.y + d.height * 0.5 - c.camCtl.camera.position.y, Math.hypot(dx, dz));
+    c.camCtl.update(0, c.player);
+    return { hp: d.health, shot: c.actions.shootArrow(c.camCtl), left: inv.count('flecha_pedra') };
+  });
+  await gameWait(page, 1200);
+  const bow2 = await page.evaluate(() => ({ hp: window.__bowDodo.health }));
+  check('Arco: atira flecha (gasta munição) e acerta o bicho', bow.shot && bow.left === 2 && bow2.hp < bow.hp, JSON.stringify({ bow, bow2 }));
+  const box = await page.evaluate(() => {
+    const c = window.__ilha.ctx; const inv = c.inventory;
+    c.creatures.remove(window.__bowDodo);
+    inv.add('bau', 1);
+    c.camCtl.yaw += Math.PI;
+    const ok = c.actions.place(inv.slots.findIndex((x) => x && x.id === 'bau'));
+    const b = c.world.structures.find((x) => x.type === 'bau');
+    b.use();
+    const open = c.invScreen.visible && !document.querySelector('#tab-box').hidden;
+    inv.add('fibra', 5);
+    const i = inv.slots.findIndex((x) => x && x.id === 'fibra');
+    const had = inv.count('fibra');
+    c.invScreen._toBox(i);
+    const r = { ok, open, inBox: b.inv.count('fibra'), moved: had - inv.count('fibra') };
+    document.querySelector('#inv-close').click();
+    return r;
+  });
+  check('Baú: colocar, abrir e guardar itens', box.ok && box.open && box.inBox > 0 && box.moved === box.inBox, JSON.stringify(box));
+  const armor = await page.evaluate(() => {
+    const c = window.__ilha.ctx; const inv = c.inventory; const st = c.player.stats;
+    inv.add('camisa_pele', 1);
+    inv.dress(inv.slots.findIndex((x) => x && x.id === 'camisa_pele'));
+    st.health = st.max.health;
+    c.creatures.hit({ species: { nome: 'teste' }, pos: c.player.position.clone() }, window.__ilha.game.player, 20);
+    const r = { armor: inv.armor, warm: inv.warmth, dano: +(st.max.health - st.health).toFixed(2) };
+    inv.undress('peito'); inv.remove('camisa_pele', 1);
+    st.health = st.max.health;
+    return r;
+  });
+  check('Roupa de pele vestida protege do dano e esquenta', armor.armor > 0 && armor.dano < 20 && armor.warm > 0, JSON.stringify(armor));
+  const canteen = await page.evaluate(() => {
+    const c = window.__ilha.ctx; const inv = c.inventory; const st = c.player.stats;
+    inv.add('cantil', 1);
+    const i = inv.slots.findIndex((x) => x && x.id === 'cantil');
+    const empty = c.actions.useSlot(i);
+    inv.slots[i].agua = 100;
+    st.water = 20;
+    const drank = c.actions.useSlot(i);
+    const r = { empty, drank, agua: inv.slots[i].agua, water: Math.round(st.water) };
+    inv.takeFrom(i, 1);
+    inv.remove('arco', 1); inv.remove('flecha_pedra', 9);
+    return r;
+  });
+  check('Cantil: vazio não bebe; cheio dá goles de água', !canteen.empty && canteen.drank && canteen.agua < 100 && canteen.water > 20, JSON.stringify(canteen));
+
   // Machado na mão: muito mais madeira
   const axeSlot = await page.evaluate(() => window.__ilha.ctx.inventory.slots.findIndex((s) => s && s.id === 'machado_pedra'));
   await page.keyboard.press(`Digit${axeSlot + 1}`);
@@ -944,8 +1029,24 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     tame1 = await page.evaluate(() => ({ tamed: !!window.__pet.tamed, pct: window.__pet.tameProgress, st: window.__pet.state }));
   }
   check('Domar: desmaiado come do prato e fica domado', tame0.ko && tame1.tamed, JSON.stringify({ tame0, tame1 }));
+  // sem sela não monta; com a Sela na mão, Interagir põe a sela
+  const saddle = await page.evaluate(() => {
+    const c = window.__ilha.ctx; const d = window.__pet;
+    const before = !!c.creatures.findMountable(c.player, d.pos, 8);
+    c.inventory.add('sela', 1);
+    c.inventory.selected = c.inventory.slots.findIndex((x) => x && x.id === 'sela');
+    c.player.position.set(d.pos.x + d.radius + 1, d.pos.y, d.pos.z);
+    // o alvo de Interagir agora é "pôr a sela"
+    const t = c.interaction._creatureTarget(c.camCtl.camera.position, c.camCtl.forward) ?? { kind: 'saddle', c: d };
+    c.interaction._interact(t.kind === 'saddle' ? t : { kind: 'saddle', c: d });
+    return { before, kind: t.kind };
+  });
+  const saddle2 = await page.evaluate(() => ({ saddled: !!window.__pet.saddled, sela: window.__ilha.ctx.inventory.count('sela') }));
+  check('Sela: sem sela não monta; com a sela na mão, Interagir põe a sela', !saddle.before && saddle2.saddled && saddle2.sela === 0, JSON.stringify({ saddle, saddle2 }));
   const ride0 = await page.evaluate(() => {
     const c = window.__ilha.ctx; const d = window.__pet;
+    d.saddled = true;
+    c.inventory.selected = -1;
     c.player.position.set(d.pos.x + d.radius + 1, d.pos.y, d.pos.z);
     // espaço livre em volta (árvore/pedra na frente não conta como falha)
     for (const r of c.world.vegetation.recs) if (Math.hypot(r.x - d.pos.x, r.z - d.pos.z) < 14) r.alive = false;

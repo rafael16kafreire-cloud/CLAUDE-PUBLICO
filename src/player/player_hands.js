@@ -125,6 +125,22 @@ function makeTool(kind) {
     inner.position.y = 0.58;
     g.add(wrap, flame, inner);
     g.userData.flame = flame;
+  } else if (kind === 'arco') {
+    // arco curvo: a mão segura o meio; as pontas e a corda vêm para perto
+    // de quem atira (arco em pé, um pouco inclinado)
+    const R = 0.34;
+    const half = Math.PI * 0.38;
+    const arc = new THREE.TorusGeometry(R, 0.016, 5, 16, half * 2);
+    arc.rotateZ(Math.PI - half);
+    arc.translate(R, 0, 0); // meio do arco no punho
+    arc.rotateY(-Math.PI / 2); // pontas para trás (+z)
+    const bow = new THREE.Mesh(arc, WOOD);
+    const tipZ = R * (1 - Math.cos(half));
+    const tipY = R * Math.sin(half);
+    const string = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.003, tipY * 2, 3), ROPE);
+    string.position.z = tipZ;
+    const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.1, 6), ROPE);
+    g.add(bow, string, grip);
   } else if (kind === 'clava') {
     g.add(handle(0.42, 0.025));
     const head = new THREE.Mesh(new THREE.SphereGeometry(0.075, 8, 6), WOOD);
@@ -143,11 +159,12 @@ export class PlayerHands {
     this.left = new THREE.Group();
     this.root.add(this.right);
     this.tools = {};
-    for (const k of ['machado', 'picareta', 'lanca', 'clava', 'tocha']) {
+    for (const k of ['machado', 'picareta', 'lanca', 'clava', 'tocha', 'arco']) {
       const t = makeTool(k);
       t.visible = false;
       t.position.z = -0.26;
-      t.rotation.x = -1.2; // inclinado para frente
+      t.rotation.x = k === 'arco' ? -0.1 : -1.2; // inclinado para frente (arco quase em pé)
+      if (k === 'arco') t.rotation.z = 0.35;
       this.right.add(t);
       this.tools[k] = t;
     }
@@ -245,6 +262,10 @@ export class PlayerHands {
         hand.position.z -= k * 0.28;
         hand.position.x -= k * 0.1 * this._side;
         hand.position.y += k * 0.06;
+      } else if (this._kind === 'arco') {
+        // tiro: recua um pouco (coice da corda)
+        const k = Math.sin(t * Math.PI);
+        this.right.position.z += k * 0.08;
       } else if (this._kind === 'lanca') {
         const k = Math.sin(t * Math.PI);
         this.right.position.z -= k * 0.35;

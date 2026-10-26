@@ -15,6 +15,7 @@ export const EV = {
   INTERACT_PROMPT: 'interact_prompt',     // { text } ou null  "Beber água"
   WATER_DRUNK: 'water_drunk',             // { fresh, amount }
   XP_GAINED: 'xp_gained',                 // { amount }
+  ITEM_SPOILED: 'item_spoiled',           // { id } (comida estragou)
   LEVEL_UP: 'level_up',                   // { level, points }
   SKILLS_CHANGED: 'skills_changed',       // { key } ponto de habilidade gasto
   CREATURE_TAMED: 'creature_tamed',       // { creature }
@@ -29,6 +30,7 @@ export const EV = {
   ITEM_GAINED: 'item_gained',             // { id, amount }
   CRAFTED: 'crafted',                     // { id }  item ficou pronto
   STRUCTURE_USED: 'structure_used',       // { structure }  acendeu fogueira, dormiu...
+  OPEN_STORAGE: 'open_storage',           // { box }  abriu um baú
   OPEN_CRAFTING: 'open_crafting',         // { station }  abriu a bancada
   PLACED: 'placed',                       // { type, structure }  fogueira, saco de dormir...
   ATE: 'ate',                             // { id }

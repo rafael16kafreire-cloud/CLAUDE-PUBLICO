@@ -18,6 +18,7 @@ import { findRespawnPoints } from './respawn_points.js';
 import { DeathBag } from './death_bag.js';
 import { sharedTime } from './materials.js';
 import { createStructure } from './structures.js';
+import { Projectiles } from './projectiles.js';
 import { BuildPiece, PIECES } from './building.js';
 import recipes from '../data/crafting/receitas.json';
 import { events, EV } from '../core/event_bus.js';
@@ -49,6 +50,7 @@ export class World {
     this.grass = new Grass(this.map, this.water, scene);
     this.sky = new Sky(scene);
     this.effects = new Effects(scene);
+    this.projectiles = new Projectiles(this);
     this.effects.groundAt = (x, z) => this.heightAt(x, z);
     this.underwater = new Underwater(scene);
     this.deathBags = [];
@@ -246,6 +248,7 @@ export class World {
     this.sky.setTime(this.time);
     for (const s of this.structures) s.update?.(dt);
     this.structures = this.structures.filter((s) => !s.removed);
+    this.projectiles.update(dt);
     // luz da fogueira acesa mais perto
     let best = null;
     let bd = 60;

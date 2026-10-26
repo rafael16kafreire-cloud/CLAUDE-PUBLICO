@@ -1,17 +1,77 @@
 // =============================================================
 // INVENTÁRIO – espaços (slots) com pilhas de itens e peso.
 // Os 8 primeiros espaços são a BARRA RÁPIDA (embaixo na tela).
-// Cada espaço: { id, qty, dur } (dur = durabilidade de ferramentas).
+// Cada espaço: { id, qty, dur, spoil, agua }
+//   dur = durabilidade de ferramentas e roupas
+//   spoil = segundos até a próxima unidade de comida estragar
+//   agua = água dentro do cantil
 // =============================================================
 import { events, EV } from '../core/event_bus.js';
 import { ITEMS } from '../items/items.js';
 
 export const HOTBAR = 8;
+// Partes do corpo onde se veste roupa/armadura
+export const EQUIP_SLOTS = ['cabeca', 'peito', 'maos', 'pernas', 'pes'];
 
 export class Inventory {
   constructor(size = 38) {
     this.slots = new Array(size).fill(null);
     this.selected = -1; // espaço da barra rápida em uso (-1 = mãos vazias)
+    this.equip = Object.fromEntries(EQUIP_SLOTS.map((k) => [k, null])); // roupa vestida
+  }
+
+  // Veste a roupa do espaço i (a que estava vestida volta para a mochila).
+  dress(i) {
+    const s = this.slots[i];
+    const eq = s && ITEMS[s.id]?.equipamento;
+    if (!eq) return false;
+    const old = this.equip[eq.slot];
+    this.slots[i] = old;
+    this.equip[eq.slot] = s;
+    if (this.selected === i) this.selected = -1;
+    this._changed();
+    return true;
+  }
+
+  // Tira a roupa da parte do corpo (vai para a mochila).
+  undress(part) {
+    const s = this.equip[part];
+    if (!s) return false;
+    const free = this.slots.findIndex((x, k) => !x && k >= HOTBAR);
+    const k = free >= 0 ? free : this.slots.findIndex((x) => !x);
+    if (k < 0) return false;
+    this.slots[k] = s;
+    this.equip[part] = null;
+    this._changed();
+    return true;
+  }
+
+  // Soma da proteção da roupa vestida (0..1) e do calor (graus).
+  get armor() {
+    let a = 0;
+    for (const s of Object.values(this.equip)) if (s) a += ITEMS[s.id].equipamento.armadura ?? 0;
+    return a / 100;
+  }
+
+  get warmth() {
+    let t = 0;
+    for (const s of Object.values(this.equip)) if (s) t += ITEMS[s.id].equipamento.frio ?? 0;
+    return t;
+  }
+
+  // Cada golpe levado gasta um pouco das roupas; a que zera rasga.
+  wearArmor(amount = 1) {
+    let torn = null;
+    for (const [k, s] of Object.entries(this.equip)) {
+      if (!s) continue;
+      s.dur = (s.dur ?? ITEMS[s.id].equipamento.durabilidade) - amount;
+      if (s.dur <= 0) {
+        torn = ITEMS[s.id].nome;
+        this.equip[k] = null;
+      }
+    }
+    if (torn) this._changed();
+    return torn;
   }
 
   _changed() {
@@ -62,6 +122,9 @@ export class Inventory {
       const k = Math.min(max, left);
       this.slots[i] = { id, qty: k };
       if (def.ferramenta) this.slots[i].dur = extra.dur ?? def.ferramenta.durabilidade;
+      if (def.equipamento) this.slots[i].dur = extra.dur ?? def.equipamento.durabilidade;
+      if (def.comida?.estraga_min) this.slots[i].spoil = extra.spoil ?? def.comida.estraga_min * 60;
+      if (def.cantil) this.slots[i].agua = extra.agua ?? 0;
       left -= k;
     }
     if (qty - left > 0) this._changed();
@@ -81,6 +144,31 @@ export class Inventory {
     }
     if (qty - left > 0) this._changed();
     return qty - left;
+  }
+
+  // Comida estraga: a cada "estraga_min" minutos uma unidade da pilha
+  // estraga (carne vira Carne Estragada). mult < 1 = mais devagar (baú).
+  update(dt, mult = 1) {
+    let changed = false;
+    for (let i = 0; i < this.slots.length; i++) {
+      const s = this.slots[i];
+      const min = s && ITEMS[s.id]?.comida?.estraga_min;
+      if (!min) continue;
+      s.spoil = (s.spoil ?? min * 60) - dt * mult;
+      if (s.spoil > 0) continue;
+      s.spoil += min * 60;
+      s.qty -= 1;
+      changed = true;
+      const rotten = s.id.startsWith('carne_') ? 'carne_estragada' : null;
+      if (s.qty <= 0) {
+        this.slots[i] = rotten ? { id: rotten, qty: 1 } : null;
+        if (!rotten && this.selected === i) this.selected = -1;
+      } else if (rotten && this.add(rotten, 1) < 1) {
+        // sem espaço: some
+      }
+      if (rotten) events.emit(EV.ITEM_SPOILED, { id: s.id });
+    }
+    if (changed) this._changed();
   }
 
   takeFrom(i, qty = 1) {
@@ -159,8 +247,9 @@ export class Inventory {
 
   // Tudo o que tem (para o saco de morte).
   takeAll() {
-    const all = this.slots.filter(Boolean);
+    const all = [...this.slots.filter(Boolean), ...Object.values(this.equip).filter(Boolean)];
     this.slots.fill(null);
+    for (const k of EQUIP_SLOTS) this.equip[k] = null;
     this.selected = -1;
     this._changed();
     return all;
@@ -187,13 +276,14 @@ export class Inventory {
   }
 
   toJSON() {
-    return { slots: this.slots, selected: this.selected };
+    return { slots: this.slots, selected: this.selected, equip: this.equip };
   }
 
   fromJSON(d) {
     if (!d?.slots) return;
     this.slots = d.slots.slice(0, this.slots.length).concat(new Array(Math.max(0, this.slots.length - d.slots.length)).fill(null));
     this.selected = d.selected ?? -1;
+    for (const k of EQUIP_SLOTS) this.equip[k] = d.equip?.[k] ?? null;
     this._changed();
   }
 }

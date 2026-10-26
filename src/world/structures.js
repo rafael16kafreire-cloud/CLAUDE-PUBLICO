@@ -10,6 +10,7 @@
 import * as THREE from 'three';
 import { BALANCE } from '../core/balance.js';
 import { events, EV } from '../core/event_bus.js';
+import { Inventory } from '../inventory/inventory.js';
 
 const STONE_MAT = new THREE.MeshLambertMaterial({ color: '#7d7a72' });
 const LOG_MAT = new THREE.MeshLambertMaterial({ color: '#5a3e26' });
@@ -295,8 +296,140 @@ export class Workbench extends Structure {
   }
 }
 
+// ------------------------------------------------------------
+// Pilão: perto dele dá para fazer Narcótico. Interagir abre o Criar.
+// ------------------------------------------------------------
+const MORTAR_MAT = new THREE.MeshLambertMaterial({ color: '#8f8a80' });
+const MORTAR_DARK = new THREE.MeshLambertMaterial({ color: '#5f5b54' });
+
+export class Mortar extends Structure {
+  constructor(world, position, rotY, id) {
+    super(world, 'pilao', position, rotY, id);
+    this.interactPoint = position.clone().add(new THREE.Vector3(0, 0.5, 0));
+    // tigela de pedra (cilindro aberto em cima) e a mão de pilão
+    const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.32, 0.45, 12, 1, true), MORTAR_MAT);
+    bowl.position.y = 0.225;
+    bowl.castShadow = true;
+    const inside = new THREE.Mesh(new THREE.CircleGeometry(0.4, 12), MORTAR_DARK);
+    inside.rotation.x = -Math.PI / 2;
+    inside.position.y = 0.3;
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.38, 0.06, 12), MORTAR_DARK);
+    base.position.y = 0.03;
+    const pestle = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.09, 0.62, 8), MORTAR_MAT);
+    pestle.position.set(0.12, 0.5, 0.05);
+    pestle.rotation.z = -0.5;
+    this.root.add(bowl, inside, base, pestle);
+  }
+
+  promptText() {
+    return 'Usar pilão (criar Narcótico)';
+  }
+
+  use() {
+    events.emit(EV.OPEN_CRAFTING, { station: this });
+    return false;
+  }
+}
+
+// ------------------------------------------------------------
+// Forja: perto dela, Minério de Ferro vira Lingote de Metal (no Criar).
+// Fica com fogo aceso enquanto você está perto.
+// ------------------------------------------------------------
+const FORGE_MAT = new THREE.MeshLambertMaterial({ color: '#6a6460' });
+
+export class Forge extends Structure {
+  constructor(world, position, rotY, id) {
+    super(world, 'forja', position, rotY, id);
+    this.interactRadius = 1.4;
+    this.interactPoint = position.clone().add(new THREE.Vector3(0, 0.8, 0));
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.95, 1.1, 10), FORGE_MAT);
+    body.position.y = 0.55;
+    body.castShadow = true;
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.65, 0.5, 10), FORGE_MAT);
+    top.position.y = 1.35;
+    top.castShadow = true;
+    const chimney = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.25, 0.6, 8), MORTAR_DARK);
+    chimney.position.y = 1.85;
+    const mouth = new THREE.Mesh(new THREE.CircleGeometry(0.32, 10), ASH_MAT);
+    mouth.position.set(0, 0.55, -0.93);
+    mouth.rotation.y = Math.PI;
+    this.fire = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.42, 6, 1, true), FLAME_MAT);
+    this.fire.position.set(0, 0.5, -0.82);
+    this.root.add(body, top, chimney, mouth, this.fire);
+    this._t = 0;
+  }
+
+  promptText() {
+    return 'Usar forja (Lingote de Metal)';
+  }
+
+  use() {
+    events.emit(EV.OPEN_CRAFTING, { station: this });
+    return false;
+  }
+
+  update(dt) {
+    this._t += dt;
+    this.fire.scale.y = 0.85 + Math.sin(this._t * 13) * 0.15;
+  }
+}
+
+// ------------------------------------------------------------
+// Baú: guarda itens (30 espaços). Comida estraga mais devagar dentro.
+// ------------------------------------------------------------
+export class StorageBox extends Structure {
+  constructor(world, position, rotY, id) {
+    super(world, 'bau', position, rotY, id);
+    this.interactPoint = position.clone().add(new THREE.Vector3(0, 0.45, 0));
+    this.inv = new Inventory(30);
+    const box = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.55, 0.65), PLANK_MAT);
+    box.position.y = 0.3;
+    box.castShadow = true;
+    const lid = new THREE.Mesh(new THREE.BoxGeometry(1.14, 0.12, 0.69), PLANK_DARK);
+    lid.position.y = 0.62;
+    lid.castShadow = true;
+    for (const x of [-0.42, 0.42]) {
+      const band = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.58, 0.7), TOOL_MAT);
+      band.position.set(x, 0.33, 0);
+      this.root.add(band);
+    }
+    const lock = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.14, 0.04), TOOL_MAT);
+    lock.position.set(0, 0.52, -0.34);
+    this.root.add(box, lid, lock);
+  }
+
+  promptText() {
+    const n = this.inv.slots.filter(Boolean).length;
+    return `Abrir baú (${n}/30)`;
+  }
+
+  use() {
+    events.emit(EV.OPEN_STORAGE, { box: this });
+    return false;
+  }
+
+  update(dt) {
+    this.inv.update(dt, BALANCE.estragar.no_bau_mult);
+  }
+
+  toJSON() {
+    return { ...super.toJSON(), slots: this.inv.slots };
+  }
+
+  applyState(d) {
+    if (d.slots) this.inv.fromJSON({ slots: d.slots });
+  }
+}
+
 export function createStructure(world, d) {
   if (d.type === 'bancada') return new Workbench(world, new THREE.Vector3(d.x, d.y, d.z), d.rot, d.id);
+  if (d.type === 'pilao') return new Mortar(world, new THREE.Vector3(d.x, d.y, d.z), d.rot, d.id);
+  if (d.type === 'forja') return new Forge(world, new THREE.Vector3(d.x, d.y, d.z), d.rot, d.id);
+  if (d.type === 'bau') {
+    const b = new StorageBox(world, new THREE.Vector3(d.x, d.y, d.z), d.rot, d.id);
+    if (d.slots) b.applyState(d);
+    return b;
+  }
   const pos = new THREE.Vector3(d.x, d.y, d.z);
   if (d.type === 'fogueira') {
     const s = new Campfire(world, pos, d.rot, d.id);

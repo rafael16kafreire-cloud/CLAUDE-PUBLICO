@@ -132,6 +132,58 @@ const SHAPES = {
     <path d="M12 42 L26 20" stroke="${a}" stroke-width="5" stroke-linecap="round"/>
     <path d="M22 22 C20 12 28 4 36 8 C42 12 40 22 30 26 Z" fill="${b}"/>
     <circle cx="33" cy="12" r="2" fill="#2e2216"/><circle cx="29" cy="19" r="1.8" fill="#2e2216"/>`,
+  pilao: (a, b) => `
+    <path d="M8 22 H40 L36 40 H12 Z" fill="${a}"/>
+    <ellipse cx="24" cy="22" rx="16" ry="4.5" fill="${b}"/>
+    <path d="M30 22 L40 6" stroke="${b}" stroke-width="5" stroke-linecap="round"/>
+    <path d="M30 22 L40 6" stroke="${a}" stroke-width="2.4" stroke-linecap="round" opacity=".6"/>`,
+  arco: (a, b) => `
+    <path d="M14 6 C34 12 34 36 14 42" fill="none" stroke="${a}" stroke-width="4" stroke-linecap="round"/>
+    <path d="M14 6 L14 42" stroke="${b}" stroke-width="1.4"/>
+    <path d="M10 24 H38" stroke="#7a5a3a" stroke-width="2"/><path d="M38 24 L33 21 M38 24 L33 27" stroke="#8a8a90" stroke-width="2.2"/>`,
+  flecha: (a, b) => `
+    <path d="M8 40 L36 12" stroke="${a}" stroke-width="2.8" stroke-linecap="round"/>
+    <path d="M36 12 L42 5 L40 14 Z M36 12 L42 5 L33 7 Z" fill="${b}"/>
+    <path d="M8 40 L5 35 M8 40 L13 43 M12 36 L9 31 M12 36 L17 39" stroke="#e8e0c8" stroke-width="2"/>`,
+  cantil: (a, b) => `
+    <path d="M24 6 h4 v6 h-4 Z" fill="#5a4430"/>
+    <path d="M14 18 C14 12 34 12 34 18 L36 36 C36 44 12 44 12 36 Z" fill="${a}"/>
+    <path d="M15 30 C20 34 28 34 33 30 L34 36 C34 41 14 41 14 36 Z" fill="${b}" opacity=".85"/>
+    <path d="M18 12 C14 8 34 8 30 12" fill="none" stroke="#5a4430" stroke-width="2"/>`,
+  bau: (a, b) => `
+    <rect x="6" y="18" width="36" height="22" rx="2" fill="${a}"/>
+    <path d="M6 18 C6 9 42 9 42 18 Z" fill="${b}"/>
+    <path d="M14 12 V40 M34 12 V40" stroke="#6a6e74" stroke-width="2.6"/>
+    <rect x="21" y="18" width="6" height="7" rx="1" fill="#c8b070"/>`,
+  forja: (a, b) => `
+    <path d="M10 42 L12 18 C12 10 36 10 36 18 L38 42 Z" fill="${a}"/>
+    <rect x="20" y="4" width="8" height="10" fill="#4a4642"/>
+    <path d="M17 42 V32 C17 26 31 26 31 32 V42 Z" fill="#2e2a26"/>
+    <path d="M24 40 C19 36 22 31 24 29 C26 32 29 35 24 40 Z" fill="${b}"/>`,
+  lingote: (a, b) => `
+    <path d="M6 32 L14 20 H40 L42 32 Z" fill="${a}"/>
+    <path d="M6 32 H42 L40 38 H8 Z" fill="${b}"/>
+    <path d="M14 20 L16 26 H38 L40 20" fill="none" stroke="#e8ecf2" stroke-width="1.4" opacity=".7"/>`,
+  sela: (a, b) => `
+    <path d="M6 24 C10 14 38 14 42 24 C38 30 10 30 6 24 Z" fill="${a}"/>
+    <path d="M14 20 C16 12 22 12 24 18 C26 12 32 12 34 20" fill="${b}"/>
+    <path d="M16 28 V40 M32 28 V40" stroke="#5a4430" stroke-width="2.4"/>
+    <circle cx="16" cy="41" r="2.6" fill="none" stroke="#8a8a90" stroke-width="1.8"/><circle cx="32" cy="41" r="2.6" fill="none" stroke="#8a8a90" stroke-width="1.8"/>`,
+  capuz: (a, b) => `
+    <path d="M10 36 C8 14 40 14 38 36 L34 40 C32 30 16 30 14 40 Z" fill="${a}"/>
+    <path d="M16 36 C18 28 30 28 32 36 C28 33 20 33 16 36 Z" fill="${b}"/>`,
+  luvas: (a, b) => `
+    <path d="M10 40 V22 C10 18 14 18 14 22 V14 C14 10 18 10 18 14 V12 C18 8 22 8 22 12 V22 L26 18 C28 16 31 19 29 22 L24 34 V40 Z" fill="${a}"/>
+    <rect x="9" y="36" width="16" height="6" rx="1" fill="${b}"/>
+    <path d="M26 40 V24 C26 20 30 20 30 24 V16 C30 12 34 12 34 16 V20 C34 16 38 16 38 20 V34 L36 40 Z" fill="${a}" opacity=".85"/>`,
+  calca: (a, b) => `
+    <path d="M12 6 H36 L38 42 H28 L24 18 L20 42 H10 Z" fill="${a}"/>
+    <rect x="12" y="6" width="24" height="5" fill="${b}"/>`,
+  botas: (a, b) => `
+    <path d="M8 8 H20 V30 L30 32 C34 33 34 40 30 40 H8 Z" fill="${a}"/>
+    <path d="M8 36 H32 V40 H8 Z" fill="${b}"/>
+    <path d="M24 10 H34 V28 L42 30 C45 31 44 37 41 37 H34" fill="${a}" opacity=".7"/>`,
+
 };
 
 const iconCache = {};
