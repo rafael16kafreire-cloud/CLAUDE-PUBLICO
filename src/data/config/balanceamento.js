@@ -118,6 +118,8 @@ export default {
     folego: 15,     // +15 de fôlego embaixo d'água
     peso: 15,       // +15 kg que carrega
     forca: 5,       // +5% de dano corpo a corpo
+    velocidade: 2,  // +2% de velocidade de andar/correr
+    fortitude: 2,   // +2 °C de resistência ao frio
   },
 
   // Engramas (como no ARK): ao subir de nível você ganha pontos para

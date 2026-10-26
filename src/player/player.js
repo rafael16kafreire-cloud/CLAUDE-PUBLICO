@@ -167,7 +167,9 @@ export class Player {
   clothingWarmth() {
     const inv = this.actions?.inv;
     if (!inv) return 0;
-    return (inv.count('casaco_pele') > 0 ? BALANCE.temperatura.casaco_c : 0) + inv.warmth;
+    // Fortitude só ajuda no frio
+    const fort = this.world.temperatureAt(this.position, false) < 20 ? this.stats.fortitudeC : 0;
+    return (inv.count('casaco_pele') > 0 ? BALANCE.temperatura.casaco_c : 0) + inv.warmth + fort;
   }
 
   // ---------------------------------------------------------
@@ -316,7 +318,7 @@ export class Player {
     this.running = runRequest && this.moving && !this.crouching && st.stamina > 0.5;
     this.swimFast = false;
 
-    let speed = this.crouching ? M.agachado : this.running ? M.correr : M.andar;
+    let speed = (this.crouching ? M.agachado : this.running ? M.correr : M.andar) * st.speedMul;
     if (waterDepth > 0.5) speed *= M.na_agua_rasa;
     // carregando peso demais: anda devagar ou nem anda
     const wf = this.actions ? this.actions.weightFactor() : 1;

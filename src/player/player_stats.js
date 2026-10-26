@@ -29,7 +29,7 @@ export class PlayerStats {
     // engramas: pontos para aprender receitas e as já aprendidas
     this.engramPoints = 0;
     this.learned = new Set();
-    this.skills = { vida: 0, stamina: 0, fome: 0, sede: 0, folego: 0, peso: 0, forca: 0 };
+    this.skills = { vida: 0, stamina: 0, fome: 0, sede: 0, folego: 0, peso: 0, forca: 0, velocidade: 0, fortitude: 0 };
 
     this.dead = false;
     this.deathCause = null;
@@ -193,6 +193,16 @@ export class PlayerStats {
     return BALANCE.jogador.peso_max + this.skills.peso * BALANCE.habilidades.peso;
   }
 
+  // Multiplicador da velocidade de andar/correr (habilidade Velocidade).
+  get speedMul() {
+    return 1 + (this.skills.velocidade * BALANCE.habilidades.velocidade) / 100;
+  }
+
+  // Graus a mais de resistência ao frio (habilidade Fortitude).
+  get fortitudeC() {
+    return this.skills.fortitude * BALANCE.habilidades.fortitude;
+  }
+
   // Multiplicador do dano corpo a corpo.
   get damageMul() {
     return 1 + (this.skills.forca * BALANCE.habilidades.forca) / 100;
@@ -209,6 +219,8 @@ export class PlayerStats {
       case 'folego': return this.max.oxygen;
       case 'peso': return this.maxWeight;
       case 'forca': return 100 + this.skills.forca * H.forca;
+      case 'velocidade': return 100 + this.skills.velocidade * H.velocidade;
+      case 'fortitude': return this.skills.fortitude * H.fortitude;
       default: return 0;
     }
   }

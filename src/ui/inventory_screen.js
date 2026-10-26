@@ -25,6 +25,8 @@ const SKILLS = [
   { key: 'folego', nome: 'Fôlego', icon: ICONS.oxygen, cls: 'oxygen' },
   { key: 'peso', nome: 'Peso', icon: STAT_ICONS.peso, cls: 'weight', unit: ' kg' },
   { key: 'forca', nome: 'Força', icon: STAT_ICONS.forca, cls: 'melee', unit: '%' },
+  { key: 'velocidade', nome: 'Velocidade', icon: STAT_ICONS.velocidade, cls: 'speed', unit: '%' },
+  { key: 'fortitude', nome: 'Fortitude (frio)', icon: STAT_ICONS.fortitude, cls: 'fort', unit: ' °C' },
 ];
 
 const CATS = ['Tudo', 'Aprender', 'Ferramentas', 'Armas', 'Roupas', 'Estruturas', 'Construção', 'Cura'];
