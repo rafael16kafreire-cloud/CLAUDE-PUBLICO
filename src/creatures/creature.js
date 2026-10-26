@@ -167,6 +167,27 @@ export class Creature {
     this.sex = r() < 0.5 ? 'Macho' : 'Fêmea';
     const vida = pick('vida', [sp.vida, sp.vida]);
     const forca = pick('forca', [100, 100]);
+    const inc = sp.ark_por_nivel;
+    if (inc) {
+      // Como no ARK: cada nível acima do 1 é um ponto sorteado entre vida,
+      // stamina, oxigênio, comida, peso, dano e velocidade. Cada ponto soma
+      // uma fração do valor do nível 1 (oxigênio, comida e velocidade não
+      // mudam nada aqui). O torpor sobe com todos os níveis.
+      const pts = { vida: 0, stamina: 0, oxigenio: 0, comida: 0, peso: 0, forca: 0, velocidade: 0 };
+      const keys = Object.keys(pts);
+      for (let i = 0; i < L; i++) pts[keys[Math.floor(r() * keys.length)]]++;
+      this.levelPoints = pts;
+      this.stats = {
+        vida: Math.round(vida * (1 + inc.vida * pts.vida)),
+        forca: Math.round(forca * (1 + inc.forca * pts.forca)),
+        peso: Math.round(pick('peso', [sp.carga ?? 20, sp.carga ?? 20]) * (1 + inc.peso * pts.peso)),
+        stamina: Math.round(pick('stamina', [100, 100]) * (1 + inc.stamina * pts.stamina)),
+        velocidade: Math.round(pick('velocidade', [100, 100])),
+        torpor: Math.round(pick('torpor', [100, 100]) * (1 + inc.torpor * L)),
+      };
+      this._deriveStats();
+      return;
+    }
     this.stats = {
       vida: Math.round(vida * (1 + 0.06 * L)),
       forca: Math.round(forca * (1 + 0.03 * L)),

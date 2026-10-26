@@ -15,7 +15,7 @@ export default {
     fome_max: 100,       // barra de comida (cheia = sem fome)
     sede_max: 100,       // barra de água (cheia = sem sede)
     folego_max: 100,     // ar embaixo d'água
-    peso_max: 120,       // kg que carrega andando normal (até 150% anda devagar)
+    peso_max: 100,       // kg que carrega (igual ao ARK; até 150% anda devagar)
   },
 
   // ---------------------------------------------------------
