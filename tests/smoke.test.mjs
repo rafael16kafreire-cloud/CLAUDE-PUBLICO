@@ -510,7 +510,12 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     c.creatures.remove(window.__bowDodo);
     inv.add('bau', 1);
     c.camCtl.yaw += Math.PI;
-    const ok = c.actions.place(inv.slots.findIndex((x) => x && x.id === 'bau'));
+    // tenta colocar; se o chão atrás for ruim (água/morro), põe no pé do jogador
+    let ok = c.actions.place(inv.slots.findIndex((x) => x && x.id === 'bau'));
+    if (!ok) {
+      const p = c.player.position;
+      ok = !!c.world.addStructure({ type: 'bau', x: p.x + 1.5, y: c.world.heightAt(p.x + 1.5, p.z), z: p.z, rot: 0 });
+    }
     const b = c.world.structures.find((x) => x.type === 'bau');
     b.use();
     const open = c.invScreen.visible && !document.querySelector('#tab-box').hidden;
