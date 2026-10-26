@@ -111,12 +111,13 @@ export default {
   // Habilidades). Quanto cada ponto aumenta:
   habilidades: {
     pontos_por_nivel: 1,
-    vida: 10,       // +10 de vida máxima
+    // cada ponto soma +20 (ex.: Vida 100 -> 120)
+    vida: 20,       // +20 de vida máxima
     stamina: 20,    // +20 de stamina máxima
-    fome: 10,       // +10 na barra de comida (dura mais)
-    sede: 10,       // +10 na barra de água (dura mais)
-    folego: 15,     // +15 de fôlego embaixo d'água
-    peso: 15,       // +15 kg que carrega
+    fome: 20,       // +20 na barra de comida (dura mais)
+    sede: 20,       // +20 na barra de água (dura mais)
+    folego: 20,     // +20 de fôlego embaixo d'água
+    peso: 20,       // +20 kg que carrega
     forca: 5,       // +5% de dano corpo a corpo
     velocidade: 2,  // +2% de velocidade de andar/correr
     fortitude: 2,   // +2 °C de resistência ao frio

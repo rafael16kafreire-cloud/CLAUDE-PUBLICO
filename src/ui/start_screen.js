@@ -5,6 +5,7 @@
 // =============================================================
 import { IMPORTED } from '../creatures/imported_model.js';
 import criaturas from '../data/creatures/criaturas.json';
+import { listSlots, slotLabel } from '../core/save.js';
 
 const SPECIES = Object.fromEntries(criaturas.especies.map((e) => [e.id, e]));
 
@@ -20,6 +21,8 @@ const PLANT_CREDITS = [
   ['Árvore alta da mata', 'Agarwood', 'Valery.Li'],
   ['Arbustos de bagas', 'Bush with Berries', 'ivanmm1'],
   ['Aparência do jogador', 'Base Chibi Fantasy Blocky Head', 'UFRE Studio'],
+  ['Braço em primeira pessoa', 'First Person hands rigged', 'davidfischer'],
+  ['Troncos caídos', 'Mossy old tree log / Fallen Spruce Tree', 'autores no Sketchfab'],
 ];
 
 // Créditos dos modelos 3D (licença CC-BY pede o nome do autor)
@@ -33,11 +36,12 @@ function creditsHtml() {
   for (const [what, title, author] of PLANT_CREDITS) {
     rows.push(`<li><b>${esc(what)}</b>: “${esc(title)}” por ${esc(author)} (Sketchfab), CC-BY-4.0 — adaptado.</li>`);
   }
-  return `<details class="credits"><summary>Créditos dos modelos 3D</summary><ul>${rows.join('')}</ul></details>`;
+  rows.push('<li><b>Sons de passos, coleta e interface</b>: Kenney.nl (CC0).</li>');
+  return `<details class="credits"><summary>Créditos dos modelos 3D e sons</summary><ul>${rows.join('')}</ul></details>`;
 }
 
 export class StartScreen {
-  constructor(root, { onPlay, onHost, onJoin, onNewGame, playerName = '' }) {
+  constructor(root, { onPlay, onHost, onJoin, onNewGame, onLoadSlot, playerName = '' }) {
     const el = document.createElement('div');
     el.className = 'overlay start';
     el.innerHTML = `
@@ -47,6 +51,7 @@ export class StartScreen {
         <p class="tagline">Você acordou na beira da mata sem nada. Pegue madeira, crie ferramentas e sobreviva aos predadores da floresta.</p>
         <button type="button" class="btn btn-primary btn-play" id="btn-play" disabled>Gerando a ilha…</button>
         <button type="button" class="btn btn-small btn-new" id="btn-new" hidden>Novo jogo (apaga o salvo)</button>
+        <details class="load-box" id="load-box" hidden><summary>Carregar jogo salvo</summary><div class="save-list" id="start-slots"></div></details>
         <div class="coop-box">
           <label class="coop-name">Seu nome <input id="coop-name" maxlength="16" autocomplete="off" placeholder="Jogador"></label>
           <div class="coop-row">
@@ -83,6 +88,8 @@ export class StartScreen {
     this.el = el;
     this.button = el.querySelector('#btn-play');
     this.button.addEventListener('click', () => onPlay());
+    this.onLoadSlot = onLoadSlot;
+    this._renderSlots();
     this.newButton = el.querySelector('#btn-new');
     this.newButton.addEventListener('click', () => {
       // eslint-disable-next-line no-alert
@@ -110,6 +117,17 @@ export class StartScreen {
     });
   }
 
+  // Espaços salvos (Salvar no menu de pausa)
+  _renderSlots() {
+    const slots = listSlots();
+    const box = this.el.querySelector('#load-box');
+    box.hidden = slots.every((m) => m.empty);
+    this.el.querySelector('#start-slots').innerHTML = slots.filter((m) => !m.empty).map((m) => `
+      <div class="save-row"><span class="save-label">${slotLabel(m)}</span>
+      <button type="button" class="btn btn-small" data-load="${m.n}">Carregar</button></div>`).join('');
+    this.el.querySelectorAll('#start-slots [data-load]').forEach((b) => b.addEventListener('click', () => this.onLoadSlot?.(Number(b.dataset.load))));
+  }
+
   get playerName() {
     return this.nameInput.value.trim().slice(0, 16) || 'Jogador';
   }
@@ -130,6 +148,7 @@ export class StartScreen {
   }
 
   setReady(label = 'Jogar sozinho', canStartNew = false) {
+    this._renderSlots();
     this.button.disabled = false;
     this.button.textContent = label;
     this.newButton.hidden = !canStartNew;

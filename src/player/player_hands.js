@@ -7,6 +7,7 @@
 import * as THREE from 'three';
 import { SKIN_PARTES, SKIN_TEXTURA } from './skin_data.js';
 import { skinGeometry } from './player_model.js';
+import { loadFpArm } from './fp_arms.js';
 
 const SKIN = new THREE.MeshLambertMaterial({ color: '#b5784e' });
 const WOOD = new THREE.MeshLambertMaterial({ color: '#7a5a3a' });
@@ -175,6 +176,18 @@ export class PlayerHands {
       }
     });
     camera.add(this.root);
+    // braço de verdade (modelo com ossos): troca o provisório quando carregar
+    loadFpArm().then(({ group }) => {
+      const fist = this.right.userData.fist;
+      if (!fist) return;
+      for (const c of [...this.right.children]) if (c.isMesh) this.right.remove(c);
+      fist.clear();
+      group.traverse((o) => {
+        if (o.isMesh) o.renderOrder = 10;
+      });
+      fist.add(group);
+      this.realArm = group;
+    }).catch((err) => console.warn('[Ilha] braço 1ª pessoa', err));
     this.restR = this.right.position.clone();
     this.restL = this.left.position.clone();
     this.restRotR = this.right.rotation.clone();

@@ -46,3 +46,60 @@ export function clearSave() {
     /* ok */
   }
 }
+
+// ---------------------------------------------------------
+// Espaços de salvar (3): o jogador escolhe onde guardar e de qual
+// carregar (menu de pausa e tela inicial). O salvo automático
+// continua no espaço principal ("Continuar").
+// ---------------------------------------------------------
+export const SLOTS = [1, 2, 3];
+const slotKey = (n) => `${KEY}:espaco${n}`;
+
+export function saveSlot(n, data) {
+  try {
+    const meta = {
+      savedAt: Date.now(),
+      level: data.player?.level ?? 1,
+      day: data.world?.day ?? 1,
+      tamed: data.tamed?.length ?? 0,
+    };
+    localStorage.setItem(slotKey(n), JSON.stringify({ ...data, version: VERSION, meta }));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Resumo de cada espaço (null = vazio)
+export function listSlots() {
+  return SLOTS.map((n) => {
+    try {
+      const raw = localStorage.getItem(slotKey(n));
+      if (!raw) return { n, empty: true };
+      const d = JSON.parse(raw);
+      return d.version === VERSION ? { n, ...d.meta } : { n, empty: true };
+    } catch {
+      return { n, empty: true };
+    }
+  });
+}
+
+// Copia o espaço para o salvo principal (o jogo carrega dele ao abrir).
+export function useSlot(n) {
+  try {
+    const raw = localStorage.getItem(slotKey(n));
+    if (!raw) return false;
+    localStorage.setItem(KEY, raw);
+    lastWritten = raw;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function slotLabel(m) {
+  if (!m || m.empty) return `Espaço ${m?.n ?? ''}: vazio`;
+  const d = new Date(m.savedAt);
+  const when = `${d.toLocaleDateString('pt-BR')} ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+  return `Espaço ${m.n}: Nível ${m.level} · Dia ${m.day}${m.tamed ? ` · ${m.tamed} domado(s)` : ''} · ${when}`;
+}

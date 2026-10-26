@@ -4,9 +4,10 @@
 // que importam para testar no celular.)
 // =============================================================
 import { settings, QUALITY_PRESETS } from '../core/settings.js';
+import { listSlots, slotLabel } from '../core/save.js';
 
 export class PauseMenu {
-  constructor(root, { onResume, onQuitToMenu, onCloseApp, species = [], onSpawnTest, onLeaveCoop, onAdjustButtons }) {
+  constructor(root, { onResume, onQuitToMenu, onCloseApp, onSaveSlot, onLoadSlot, onLeaveCoop, onAdjustButtons }) {
     const el = document.createElement('div');
     el.className = 'overlay pause';
     el.hidden = true;
@@ -70,14 +71,9 @@ export class PauseMenu {
           <label for="opt-debug">Mostrar FPS e desempenho</label>
           <input type="checkbox" id="opt-debug">
         </form>
-        <div class="pause-test">
-          <label for="opt-spawn">Teste: chamar animal</label>
-          <div class="pause-test-row">
-            <select id="opt-spawn">
-              ${species.map((sp) => `<option value="${sp.id}">${sp.nome}</option>`).join('')}
-            </select>
-            <button type="button" class="btn" id="pause-spawn">Criar perto de mim</button>
-          </div>
+        <div class="pause-saves">
+          <p class="inv-label">Salvar / carregar jogo</p>
+          <div class="save-list" id="save-list"></div>
         </div>
         <div class="pause-foot">
           <button type="button" class="btn" id="pause-menu">Voltar à tela inicial</button>
@@ -113,7 +109,9 @@ export class PauseMenu {
     };
 
     $('pause-opts').addEventListener('submit', (e) => e.preventDefault());
-    $('pause-spawn').addEventListener('click', () => onSpawnTest?.($('opt-spawn').value));
+    this.saveList = $('save-list');
+    this.onSaveSlot = onSaveSlot;
+    this.onLoadSlot = onLoadSlot;
     $('pause-resume').addEventListener('click', () => onResume());
     $('pause-buttons').addEventListener('click', () => onAdjustButtons?.());
     $('pause-leave').addEventListener('click', () => onLeaveCoop?.());
@@ -195,7 +193,32 @@ export class PauseMenu {
 
   show() {
     this.refresh();
+    this._renderSaves();
     this.el.hidden = false;
+  }
+
+  // Espaços de salvar: Salvar aqui / Carregar
+  _renderSaves() {
+    const list = this.saveList;
+    if (!list) return;
+    list.innerHTML = listSlots().map((m) => `
+      <div class="save-row">
+        <span class="save-label">${slotLabel(m)}</span>
+        <button type="button" class="btn btn-small" data-save="${m.n}">Salvar aqui</button>
+        <button type="button" class="btn btn-small" data-load="${m.n}" ${m.empty ? 'disabled' : ''}>Carregar</button>
+      </div>`).join('');
+    list.querySelectorAll('[data-save]').forEach((b) => b.addEventListener('click', () => {
+      const n = Number(b.dataset.save);
+      const used = !listSlots()[n - 1].empty;
+      // eslint-disable-next-line no-alert
+      if (used && !window.confirm(`Salvar por cima do Espaço ${n}?`)) return;
+      this.onSaveSlot?.(n);
+      this._renderSaves();
+    }));
+    list.querySelectorAll('[data-load]').forEach((b) => b.addEventListener('click', () => {
+      // eslint-disable-next-line no-alert
+      if (window.confirm(`Carregar o Espaço ${b.dataset.load}? O que não foi salvo agora se perde.`)) this.onLoadSlot?.(Number(b.dataset.load));
+    }));
   }
 
   hide() {

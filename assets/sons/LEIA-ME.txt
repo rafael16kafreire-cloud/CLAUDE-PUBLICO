@@ -37,3 +37,10 @@ Qual som do ARK virou qual bicho:
   Astrocetus -> mosassauro   Pelagornis -> arara
 Para tirar: apague os bicho_*.mp3 e rode npm run build (volta o som
 feito por código).
+
+SONS LIVRES (Kenney, CC0 – pode publicar)
+-----------------------------------------
+pegar_*, folhas_*, madeira_*, pedra_*, colocar_*, criar_*, clique_*,
+carne_*, passo_mato_*, passo_neve_*, passo_areia_* (.ogg) vêm dos
+pacotes "RPG Audio", "Impact Sounds" e "Interface Sounds" de
+Kenney.nl, licença CC0 (domínio público). Ver LICENCA-kenney.txt.

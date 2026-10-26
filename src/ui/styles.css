@@ -1140,3 +1140,11 @@ body.underwater-swamp .uw-overlay {
 .cq-row .item-png { width: 26px; height: 26px; flex: none; }
 .rc-icon .item-png, .hb-icon .item-png, .is-icon .item-png, .msg-icon .item-png, .drag-ghost .item-png { display: block; }
 @media (orientation: portrait) { .rd-head .item-png { width: 36px; height: 36px; } }
+
+/* Salvar / carregar (menu de pausa e tela inicial) */
+.pause-saves { margin-top: 10px; }
+.save-list { display: flex; flex-direction: column; gap: 6px; }
+.save-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.save-label { flex: 1 1 220px; font-size: 12.5px; font-weight: 700; color: var(--bone); }
+.load-box { margin: 8px 0; text-align: left; }
+.load-box summary { cursor: pointer; font-weight: 800; color: var(--bone); }

@@ -19,7 +19,7 @@ import { PlayerInteraction } from './player/player_interaction.js';
 import { Hud } from './ui/hud.js';
 import { InspectPanel } from './ui/inspect_panel.js';
 import { BuildGhost } from './world/building.js';
-import { loadGame, saveGame, clearSave } from './core/save.js';
+import { loadGame, saveGame, clearSave, saveSlot, useSlot } from './core/save.js';
 import { Messages } from './ui/messages.js';
 import { TouchControls } from './ui/touch_controls.js';
 import { DeathScreen } from './ui/death_screen.js';
@@ -97,6 +97,7 @@ function boot(hotData = {}) {
 
   const start = new StartScreen(ui, {
     onPlay: () => play(),
+    onLoadSlot: (n) => loadSlotAndRestart(n),
     onHost: (name) => hostCoop(name),
     onJoin: (code, name) => joinCoop(code, name),
     onNewGame: () => {
@@ -226,8 +227,11 @@ function boot(hotData = {}) {
       onResume: () => resume(),
       onQuitToMenu: () => toMenu(),
       onCloseApp: androidApp?.exit ? () => androidApp.exit() : null,
-      species: Object.values(SPECIES),
-      onSpawnTest: (id) => spawnInFront(id),
+      onSaveSlot: (n) => {
+        const ok = saveSlot(n, gameSnapshot());
+        events.emit(EV.MESSAGE, { text: ok ? `Jogo salvo no Espaço ${n}.` : 'Não deu para salvar (sem espaço no aparelho).', kind: ok ? 'gain' : 'warn' });
+      },
+      onLoadSlot: (n) => loadSlotAndRestart(n),
       // ajustar botões: esconde o menu, arrasta, Travar salva e volta ao menu
       onAdjustButtons: () => {
         ctx.pause.hide();
@@ -279,6 +283,13 @@ function boot(hotData = {}) {
       console.warn('[Ilha] compile', err);
     }
     start.setReady(hotData.player ? 'Continuar' : 'Jogar', !!hotData.player);
+    // veio de "Carregar" um espaço: entra direto no jogo
+    try {
+      if (sessionStorage.getItem('ilha-primordial:auto-continuar')) {
+        sessionStorage.removeItem('ilha-primordial:auto-continuar');
+        setTimeout(() => play(), 50);
+      }
+    } catch { /* ok */ }
     game.setState(STATE.MENU);
     console.info(`[Ilha] ilha gerada em ${world.generationMs} ms`, world.vegetation.countByType());
   }
@@ -362,6 +373,13 @@ function boot(hotData = {}) {
   }
 
   // Teste (menu de pausa): cria o dinossauro escolhido na frente do jogador.
+  // Carregar um espaço: vira o salvo principal e o jogo recomeça dele.
+  function loadSlotAndRestart(n) {
+    if (!useSlot(n)) return;
+    sessionStorage.setItem('ilha-primordial:auto-continuar', '1');
+    window.location.reload();
+  }
+
   function spawnInFront(id) {
     const sp = SPECIES[id];
     const f = ctx.camCtl.forward;
