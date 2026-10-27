@@ -12,9 +12,10 @@ import { VEG_TRONCOS, VEG_TRONCOS_TEX } from './textures/veg_troncos.js';
 import { VEG_BL_MODELOS, VEG_BL_TEXTURAS } from './textures/veg_blender.js';
 import { VEG_CX_MODELOS, VEG_CX_TEXTURAS } from './textures/veg_caixa.js';
 import { VEG_PL_MODELOS, VEG_PL_TEXTURAS } from './textures/veg_palmas.js';
+import { VEG_CP_MODELOS, VEG_CP_TEXTURAS } from './textures/veg_copas.js';
 
-const VEG_MODELOS = { ...M1, ...VEG_MODELOS2, ...VEG_TRONCOS, ...VEG_BL_MODELOS, ...VEG_CX_MODELOS, ...VEG_PL_MODELOS };
-const VEG_TEXTURAS = { ...T1, ...VEG_TEXTURAS2, ...VEG_TRONCOS_TEX, ...VEG_BL_TEXTURAS, ...VEG_CX_TEXTURAS, ...VEG_PL_TEXTURAS, folhagem_arbusto: FOLHAGEM_COR };
+const VEG_MODELOS = { ...M1, ...VEG_MODELOS2, ...VEG_TRONCOS, ...VEG_BL_MODELOS, ...VEG_CX_MODELOS, ...VEG_PL_MODELOS, ...VEG_CP_MODELOS };
+const VEG_TEXTURAS = { ...T1, ...VEG_TEXTURAS2, ...VEG_TRONCOS_TEX, ...VEG_BL_TEXTURAS, ...VEG_CX_TEXTURAS, ...VEG_PL_TEXTURAS, ...VEG_CP_TEXTURAS, folhagem_arbusto: FOLHAGEM_COR };
 import { addWind } from './materials.js';
 import { addLeafLight } from './foliage_texture.js';
 
@@ -44,6 +45,8 @@ export function vegGeometry(key, height, wind = 0.5) {
     const [u0, v0, u1, v1] = part.uvbox;
     // tronco não balança; folhas balançam mais em cima
     const leafy = parts.length === 1 || pi > 0;
+    // cor por vértice (tons diferentes por tufo de folhas), se o modelo tiver
+    const cq = part.col ? new Uint8Array(bytes(part.col)) : null;
     for (let i = 0; i < part.n; i++) {
       const k = base + i;
       pos[k * 3] = (x0 + (q[i * 3] / 65535) * (x1 - x0)) * height;
@@ -51,6 +54,11 @@ export function vegGeometry(key, height, wind = 0.5) {
       pos[k * 3 + 2] = (z0 + (q[i * 3 + 2] / 65535) * (z1 - z0)) * height;
       uv[k * 2] = u0 + (uq[i * 2] / 65535) * (u1 - u0);
       uv[k * 2 + 1] = v0 + (uq[i * 2 + 1] / 65535) * (v1 - v0);
+      if (cq) {
+        col[k * 3] = cq[i * 3] / 255;
+        col[k * 3 + 1] = cq[i * 3 + 1] / 255;
+        col[k * 3 + 2] = cq[i * 3 + 2] / 255;
+      }
       wnd[k] = leafy ? Math.min(1, pos[k * 3 + 1] / height) * wind : 0;
     }
     g.addGroup(index.length, idx.length, pi);

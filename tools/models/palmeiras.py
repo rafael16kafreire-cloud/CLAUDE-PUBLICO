@@ -245,7 +245,7 @@ def b64(a):
     return base64.b64encode(np.ascontiguousarray(a).tobytes()).decode()
 
 
-def parte_jogo(M, tex, altura):
+def parte_jogo(M, tex, altura, cores=None):
     """Blender/aqui: Z para cima. Jogo: Y para cima (x, z, -y). Normaliza pela altura."""
     p = np.array([(v[0], v[2], -v[1]) for v in M.V], dtype=float)
     uv = np.array(M.U, dtype=float)
@@ -261,6 +261,7 @@ def parte_jogo(M, tex, altura):
         'uv': b64(np.round((uv - ulo) / np.maximum(uhi - ulo, 1e-9) * 65535).astype('<u2')),
         'idx': b64(idx.astype('<u2')),
         'tex': tex,
+        **({'col': b64(np.round(np.clip(np.array(cores), 0, 1) * 255).astype('u1'))} if cores is not None else {}),
     }
 
 
