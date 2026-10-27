@@ -179,13 +179,15 @@ function tileNoise(cellsX, cellsY, seed) {
 
 export function barkTexture() {
   if (bark) return bark;
-  const W = 128;
-  const H = 256;
+  const W = 256;
+  const H = 512;
   const data = new Uint8Array(W * H * 4);
-  // casca: muito mais detalhe na horizontal (veios em pé)
-  const n1 = tileNoise(16, 4, 11);
-  const n2 = tileNoise(32, 10, 12);
-  const n3 = tileNoise(8, 3, 13);
+  // casca: veios compridos em pé, rachaduras fundas, placas e grão fino
+  const n1 = tileNoise(24, 5, 11);
+  const n2 = tileNoise(64, 20, 12);
+  const n3 = tileNoise(10, 4, 13);
+  const n7 = tileNoise(128, 40, 17);   // grão fino
+  const n8 = tileNoise(12, 16, 18);    // placas (quebram o veio a cada tanto)
   // nervuras: linhas finas diagonais
   const n4 = tileNoise(24, 24, 14);
   // líquen e musgo: manchas grandes e miúdas
@@ -195,11 +197,14 @@ export function barkTexture() {
     for (let x = 0; x < W; x++) {
       const u = x / W;
       const v = y / H;
-      const warp = (n3(u, v) - 0.5) * 0.08;
+      const warp = (n3(u, v) - 0.5) * 0.1 + (n8(u, v) - 0.5) * 0.03;
       const ridge = 1 - Math.abs(n1(u + warp, v) * 2 - 1); // 1 no meio do veio
       const fine = n2(u + warp, v);
-      let b = 0.35 + ridge * 0.5 + (fine - 0.5) * 0.3;
-      if (ridge < 0.18) b *= 0.45; // rachadura funda
+      const grain = n7(u, v);
+      const plate = n8(u, v);
+      let b = 0.3 + ridge * 0.5 + (fine - 0.5) * 0.34 + (grain - 0.5) * 0.14 + (plate - 0.5) * 0.12;
+      if (ridge < 0.2) b *= 0.4;          // rachadura funda
+      else if (ridge < 0.32) b *= 0.7;    // beira da rachadura
       const vein = 0.75 + 0.25 * Math.abs(Math.sin((u * 6 + v * 3) * Math.PI * 2)) * (0.6 + n4(u, v) * 0.4);
       const i = (y * W + x) * 4;
       data[i] = Math.max(0, Math.min(255, Math.round(b * 255)));
@@ -212,6 +217,7 @@ export function barkTexture() {
   bark.wrapS = THREE.RepeatWrapping;
   bark.wrapT = THREE.RepeatWrapping;
   bark.magFilter = THREE.LinearFilter;
+  bark.anisotropy = 4;
   bark.minFilter = THREE.LinearMipmapLinearFilter;
   bark.generateMipmaps = true;
   bark.needsUpdate = true;
@@ -258,7 +264,7 @@ export function addPlantDetail(material) {
           } else if (vPlantW < 0.2) {
             // casca: 5 voltas da textura em volta do tronco, com líquen e musgo
             float ang = atan(pp.z, pp.x) / 6.28318;
-            vec3 bt = texture2D(uBark, vec2(ang * 5.0, pp.y * 0.22)).rgb;
+            vec3 bt = texture2D(uBark, vec2(ang * 6.0, pp.y * 0.25)).rgb;
             vec3 base = diffuseColor.rgb * mix(0.36, 1.2, bt.r);
             float low = 1.0 - smoothstep(0.0, 7.0, pp.y);
             float lich = smoothstep(0.52, 0.78, bt.b);
@@ -297,7 +303,7 @@ export function addPlantDetail(material) {
         #endif`);
   };
   const key = material.customProgramCacheKey;
-  material.customProgramCacheKey = () => `${key ? key() : ''}-planta3`;
+  material.customProgramCacheKey = () => `${key ? key() : ''}-planta4`;
   return material;
 }
 
