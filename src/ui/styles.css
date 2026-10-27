@@ -1673,3 +1673,14 @@ body.is-touch.touch-botoes .hotbar {
   .po-cats { flex-direction: column; overflow-x: visible; }
   .po-cat { min-height: 13.4vh; padding: 0 1vh; font-size: 4vh; }
 }
+
+/* Opções mais transparentes (dá para ver o jogo atrás, como no ARK Mobile) */
+.pause-opts-panel {
+  background: var(--ark-hex), linear-gradient(180deg, rgba(14, 74, 98, 0.5), rgba(5, 32, 46, 0.58)) !important;
+  backdrop-filter: blur(1.5px);
+}
+.overlay.pause { background: rgba(2, 14, 22, 0.18); }
+.po-cat { background: rgba(6, 24, 34, 0.5); }
+.po-cat.on { background: rgba(26, 120, 150, 0.55); }
+.po-content { background: rgba(10, 16, 20, 0.58); }
+.po-ctrl { background: rgba(10, 92, 118, 0.6); }
