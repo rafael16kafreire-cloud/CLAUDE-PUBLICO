@@ -500,7 +500,7 @@ export function makeSkyMaterial({ horizon, zenith, sunDir }) {
         col += uSunColor * day * (disc * 14.0 + pow(sd, 400.0) * 3.0 + pow(sd, 90.0) * 0.8);
         // lua: disco claro com halo fraco (a luz da noite vem da mesma direção)
         float md = sd;
-        col += vec3(0.86, 0.9, 1.0) * uNight * (smoothstep(0.9993, 0.99955, md) * 1.5 + pow(md, 260.0) * 0.28 + pow(md, 26.0) * 0.05);
+        col += vec3(0.86, 0.9, 1.0) * uNight * (smoothstep(0.9994, 0.99957, md) * 1.15 + pow(md, 260.0) * 0.2 + pow(md, 26.0) * 0.05);
         gl_FragColor = vec4(col, 1.0);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>

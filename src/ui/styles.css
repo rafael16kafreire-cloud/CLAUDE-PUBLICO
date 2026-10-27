@@ -1733,7 +1733,7 @@ body.is-touch.touch-botoes .hotbar {
 .sun-glare[hidden] { display: none; }
 .sun-glare i { position: absolute; left: 0; top: 0; display: block; border-radius: 50%; will-change: transform, opacity; }
 .sg-core { width: 96vmin; height: 96vmin; background: radial-gradient(circle, rgba(255, 255, 250, 0.95) 0, rgba(var(--sc), 0.85) 3.5%, rgba(var(--sc), 0.5) 10%, rgba(var(--sc), 0.2) 24%, rgba(var(--sc), 0.07) 42%, transparent 68%); }
-.sg-streak { width: 150vmin; height: 2.2vmin; background: linear-gradient(90deg, transparent, rgba(var(--sc), 0.5) 35%, rgba(255, 255, 250, 0.7) 50%, rgba(var(--sc), 0.5) 65%, transparent); }
+.sg-streak { width: 110vmin; height: 5vmin; background: radial-gradient(ellipse 50% 50% at 50% 50%, rgba(255, 255, 250, 0.55) 0, rgba(var(--sc), 0.28) 30%, rgba(var(--sc), 0.08) 60%, transparent 100%); }
 .sg-g { background: radial-gradient(circle, transparent 54%, rgba(150, 230, 190, 0.22) 62%, rgba(255, 220, 150, 0.16) 70%, transparent 76%); }
 .sg-g1 { width: 15vmin; height: 15vmin; }
 .sg-g2 { width: 26vmin; height: 26vmin; background: radial-gradient(circle, rgba(255, 200, 140, 0.1) 0, rgba(160, 200, 255, 0.14) 50%, transparent 72%); }

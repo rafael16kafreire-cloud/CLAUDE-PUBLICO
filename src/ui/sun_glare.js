@@ -87,7 +87,7 @@ export class SunGlare {
       n.style.opacity = o.toFixed(3);
     };
     put(core, sx, sy, Math.min(1, amt * (0.8 + 0.2 * low)), 1 + low * 0.4);
-    put(streak, sx, sy, amt * 0.7, 1 + low * 0.5);
+    put(streak, sx, sy, amt * 0.5, 1 + low * 0.3);
     const cx = W / 2;
     const cy = H / 2;
     // reflexos de lente: ficam na linha que liga o sol ao centro da tela, do outro lado
