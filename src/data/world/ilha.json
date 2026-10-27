@@ -150,7 +150,7 @@
     "passo_m": 4.2,
     "_chances": "Para cada ponto da grade: chance (0 a 1) de nascer cada coisa, por bioma. A soma pode passar de 1 só até onde couber.",
     "biomas": {
-      "praia": { "coqueiro": 0.06, "tamareira": 0.014, "tamareira2": 0.012, "planta_praia": 0.035, "arbusto_frutas": 0.012, "pedra_musgo": 0.014, "tronco_caido": 0.02 },
+      "praia": { "coqueiro": 0.012, "palma_bl_a": 0.03, "palma_bl_b": 0.03, "palma_bl_c": 0.026, "planta_praia": 0.035, "arbusto_frutas": 0.012, "pedra_musgo": 0.014, "tronco_caido": 0.02 },
       "selva": {
         "sumauma": 0.045, "arvore_dossel": 0.07, "arvore_bl_a": 0.035, "arvore_bl_b": 0.035, "arvore_bl_c": 0.035, "arvore_media": 0.12, "acai": 0.07,
         "samambaia_gigante": 0.08, "bananeira": 0.035, "samambaia": 0.16,

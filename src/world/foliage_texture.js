@@ -265,6 +265,8 @@ export function addPlantDetail(material) {
             // casca: 5 voltas da textura em volta do tronco, com líquen e musgo
             float ang = atan(pp.z, pp.x) / 6.28318;
             vec3 bt = texture2D(uBark, vec2(ang * 6.0, pp.y * 0.25)).rgb;
+            // relevo: amostra mais borrada e menos intensa (derivadas de tela dão blocos 2x2 se vierem do detalhe fino)
+            float btSoft = texture2D(uBark, vec2(ang * 6.0, pp.y * 0.25), 2.5).r;
             vec3 base = diffuseColor.rgb * mix(0.36, 1.2, bt.r);
             float low = 1.0 - smoothstep(0.0, 7.0, pp.y);
             float lich = smoothstep(0.52, 0.78, bt.b);
@@ -272,7 +274,7 @@ export function addPlantDetail(material) {
             float moss = smoothstep(0.42, 0.8, bt.b * (0.55 + low * 0.8));
             base = mix(base, vec3(0.24, 0.38, 0.13) * (0.65 + 0.7 * bt.r), moss * (0.3 + low * 0.45));
             diffuseColor.rgb = base;
-            plantBump = bt.r;
+            plantBump = btSoft;
           } else {
             float vn = texture2D(uBark, pp.xz * 1.7 + pp.y * 0.3).g;
             diffuseColor.rgb *= mix(0.78, 1.1, vn);
@@ -287,7 +289,7 @@ export function addPlantDetail(material) {
           vec3 R1 = cross(sY, normal);
           vec3 R2 = cross(normal, sX);
           float det = dot(sX, R1);
-          vec2 dH = dHp * 1.6;
+          vec2 dH = dHp * 0.9;
           vec3 gr = sign(det) * (dH.x * R1 + dH.y * R2);
           normal = normalize(abs(det) * normal - gr);
         }`)
@@ -303,7 +305,7 @@ export function addPlantDetail(material) {
         #endif`);
   };
   const key = material.customProgramCacheKey;
-  material.customProgramCacheKey = () => `${key ? key() : ''}-planta4`;
+  material.customProgramCacheKey = () => `${key ? key() : ''}-planta5`;
   return material;
 }
 
