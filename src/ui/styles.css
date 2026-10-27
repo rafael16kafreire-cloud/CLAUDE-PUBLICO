@@ -1327,10 +1327,10 @@ body.is-touch .hud-gauges { bottom: calc(var(--safe-b) + 72px); }
   position: absolute; left: 50%; top: 100%; transform: translateX(-50%);
   font-size: 9.5px; font-weight: 800; color: var(--ark-text); text-shadow: 0 1px 2px #000;
 }
-.stat-health { --c: #3fe36a; --mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 2h6v7h7v6h-7v7H9v-7H2V9h7z'/%3E%3C/svg%3E"); }
-.stat-stamina { --c: #f4f4f4; --mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M13.6 2 4.5 13.4h6.1L9.2 22l10.3-12.6h-6.3z'/%3E%3C/svg%3E"); }
-.stat-food { --c: #3fe36a; --mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M14.8 2.8a6.2 6.2 0 0 0-5.6 8.6l-3.6 3.6a2.4 2.4 0 1 0-1.7 4.1 2.4 2.4 0 1 0 4.1-1.7l3.6-3.6a6.2 6.2 0 1 0 3.2-11z'/%3E%3C/svg%3E"); }
-.stat-water { --c: #3fe36a; --mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2.4S5 10.3 5 14.8a7 7 0 0 0 14 0C19 10.3 12 2.4 12 2.4z'/%3E%3C/svg%3E"); }
+.stat-health { --c: #35c3e8; --mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 2h6v7h7v6h-7v7H9v-7H2V9h7z'/%3E%3C/svg%3E"); }
+.stat-stamina { --c: #35c3e8; --mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M13.6 2 4.5 13.4h6.1L9.2 22l10.3-12.6h-6.3z'/%3E%3C/svg%3E"); }
+.stat-food { --c: #35c3e8; --mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M14.8 2.8a6.2 6.2 0 0 0-5.6 8.6l-3.6 3.6a2.4 2.4 0 1 0-1.7 4.1 2.4 2.4 0 1 0 4.1-1.7l3.6-3.6a6.2 6.2 0 1 0 3.2-11z'/%3E%3C/svg%3E"); }
+.stat-water { --c: #35c3e8; --mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2.4S5 10.3 5 14.8a7 7 0 0 0 14 0C19 10.3 12 2.4 12 2.4z'/%3E%3C/svg%3E"); }
 .stat-oxygen { --c: #7fe3ff; --mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='8' cy='15' r='4.4'/%3E%3Ccircle cx='16.5' cy='9' r='3.2'/%3E%3Ccircle cx='17' cy='17.5' r='2'/%3E%3Ccircle cx='9.5' cy='5.5' r='1.8'/%3E%3C/svg%3E"); }
 /* acabando: fica vermelho e pisca (como no ARK) */
 .hud-gauges .stat.low { --c: #ff4a3a; }
