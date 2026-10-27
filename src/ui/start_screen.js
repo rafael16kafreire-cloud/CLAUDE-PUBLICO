@@ -41,7 +41,7 @@ function creditsHtml() {
   rows.push('<li><b>Motor 3D</b>: three.js (MIT), © os autores do three.js.</li>');
   rows.push('<li><b>Efeitos de imagem</b>: postprocessing, © Raoul van Rüschen (Zlib).</li>');
   rows.push('<li><b>Raios de sol</b>: three-good-godrays, © 2022 Casey Primozic, adaptado de goodGodRays de n8python (Zlib).</li>');
-  rows.push('<li><b>Oclusão ambiental</b>: N8AO, © Nathan Sung / n8python (ISC).</li>');
+  rows.push('<li><b>Oclusão ambiental</b>: N8AO, de n8python (licença livre: CC0 no arquivo, ISC no npm).</li>');
   return `<div class="credits"><p>Modelos 3D e sons usados no jogo (licença pede o nome do autor):</p><ul>${rows.join('')}</ul></div>`;
 }
 
