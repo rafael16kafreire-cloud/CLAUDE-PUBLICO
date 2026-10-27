@@ -1,0 +1,26 @@
+{
+  "applicationId": "com.ilhaprimordial.jogo",
+  "version": "__VERSAO__",
+  "defaultMode": "window",
+  "documentRoot": "/resources/",
+  "url": "/",
+  "enableServer": true,
+  "enableNativeAPI": false,
+  "port": 0,
+  "logging": { "enabled": false, "writeToLogFile": false },
+  "modes": {
+    "window": {
+      "title": "Ilha Primordial",
+      "width": 1600,
+      "height": 900,
+      "minWidth": 800,
+      "minHeight": 450,
+      "center": true,
+      "maximize": true,
+      "fullScreen": false,
+      "resizable": true,
+      "enableInspector": false,
+      "icon": "/resources/icon.png"
+    }
+  }
+}

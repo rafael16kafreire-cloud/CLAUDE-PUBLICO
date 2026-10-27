@@ -1,0 +1,15 @@
+ÍCONES PROVISÓRIOS (PLACEHOLDER) – NÃO PUBLICAR
+================================================
+
+Os ícones desta pasta vêm da wiki do ARK: Survival Evolved
+(https://ark.wiki.gg) e são propriedade da Studio Wildcard.
+
+Eles servem SÓ como marcador temporário durante o desenvolvimento e
+PRECISAM SER SUBSTITUÍDOS por ícones próprios antes de qualquer
+publicação (loja, site, APK distribuído, repositório público).
+
+- mapa.json: qual item do jogo usa qual arquivo.
+- Para baixar: sh tools/baixar_icones_ark.sh (precisa de internet com
+  acesso a ark.wiki.gg).
+- Para tirar do jogo: apague os .png desta pasta e gere o jogo de novo
+  (npm run build); os ícones desenhados do próprio jogo voltam.

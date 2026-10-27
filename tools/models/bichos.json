@@ -1,0 +1,254 @@
+{
+ "_explicacao": "Modelos de bichos enviados pelo jogador. arquivo = parte do nome do .usdz; giro = como virar (y180: cabeça estava em +Z; cabeca_cima / cabeca_baixo: modelo em pé); yaw = girar mais (graus); inclui/exclui = pedaços do modelo; triangulos = quantos ficam; textura = tamanho em px; ajuste = mover ossos do molde (metros do molde). brilho = clarear a textura (1 = igual).",
+ "trex": {
+  "arquivo": "trex_Jw",
+  "giro": "y180",
+  "triangulos": 22000
+ },
+ "braquiossauro": {
+  "arquivo": "JWA_Brachiosaurus",
+  "giro": "y180",
+  "triangulos": 7300
+ },
+ "titanoboa": {
+  "arquivo": "Titanoboa",
+  "giro": "cabeca_baixo",
+  "triangulos": 16000
+ },
+ "deinosuchus": {
+  "arquivo": "Deinosuchus",
+  "giro": "y180",
+  "triangulos": 16000
+ },
+ "estegossauro": {
+  "arquivo": "Stegosaurus",
+  "giro": "y180",
+  "triangulos": 20000
+ },
+ "anquilossauro": {
+  "arquivo": "Ankylosaurus",
+  "giro": "y180",
+  "triangulos": 20000
+ },
+ "parassauro": {
+  "arquivo": "Parasaurolophus",
+  "giro": "y180",
+  "triangulos": 20000,
+  "yaw": -20
+ },
+ "raptor": {
+  "arquivo": "Reaper_Raptor",
+  "giro": "nada",
+  "inclui": [
+   "_001_Material",
+   "_000_Material"
+  ],
+  "triangulos": 14000,
+  "brilho": 2.2
+ },
+ "quetzalcoatlus": {
+  "arquivo": "JWD_Quetzalcoatlus",
+  "giro": "cabeca_cima_costas",
+  "triangulos": 16000,
+  "pitch": 30
+ },
+ "mamute": {
+  "arquivo": "woolly_mammoth",
+  "giro": "y180",
+  "triangulos": 24000,
+  "brilho": 1.9
+ },
+ "argentavis": {
+  "arquivo": "Argentavis",
+  "giro": "y180",
+  "triangulos": 18000
+ },
+ "reidodo": {
+  "arquivo": "Dodorex",
+  "giro": "cabeca_cima",
+  "triangulos": 18000
+ },
+ "_explicacao_animados": "animado = usa o esqueleto e a animação do próprio modelo (bichos_animados.sh). repouso = 'ligacao' (pose em que foi modelado) ou número do quadro usado como pose parada. ossos = número do osso original de cada osso do jogo (pernas: coxa, joelho, pé). pais = mudar o pai de um osso. clipes = papel -> quadros (de/ate) da animação: andar, voar, parado, rugido, ataque, nadar.",
+ "sauropelta": {
+  "arquivo": "Sauropelta",
+  "animado": true,
+  "giro": "y180",
+  "repouso": "ligacao",
+  "triangulos": 16000,
+  "ossos": {
+   "hips": 0,
+   "chest": 3,
+   "neck": 4,
+   "head": 5,
+   "tail1": 23,
+   "tail2": 25,
+   "tail3": 27,
+   "frenteE": 8,
+   "frenteE_joelho": 9,
+   "frenteE_pe": 10,
+   "frenteD": 14,
+   "frenteD_joelho": 15,
+   "frenteD_pe": 16,
+   "trásE": 11,
+   "trásE_joelho": 12,
+   "trásE_pe": 13,
+   "trásD": 17,
+   "trásD_joelho": 18,
+   "trásD_pe": 19
+  },
+  "pais": {
+   "22": 0
+  },
+  "clipes": {
+   "andar": {}
+  }
+ },
+ "argentinossauro": {
+  "arquivo": "Argentinosaurus",
+  "animado": true,
+  "giro": "y180",
+  "repouso": "ligacao",
+  "triangulos": 16000,
+  "ossos": {
+   "hips": 0,
+   "chest": 1,
+   "neck": 4,
+   "neck2": 8,
+   "head": 11,
+   "tail1": 30,
+   "tail2": 32,
+   "tail3": 35,
+   "frenteE": 15,
+   "frenteE_joelho": 16,
+   "frenteE_pe": 17,
+   "frenteD": 23,
+   "frenteD_joelho": 24,
+   "frenteD_pe": 25,
+   "trásE": 18,
+   "trásE_joelho": 19,
+   "trásE_pe": 20,
+   "trásD": 26,
+   "trásD_joelho": 27,
+   "trásD_pe": 28
+  },
+  "pais": {
+   "29": 0
+  },
+  "clipes": {
+   "andar": {}
+  }
+ },
+ "carnotauro": {
+  "arquivo": "carnotaurus",
+  "animado": true,
+  "giro": "nada",
+  "repouso": 0,
+  "triangulos": 12000,
+  "ossos": {
+   "hips": 0,
+   "chest": 3,
+   "neck": 5,
+   "head": 6,
+   "jaw": 7,
+   "tail1": 46,
+   "tail2": 47,
+   "tail3": 48,
+   "pernaE": 31,
+   "pernaE_joelho": 32,
+   "pernaE_pe": 33,
+   "pernaD": 50,
+   "pernaD_joelho": 51,
+   "pernaD_pe": 52,
+   "bracoE": 13,
+   "bracoE_joelho": 14,
+   "bracoE_pe": 16,
+   "bracoD": 22,
+   "bracoD_joelho": 23,
+   "bracoD_pe": 25
+  },
+  "clipes": {
+   "parado": {}
+  }
+ },
+ "raptor_animado": {
+  "arquivo": "JWR_Velociraptor",
+  "animado": true,
+  "especie": "raptor",
+  "giro": "y180",
+  "repouso": 0,
+  "triangulos": 14000,
+  "ossos": {
+   "hips": 0,
+   "chest": 3,
+   "neck": 5,
+   "head": 8,
+   "jaw": 9,
+   "tail1": 94,
+   "tail2": 96,
+   "tail3": 98,
+   "pernaE": 102,
+   "pernaE_joelho": 103,
+   "pernaE_pe": 104,
+   "pernaD": 119,
+   "pernaD_joelho": 120,
+   "pernaD_pe": 121,
+   "bracoE": 48,
+   "bracoE_joelho": 49,
+   "bracoE_pe": 51,
+   "bracoD": 69,
+   "bracoD_joelho": 70,
+   "bracoD_pe": 72
+  },
+  "clipes": {
+   "rugido": {
+    "loop": false
+   }
+  }
+ },
+ "pterodactilo": {
+  "arquivo": "Pteranodon",
+  "animado": true,
+  "giro": "y180",
+  "repouso": 0,
+  "triangulos": 9000,
+  "ossos": {
+   "hips": 86,
+   "chest": 4,
+   "neck": 5,
+   "head": 10,
+   "asaE": 28,
+   "asaE_punho": 29,
+   "asaD": 58,
+   "asaD_punho": 59,
+   "pernaE": 87,
+   "pernaE_joelho": 88,
+   "pernaE_pe": 89,
+   "pernaD": 105,
+   "pernaD_joelho": 106,
+   "pernaD_pe": 107
+  },
+  "clipes": {
+   "voar": {}
+  }
+ },
+ "mosassauro": {
+  "arquivo": "Mosasaurus",
+  "animado": true,
+  "giro": "y180",
+  "repouso": 0,
+  "triangulos": 9000,
+  "ossos": {
+   "chest": 1,
+   "tail1": 10,
+   "tail2": 13,
+   "tail3": 16,
+   "head": 40,
+   "jaw": 41
+  },
+  "clipes": {
+   "ataque": {
+    "loop": false
+   }
+  }
+ }
+}

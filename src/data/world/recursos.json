@@ -1,0 +1,156 @@
+{
+  "_explicacao": "efeito = pedacinhos que voam ao bater (pedra, madeira, folha, cristal, obsidiana, agua). so_machado = só dá para tirar algo com machado (com a mão você se machuca). infinita = nunca acaba. O que cada planta/pedra dá quando você bate (mao = sem ferramenta, machado, picareta, lanca, clava) ou colhe com Interagir (colher). Valores = [mínimo, máximo] por golpe. capacidade = quantos golpes até acabar. esvazia = vira outro tipo quando acaba (ex.: arbusto sem bagas). Recursos voltam depois de 'reaparece_min' minutos, se você não estiver perto.",
+  "reaparece_min": 8,
+  "tipos": {
+    "arvore": {
+      "nome": "Árvore", "capacidade": 45, "xp": 1, "so_machado": true,
+      "mao": {},
+      "machado": { "madeira": [4, 6], "palha": [0, 1] },
+      "picareta": { "palha": [4, 6], "madeira": [0, 1] },
+      "lanca": { "palha": [1, 2] },
+      "clava": { "palha": [1, 3] }
+    },
+    "arvore_gigante": {
+      "nome": "Sumaúma", "capacidade": 120, "xp": 1, "so_machado": true, "infinita": true,
+      "mao": {},
+      "machado": { "madeira": [6, 9], "palha": [0, 2] },
+      "picareta": { "palha": [5, 8], "madeira": [0, 1] },
+      "lanca": { "palha": [1, 2] },
+      "clava": { "palha": [1, 3] }
+    },
+    "palmeira": {
+      "nome": "Palmeira", "capacidade": 18, "xp": 1,
+      "mao": { "palha": [2, 4], "fibra": [0, 1] },
+      "machado": { "madeira": [2, 4], "palha": [1, 2] },
+      "picareta": { "palha": [3, 5] },
+      "lanca": { "palha": [1, 2] },
+      "clava": { "palha": [1, 2] }
+    },
+    "tronco": {
+      "nome": "Tronco caído", "capacidade": 30, "xp": 1,
+      "mao": { "madeira": [1, 1], "palha": [0, 1] },
+      "machado": { "madeira": [4, 7] },
+      "picareta": { "madeira": [1, 2], "palha": [1, 2] },
+      "lanca": { "madeira": [0, 1] },
+      "clava": { "madeira": [1, 1] }
+    },
+    "pedrinhas": {
+      "nome": "Pedrinhas", "capacidade": 1, "xp": 1, "rotulo": "Pegar pedras",
+      "mao": { "pedra": [1, 2] },
+      "colher": { "pedra": [2, 3], "silex": [0, 1] }
+    },
+    "gravetos": {
+      "nome": "Gravetos", "capacidade": 1, "xp": 1, "rotulo": "Pegar gravetos",
+      "mao": { "graveto": [1, 2] },
+      "colher": { "graveto": [2, 3] }
+    },
+    "rochedo": {
+      "efeito": "pedra", "nome": "Rochedo", "capacidade": 80, "xp": 1, "infinita": true,
+      "so_ferramenta": true, "mao": {},
+      "machado": { "pedra": [2, 4], "silex": [0, 1] },
+      "picareta": { "pedra": [2, 3], "silex": [1, 3] },
+      "lanca": { "pedra": [0, 1] },
+      "clava": { "pedra": [1, 1] }
+    },
+    "ferro": {
+      "efeito": "pedra", "nome": "Minério de ferro", "capacidade": 30, "xp": 2,
+      "so_ferramenta": true, "mao": {},
+      "machado": { "pedra": [1, 2], "minerio_ferro": [0, 1] },
+      "picareta": { "minerio_ferro": [2, 3], "pedra": [0, 2] },
+      "lanca": { "pedra": [0, 1] },
+      "clava": { "pedra": [1, 1] }
+    },
+    "metal": {
+      "efeito": "pedra", "nome": "Rocha de metal", "capacidade": 40, "xp": 3,
+      "so_ferramenta": true, "mao": {},
+      "machado": { "pedra": [1, 2], "minerio_ferro": [0, 1] },
+      "picareta": { "minerio_ferro": [3, 5], "pedra": [0, 1] },
+      "lanca": { "pedra": [0, 1] },
+      "clava": { "pedra": [1, 1] }
+    },
+    "obsidiana": {
+      "efeito": "obsidiana", "nome": "Obsidiana", "capacidade": 25, "xp": 3,
+      "so_ferramenta": true, "mao": {},
+      "machado": { "pedra": [1, 2], "obsidiana": [0, 1] },
+      "picareta": { "obsidiana": [2, 3], "pedra": [0, 1] },
+      "lanca": { "pedra": [0, 1] },
+      "clava": { "pedra": [0, 1] }
+    },
+    "cristal": {
+      "efeito": "cristal", "nome": "Cristal", "capacidade": 20, "xp": 3,
+      "so_ferramenta": true, "mao": {},
+      "machado": { "cristal": [0, 1], "pedra": [0, 1] },
+      "picareta": { "cristal": [2, 3] },
+      "lanca": { "cristal": [0, 1] },
+      "clava": { "pedra": [0, 1] }
+    },
+    "petroleo": {
+      "efeito": "obsidiana", "nome": "Rocha de petróleo", "capacidade": 22, "xp": 3,
+      "so_ferramenta": true, "mao": {},
+      "machado": { "pedra": [1, 2], "petroleo": [0, 1] },
+      "picareta": { "petroleo": [2, 3], "pedra": [0, 1] },
+      "lanca": { "pedra": [0, 1] },
+      "clava": { "pedra": [0, 1] }
+    },
+    "concha": {
+      "efeito": "agua", "nome": "Concha do fundo do mar", "capacidade": 2, "xp": 2, "rotulo": "Pegar pérolas",
+      "mao": { "perola_silica": [1, 2] },
+      "colher": { "perola_silica": [2, 4] }
+    },
+    "pedra": {
+      "efeito": "pedra", "nome": "Pedra", "capacidade": 35, "xp": 1,
+      "so_ferramenta": true, "mao": {},
+      "machado": { "pedra": [3, 5], "silex": [0, 1] },
+      "picareta": { "pedra": [1, 2], "silex": [2, 4] },
+      "lanca": { "pedra": [0, 1] },
+      "clava": { "pedra": [1, 1] }
+    },
+    "samambaia": {
+      "nome": "Samambaia", "capacidade": 6, "xp": 1,
+      "mao": { "fibra": [2, 4] },
+      "colher": { "fibra": [3, 5] }
+    },
+    "samambaia_gigante": {
+      "nome": "Samambaia gigante", "capacidade": 14, "xp": 1,
+      "mao": { "fibra": [2, 4], "palha": [0, 1] },
+      "machado": { "madeira": [1, 2], "fibra": [1, 2] },
+      "colher": { "fibra": [3, 6] }
+    },
+    "arbusto": {
+      "nome": "Arbusto", "capacidade": 5, "xp": 1,
+      "mao": { "fibra": [1, 3] },
+      "colher": { "fibra": [2, 4] }
+    },
+    "baga_mejo": {
+      "nome": "Arbusto de Baga-Mejo", "capacidade": 4, "xp": 1, "esvazia": "arbusto",
+      "mao": { "baga_mejo": [2, 4], "fibra": [1, 2] },
+      "colher": { "baga_mejo": [4, 7], "fibra": [0, 1] }
+    },
+    "baga_escura": {
+      "nome": "Arbusto de Baga-Escura", "capacidade": 4, "xp": 1, "esvazia": "arbusto",
+      "mao": { "baga_escura": [2, 4], "fibra": [1, 2] },
+      "colher": { "baga_escura": [4, 7], "fibra": [0, 1] }
+    },
+    "frutas": {
+      "nome": "Arbusto de frutas", "capacidade": 4, "xp": 1, "esvazia": "arbusto",
+      "mao": { "fruta_rubra": [1, 2], "fruta_azul": [0, 2], "fibra": [1, 2] },
+      "colher": { "fruta_rubra": [1, 3], "fruta_azul": [1, 3] }
+    },
+    "bananeira": {
+      "nome": "Bananeira", "capacidade": 2, "xp": 2, "esvazia": "bananeira_vazia",
+      "mao": { "banana": [1, 2], "fibra": [1, 2] },
+      "colher": { "banana": [3, 5] }
+    },
+    "planta": {
+      "nome": "Bananeira", "capacidade": 6, "xp": 1,
+      "mao": { "fibra": [2, 3] },
+      "machado": { "fibra": [2, 4], "palha": [1, 2] },
+      "colher": { "fibra": [2, 3] }
+    },
+    "junco": {
+      "nome": "Junco", "capacidade": 5, "xp": 1,
+      "mao": { "fibra": [2, 3], "palha": [0, 1] },
+      "colher": { "fibra": [2, 4], "palha": [1, 2] }
+    }
+  }
+}
