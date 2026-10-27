@@ -25,15 +25,19 @@ export const NIGHT_END = 0.22;
 // Cores do céu ao longo do dia: [t, horizonte, zênite, cor da luz,
 // força da luz, céu do hemisfério, força do hemisfério, nuvens]
 const KEYS = [
-  [0.0, '#141c27', '#070c16', '#8ea6d8', 0.45, '#5a6e98', 0.42, 0.22],
-  [0.2, '#1c2430', '#0a1220', '#8ea6d8', 0.45, '#5a6e98', 0.42, 0.25],
-  [0.26, '#d79a72', '#4f6a96', '#ffb27a', 1.2, '#c7b4a0', 0.8, 0.85],
-  [0.34, '#b9c7bc', '#4d8cc4', '#fff0d0', 2.3, '#dbeee6', 1.15, 1.0],
-  [0.5, '#aebfb6', '#4d8cc4', '#fff0d0', 2.6, '#dbeee6', 1.25, 1.0],
-  [0.68, '#b9c4b4', '#5288bd', '#ffe6c0', 2.3, '#dbe8de', 1.15, 1.0],
-  [0.75, '#e08a5a', '#4a5f8c', '#ff9a5a', 1.1, '#c8a890', 0.8, 0.85],
-  [0.8, '#1c2430', '#0a1220', '#8ea6d8', 0.45, '#5a6e98', 0.42, 0.25],
-  [1.0, '#141c27', '#070c16', '#8ea6d8', 0.45, '#5a6e98', 0.42, 0.22],
+  // noite: escura de verdade, luar azulado fraco (dá para ver só o mínimo)
+  [0.0, '#070b13', '#02040a', '#6f8fe0', 0.2, '#34487e', 0.2, 0.3],
+  [0.19, '#0b101b', '#03060d', '#6f8fe0', 0.2, '#34487e', 0.2, 0.32],
+  // nascer do sol: laranja e rosa no horizonte
+  [0.26, '#f0a272', '#4c6a9c', '#ffae6a', 1.5, '#c9b2a0', 0.8, 0.9],
+  [0.33, '#c6d4cc', '#3f86c8', '#fff1d0', 3.0, '#dcecf0', 1.1, 1.0],
+  // meio-dia: céu azul forte e sol bem luminoso
+  [0.5, '#bccbc8', '#3a82cc', '#fff3d6', 3.5, '#dcecf2', 1.15, 1.0],
+  [0.67, '#c7cfc0', '#3f7fc0', '#ffe8c4', 3.0, '#e0e8de', 1.1, 1.0],
+  // pôr do sol: dourado e vermelho
+  [0.75, '#ee8450', '#46598a', '#ff8f4a', 1.4, '#ca9f86', 0.8, 0.9],
+  [0.8, '#0b101b', '#03060d', '#6f8fe0', 0.2, '#34487e', 0.2, 0.32],
+  [1.0, '#070b13', '#02040a', '#6f8fe0', 0.2, '#34487e', 0.2, 0.3],
 ].map(([t, h, z, sc, si, hs, hi, cl]) => ({ t, h: new THREE.Color(h), z: new THREE.Color(z), sc: new THREE.Color(sc), si, hs: new THREE.Color(hs), hi, cl }));
 
 export class Sky {
@@ -69,6 +73,8 @@ export class Sky {
     scene.add(this.dome);
     this.time = 0.35;
     this.daylight = 1;
+    this.night = 0;
+    this.exposure = 1.15;
     this._horizon = HORIZON.clone();
   }
 
@@ -99,7 +105,12 @@ export class Sky {
     SUN_DIR.copy(up).normalize();
     this.sunDir.copy(SUN_DIR);
     u.uSunColor.value.copy(this.sun.color).multiplyScalar(sun.y > -0.05 ? 1 : 0.35);
-    this.daylight = Math.min(1, Math.max(0.18, (this.sun.intensity - 0.45) / 2.15 * 0.82 + 0.18));
+    this.daylight = Math.min(1, Math.max(0.18, (this.sun.intensity - 0.2) / 2.8 * 0.82 + 0.18));
+    // 0 = dia, 1 = noite fechada (vale para o céu: estrelas e lua) e para o brilho do sol na tela
+    this.night = Math.min(1, Math.max(0, 1 - (this.sun.intensity - 0.2) / 1.1));
+    u.uNight.value = this.night;
+    // o filme (exposição) sobe um pouco no sol forte e desce à noite
+    this.exposure = 0.95 + 0.3 * Math.min(1, (this.sun.intensity - 0.2) / 3.0);
     sharedDay.value = this.daylight;
     if (!this.underwater) {
       this.scene.fog.color.copy(this._horizon);

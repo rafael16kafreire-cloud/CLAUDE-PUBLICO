@@ -4,6 +4,7 @@
 // roda o "loop": a cada quadro atualiza tudo e desenha.
 // =============================================================
 import { abrirOlhos } from './ui/intro.js';
+import { SunGlare } from './ui/sun_glare.js';
 import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
@@ -101,6 +102,7 @@ function boot(hotData = {}) {
   uwOverlay.className = 'uw-overlay';
   app.appendChild(uwOverlay);
 
+  const sunGlare = new SunGlare(app); // clarão do sol (por cima do 3D, embaixo dos botões)
   const ui = document.createElement('div');
   ui.id = 'ui';
   app.appendChild(ui);
@@ -1089,6 +1091,9 @@ function boot(hotData = {}) {
     const focus = game.state === STATE.MENU ? camera.position : player.position;
     if (ctx && game.state !== STATE.MENU) updatePushers(focus);
     world.update(dt, camera, focus);
+    // exposição do filme acompanha o sol (mais luz de dia, menos à noite) e brilho do sol na tela
+    renderer.toneMappingExposure += ((world.sky.exposure ?? 1.15) - renderer.toneMappingExposure) * Math.min(1, dt * 2);
+    sunGlare.update(dt, camera, world.sky, world, game.state === STATE.PLAYING && !world.cameraUnderwater);
     if (game.state !== STATE.MENU) {
       hud.update(dt);
       minimap.update(dt, player, camCtl.yaw);

@@ -440,6 +440,7 @@ export function makeSkyMaterial({ horizon, zenith, sunDir }) {
       uSunDir: { value: sunDir },
       uSunColor: { value: new THREE.Color('#fff4dc') },
       uCloud: { value: 1 },
+      uNight: { value: 0 },
       uNoise: { value: detailTexture() },
       uTime: sharedTime,
     },
@@ -458,20 +459,48 @@ export function makeSkyMaterial({ horizon, zenith, sunDir }) {
       uniform sampler2D uNoise;
       uniform float uTime;
       uniform float uCloud;
+      uniform float uNight;
       varying vec3 vDir;
+      float hash3(vec3 p) { return fract(sin(dot(p, vec3(12.9898, 78.233, 37.719))) * 43758.5453); }
       void main() {
         vec3 d = normalize(vDir);
         float y = d.y;
-        vec3 col = mix(uHorizon, uZenith, smoothstep(0.0, 0.55, y));
         float sd = max(dot(d, uSunDir), 0.0);
+        float day = 1.0 - uNight;
+        // degradê do céu: horizonte claro, azul mais fundo no alto
+        vec3 col = mix(uHorizon, uZenith, pow(smoothstep(0.0, 0.62, y), 0.85));
+        // luz do sol espalhada no ar: halo largo e, perto do horizonte, brilho dourado em volta do sol
+        float hz = 1.0 - smoothstep(0.0, 0.45, y);
+        col += uSunColor * day * (pow(sd, 3.0) * 0.1 + pow(sd, 7.0) * hz * 0.5 + pow(sd, 28.0) * 0.32);
+        // estrelas (só de noite, e só onde a nuvem deixa)
+        float cl = 0.0;
+        vec3 cloud = vec3(0.0);
         if (y > 0.0) {
           vec2 uv = d.xz / (y + 0.12) * 0.22 + vec2(uTime * 0.0025, uTime * 0.0012);
           float nn = texture2D(uNoise, uv).r * 0.65 + texture2D(uNoise, uv * 2.7 + 0.3).r * 0.35;
-          float cl = smoothstep(0.48, 0.72, nn) * smoothstep(0.0, 0.22, y);
-          vec3 cloud = (mix(vec3(0.78, 0.8, 0.82), vec3(1.0), smoothstep(0.5, 0.8, nn)) + uSunColor * pow(sd, 6.0) * 0.25) * uCloud;
-          col = mix(col, cloud, cl * 0.9);
+          cl = smoothstep(0.46, 0.74, nn) * smoothstep(0.0, 0.2, y);
+          float dens = smoothstep(0.5, 0.85, nn);
+          // nuvem: topo claro, barriga mais escura, borda prateada contra o sol
+          vec3 lit = mix(vec3(0.72, 0.75, 0.8), vec3(1.0), dens);
+          vec3 shade = vec3(0.5, 0.54, 0.62);
+          cloud = mix(shade, lit, smoothstep(0.35, 0.8, nn + sd * 0.25)) + uSunColor * (pow(sd, 5.0) * 0.4 + pow(sd, 40.0) * 0.6);
+          cloud *= uCloud;
+          vec3 st = d * 180.0;
+          vec3 ip = floor(st);
+          vec3 fp = fract(st) - 0.5;
+          float h = hash3(ip);
+          float tw = 0.55 + 0.45 * sin(uTime * (1.5 + h * 4.0) + h * 60.0);
+          float star = step(0.982, h) * smoothstep(0.34, 0.0, length(fp)) * tw;
+          float big = step(0.9975, hash3(ip + 7.0)) * smoothstep(0.45, 0.0, length(fp)) * 1.6;
+          col += vec3(0.78, 0.88, 1.0) * (star + big) * uNight * smoothstep(0.02, 0.3, y) * (1.0 - cl);
         }
-        col += uSunColor * (pow(sd, 900.0) * 6.0 + pow(sd, 16.0) * 0.22);
+        col = mix(col, cloud, cl * 0.92);
+        // sol: disco forte com borda macia (valores acima de 1: estoura em branco com o tom do filme)
+        float disc = smoothstep(0.99955, 0.99985, sd);
+        col += uSunColor * day * (disc * 14.0 + pow(sd, 400.0) * 3.0 + pow(sd, 90.0) * 0.8);
+        // lua: disco claro com halo fraco (a luz da noite vem da mesma direção)
+        float md = sd;
+        col += vec3(0.86, 0.9, 1.0) * uNight * (smoothstep(0.9993, 0.99955, md) * 1.5 + pow(md, 260.0) * 0.28 + pow(md, 26.0) * 0.05);
         gl_FragColor = vec4(col, 1.0);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>

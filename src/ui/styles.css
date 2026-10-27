@@ -1727,3 +1727,14 @@ body.is-touch.touch-botoes .hotbar {
 .logo-carga { display: none; width: 64px; height: 64px; color: #bff1ff; margin-bottom: 10px; filter: drop-shadow(0 0 8px rgba(100, 220, 255, 0.5)); }
 .start.carregando .logo-carga { display: block; }
 .logo-anel { transform-origin: 60px 60px; animation: girar 1.2s linear infinite; }
+
+/* ---------- Brilho do sol na tela (sun_glare.js) ---------- */
+.sun-glare { position: absolute; inset: 0; pointer-events: none; overflow: hidden; mix-blend-mode: screen; --sc: 255, 244, 214; }
+.sun-glare[hidden] { display: none; }
+.sun-glare i { position: absolute; left: 0; top: 0; display: block; border-radius: 50%; will-change: transform, opacity; }
+.sg-core { width: 96vmin; height: 96vmin; background: radial-gradient(circle, rgba(255, 255, 250, 0.95) 0, rgba(var(--sc), 0.85) 3.5%, rgba(var(--sc), 0.5) 10%, rgba(var(--sc), 0.2) 24%, rgba(var(--sc), 0.07) 42%, transparent 68%); }
+.sg-streak { width: 150vmin; height: 2.2vmin; background: linear-gradient(90deg, transparent, rgba(var(--sc), 0.5) 35%, rgba(255, 255, 250, 0.7) 50%, rgba(var(--sc), 0.5) 65%, transparent); }
+.sg-g { background: radial-gradient(circle, transparent 54%, rgba(150, 230, 190, 0.22) 62%, rgba(255, 220, 150, 0.16) 70%, transparent 76%); }
+.sg-g1 { width: 15vmin; height: 15vmin; }
+.sg-g2 { width: 26vmin; height: 26vmin; background: radial-gradient(circle, rgba(255, 200, 140, 0.1) 0, rgba(160, 200, 255, 0.14) 50%, transparent 72%); }
+.sg-g3 { width: 9vmin; height: 9vmin; background: radial-gradient(circle, rgba(255, 240, 200, 0.3) 0, transparent 70%); }
