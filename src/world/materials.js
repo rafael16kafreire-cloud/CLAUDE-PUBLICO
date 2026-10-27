@@ -214,10 +214,10 @@ export function makeTerrainMaterial() {
           float ripple = sin(a1) * 0.6 + sin(a2) * 0.4;
           float grain = texture2D(detailMap, sp * 1.9).r;
           float wet = 1.0 - smoothstep(0.1, 0.75, vWPos.y);
-          diffuseColor.rgb *= 1.0 + sandK * sandNear * (ripple * 0.07 + (grain - 0.5) * 0.24);
+          diffuseColor.rgb *= 1.0 + sandK * sandNear * (ripple * 0.12 + (grain - 0.5) * 0.3);
           diffuseColor.rgb *= mix(1.0, 0.7, wet * sandK);
           diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(0.95, 0.97, 1.05), wet * sandK * 0.5);
-          sandGrad = (cos(a1) * 0.6 * 4.2 * vec2(0.83, 0.56) + cos(a2) * 0.4 * 11.0 * vec2(-0.5, 0.86)) * 0.05 * sandNear;
+          sandGrad = (cos(a1) * 0.6 * 4.2 * vec2(0.83, 0.56) + cos(a2) * 0.4 * 11.0 * vec2(-0.5, 0.86)) * 0.11 * sandNear;
         }`)
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
         normal = normalize(normal + (viewMatrix * vec4(-sandGrad.x, 0.0, -sandGrad.y, 0.0)).xyz * sandK);`);

@@ -1098,7 +1098,7 @@ export function makeFlowerTuft() {
     const cx = x + Math.sin(a) * 0.04;
     const cz = z + Math.cos(a) * 0.04;
     b = verts.length / 3;
-    const R = 0.07;
+    const R = 0.042;
     verts.push(cx, h, cz);
     winds.push(1);
     cols.push(bloom.r * 0.85, bloom.g * 0.85, bloom.b * 0.7);
