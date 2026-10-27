@@ -10,9 +10,10 @@ import { VEG_MODELOS as M1, VEG_TEXTURAS as T1, FOLHAGEM_COR } from './textures/
 import { VEG_MODELOS2, VEG_TEXTURAS2 } from './textures/veg_modelos2.js';
 import { VEG_TRONCOS, VEG_TRONCOS_TEX } from './textures/veg_troncos.js';
 import { VEG_BL_MODELOS, VEG_BL_TEXTURAS } from './textures/veg_blender.js';
+import { VEG_CX_MODELOS, VEG_CX_TEXTURAS } from './textures/veg_caixa.js';
 
-const VEG_MODELOS = { ...M1, ...VEG_MODELOS2, ...VEG_TRONCOS, ...VEG_BL_MODELOS };
-const VEG_TEXTURAS = { ...T1, ...VEG_TEXTURAS2, ...VEG_TRONCOS_TEX, ...VEG_BL_TEXTURAS, folhagem_arbusto: FOLHAGEM_COR };
+const VEG_MODELOS = { ...M1, ...VEG_MODELOS2, ...VEG_TRONCOS, ...VEG_BL_MODELOS, ...VEG_CX_MODELOS };
+const VEG_TEXTURAS = { ...T1, ...VEG_TEXTURAS2, ...VEG_TRONCOS_TEX, ...VEG_BL_TEXTURAS, ...VEG_CX_TEXTURAS, folhagem_arbusto: FOLHAGEM_COR };
 import { addWind } from './materials.js';
 import { addLeafLight } from './foliage_texture.js';
 

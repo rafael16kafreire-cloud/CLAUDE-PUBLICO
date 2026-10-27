@@ -573,10 +573,10 @@ function boot(hotData = {}) {
     const len = Math.hypot(f.x, f.z) || 1;
     const x = p.x + (f.x / len) * 1.4;
     const z = p.z + (f.z / len) * 1.4;
-    const pos = new THREE.Vector3(x, Math.max(ctx.world.heightAt(x, z), p.y - 1.5), z);
-    const body = ctx.world.waterAt(x, z);
-    if (body) pos.y = Math.max(pos.y, body.level - 0.3);
-    ctx.world.spawnDeathBag(pos, [stack], 'bolsa');
+    // a caixa sai da altura da mão, com um impulso para frente e um pouco para cima
+    const pos = new THREE.Vector3(p.x + (f.x / len) * 0.9, p.y + 0.9, p.z + (f.z / len) * 0.9);
+    const vel = new THREE.Vector3((f.x / len) * 3.4, 1.8, (f.z / len) * 3.4);
+    ctx.world.spawnDeathBag(pos, [stack], 'bolsa', vel);
   }
 
   function pauseGame() {

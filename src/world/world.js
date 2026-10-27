@@ -181,8 +181,10 @@ export class World {
   }
 
   // ---------- sacos de morte / itens largados ----------
-  spawnDeathBag(position, items = [], label) {
-    const bag = new DeathBag(this.scene, position, items, label);
+  // velocity: só para a caixa de itens largados (sai da mão com impulso)
+  spawnDeathBag(position, items = [], label, velocity = null) {
+    const opts = velocity ? { velocity, physics: { heightAt: (x, z) => this.heightAt(x, z), waterAt: (x, z) => this.waterAt(x, z) } } : {};
+    const bag = new DeathBag(this.scene, position, items, label, opts);
     this.deathBags.push(bag);
     return bag;
   }

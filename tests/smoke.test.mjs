@@ -15,7 +15,7 @@ const { chromium } = require('playwright');
 
 const SHOTS = process.env.SHOTS || 'build/shots';
 await mkdir(SHOTS, { recursive: true });
-const url = pathToFileURL(resolve('dist/ilha-primordial.html')).href;
+const url = pathToFileURL(resolve(process.env.GAME_HTML || 'dist/ilha-primordial.html')).href;
 
 const results = [];
 function check(name, ok, detail = '') {
