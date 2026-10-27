@@ -188,6 +188,9 @@ export function barkTexture() {
   const n3 = tileNoise(8, 3, 13);
   // nervuras: linhas finas diagonais
   const n4 = tileNoise(24, 24, 14);
+  // líquen e musgo: manchas grandes e miúdas
+  const n5 = tileNoise(5, 10, 15);
+  const n6 = tileNoise(14, 26, 16);
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
       const u = x / W;
@@ -201,7 +204,7 @@ export function barkTexture() {
       const i = (y * W + x) * 4;
       data[i] = Math.max(0, Math.min(255, Math.round(b * 255)));
       data[i + 1] = Math.round(vein * 255);
-      data[i + 2] = 0;
+      data[i + 2] = Math.round(Math.min(1, n5(u, v) * 0.62 + n6(u, v) * 0.38) * 255);
       data[i + 3] = 255;
     }
   }
@@ -237,6 +240,7 @@ export function addPlantDetail(material) {
         varying float vPlantW;`)
       .replace('#include <map_fragment>', `#include <map_fragment>
         float plantLeaf = 1.0;
+        float plantBump = 0.0;
         #ifdef USE_MAP
         if (vMapUv.x > 0.88 && vPlantW < 0.2) plantLeaf = 0.0;
         if (plantLeaf > 0.5) {
@@ -252,16 +256,35 @@ export function addPlantDetail(material) {
             float st = texture2D(uBark, pp.xz * 0.9 + pp.y * 0.5).r;
             diffuseColor.rgb *= mix(0.75, 1.12, st);
           } else if (vPlantW < 0.2) {
-            // casca: 5 voltas da textura em volta do tronco
+            // casca: 5 voltas da textura em volta do tronco, com líquen e musgo
             float ang = atan(pp.z, pp.x) / 6.28318;
-            float bk = texture2D(uBark, vec2(ang * 5.0, pp.y * 0.22)).r;
-            diffuseColor.rgb *= mix(0.42, 1.18, bk);
+            vec3 bt = texture2D(uBark, vec2(ang * 5.0, pp.y * 0.22)).rgb;
+            vec3 base = diffuseColor.rgb * mix(0.36, 1.2, bt.r);
+            float low = 1.0 - smoothstep(0.0, 7.0, pp.y);
+            float lich = smoothstep(0.52, 0.78, bt.b);
+            base = mix(base, vec3(0.6, 0.66, 0.56) * (0.55 + 0.55 * bt.r), lich * 0.5 * (1.0 - low * 0.4));
+            float moss = smoothstep(0.42, 0.8, bt.b * (0.55 + low * 0.8));
+            base = mix(base, vec3(0.24, 0.38, 0.13) * (0.65 + 0.7 * bt.r), moss * (0.3 + low * 0.45));
+            diffuseColor.rgb = base;
+            plantBump = bt.r;
           } else {
             float vn = texture2D(uBark, pp.xz * 1.7 + pp.y * 0.3).g;
             diffuseColor.rgb *= mix(0.78, 1.1, vn);
           }
         }
         #endif`)
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+        vec2 dHp = vec2(dFdx(plantBump), dFdy(plantBump));
+        if (plantBump > 0.0) {
+          vec3 sX = dFdx(-vViewPosition);
+          vec3 sY = dFdy(-vViewPosition);
+          vec3 R1 = cross(sY, normal);
+          vec3 R2 = cross(normal, sX);
+          float det = dot(sX, R1);
+          vec2 dH = dHp * 1.6;
+          vec3 gr = sign(det) * (dH.x * R1 + dH.y * R2);
+          normal = normalize(abs(det) * normal - gr);
+        }`)
       .replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
         reflectedLight.indirectDiffuse *= mix(1.0, 1.22, plantLeaf);
         #if NUM_DIR_LIGHTS > 0
@@ -274,7 +297,7 @@ export function addPlantDetail(material) {
         #endif`);
   };
   const key = material.customProgramCacheKey;
-  material.customProgramCacheKey = () => `${key ? key() : ''}-planta2`;
+  material.customProgramCacheKey = () => `${key ? key() : ''}-planta3`;
   return material;
 }
 
