@@ -87,6 +87,7 @@ export class TouchControls {
   setScheme(scheme) {
     this.scheme = scheme === 'botoes' ? 'botoes' : 'gestos';
     this.el.classList.toggle('tc-esquema-gestos', this.scheme === 'gestos');
+    document.body.classList.toggle('touch-botoes', this.scheme === 'botoes');
     this._resetStick();
   }
 

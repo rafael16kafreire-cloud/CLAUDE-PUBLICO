@@ -1630,6 +1630,13 @@ body.is-touch .hb-slot {
 }
 
 
+/* esquema de botões: a barra rápida sobe para o centro, longe do pulo/ataque */
+body.is-touch.touch-botoes .hotbar {
+  left: 40%; right: auto; transform: translateX(-50%);
+  bottom: calc(8px + var(--safe-b));
+  grid-template-columns: repeat(8, var(--hb));
+}
+
 /* ---------- Controles de toque: esquema de gestos (ARK Mobile) ---------- */
 .tc-gestos { position: absolute; inset: 0; pointer-events: none; touch-action: none; }
 .tc-esquema-gestos .tc-gestos { pointer-events: auto; }
