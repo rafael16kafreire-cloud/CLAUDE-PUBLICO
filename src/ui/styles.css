@@ -1722,3 +1722,8 @@ body.is-touch.touch-botoes .hotbar {
 /* carregamento normal: círculo girando ao lado do texto do botão */
 .girando { display: inline-block; width: 1em; height: 1em; margin-right: 0.6em; vertical-align: -0.15em; border: 0.14em solid rgba(191, 241, 255, 0.3); border-top-color: #bff1ff; border-radius: 50%; animation: girar 0.9s linear infinite; }
 @keyframes girar { to { transform: rotate(360deg); } }
+
+/* logo da tela inicial: aparece com o anel girando enquanto a ilha é gerada */
+.logo-carga { display: none; width: 64px; height: 64px; color: #bff1ff; margin-bottom: 10px; filter: drop-shadow(0 0 8px rgba(100, 220, 255, 0.5)); }
+.start.carregando .logo-carga { display: block; }
+.logo-anel { transform-origin: 60px 60px; animation: girar 1.2s linear infinite; }

@@ -65,7 +65,16 @@ export class StartScreen {
     el.className = 'overlay start';
     el.innerHTML = `
       <div class="start-panel">
-        <p class="eyebrow">Protótipo · v0.17.0 · sobreviver, domar e construir</p>
+        <div class="logo-carga" aria-hidden="true">
+          <svg viewBox="0 0 120 120">
+            <circle class="logo-anel" cx="60" cy="60" r="52" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="60 267" stroke-linecap="round"/>
+            <circle cx="60" cy="60" r="44" fill="none" stroke="currentColor" stroke-width="1" opacity="0.35"/>
+            <path d="M40 28 L58 92" stroke="currentColor" stroke-width="7" stroke-linecap="round"/>
+            <path d="M58 24 L74 96" stroke="currentColor" stroke-width="7" stroke-linecap="round"/>
+            <path d="M78 28 L90 88" stroke="currentColor" stroke-width="7" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <p class="eyebrow">Protótipo · v${typeof __VERSION__ !== 'undefined' ? __VERSION__ : ''} · sobreviver, domar e construir</p>
         <h1 class="title"><span>Ilha</span><br><span>Primordial</span></h1>
         <p class="tagline">Você acordou na beira da mata sem nada. Pegue madeira, crie ferramentas e sobreviva aos predadores da floresta.</p>
         <nav class="menu-tabs" role="tablist">
@@ -198,6 +207,7 @@ export class StartScreen {
 
   setLoading(text) {
     this.button.disabled = true;
+    this.el.classList.add('carregando');
     const giro = document.createElement('span');
     giro.className = 'girando';
     this.button.replaceChildren(giro, document.createTextNode(text));
@@ -205,6 +215,7 @@ export class StartScreen {
 
   setReady(label = 'Jogar sozinho', canStartNew = false) {
     this._renderSlots();
+    this.el.classList.remove('carregando');
     this.button.disabled = false;
     this.button.textContent = label;
     this.newButton.hidden = !canStartNew;
