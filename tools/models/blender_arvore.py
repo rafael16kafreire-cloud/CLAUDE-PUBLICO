@@ -229,28 +229,30 @@ def monta_folhas(ramos, rng, P):
 
 
 def monta_lod(ramos, rng, P):
-    """Versão leve para a distância: tronco e galhos grandes (poucos lados) e cartões de
-    folha maiores só nos galhos grandes e em alguns médios (~2 mil triângulos)."""
+    """Versão muito leve para a distância (centenas de árvores aparecem nessa faixa):
+    só o tronco, decimado (5 lados, 1 anel a cada ~2 m), e poucos cartões de folha
+    grandes na copa (~250 triângulos no total)."""
     Vt, Ut, Ft, Vf, Uf, Ff = [], [], [], [], [], []
     centro = Vector((0, 0, P['altura'] * P['galho_fim'] * 0.92))
     for i, r in enumerate(ramos):
-        if r.nivel > 1 and not (r.nivel == 2 and i % 3 == 0):
-            continue
-        lados = 8 if r.nivel == 0 else 4
-        urep = max(1, round(math.tau * max(r.raios[0], 0.02) / 1.3))
-        if r.nivel <= 1:
-            v, u, f = tubo(r, lados, urep, 2.6, rng.random())
-            b = len(Vt)
+        if r.nivel == 0:
+            pts = r.pts[::4] + ([r.pts[-1]] if (len(r.pts) - 1) % 4 else [])
+            raios = r.raios[::4] + ([r.raios[-1]] if (len(r.raios) - 1) % 4 else [])
+            urep = max(1, round(math.tau * max(r.raios[0], 0.02) / 1.3))
+            v, u, f = tubo(Ramo(pts, raios, 0), 5, urep, 2.6, rng.random())
             Vt += v
             Ut += u
-            Ft += [(x + b, y + b, z + b) for x, y, z in f]
-        if r.nivel == 0 or (r.nivel == 1 and r.pts[0].z < 1.5):
+            Ft += f
             continue
-        n = 5 if r.nivel == 1 else 4
+        if r.nivel == 1 and r.pts[0].z < 1.5:
+            continue  # raízes
+        if r.nivel > 2 or (r.nivel == 2 and i % 5 != 0):
+            continue
+        n = 3 if r.nivel == 1 else 2
         for k in range(n):
-            t = 0.5 + 0.5 * rng.random() if k else 1.0
+            t = 0.55 + 0.45 * rng.random() if k else 1.0
             pos, d, _ = ponto_em(r, t)
-            pos = pos + Vector((rng.uniform(-1, 1), rng.uniform(-1, 1), rng.uniform(-0.6, 0.8))) * 0.7
+            pos = pos + Vector((rng.uniform(-1, 1), rng.uniform(-1, 1), rng.uniform(-0.5, 0.9))) * 0.8
             fora = (pos - centro)
             fora = (fora.normalized() * 0.7 + Vector((rng.uniform(-1, 1), rng.uniform(-1, 1), rng.uniform(-0.3, 1))) * 0.7 + UP * 0.2).normalized()
             t1 = fora.cross(Vector((rng.uniform(-1, 1), rng.uniform(-1, 1), rng.uniform(-1, 1))))
@@ -258,14 +260,15 @@ def monta_lod(ramos, rng, P):
                 t1 = Vector((1, 0, 0))
             t1.normalize()
             t2 = fora.cross(t1).normalized()
-            h = P['cartao'] * rng.uniform(1.3, 1.9) / 2
+            h = P['cartao'] * rng.uniform(1.8, 2.5) / 2
             flip = rng.random() < 0.5
             base = len(Vf)
-            for a, b2 in [(-1, -1), (1, -1), (1, 1), (-1, 1)]:
-                Vf.append(pos + t1 * a * h + t2 * b2 * h)
-                Uf.append((1.0 if ((a > 0) != flip) else 0.0, 1.0 if b2 > 0 else 0.0))
+            for a2, b2 in [(-1, -1), (1, -1), (1, 1), (-1, 1)]:
+                Vf.append(pos + t1 * a2 * h + t2 * b2 * h)
+                Uf.append((1.0 if ((a2 > 0) != flip) else 0.0, 1.0 if b2 > 0 else 0.0))
             Ff += [(base, base + 1, base + 2), (base, base + 2, base + 3)]
     return Vt, Ut, Ft, Vf, Uf, Ff
+
 
 # ---------------------------------------------------------------
 # Exportação para o jogo
