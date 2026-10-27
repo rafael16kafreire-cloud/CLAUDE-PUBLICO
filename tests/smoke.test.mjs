@@ -779,6 +779,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     const c = window.__ilha.ctx;
     c.player.position.set(0, -4, 1590);
     c.player.velocity.set(0, 0, 0);
+    c.player.stats.stamina = c.player.stats.max.stamina; // cansado afunda um pouco
   });
   await gameWait(page, 3000);
   const floatY = await page.evaluate(() => ({ y: window.__ilha.ctx.player.position.y, sw: window.__ilha.ctx.player.swimming, cam: window.__ilha.ctx.world.cameraUnderwater }));
@@ -960,7 +961,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   check('Tamanhos reais: espino 14–18 m, deinosuchus 10–12, titanoboa 12–14, T-rex < 13', v07.sizesOk, JSON.stringify(v07.sizes));
   check('Ciclo de vida: nasce filhote, cresce e o velho morre', v07.baby && v07.grew && v07.oldDies, JSON.stringify({ b: v07.baby, g: v07.grew, o: v07.oldDies }));
   check('Chão: gravetos e pedrinhas para pegar', v07.ground.gravetos > 500 && v07.ground.pedrinhas > 300, JSON.stringify(v07.ground));
-  check('Stamina dobrada e habilidades aumentam vida/peso', v07.stamina === 200 && v07.skills.vida === 20 && v07.skills.peso === 140, JSON.stringify(v07));
+  check('Stamina dobrada e habilidades aumentam vida/peso', v07.stamina === 200 && v07.skills.vida === 20 && v07.skills.peso === 120, JSON.stringify(v07));
 
   // Construção: piso encaixa do lado do outro, parede na beira, teto em cima,
   // rampa sobe 3 m, parede segura o jogador e a porta abre
@@ -1079,24 +1080,27 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   check('Montar: F monta, o bicho anda com você e F desce', ride1 && ride1.riding && ride1.onTop && ride1.moved > 1 && !ride2.riding, JSON.stringify({ ride1, ride2 }));
   await page.evaluate(() => window.__ilha.ctx.creatures.clear());
 
-  // Atributos sorteados entre o mínimo e o máximo da espécie
+  // Atributos como no ARK: nível 1 = valores da espécie; cada nível a mais
+  // é um ponto sorteado entre os atributos
   const rolls = await page.evaluate(() => {
     const c = window.__ilha.ctx; const p = c.player.position; const out = { ok: true, bad: [], distinct: 0 };
     const seen = new Set();
     for (let i = 0; i < 12; i++) {
-      const cr = c.creatures.spawn('raptor', p.x + 200 + i * 3, p.z + 200, 1);
-      const at = cr.species.atributos;
+      const lv1 = c.creatures.spawn('raptor', p.x + 200 + i * 3, p.z + 200, 1);
+      const at = lv1.species.atributos;
       for (const k of ['vida', 'forca', 'peso', 'stamina', 'velocidade', 'torpor']) {
-        const v = cr.stats[k]; const [a, b] = at[k];
-        if (v < Math.floor(a) || v > Math.ceil(b)) { out.ok = false; out.bad.push(`${k}=${v}`); }
+        if (lv1.stats[k] !== at[k][0]) { out.ok = false; out.bad.push(`nv1 ${k}=${lv1.stats[k]}`); }
       }
-      seen.add(cr.stats.vida);
+      const lv30 = c.creatures.spawn('raptor', p.x + 200 + i * 3, p.z + 210, 30);
+      const pts = Object.values(lv30.levelPoints).reduce((a, b) => a + b, 0);
+      if (pts !== 29) { out.ok = false; out.bad.push(`pontos=${pts}`); }
+      seen.add(lv30.stats.vida);
     }
     out.distinct = seen.size;
     c.creatures.clear();
     return out;
   });
-  check('Atributos: cada bicho sorteia vida/força/peso/stamina/velocidade/torpor no intervalo', rolls.ok && rolls.distinct > 3, JSON.stringify(rolls));
+  check('Atributos: nível 1 igual à espécie e pontos de nível sorteados (como no ARK)', rolls.ok && rolls.distinct > 3, JSON.stringify(rolls));
 
   // Lupa: mira num bicho, espera 2 s e aparece a ficha com os atributos
   await page.evaluate(() => {
