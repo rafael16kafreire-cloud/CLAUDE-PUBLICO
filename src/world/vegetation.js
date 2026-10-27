@@ -47,10 +47,10 @@ const TYPES = {
   planta_praia: { hi: () => vegGeometry('planta_praia', 1.1), mat: () => vegMaterial('planta_praia'), collider: 0, shadow: false, scale: [0.7, 1.4], res: 'arbusto', maxDist: 80, textured: true },
   capim_praia: { hi: () => vegGeometry('capim_praia', 0.9), mat: () => vegMaterial('capim_praia'), collider: 0, shadow: false, scale: [0.7, 1.4], res: null, maxDist: 60, textured: true },
   // floresta (Low Poly Tree Scene Free): árvores folhosas e tufos de capim
-  arvore_folhosa: { hiDist: 26, foot: 0.5, hi: () => vegGeometry('arvore_folhosa', 15), lo: P.makeCanopyTreeLow, mat: () => vegMaterial('arvore_folhosa'), collider: 0.45, shadow: true, scale: [0.8, 1.3], res: 'arvore', textured: true, maxDist: 320 },
+  arvore_folhosa: { hiDist: 26, foot: 0.5, hi: () => vegGeometry('arvore_folhosa', 15), lo: P.makeCanopyTreeLow, mat: () => vegMaterial('arvore_folhosa'), collider: 0.45, shadow: true, scale: [0.8, 1.3], res: 'arvore_mole', textured: true, maxDist: 320 },
   arvore_folhosa2: { foot: 0.35, hi: () => vegGeometry('arvore_folhosa2', 11), lo: P.makeUnderstoryTreeLow, mat: () => vegMaterial('arvore_folhosa2'), collider: 0.35, shadow: true, scale: [0.8, 1.3], res: 'arvore_mole', textured: true, maxDist: 320 },
   // árvore alta da mata (Agarwood): tronco liso, copa no alto e cipós
-  arvore_agar: { hiDist: 24, foot: 0.45, hi: () => vegGeometry('arvore_agar', 24), lo: P.makeCanopyTreeLow, mat: () => vegMaterial('arvore_agar'), collider: 0.45, shadow: true, scale: [0.8, 1.25], res: 'arvore', textured: true, maxDist: 320 },
+  arvore_agar: { hiDist: 24, foot: 0.45, hi: () => vegGeometry('arvore_agar', 24), lo: P.makeCanopyTreeLow, mat: () => vegMaterial('arvore_agar'), collider: 0.45, shadow: true, scale: [0.8, 1.25], res: 'arvore_mole', textured: true, maxDist: 320 },
   capim: { hi: () => vegGeometry('capim', 0.8), mat: () => vegMaterial('capim'), collider: 0, shadow: false, scale: [0.7, 1.5], res: null, maxDist: 55, textured: true },
   samambaia_gigante: { foot: 0.3, hi: P.makeTreeFern, lo: P.makeTreeFernLow, imp: true, collider: 0.2, shadow: true, scale: [0.8, 1.3], res: 'samambaia_gigante' },
   bananeira: { foot: 0.45, hi: P.makeBananaTree, lo: P.makeBananaTreeLow, collider: 0.22, shadow: false, scale: [0.85, 1.25], res: 'bananeira', maxDist: 110 },
@@ -66,10 +66,10 @@ const TYPES = {
   tronco_pinho: { hi: () => vegGeometry('pinho', 9, 0), lo: P.makeFallenLogLow, mat: () => vegMaterial('pinho'), textured: true, collider: 'log', log: [4.3, 0.45, 0.9], shadow: true, scale: [0.8, 1.2], res: 'tronco', maxDist: 140 },
   pedrinhas: { foot: 0.05, hi: P.makePebbles, collider: 0, shadow: false, scale: [0.8, 1.3], res: 'pedrinhas', maxDist: 45 },
   gravetos: { foot: 0.05, hi: P.makeSticks, collider: 0, shadow: false, scale: [0.8, 1.3], res: 'gravetos', maxDist: 45 },
-  pinheiro: { foot: 0.4, hi: P.makeSpruce, lo: P.makeSpruceLow, imp: true, collider: 0.3, shadow: true, scale: [0.7, 1.3], res: 'arvore', cold: true },
+  pinheiro: { foot: 0.4, hi: P.makeSpruce, lo: P.makeSpruceLow, imp: true, collider: 0.3, shadow: true, scale: [0.7, 1.3], res: 'arvore_mole', cold: true },
   // modelos da neve enviados pelo jogador (mat = material próprio, com textura)
   // neve: árvores em 3D de verdade (galhos e neve em cima), não placas com foto
-  pinheiro_neve: { foot: 0.4, hi: P.makeSnowSpruce, lo: P.makeSnowSpruceLow, imp: true, collider: 0.3, shadow: true, scale: [0.75, 1.35], res: 'arvore', cold: true },
+  pinheiro_neve: { foot: 0.4, hi: P.makeSnowSpruce, lo: P.makeSnowSpruceLow, imp: true, collider: 0.3, shadow: true, scale: [0.75, 1.35], res: 'arvore_mole', cold: true },
   arvore_morta_neve: { foot: 0.4, hi: P.makeSnowDeadTree, lo: P.makeSnowDeadTreeLow, collider: 0.3, shadow: true, scale: [0.8, 1.3], res: 'arvore_mole', cold: true, maxDist: 320 },
   arvore_seca: { foot: 0.4, hi: () => P.makeSnowDeadTree(false, 5), lo: () => P.makeSnowDeadTree(true, 5), collider: 0.25, shadow: true, scale: [0.9, 1.4], res: 'arvore_mole', cold: true, maxDist: 320 },
   arbusto_neve: { hi: P.makeSnowShrub, collider: 0, shadow: false, scale: [0.7, 1.4], res: 'arbusto', maxDist: 90 },
