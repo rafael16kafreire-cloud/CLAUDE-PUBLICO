@@ -31,23 +31,47 @@ function bytes(b64) {
 
 export function skinGeometry(part) {
   const q = new Uint16Array(bytes(part.pos));
-  const uq = new Uint16Array(bytes(part.uv));
   const [x0, y0, z0, x1, y1, z1] = part.box;
   const pos = new Float32Array(part.n * 3);
-  const uv = new Float32Array(part.n * 2);
   for (let i = 0; i < part.n; i++) {
     pos[i * 3] = x0 + (q[i * 3] / 65535) * (x1 - x0);
     pos[i * 3 + 1] = y0 + (q[i * 3 + 1] / 65535) * (y1 - y0);
     pos[i * 3 + 2] = z0 + (q[i * 3 + 2] / 65535) * (z1 - z0);
-    uv[i * 2] = uq[i * 2] / 65535;
-    uv[i * 2 + 1] = uq[i * 2 + 1] / 65535;
+  }
+  let uv;
+  if (part.uvf) uv = new Float32Array(bytes(part.uvf));
+  else {
+    const uq = new Uint16Array(bytes(part.uv));
+    uv = new Float32Array(part.n * 2);
+    for (let i = 0; i < part.n * 2; i++) uv[i] = uq[i] / 65535;
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
   g.setIndex(new THREE.BufferAttribute(new Uint16Array(bytes(part.idx)), 1));
-  g.computeVertexNormals();
+  if (part.nrm) {
+    const nq = new Int8Array(bytes(part.nrm));
+    const n = new Float32Array(part.n * 3);
+    for (let i = 0; i < n.length; i++) n[i] = nq[i] / 127;
+    g.setAttribute('normal', new THREE.BufferAttribute(n, 3));
+  } else g.computeVertexNormals();
+  if (part.col) {
+    // cor por vértice (sombra nas dobras dos músculos, roupa, cabelo): 0..1,3
+    const cq = new Uint8Array(bytes(part.col));
+    const c = new Float32Array(part.n * 3);
+    for (let i = 0; i < c.length; i++) c[i] = (cq[i] / 255) * 1.3;
+    g.setAttribute('color', new THREE.BufferAttribute(c, 3));
+  }
   return g;
+}
+
+// Material da pele (textura de pele + cor por vértice); um só para o corpo todo.
+export function skinMaterial() {
+  const tex = new THREE.TextureLoader().load(SKIN_TEXTURA);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.anisotropy = 4;
+  return new THREE.MeshLambertMaterial({ map: tex, vertexColors: true });
 }
 
 export class PlayerModel {
@@ -99,9 +123,7 @@ export class PlayerModel {
     this.body.traverse((o) => {
       if (o.isMesh) o.visible = false;
     });
-    const tex = new THREE.TextureLoader().load(SKIN_TEXTURA);
-    tex.colorSpace = THREE.SRGBColorSpace;
-    const mat = new THREE.MeshLambertMaterial({ map: tex });
+    const mat = skinMaterial();
     const holders = { head: this.head, torso: this.body, armL: this.armL, armR: this.armR, legL: this.legL, legR: this.legR };
     for (const [name, part] of Object.entries(SKIN_PARTES)) {
       const holder = holders[name];

@@ -20,8 +20,6 @@ const PLANT_CREDITS = [
   ['Folhagem do chão da floresta', 'Grass', 'Epic_Tree_Store'],
   ['Árvore alta da mata', 'Agarwood', 'Valery.Li'],
   ['Arbustos de bagas', 'Bush with Berries', 'ivanmm1'],
-  ['Aparência do jogador', 'Base Chibi Fantasy Blocky Head', 'UFRE Studio'],
-  ['Braço em primeira pessoa', 'First Person hands rigged', 'davidfischer'],
   ['Troncos caídos', 'Mossy old tree log / Fallen Spruce Tree', 'autores no Sketchfab'],
 ];
 

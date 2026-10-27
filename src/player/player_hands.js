@@ -5,76 +5,33 @@
 // de lança. A ferramenta em uso aparece na mão direita.
 // =============================================================
 import * as THREE from 'three';
-import { SKIN_PARTES, SKIN_TEXTURA } from './skin_data.js';
-import { skinGeometry } from './player_model.js';
-import { loadFpArm } from './fp_arms.js';
+import { FP_BRACO } from './skin_data.js';
+import { skinGeometry, skinMaterial } from './player_model.js';
 
-const SKIN = new THREE.MeshLambertMaterial({ color: '#b5784e' });
 const WOOD = new THREE.MeshLambertMaterial({ color: '#7a5a3a' });
 const STONE = new THREE.MeshLambertMaterial({ color: '#8a8a90' });
 const FLINT = new THREE.MeshLambertMaterial({ color: '#4c505a' });
 const ROPE = new THREE.MeshLambertMaterial({ color: '#a89058' });
 
-// Peça "de carne": esfera esticada (músculos, mão).
-function lump(r, sx, sy, sz, x, y, z, mat = SKIN, seg = 14) {
-  const m = new THREE.Mesh(new THREE.SphereGeometry(r, seg, Math.round(seg * 0.75)), mat);
-  m.scale.set(sx, sy, sz);
-  m.position.set(x, y, z);
-  return m;
-}
-
-// Braço direito musculoso: bíceps, antebraço grosso com músculos
-// saltados, punho e mão fechada com os nós dos dedos.
-// (o braço aponta para -z, para frente da câmera)
-function muscularArm() {
-  const g = new THREE.Group();
-  // braço (perto da câmera) e bíceps
-  g.add(lump(0.07, 1.05, 1.0, 2.6, 0.0, 0.0, 0.26));
-  g.add(lump(0.06, 1.0, 1.05, 1.9, 0.0, 0.035, 0.22));
-  // cotovelo
-  g.add(lump(0.06, 1.0, 0.95, 1.1, 0.005, -0.008, 0.1));
-  // antebraço: mais grosso perto do cotovelo, afinando até o punho
-  g.add(lump(0.058, 1.12, 1.0, 2.4, 0.0, 0.0, -0.02));
-  g.add(lump(0.06, 0.95, 0.9, 2.0, 0.026, 0.026, 0.02));  // músculo de cima (saltado)
-  g.add(lump(0.046, 0.85, 0.8, 2.0, -0.028, -0.01, 0.02)); // músculo de baixo
-  g.add(lump(0.038, 1.15, 0.85, 2.0, 0.0, 0.0, -0.13));
-  // punho
-  g.add(lump(0.033, 1.25, 0.85, 1.0, 0.0, 0.0, -0.205));
-  // mão fechada
-  const hand = new THREE.Group();
-  hand.position.z = -0.26;
-  hand.add(lump(0.046, 1.15, 0.78, 1.0, 0.0, 0.0, 0.0));            // palma/costas da mão
-  for (let i = 0; i < 4; i++) {
-    const x = -0.033 + i * 0.022;
-    hand.add(lump(0.017, 1.0, 0.9, 1.0, x, 0.012, -0.04, SKIN, 10));     // nós dos dedos
-    hand.add(lump(0.016, 1.0, 1.35, 1.0, x, -0.012, -0.046, SKIN, 10));  // dedos dobrados
-  }
-  hand.add(lump(0.016, 1.0, 1.0, 2.0, -0.05, -0.014, -0.02, SKIN, 8)); // polegar
-  g.add(hand);
-  g.userData.fist = hand;
-  g.scale.setScalar(1.25);
-  g.position.set(0.2, -0.27, -0.27);
-  g.rotation.set(0.32, 0.2, 0.05);
-  return g;
-}
-
-// Braço direito do boneco (mesma skin do modelo em 3ª pessoa).
-// A peça da skin pende para baixo a partir do ombro; aqui ela é
-// deitada para apontar para frente (-z) e a mão fica onde as
-// ferramentas encaixam.
+// Braço direito em primeira pessoa (gerado em tools/models/personagem.py): ombro e bíceps
+// perto da câmera, antebraço grosso com veias, punho fechado com os nós dos dedos e o polegar
+// por cima, pulseira de couro com a gema verde. A origem do modelo é o centro do punho
+// (onde as ferramentas encaixam); o antebraço vem para +z e o punho aponta para -z.
 function skinArm() {
   const g = new THREE.Group();
-  const tex = new THREE.TextureLoader().load(SKIN_TEXTURA);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  const arm = new THREE.Mesh(skinGeometry(SKIN_PARTES.armR), new THREE.MeshLambertMaterial({ map: tex }));
-  const s = 0.3;
-  const len = 0.86 * s;
-  arm.scale.setScalar(s);
-  arm.rotation.set(Math.PI / 2, Math.PI / 2, 0); // costas da mão para cima
-  arm.position.set(-0.07 * s, 0, len - 0.3);
-  g.add(arm);
   const hand = new THREE.Group();
   hand.position.z = -0.26;
+  const arm = new THREE.Mesh(skinGeometry(FP_BRACO), skinMaterial());
+  hand.add(arm);
+  // gema verde da pulseira (brilha e pulsa devagar)
+  const gem = new THREE.Mesh(
+    new THREE.SphereGeometry(0.014, 12, 8),
+    new THREE.MeshBasicMaterial({ color: '#3dff86' }),
+  );
+  gem.scale.set(1, 0.55, 1.25);
+  gem.position.set(0, 0.0745, 0.22);
+  hand.add(gem);
+  g.userData.gem = gem;
   g.add(hand);
   g.userData.fist = hand;
   g.scale.setScalar(1.25);
@@ -173,7 +130,7 @@ export class PlayerHands {
   constructor(camera) {
     this.root = new THREE.Group();
     // Só o braço direito aparece (o esquerdo fica fora da tela).
-    this.right = SKIN_PARTES?.armR ? skinArm() : muscularArm();
+    this.right = skinArm();
     this.left = new THREE.Group();
     this.root.add(this.right);
     this.tools = {};
@@ -194,18 +151,6 @@ export class PlayerHands {
       }
     });
     camera.add(this.root);
-    // braço de verdade (modelo com ossos): troca o provisório quando carregar
-    loadFpArm().then(({ group }) => {
-      const fist = this.right.userData.fist;
-      if (!fist) return;
-      for (const c of [...this.right.children]) if (c.isMesh) this.right.remove(c);
-      fist.clear();
-      group.traverse((o) => {
-        if (o.isMesh) o.renderOrder = 10;
-      });
-      fist.add(group);
-      this.realArm = group;
-    }).catch((err) => console.warn('[Ilha] braço 1ª pessoa', err));
     this.restR = this.right.position.clone();
     this.restL = this.left.position.clone();
     this.restRotR = this.right.rotation.clone();
@@ -240,6 +185,8 @@ export class PlayerHands {
     this.root.visible = visible;
     if (!visible) return;
     this._t += dt;
+    const gem = this.right.userData.gem;
+    if (gem) gem.material.color.setRGB(0.16 + 0.1 * Math.sin(this._t * 2.2), 0.85 + 0.15 * Math.sin(this._t * 2.2), 0.42 + 0.1 * Math.sin(this._t * 2.2));
     const fl = this.tools.tocha?.userData.flame;
     if (fl && this.toolKind === 'tocha') fl.scale.set(1, 0.85 + Math.sin(this._t * 17) * 0.12 + Math.sin(this._t * 41) * 0.06, 1);
     // aterrissagem: as mãos "afundam"
