@@ -147,6 +147,7 @@ function boot(hotData = {}) {
   let composerKey = '';
   let cinema = false;      // true: composer é o da biblioteca "postprocessing" (qualidade alta)
   let godrays = null;
+  let aoPass = null;
   // Qualidade alta: oclusão ambiental (n8ao, ISC), raios de sol que atravessam a copa
   // (three-good-godrays, Zlib), brilho, tom ACES, cor e vinheta. Bibliotecas em
   // "postprocessing" (Zlib). Créditos na tela inicial.
@@ -162,6 +163,7 @@ function boot(hotData = {}) {
     ao.configuration.halfRes = true;
     ao.setQualityMode('Medium');
     c.addPass(ao);
+    aoPass = ao;
     const bloom = new BloomEffect({ intensity: 0.32, luminanceThreshold: 0.88, luminanceSmoothing: 0.25, mipmapBlur: true });
     const tone = new ToneMappingEffect({ mode: ToneMappingMode.ACES_FILMIC });
     const sat = new HueSaturationEffect({ saturation: 0.14, hue: 0 });
@@ -1095,6 +1097,8 @@ function boot(hotData = {}) {
     snapshot: () => (ctx ? gameSnapshot() : {}),
     save: () => autosave(),
     clearSave,
+    // depuração dos efeitos de imagem (testes automáticos)
+    get post() { return { composer, godrays, ao: aoPass, cinema }; },
   };
 }
 
