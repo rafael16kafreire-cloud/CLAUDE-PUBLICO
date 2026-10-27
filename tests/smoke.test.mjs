@@ -29,14 +29,14 @@ const browser = await chromium.launch({
   args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--disable-gpu-compositing'],
 });
 
-async function openGame(contextOptions, label) {
+async function openGame(contextOptions, label, extraSettings = {}) {
   const context = await browser.newContext(contextOptions);
   // Testes medem a qualidade padrão: sem baixar sozinho.
-  await context.addInitScript(() => {
+  await context.addInitScript((extra) => {
     try {
-      localStorage.setItem('ilha-primordial:opcoes', JSON.stringify({ version: 3, autoQuality: false }));
+      localStorage.setItem('ilha-primordial:opcoes', JSON.stringify({ version: 3, autoQuality: false, ...extra }));
     } catch { /* ok */ }
-  });
+  }, extraSettings);
   const page = await context.newPage();
   page.setDefaultTimeout(120000); // navegador de teste sem placa de vídeo é lento
   const errors = [];
@@ -447,6 +447,22 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   await page.click('#it-drop');
   const bags1 = await page.evaluate(() => window.__ilha.ctx.world.deathBags.length);
   check('Inventário: Largar cria uma bolsa no chão', bags1 === bags0 + 1, `${bags0} -> ${bags1}`);
+  // Carga (como no ARK): quanto mais pesado, mais devagar, aos poucos; acima do máximo não corre
+  const wf = await page.evaluate(() => {
+    const { ctx } = window.__ilha;
+    const inv = ctx.inventory;
+    const st = ctx.player.stats;
+    const keep = inv.slots.map((x) => (x ? { ...x } : null));
+    const base = ctx.actions.weightFactor();
+    inv.add('pedra', Math.round((st.maxWeight * 0.7) / 0.5));
+    const f70 = ctx.actions.weightFactor();
+    inv.add('pedra', Math.round((st.maxWeight * 0.5) / 0.5));
+    const f120 = ctx.actions.weightFactor();
+    const over = ctx.actions.overloaded();
+    for (let i = 0; i < inv.slots.length; i++) inv.slots[i] = keep[i];
+    return { base, f70: +f70.toFixed(2), f120: +f120.toFixed(2), over };
+  });
+  check('Carga: fica mais lento aos poucos e acima do máximo não corre', wf.base === 1 && wf.f70 < 1 && wf.f70 > 0.7 && wf.f120 < wf.f70 && wf.over === true, JSON.stringify(wf));
   await page.keyboard.press('Tab');
   await frames(page, 3);
   const invClosed = await page.evaluate(() => document.querySelector('.inv').hidden && !window.__ilha.ctx.touch.input.blocked);
@@ -1229,7 +1245,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     isMobile: true,
     hasTouch: true,
     userAgent: 'Mozilla/5.0 (Linux; Android 13; Pixel 6a) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36',
-  }, 'Celular');
+  }, 'Celular', { touchScheme: 'botoes' });
   await frames(page, 10);
   await page.screenshot({ path: `${SHOTS}/20-cel-tela-inicial.png` });
   await page.tap('#btn-play');
@@ -1363,6 +1379,96 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   await frames(page, 4);
   await page.screenshot({ path: `${SHOTS}/28-cel-em-pe-inventario.png` });
   await page.tap('#inv-close');
+
+  // ---------- Gestos (esquema padrão do ARK Mobile) ----------
+  // Os tempos dos gestos são alargados: o navegador de teste (sem placa de vídeo) é lento.
+  await page.evaluate(() => {
+    const { ctx, settings } = window.__ilha;
+    settings.set('touchScheme', 'gestos');
+    ctx.touch.timing = { flick: 6000, double: 6000, hold: 700, tap: 6000, edge: 6000 };
+    ctx.creatures.enabled = false; ctx.creatures.clear();
+    if (ctx.invScreen.visible) ctx.invScreen.hide();
+    document.body.classList.remove('inv-open');
+    ctx.touch.input.blocked = false;
+    ctx.touch.setVisible(true);
+    ctx.camCtl.pitch = 1.2; // olhando para o céu: sem aviso de interação no caminho
+    const i = ctx.touch.input;
+    window.__rec = { press: [], look: 0, runSeen: false };
+    const p = i.press.bind(i); i.press = (a) => { window.__rec.press.push(a); return p(a); };
+    const al = i.addLook.bind(i); i.addLook = (dx, dy) => { window.__rec.look += Math.abs(dx); return al(dx, dy); };
+    setInterval(() => { if (i.runToggle) window.__rec.runSeen = true; }, 10);
+    window.__resetRec = () => { window.__rec.press = []; window.__rec.look = 0; window.__rec.runSeen = false; };
+  });
+  await frames(page, 5);
+  const gwait = (ms) => page.waitForTimeout(ms);
+  const rec = () => page.evaluate(() => JSON.parse(JSON.stringify(window.__rec)));
+  check('Gestos: esquema de gestos ligado', await page.evaluate(() => document.querySelector('.tc').classList.contains('tc-esquema-gestos')));
+  const gz0 = await page.evaluate(() => window.__ilha.ctx.player.position.z);
+  await touch('touchStart', [{ x: 120, y: 280, id: 1 }]);
+  for (let i = 1; i <= 6; i++) { await touch('touchMove', [{ x: 120, y: 280 - i * 10, id: 1 }]); await gwait(40); }
+  await gwait(1800);
+  await touch('touchEnd', []);
+  const gz1 = await page.evaluate(() => window.__ilha.ctx.player.position.z);
+  check('Gestos: arrastar na esquerda anda', gz1 < gz0 - 1.5, `z ${gz0.toFixed(1)} -> ${gz1.toFixed(1)}`);
+  await gwait(800);
+  await page.evaluate(() => window.__resetRec());
+  await touch('touchStart', [{ x: 120, y: 300, id: 1 }]);
+  await gwait(40); await touch('touchMove', [{ x: 122, y: 262, id: 1 }]);
+  await gwait(40); await touch('touchMove', [{ x: 122, y: 238, id: 1 }]);
+  await gwait(900);
+  await touch('touchEnd', []);
+  await gwait(500);
+  check('Gestos: arrastar rápido para cima pula', (await rec()).press.includes('jump'));
+  await gwait(1200);
+  await page.evaluate(() => window.__resetRec());
+  await touch('touchStart', [{ x: 120, y: 300, id: 1 }]); await gwait(50); await touch('touchEnd', []);
+  await gwait(100);
+  await touch('touchStart', [{ x: 120, y: 300, id: 1 }]); await gwait(900);
+  await touch('touchEnd', []);
+  await gwait(500);
+  const gRun = await rec();
+  const gRunOff = await page.evaluate(() => window.__ilha.ctx.touch.input.runToggle);
+  check('Gestos: tocar duas vezes e segurar corre (e solta ao levantar)', gRun.runSeen === true && gRunOff === false, `${gRun.runSeen}/${gRunOff}`);
+  await gwait(800);
+  await page.evaluate(() => window.__resetRec());
+  await touch('touchStart', [{ x: 600, y: 160, id: 2 }]); await gwait(50); await touch('touchEnd', []);
+  await gwait(1000);
+  const gTap = (await rec()).press;
+  check('Gestos: tocar na direita ataca ou usa', gTap.includes('attack') || gTap.includes('interact'), JSON.stringify(gTap));
+  await gwait(600);
+  const gy0 = await page.evaluate(() => window.__ilha.ctx.camCtl.yaw);
+  await touch('touchStart', [{ x: 480, y: 160, id: 2 }]);
+  for (let i = 1; i <= 8; i++) { await touch('touchMove', [{ x: 480 + i * 12, y: 160, id: 2 }]); await gwait(60); }
+  await gwait(300);
+  await touch('touchEnd', []);
+  await gwait(500);
+  const gy1 = await page.evaluate(() => window.__ilha.ctx.camCtl.yaw);
+  check('Gestos: arrastar na direita gira a câmera', Math.abs(gy1 - gy0) > 0.2, `${gy0.toFixed(2)} -> ${gy1.toFixed(2)}`);
+  await touch('touchStart', [{ x: 600, y: 160, id: 2 }]); await gwait(1000);
+  await touch('touchEnd', []);
+  await gwait(800);
+  check('Gestos: segurar parado na direita abre o inventário', await page.evaluate(() => !document.querySelector('.inv').hidden));
+  await page.keyboard.press('Tab');
+  await gwait(800);
+  await page.evaluate(() => { const c = window.__ilha.ctx; if (c.invScreen.visible) { c.invScreen.hide(); document.body.classList.remove('inv-open'); c.touch.input.blocked = false; c.touch.setVisible(true); } });
+  await gwait(500);
+  const swipeEdge = async (x0, x1) => {
+    await touch('touchStart', [{ x: x0, y: 180, id: 3 }]); await gwait(60);
+    await touch('touchMove', [{ x: (x0 + x1) / 2, y: 180, id: 3 }]); await gwait(60);
+    await touch('touchMove', [{ x: x1, y: 180, id: 3 }]); await gwait(600);
+    await touch('touchEnd', []);
+    await gwait(800);
+  };
+  await swipeEdge(794, 720);
+  check('Gestos: arrastar da borda direita abre a roda de assovios', await page.evaluate(() => window.__ilha.ctx.whistle.visible));
+  await page.evaluate(() => window.__ilha.ctx.whistle.close());
+  await gwait(800);
+  await swipeEdge(6, 90);
+  check('Gestos: arrastar da borda esquerda abre a roda de ações', await page.evaluate(() => window.__ilha.ctx.actionWheel.visible));
+  await page.screenshot({ path: `${SHOTS}/25-cel-roda-acoes.png` });
+  await page.evaluate(() => window.__ilha.ctx.actionWheel.close());
+  await gwait(500);
+  await page.screenshot({ path: `${SHOTS}/26-cel-hud-gestos.png` });
 
   check('Celular: sem erros no console', errors.length === 0, errors.slice(0, 3).join(' / '));
   await context.close();

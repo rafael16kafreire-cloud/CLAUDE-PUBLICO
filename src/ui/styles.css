@@ -1637,8 +1637,9 @@ body.is-touch .hb-slot {
 .tc:not(.tc-esquema-gestos) .tc-gestos { display: none; }
 /* só sobra o botão de agachar (o bonequinho agachado, embaixo à esquerda) */
 .tc-esquema-gestos .tc-btn:not(.b-crouch) { display: none; }
+.tc-esquema-gestos .tc-buttons { right: auto; left: var(--safe-l, 0px); bottom: var(--safe-b, 0px); }
 .tc-esquema-gestos .tc-btn.b-crouch {
-  left: calc(var(--safe-l, 0px) + 12px); bottom: calc(var(--safe-b, 0px) + 12px);
+  left: 12px; bottom: 12px;
   right: auto; top: auto; position: absolute;
   width: 48px; height: 48px; opacity: 0.85;
   background: transparent; border: none; box-shadow: none; color: #35c3e8;
