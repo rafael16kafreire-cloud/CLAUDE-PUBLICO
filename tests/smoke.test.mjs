@@ -427,7 +427,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   check('Crafting: clicar no machado mostra o que precisa', reqs.length === 3 && reqs.some((r) => /Palha/.test(r)), reqs.join(' | '));
   await page.screenshot({ path: `${SHOTS}/08-pc-crafting.png` });
   await page.click('#craft-1');
-  await gameWait(page, 3600);
+  await gameWait(page, 6000); // 5 s para fazer, como no ARK
   const axe = await page.evaluate(() => window.__t.count('machado_pedra'));
   check('Crafting: criar Machado de Pedra', axe === 1, `machados ${axe}`);
   // Largar um item: vira bolsa no chão
