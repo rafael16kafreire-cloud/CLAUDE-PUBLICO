@@ -22,6 +22,7 @@ import { game, STATE } from './core/game_manager.js';
 import { settings, QUALITY_PRESETS, hdTextures } from './core/settings.js';
 import { input } from './core/input.js';
 import { World } from './world/world.js';
+import { setPushers } from './world/materials.js';
 import { Player } from './player/player.js';
 import { PlayerCamera } from './player/player_camera.js';
 import { PlayerInteraction } from './player/player_interaction.js';
@@ -815,6 +816,25 @@ function boot(hotData = {}) {
   }
 
   // ---------- Qualidade automática ----------
+  // Quem anda empurra a grama e as plantas baixas: o jogador e os bichos mais perto.
+  const _pushers = [];
+  function updatePushers(focus) {
+    _pushers.length = 0;
+    _pushers.push({ x: focus.x, z: focus.z, r: 1.5, w: 1 });
+    const cand = [];
+    for (const c of ctx.creatures.list) {
+      if (!c.alive || !c.mesh) continue;
+      const p = c.mesh.position;
+      const d = Math.hypot(p.x - focus.x, p.z - focus.z);
+      if (d > 32) continue;
+      if (p.y - ctx.world.heightAt(p.x, p.z) > 3) continue; // voando: não encosta no mato
+      cand.push({ d, x: p.x, z: p.z, r: Math.min(7, 1.3 + ((c.bodyFront ?? 1) + (c.bodyBack ?? 1)) * (c.scale ?? 1) * 0.4) });
+    }
+    cand.sort((a, b) => a.d - b.d);
+    for (let i = 0; i < Math.min(cand.length, 6); i++) _pushers.push({ x: cand[i].x, z: cand[i].z, r: cand[i].r, w: 1 });
+    setPushers(_pushers);
+  }
+
   // Se o aparelho ficar lento (menos de 22 quadros por segundo por
   // alguns segundos), baixa um nível de qualidade e avisa.
   const perf = { time: 0, frames: 0, warmup: 6 };
@@ -1002,6 +1022,7 @@ function boot(hotData = {}) {
     }
 
     const focus = game.state === STATE.MENU ? camera.position : player.position;
+    if (ctx && game.state !== STATE.MENU) updatePushers(focus);
     world.update(dt, camera, focus);
     if (game.state !== STATE.MENU) {
       hud.update(dt);

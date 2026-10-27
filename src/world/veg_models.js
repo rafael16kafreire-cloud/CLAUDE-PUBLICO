@@ -97,7 +97,7 @@ export function vegMaterial(key, berry) {
     });
     // relevo (normal map), se o modelo tiver
     if (VEG_TEXTURAS[`${part.tex}_relevo`]) m.normalMap = texture(`${part.tex}_relevo`, false);
-    addWind(m, opaque ? 0.004 : 0.01, opaque ? 0 : 0.03);
+    addWind(m, opaque ? 0.004 : 0.01, opaque ? 0 : 0.03, opaque ? 0 : 1);
     return opaque ? m : addLeafLight(m, 0.55);
   });
   return mats.length === 1 ? mats[0] : mats;

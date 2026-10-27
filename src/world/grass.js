@@ -36,7 +36,7 @@ export class Grass {
     this.water = water;
     this.radius = 28;
     this.density = 1;
-    const material = addWind(new THREE.MeshLambertMaterial({ vertexColors: true }), 0.25, 0.05);
+    const material = addWind(new THREE.MeshLambertMaterial({ vertexColors: true }), 0.25, 0.05, 1);
     this.kinds = {
       capim: this._mesh(makeGrassTuft(), material, 9000, 'Capim'),
       folha: this._mesh(makeBroadPlant(), material, 2600, 'Folhagem'),

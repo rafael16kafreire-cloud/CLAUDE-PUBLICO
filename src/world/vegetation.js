@@ -157,7 +157,7 @@ export class Vegetation {
       vertexColors: true,
       map: foliageTexture(),
       alphaTest: 0.42,
-    }), 0.012, 0.045));
+    }), 0.012, 0.045, 1));
     // Modelos de média distância não têm recortes: material sem
     // "alphaTest" (a placa de vídeo descarta pixels escondidos antes).
     this.materialSolid = addPlantDetail(addWind(new THREE.MeshLambertMaterial({ vertexColors: true, map: this.material.map }), 0.012, 0.045));

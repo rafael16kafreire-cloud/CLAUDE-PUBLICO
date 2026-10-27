@@ -20,7 +20,7 @@ import numpy as np  # noqa: E402
 
 ESTILOS = {
     # cor das rachaduras, cor das placas (duas), líquen, musgo, escala (horizontal, vertical)
-    'placas': dict(crack=(0.035, 0.022, 0.014), a=(0.20, 0.15, 0.105), b=(0.34, 0.27, 0.20),
+    'placas': dict(crack=(0.075, 0.052, 0.036), a=(0.32, 0.24, 0.17), b=(0.50, 0.40, 0.30),
                    lich=(0.50, 0.56, 0.47), moss=(0.13, 0.25, 0.06), esc=(4.0, 1.1), lich_q=0.53, moss_q=0.6),
     'claro': dict(crack=(0.10, 0.085, 0.07), a=(0.42, 0.37, 0.30), b=(0.58, 0.52, 0.44),
                   lich=(0.62, 0.66, 0.56), moss=(0.20, 0.32, 0.10), esc=(3.0, 0.9), lich_q=0.58, moss_q=0.62),

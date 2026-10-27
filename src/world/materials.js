@@ -28,6 +28,19 @@ export function shakeAt(x, z, strength = 1) {
   sharedShake.value.set(x, z, sharedTime.value, strength);
 }
 
+// Empurradores (jogador, bichos, árvore caindo): a grama, as samambaias e os
+// arbustos perto deles se curvam para o lado. (x, z, raio em metros, força 0..1)
+export const MAX_PUSH = 8;
+export const sharedPush = { value: Array.from({ length: MAX_PUSH }, () => new THREE.Vector4(0, 0, 0, 0)) };
+export function setPushers(list) {
+  const a = sharedPush.value;
+  for (let i = 0; i < MAX_PUSH; i++) {
+    const p = list[i];
+    if (p) a[i].set(p.x, p.z, p.r, p.w ?? 1);
+    else a[i].set(0, 0, 0, 0);
+  }
+}
+
 // ----------------------------------------------------------
 // Textura de ruído que se repete sem emenda
 // ----------------------------------------------------------
@@ -233,16 +246,18 @@ export function makeTerrainMaterial() {
 // O deslocamento é aplicado depois da posição de cada instância,
 // então o vento sopra na mesma direção para todas as plantas.
 // ----------------------------------------------------------
-export function addWind(material, bend = 0.012, flutter = 0.05) {
+export function addWind(material, bend = 0.012, flutter = 0.05, push = 0) {
   const prev = material.onBeforeCompile;
   material.onBeforeCompile = (shader, renderer) => {
     prev?.(shader, renderer);
     shader.uniforms.uTime = sharedTime;
     shader.uniforms.uShake = sharedShake;
+    shader.uniforms.uPush = sharedPush;
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', `#include <common>
         uniform float uTime;
         uniform vec4 uShake;
+        uniform vec4 uPush[${MAX_PUSH}];
         attribute float aWind;`)
       .replace('#include <project_vertex>', `
         vec4 mvPosition = vec4(transformed, 1.0);
@@ -265,11 +280,26 @@ export function addWind(material, bend = 0.012, flutter = 0.05) {
           mvPosition.x += sway + fl + shake;
           mvPosition.z += sway * 0.55 + fl * 0.8 + shake * 0.6;
           mvPosition.y += fl * 0.35;
+          ${push > 0 ? `
+          // quem passa empurra a planta baixa para o lado e a amassa um pouco
+          float low = 1.0 - smoothstep(1.0, 2.4, h);
+          for (int i = 0; i < ${MAX_PUSH}; i++) {
+            vec4 pu = uPush[i];
+            if (pu.w > 0.0) {
+              vec2 dp = mvPosition.xz - pu.xy;
+              float Ld = length(dp);
+              float kk = 1.0 - smoothstep(0.0, pu.z, Ld);
+              float amt = kk * kk * pu.w * aWind * low;
+              vec2 dir = Ld > 0.001 ? dp / Ld : vec2(1.0, 0.0);
+              mvPosition.xz += dir * amt * pu.z * ${(0.55 * push).toFixed(3)};
+              mvPosition.y -= amt * ${(0.3 * push).toFixed(3)};
+            }
+          }` : ''}
         }
         mvPosition = modelViewMatrix * mvPosition;
         gl_Position = projectionMatrix * mvPosition;`);
   };
-  material.customProgramCacheKey = () => `wind-${bend}-${flutter}`;
+  material.customProgramCacheKey = () => `wind-${bend}-${flutter}-${push}`;
   return material;
 }
 
