@@ -198,7 +198,9 @@ export class StartScreen {
 
   setLoading(text) {
     this.button.disabled = true;
-    this.button.textContent = text;
+    const giro = document.createElement('span');
+    giro.className = 'girando';
+    this.button.replaceChildren(giro, document.createTextNode(text));
   }
 
   setReady(label = 'Jogar sozinho', canStartNew = false) {

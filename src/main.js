@@ -3,7 +3,7 @@
 // Cria o desenho 3D (renderer), o mundo, o jogador e as telas, e
 // roda o "loop": a cada quadro atualiza tudo e desenha.
 // =============================================================
-import { playIntro } from './ui/intro.js';
+import { abrirOlhos } from './ui/intro.js';
 import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
@@ -479,23 +479,28 @@ function boot(hotData = {}) {
     ctx.hud.setCoop(n.active ? n.code : null, n.playerCount);
   });
 
-  let entrando = false;
   function play() {
-    if (!ctx || entrando) return;
+    if (!ctx) return;
     sound.unlock();
     sound.setPaused(false);
-    // tela cheia e mouse precisam do toque/clique: pede já, antes da animação
+    comecarAJogar();
     requestFullscreenLandscape();
     if (!game.isTouch) input.requestPointerLock();
-    // testes automáticos (e quem pedir) entram direto, sem a animação
+    // testes automáticos entram direto, sem a animação de acordar
     let pular = false;
     try { pular = navigator.webdriver && !localStorage.getItem('ilha-primordial:intro-forcar'); } catch { /* ok */ }
-    if (pular) {
-      comecarAJogar();
-      return;
-    }
-    entrando = true;
-    playIntro(ui, { onStart: comecarAJogar, onDone: () => { entrando = false; } });
+    if (!pular) acordar();
+  }
+
+  // Acorda deitado no chão: olhos abrindo, câmera levantando, sem controle por uns instantes.
+  function acordar() {
+    ctx.camCtl.acordar(3.4);
+    input.clear();
+    input.blocked = true;
+    abrirOlhos(ui);
+    setTimeout(() => {
+      if (!ctx.invScreen.visible) input.blocked = false;
+    }, 2800);
   }
 
   function comecarAJogar() {

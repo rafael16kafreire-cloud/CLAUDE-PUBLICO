@@ -54,8 +54,28 @@ export class PlayerCamera {
     this._shake = Math.max(this._shake ?? 0, amount);
   }
 
+  // Acordar no chão: a câmera começa baixa, olhando para cima e meio torta, e levanta.
+  acordar(seconds) {
+    this._wakeT = seconds;
+    this._wakeLen = seconds;
+  }
+
   // 2º passo: posiciona a câmera onde o jogador está agora.
   update(dt, player) {
+    this._update(dt, player);
+    if (this._wakeT > 0) {
+      this._wakeT = Math.max(0, this._wakeT - dt);
+      const k = 1 - this._wakeT / this._wakeLen;
+      const e = k * k * (3 - 2 * k);
+      const rest = 1 - e;
+      const floor = this.world.heightAt(this.camera.position.x, this.camera.position.z) + 0.2;
+      this.camera.position.y = Math.max(floor, this.camera.position.y - rest * 1.0);
+      this.camera.rotation.x += rest * 0.55;
+      this.camera.rotation.z += rest * 0.3;
+    }
+  }
+
+  _update(dt, player) {
     const firstPerson = player.firstPerson;
     const cp = Math.cos(this.pitch);
     this._forward.set(-Math.sin(this.yaw) * cp, Math.sin(this.pitch), -Math.cos(this.yaw) * cp);

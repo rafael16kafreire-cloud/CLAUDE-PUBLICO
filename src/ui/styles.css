@@ -1685,14 +1685,9 @@ body.is-touch.touch-botoes .hotbar {
 .po-content { background: rgba(10, 16, 20, 0.58); }
 .po-ctrl { background: rgba(10, 92, 118, 0.6); }
 
-/* ---------- Entrada no jogo: logo e olhos abrindo ---------- */
+/* ---------- Acordar no mapa: olhos abrindo ---------- */
 .intro { position: absolute; inset: 0; z-index: 9000; pointer-events: none; background: #000; overflow: hidden; }
 .intro.abrindo { background: transparent; }
-.intro-logo { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.2vh; color: #bff1ff; opacity: 0; transform: scale(0.96); transition: opacity 0.8s ease, transform 2.4s ease; }
-.intro.logo-in .intro-logo { opacity: 1; transform: scale(1); }
-.intro.logo-out .intro-logo { opacity: 0; transition: opacity 0.5s ease; }
-.intro-logo svg { width: 18vh; height: 18vh; filter: drop-shadow(0 0 1.2vh rgba(100, 220, 255, 0.55)); }
-.intro-nome { font: 600 3.6vh var(--font-ui); letter-spacing: 0.4em; padding-left: 0.4em; color: #e8fbff; text-shadow: 0 0 1.6vh rgba(100, 220, 255, 0.5); }
 .olho { position: absolute; left: -10%; width: 120%; height: 52%; background: #000; opacity: 0; }
 .olho-cima { top: 0; border-radius: 0 0 50% 50% / 0 0 22% 22%; transform: translateY(0); }
 .olho-baixo { bottom: 0; border-radius: 50% 50% 0 0 / 22% 22% 0 0; transform: translateY(0); }
@@ -1723,3 +1718,7 @@ body.is-touch.touch-botoes .hotbar {
   60% { opacity: 1; -webkit-backdrop-filter: blur(7px) brightness(1.1); backdrop-filter: blur(7px) brightness(1.1); }
   100% { opacity: 1; -webkit-backdrop-filter: blur(0) brightness(1); backdrop-filter: blur(0) brightness(1); }
 }
+
+/* carregamento normal: círculo girando ao lado do texto do botão */
+.girando { display: inline-block; width: 1em; height: 1em; margin-right: 0.6em; vertical-align: -0.15em; border: 0.14em solid rgba(191, 241, 255, 0.3); border-top-color: #bff1ff; border-radius: 50%; animation: girar 0.9s linear infinite; }
+@keyframes girar { to { transform: rotate(360deg); } }
