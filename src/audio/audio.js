@@ -858,6 +858,13 @@ class Sound {
   _updateMusic(night) {
     if (!this.musicBus || this.musicVolume <= 0.001) return;
     const c = this.ctx;
+    // música gravada (assets/sons/musica_dia.mp3 e musica_noite.mp3): toca em loop
+    // e troca com um fade quando vira dia/noite. Sem os arquivos, usa a de baixo.
+    const faixa = this.samples?.[night ? 'musica_noite' : 'musica_dia']?.[0];
+    if (faixa) {
+      this._tocarFaixa(night, faixa);
+      return;
+    }
     const M = this._music;
     const beat = night ? 0.95 : 0.75; // segundos por tempo
     if (M.next < c.currentTime) M.next = c.currentTime + 0.2;
@@ -920,6 +927,27 @@ class Sound {
     }
     M.next = t0 + barLen;
     M.bar++;
+  }
+
+  _tocarFaixa(night, buf) {
+    const c = this.ctx;
+    const cur = this._faixa;
+    if (cur && cur.night === night) return;
+    const FADE = 5;
+    if (cur) {
+      cur.g.gain.cancelScheduledValues(c.currentTime);
+      cur.g.gain.setTargetAtTime(0.0001, c.currentTime, FADE / 3);
+      try { cur.src.stop(c.currentTime + FADE * 1.5); } catch { /* já parou */ }
+    }
+    const src = c.createBufferSource();
+    src.buffer = buf;
+    src.loop = true;
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.0001, c.currentTime);
+    g.gain.linearRampToValueAtTime(1, c.currentTime + (cur ? FADE : 2));
+    src.connect(g).connect(this.musicBus);
+    src.start();
+    this._faixa = { night, src, g };
   }
 
   _insect() {
