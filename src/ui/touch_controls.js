@@ -71,6 +71,8 @@ export class TouchControls {
     this.editBar.querySelector('[data-act="lock"]').addEventListener('click', () => this.stopEdit());
 
     this.scheme = 'gestos';
+    // tempos dos gestos em ms (padrão de dedo no celular; os testes automáticos alargam)
+    this.timing = { flick: 280, double: 330, hold: 480, tap: 260, edge: 600 };
     this.onEdge = null;   // (lado 'L' | 'R') chamado quando arrasta a partir da borda
     this._mounted = false;
     this._swimming = false;
@@ -178,8 +180,6 @@ export class TouchControls {
     const P = new Map();      // dedo -> estado do gesto
     let lastTapL = 0;
     let lastTapR = 0;
-    const FLICK_MS = 280;     // arrasto rápido
-    const DOUBLE_MS = 330;    // intervalo do toque duplo
     const EDGE = 26;          // px: o que conta como "borda da tela"
     const stickZone = this.el.querySelector('.tc-stick-zone');
 
@@ -211,12 +211,12 @@ export class TouchControls {
           this._moveKnob(x, y);
         }
         // tocar duas vezes e segurar = correr
-        if (now - lastTapL < DOUBLE_MS) {
+        if (now - lastTapL < this.timing.double) {
           st.dbl = true;
           this.input.runToggle = true;
           navigator.vibrate?.(12);
         }
-      } else if (now - lastTapR < DOUBLE_MS) {
+      } else if (now - lastTapR < this.timing.double) {
         // tocar duas vezes e segurar = repetir (colher/atacar sem parar)
         st.dbl = true;
         st.holdAttack = true;
@@ -228,7 +228,7 @@ export class TouchControls {
             st.held = true;
             this._holdAction();
           }
-        }, 480);
+        }, this.timing.hold);
       }
     };
 
@@ -245,7 +245,7 @@ export class TouchControls {
         clearTimeout(st.timer);
       }
       // arrasto a partir da borda: abre a roda (esquerda: ações; direita: assovios)
-      if (st.edge && now - st.t0 < 600 && ((st.edge === 'L' && dx > 48) || (st.edge === 'R' && dx < -48))) {
+      if (st.edge && now - st.t0 < this.timing.edge && ((st.edge === 'L' && dx > 48) || (st.edge === 'R' && dx < -48))) {
         st.cancelled = true;
         if (st.left) this._resetStick();
         navigator.vibrate?.(15);
@@ -254,11 +254,11 @@ export class TouchControls {
       }
       if (st.left) {
         this._moveKnob(x, y);
-        if (!st.jumped && now - st.t0 < FLICK_MS && dy < -52 && Math.abs(dx) < -dy * 0.75) {
+        if (!st.jumped && now - st.t0 < this.timing.flick && dy < -52 && Math.abs(dx) < -dy * 0.75) {
           st.jumped = true;
           this._tap('jump');
         }
-        if (!st.downed && now - st.t0 < FLICK_MS && dy > 52 && Math.abs(dx) < dy * 0.75) {
+        if (!st.downed && now - st.t0 < this.timing.flick && dy > 52 && Math.abs(dx) < dy * 0.75) {
           st.downed = true;
           this._tap('ammo');   // recarregar
         }
@@ -280,7 +280,7 @@ export class TouchControls {
       P.delete(e.pointerId);
       clearTimeout(st.timer);
       const now = e.timeStamp;
-      const quick = now - st.t0 < 260 && !st.moved && !st.cancelled;
+      const quick = now - st.t0 < this.timing.tap && !st.moved && !st.cancelled;
       if (st.left) {
         if (this._stickId === e.pointerId) this._resetStick();
         if (st.dbl) this.input.runToggle = false;
