@@ -24,7 +24,7 @@ export const QUALITY_PRESETS = {
   },
   alta: {
     pixelRatio: 2, shadows: true, shadowMap: 4096, shadowRange: 80, viewDistance: 320,
-    lodHi: 120, lodLo: 240, grassRadius: 55, grassDensity: 1.6, creatures: 45, post: 'full',
+    lodHi: 120, lodLo: 240, grassRadius: 55, grassDensity: 1.6, creatures: 45, post: 'cinema',
   },
 };
 

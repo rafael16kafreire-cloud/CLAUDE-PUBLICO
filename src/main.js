@@ -10,6 +10,13 @@ import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
+import {
+  EffectComposer as CineComposer, RenderPass as CineRenderPass, EffectPass as CineEffectPass,
+  BloomEffect, ToneMappingEffect, ToneMappingMode, HueSaturationEffect, BrightnessContrastEffect,
+  VignetteEffect, SMAAEffect, SMAAPreset,
+} from 'postprocessing';
+import { N8AOPostPass } from 'n8ao';
+import { GodraysPass } from 'three-good-godrays';
 import { events, EV } from './core/event_bus.js';
 import { game, STATE } from './core/game_manager.js';
 import { settings, QUALITY_PRESETS, hdTextures } from './core/settings.js';
@@ -138,6 +145,47 @@ function boot(hotData = {}) {
   };
   let composer = null;
   let composerKey = '';
+  let cinema = false;      // true: composer é o da biblioteca "postprocessing" (qualidade alta)
+  let godrays = null;
+  // Qualidade alta: oclusão ambiental (n8ao, ISC), raios de sol que atravessam a copa
+  // (three-good-godrays, Zlib), brilho, tom ACES, cor e vinheta. Bibliotecas em
+  // "postprocessing" (Zlib). Créditos na tela inicial.
+  function buildCinema(smaa) {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const c = new CineComposer(renderer, { frameBufferType: THREE.HalfFloatType });
+    c.addPass(new CineRenderPass(scene, camera));
+    const ao = new N8AOPostPass(scene, camera, w, h);
+    ao.configuration.aoRadius = 2.6;
+    ao.configuration.distanceFalloff = 1.2;
+    ao.configuration.intensity = 2.4;
+    ao.configuration.halfRes = true;
+    ao.setQualityMode('Medium');
+    c.addPass(ao);
+    const bloom = new BloomEffect({ intensity: 0.32, luminanceThreshold: 0.88, luminanceSmoothing: 0.25, mipmapBlur: true });
+    const tone = new ToneMappingEffect({ mode: ToneMappingMode.ACES_FILMIC });
+    const sat = new HueSaturationEffect({ saturation: 0.14, hue: 0 });
+    const bc = new BrightnessContrastEffect({ brightness: 0.03, contrast: 0.1 });
+    const vig = new VignetteEffect({ offset: 0.32, darkness: 0.5 });
+    c.addPass(new CineEffectPass(camera, bloom, tone, sat, bc, vig));
+    if (smaa) c.addPass(new CineEffectPass(camera, new SMAAEffect({ preset: SMAAPreset.MEDIUM })));
+    return c;
+  }
+  // Os raios de sol precisam da luz do sol, que só existe depois de gerar o mundo.
+  function ensureGodrays() {
+    if (!cinema || godrays || !ctx) return;
+    try {
+      const sun = ctx.world.sky.sun;
+      godrays = new GodraysPass(sun, camera, {
+        density: 1 / 110, maxDensity: 0.55, edgeStrength: 2, edgeRadius: 2,
+        distanceAttenuation: 1.6, color: new THREE.Color('#ffe9bf'), raymarchSteps: 44, blur: true, gammaCorrection: true,
+      });
+      composer.addPass(godrays, 2);
+    } catch (e) {
+      console.warn('raios de sol indisponíveis:', e?.message);
+      godrays = null;
+    }
+  }
   function setupSMAA() {
     const smaa = settings.get('smaa') !== false;
     const post = settings.quality.post ?? 'none';
@@ -146,11 +194,25 @@ function boot(hotData = {}) {
       composer?.dispose();
       composer = null;
       composerKey = '';
+      cinema = false;
+      godrays = null;
       return;
     }
     if (composer && composerKey !== key) {
       composer.dispose();
       composer = null;
+      cinema = false;
+      godrays = null;
+    }
+    if (!composer && post === 'cinema') {
+      try {
+        composer = buildCinema(smaa);
+        cinema = true;
+      } catch (e) {
+        console.warn('efeitos de cinema indisponíveis, usando o modo leve:', e?.message);
+        composer = null;
+        cinema = false;
+      }
     }
     if (!composer) {
       composer = new EffectComposer(renderer);
@@ -161,9 +223,9 @@ function boot(hotData = {}) {
       composer.addPass(new OutputPass());
       if (post !== 'none') composer.addPass(new ShaderPass(GRADE_SHADER));
       if (smaa) composer.addPass(new SMAAPass(window.innerWidth, window.innerHeight));
-      composerKey = key;
     }
-    composer.setPixelRatio(renderer.getPixelRatio());
+    composerKey = key;
+    composer.setPixelRatio?.(renderer.getPixelRatio());
     composer.setSize(window.innerWidth, window.innerHeight);
   }
 
@@ -172,7 +234,7 @@ function boot(hotData = {}) {
     const w = window.innerWidth;
     const h = window.innerHeight;
     renderer.setSize(w, h, false);
-    composer?.setPixelRatio(renderer.getPixelRatio());
+    composer?.setPixelRatio?.(renderer.getPixelRatio());
     composer?.setSize(w, h);
     camera.aspect = w / h;
     baseFov = w < h ? 82 : 70; // celular em pé: campo de visão maior
@@ -1002,6 +1064,7 @@ function boot(hotData = {}) {
       camera.fov += (wantFov - camera.fov) * Math.min(1, dt * 10);
       camera.updateProjectionMatrix();
     }
+    ensureGodrays();
     if (composer) composer.render(dt);
     else renderer.render(scene, camera);
     camera.rotation.z -= wob;

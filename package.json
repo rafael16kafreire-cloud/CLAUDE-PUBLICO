@@ -12,8 +12,11 @@
     "pc": "bash pc/build-pc.sh"
   },
   "dependencies": {
+    "n8ao": "^2.0.1",
     "peerjs": "1.5.4",
-    "three": "0.170.0"
+    "postprocessing": "^6.39.5",
+    "three": "0.170.0",
+    "three-good-godrays": "^0.12.1"
   },
   "devDependencies": {
     "@electron/asar": "^3.2.17",

@@ -37,6 +37,11 @@ function creditsHtml() {
     rows.push(`<li><b>${esc(what)}</b>: “${esc(title)}” por ${esc(author)} (Sketchfab), CC-BY-4.0 — adaptado.</li>`);
   }
   rows.push('<li><b>Sons de passos, coleta e interface</b>: Kenney.nl (CC0).</li>');
+  // bibliotecas de efeitos visuais (as licenças pedem manter o aviso)
+  rows.push('<li><b>Motor 3D</b>: three.js (MIT), © os autores do three.js.</li>');
+  rows.push('<li><b>Efeitos de imagem</b>: postprocessing, © Raoul van Rüschen (Zlib).</li>');
+  rows.push('<li><b>Raios de sol</b>: three-good-godrays, © 2022 Casey Primozic, adaptado de goodGodRays de n8python (Zlib).</li>');
+  rows.push('<li><b>Oclusão ambiental</b>: N8AO, © Nathan Sung / n8python (ISC).</li>');
   return `<div class="credits"><p>Modelos 3D e sons usados no jogo (licença pede o nome do autor):</p><ul>${rows.join('')}</ul></div>`;
 }
 
