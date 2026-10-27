@@ -405,6 +405,12 @@ function boot(hotData = {}) {
     }
     start.setReady(hotData.player ? 'Continuar' : 'Jogar', !!hotData.player);
     window.__ilhaReady = true;
+    try {
+      if (localStorage.getItem('ilha-primordial:avisar-seguro')) {
+        localStorage.removeItem('ilha-primordial:avisar-seguro');
+        setTimeout(() => events.emit(EV.MESSAGE, { text: 'Abri em modo seguro (gráficos simples) porque da última vez o jogo não terminou de abrir. Dá para subir a qualidade nas Opções.', kind: 'warn' }), 2500);
+      }
+    } catch { /* ok */ }
     // veio de "Carregar" um espaço: entra direto no jogo
     try {
       if (sessionStorage.getItem('ilha-primordial:auto-continuar')) {

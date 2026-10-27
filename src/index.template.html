@@ -10,8 +10,34 @@
 (function () {
   var errs = [];
   window.__ilhaErrs = errs;
-  window.__ilhaReady = false;
   var shown = false;
+  // Marca "abertura em andamento". Se na próxima vez a marca ainda estiver aí, o aplicativo
+  // foi fechado/morto antes de terminar de abrir (falta de memória, tela preta): abre direto
+  // no modo seguro e avisa.
+  var KB = 'ilha-primordial:abrindo';
+  var KO = 'ilha-primordial:opcoes';
+  function modoSeguro() {
+    try {
+      var o = JSON.parse(localStorage.getItem(KO) || '{}');
+      o.version = 3; o.quality = 'baixa'; o.smaa = false; o.autoQuality = false;
+      localStorage.setItem(KO, JSON.stringify(o));
+    } catch (e) { /* sem armazenamento */ }
+  }
+  try {
+    if (localStorage.getItem(KB) === '1') {
+      modoSeguro();
+      localStorage.setItem('ilha-primordial:avisar-seguro', '1');
+    }
+    localStorage.setItem(KB, '1');
+  } catch (e) { /* sem armazenamento */ }
+  var ready = false;
+  Object.defineProperty(window, '__ilhaReady', {
+    get: function () { return ready; },
+    set: function (v) {
+      ready = !!v;
+      if (ready) { try { localStorage.removeItem(KB); } catch (e) { /* ok */ } }
+    },
+  });
   function lines() { return errs.slice(0, 6).join('\n') || '(sem detalhes)'; }
   function show(title) {
     if (shown) return;
@@ -31,12 +57,8 @@
     b1.textContent = 'Modo seguro';
     b1.setAttribute('style', 'margin:8px 8px 0 0;padding:12px 18px;font-size:15px;border:0;border-radius:6px;background:#35c3e8;color:#04202a;font-weight:700');
     b1.onclick = function () {
-      try {
-        var k = 'ilha-primordial:opcoes';
-        var o = JSON.parse(localStorage.getItem(k) || '{}');
-        o.version = 3; o.quality = 'baixa'; o.smaa = false; o.autoQuality = false;
-        localStorage.setItem(k, JSON.stringify(o));
-      } catch (e) { /* sem armazenamento */ }
+      modoSeguro();
+      try { localStorage.removeItem(KB); } catch (e) { /* ok */ }
       location.reload();
     };
     var b2 = document.createElement('button');
