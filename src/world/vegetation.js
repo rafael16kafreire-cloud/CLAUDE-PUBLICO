@@ -38,7 +38,7 @@ const ROOTS = P.sumaumaRootColliders();
 const TYPES = {
   sumauma: { roots: true, foot: 2.6, hi: P.makeSumauma, lo: P.makeSumaumaLow, imp: true, collider: 1.5, shadow: true, scale: [1.2, 1.6], res: 'arvore_gigante' },
   arvore_dossel: { foot: 0.75, hi: P.makeCanopyTree, lo: P.makeCanopyTreeLow, imp: true, collider: 0.55, shadow: true, scale: [1.0, 1.45], res: 'arvore' },
-  arvore_media: { foot: 0.3, hi: P.makeUnderstoryTree, lo: P.makeUnderstoryTreeLow, imp: true, collider: 0.3, shadow: true, scale: [0.75, 1.3], res: 'arvore' },
+  arvore_media: { foot: 0.3, hi: P.makeUnderstoryTree, lo: P.makeUnderstoryTreeLow, imp: true, collider: 0.3, shadow: true, scale: [0.75, 1.3], res: 'arvore_mole' },
   acai: { foot: 0.4, hi: P.makeAcai, lo: P.makeAcaiLow, imp: true, collider: 0.22, shadow: true, scale: [0.8, 1.2], res: 'palmeira' },
   // praia (modelos enviados: Palm Tree Realistic, Date palm and vegetation)
   coqueiro: { foot: 0.3, hi: () => vegGeometry('palmeira', 11), lo: P.makeCoconutPalmLow, mat: () => vegMaterial('palmeira'), collider: 0.3, shadow: true, scale: [0.85, 1.25], res: 'palmeira', textured: true },
@@ -48,7 +48,7 @@ const TYPES = {
   capim_praia: { hi: () => vegGeometry('capim_praia', 0.9), mat: () => vegMaterial('capim_praia'), collider: 0, shadow: false, scale: [0.7, 1.4], res: null, maxDist: 60, textured: true },
   // floresta (Low Poly Tree Scene Free): árvores folhosas e tufos de capim
   arvore_folhosa: { hiDist: 26, foot: 0.5, hi: () => vegGeometry('arvore_folhosa', 15), lo: P.makeCanopyTreeLow, mat: () => vegMaterial('arvore_folhosa'), collider: 0.45, shadow: true, scale: [0.8, 1.3], res: 'arvore', textured: true, maxDist: 320 },
-  arvore_folhosa2: { foot: 0.35, hi: () => vegGeometry('arvore_folhosa2', 11), lo: P.makeUnderstoryTreeLow, mat: () => vegMaterial('arvore_folhosa2'), collider: 0.35, shadow: true, scale: [0.8, 1.3], res: 'arvore', textured: true, maxDist: 320 },
+  arvore_folhosa2: { foot: 0.35, hi: () => vegGeometry('arvore_folhosa2', 11), lo: P.makeUnderstoryTreeLow, mat: () => vegMaterial('arvore_folhosa2'), collider: 0.35, shadow: true, scale: [0.8, 1.3], res: 'arvore_mole', textured: true, maxDist: 320 },
   // árvore alta da mata (Agarwood): tronco liso, copa no alto e cipós
   arvore_agar: { hiDist: 24, foot: 0.45, hi: () => vegGeometry('arvore_agar', 24), lo: P.makeCanopyTreeLow, mat: () => vegMaterial('arvore_agar'), collider: 0.45, shadow: true, scale: [0.8, 1.25], res: 'arvore', textured: true, maxDist: 320 },
   capim: { hi: () => vegGeometry('capim', 0.8), mat: () => vegMaterial('capim'), collider: 0, shadow: false, scale: [0.7, 1.5], res: null, maxDist: 55, textured: true },
@@ -70,8 +70,8 @@ const TYPES = {
   // modelos da neve enviados pelo jogador (mat = material próprio, com textura)
   // neve: árvores em 3D de verdade (galhos e neve em cima), não placas com foto
   pinheiro_neve: { foot: 0.4, hi: P.makeSnowSpruce, lo: P.makeSnowSpruceLow, imp: true, collider: 0.3, shadow: true, scale: [0.75, 1.35], res: 'arvore', cold: true },
-  arvore_morta_neve: { foot: 0.4, hi: P.makeSnowDeadTree, lo: P.makeSnowDeadTreeLow, collider: 0.3, shadow: true, scale: [0.8, 1.3], res: 'arvore', cold: true, maxDist: 320 },
-  arvore_seca: { foot: 0.4, hi: () => P.makeSnowDeadTree(false, 5), lo: () => P.makeSnowDeadTree(true, 5), collider: 0.25, shadow: true, scale: [0.9, 1.4], res: 'arvore', cold: true, maxDist: 320 },
+  arvore_morta_neve: { foot: 0.4, hi: P.makeSnowDeadTree, lo: P.makeSnowDeadTreeLow, collider: 0.3, shadow: true, scale: [0.8, 1.3], res: 'arvore_mole', cold: true, maxDist: 320 },
+  arvore_seca: { foot: 0.4, hi: () => P.makeSnowDeadTree(false, 5), lo: () => P.makeSnowDeadTree(true, 5), collider: 0.25, shadow: true, scale: [0.9, 1.4], res: 'arvore_mole', cold: true, maxDist: 320 },
   arbusto_neve: { hi: P.makeSnowShrub, collider: 0, shadow: false, scale: [0.7, 1.4], res: 'arbusto', maxDist: 90 },
   rochedo: { foot: 1.6, hi: snowRockGeometry, mat: snowRockMaterial, lo: P.makeBoulderLow, collider: 1.0, shadow: true, scale: [1.8, 9], res: 'rochedo', maxDist: 320, rock: true, textured: true },
   // recursos por região (como no ARK): metal e cristal na serra, obsidiana
@@ -84,7 +84,7 @@ const TYPES = {
   minerio_ferro: { foot: 0.8, hi: P.makeIronOre, collider: 0.9, shadow: false, scale: [0.9, 1.6], res: 'ferro', maxDist: 140, rock: true },
   pedra_musgo: { foot: 0.85, hi: P.makeMossRock, lo: P.makeMossRockLow, collider: 1.0, shadow: false, scale: [0.6, 2.2], res: 'pedra', maxDist: 160 },
   mangue: { foot: 1.2, hi: P.makeMangrove, lo: P.makeMangroveLow, imp: true, collider: 0.6, shadow: true, scale: [0.8, 1.2], res: 'arvore', water: true },
-  arvore_morta: { foot: 0.3, hi: P.makeDeadTree, collider: 0.3, shadow: true, scale: [0.8, 1.3], res: 'arvore', water: true, maxDist: 200 },
+  arvore_morta: { foot: 0.3, hi: P.makeDeadTree, collider: 0.3, shadow: true, scale: [0.8, 1.3], res: 'arvore_mole', water: true, maxDist: 200 },
   junco: { hi: P.makeReeds, collider: 0, shadow: false, scale: [0.8, 1.3], res: 'junco', water: true, maxDist: 70 },
   taboa: { hi: P.makeCattail, collider: 0, shadow: false, scale: [0.8, 1.3], res: 'junco', water: true, maxDist: 70 },
   vitoria_regia: { hi: P.makeWaterLily, collider: 0, shadow: false, scale: [0.6, 1.7], res: null, surface: true, maxDist: 120 },

@@ -2,6 +2,14 @@
   "_explicacao": "efeito = pedacinhos que voam ao bater (pedra, madeira, folha, cristal, obsidiana, agua). so_machado = só dá para tirar algo com machado (com a mão você se machuca). infinita = nunca acaba. O que cada planta/pedra dá quando você bate (mao = sem ferramenta, machado, picareta, lanca, clava) ou colhe com Interagir (colher). Valores = [mínimo, máximo] por golpe. capacidade = quantos golpes até acabar. esvazia = vira outro tipo quando acaba (ex.: arbusto sem bagas). Recursos voltam depois de 'reaparece_min' minutos, se você não estiver perto.",
   "reaparece_min": 8,
   "tipos": {
+    "arvore_mole": {
+      "nome": "Árvore fina", "capacidade": 30, "xp": 1, "soco_dano": 0.05,
+      "mao": { "madeira": [1, 1], "palha": [1, 1] },
+      "machado": { "madeira": [3, 5], "palha": [0, 1] },
+      "picareta": { "palha": [3, 5], "madeira": [0, 1] },
+      "lanca": { "palha": [1, 2] },
+      "clava": { "palha": [1, 3] }
+    },
     "arvore": {
       "nome": "Árvore", "capacidade": 45, "xp": 1, "so_machado": true,
       "mao": {},

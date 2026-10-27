@@ -137,6 +137,17 @@ export class PlayerActions {
     }
   }
 
+  // Soco em árvore: tira uma fração da vida máxima, com um pouco de sangue na
+  // mão, e afunda a casca no lugar do golpe.
+  _punchHurt(frac, rec) {
+    const hurt = this.player.stats.max.health * frac;
+    this.player.stats.damage(hurt, 'arvore');
+    events.emit(EV.PLAYER_HURT, { amount: hurt, source: 'árvore' });
+    const pp = this.player.position;
+    this.world.effects.burst(new THREE.Vector3(pp.x + (rec.x - pp.x) * 0.75, pp.y + 1.1, pp.z + (rec.z - pp.z) * 0.75), 'sangue', 5, 1.1);
+    if (rec.r) this.world.effects.gouge(rec.x, rec.z, rec.r * 0.8, pp.y + 1.25, pp);
+  }
+
   // Coleta de uma planta/pedra com o modo dado (mao, machado, colher...).
   harvest(rec, mode) {
     const veg = this.world.vegetation;
@@ -145,9 +156,7 @@ export class PlayerActions {
     // árvore gigante: só com machado; com a mão (ou outra coisa) machuca
     if (res.so_machado && mode !== 'machado' && mode !== 'colher') {
       if (mode === 'mao') {
-        const hurt = this.player.stats.max.health * BALANCE.combate.soco_arvore_dura_vida;
-        this.player.stats.damage(hurt, 'arvore');
-        events.emit(EV.PLAYER_HURT, { amount: hurt, source: 'árvore' });
+        this._punchHurt(BALANCE.combate.soco_arvore_dura_vida, rec);
       }
       events.emit(EV.MESSAGE, { text: `Ai! ${res.nome} é dura demais: precisa de um machado.`, kind: 'warn' });
       const pp = this.player.position;
@@ -162,6 +171,8 @@ export class PlayerActions {
       sound.play('pedra', new THREE.Vector3(rec.x, this.player.position.y + 1, rec.z), { volume: 0.5 });
       return false;
     }
+    // árvore fina: dá para socar e ganhar madeira e palha, mas machuca um pouco
+    if (res.soco_dano && mode === 'mao') this._punchHurt(res.soco_dano, rec);
     const table = res[mode] ?? res.mao;
     if (!table) return false;
     const got = {};
@@ -185,7 +196,7 @@ export class PlayerActions {
     if (mode === 'colher') this.player.onGather?.();
     // efeito visual
     // efeito = tipo de pedacinho (recursos.json); rochas soltam pó de pedra
-    const kind = res.efeito ?? (res.key === 'pedra' ? 'pedra' : ['arvore', 'arvore_gigante', 'tronco', 'palmeira'].includes(res.key) ? 'madeira' : 'folha');
+    const kind = res.efeito ?? (res.key === 'pedra' ? 'pedra' : ['arvore', 'arvore_mole', 'arvore_gigante', 'tronco', 'palmeira'].includes(res.key) ? 'madeira' : 'folha');
     const fx = this.player.position.clone();
     fx.x += (rec.x - fx.x) * 0.8;
     fx.z += (rec.z - fx.z) * 0.8;
@@ -195,7 +206,7 @@ export class PlayerActions {
     if (kind === 'madeira') {
       this.world.effects.burst(fx.clone().setY(fx.y + 3), 'folha', 6, 1.5);
       // marca de corte na casca, do lado de quem bateu
-      if (['arvore', 'arvore_gigante', 'palmeira'].includes(res.key) && rec.r) {
+      if (['arvore', 'arvore_mole', 'arvore_gigante', 'palmeira'].includes(res.key) && rec.r) {
         this.world.effects.gouge(rec.x, rec.z, rec.r * 0.8, this.player.position.y + 1.25, this.player.position);
       }
       shakeAt(rec.x, rec.z, 1);

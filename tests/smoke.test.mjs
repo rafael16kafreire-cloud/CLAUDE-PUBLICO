@@ -355,6 +355,16 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   }
   const thatch = await page.evaluate(() => ({ palha: window.__t.count('palha'), madeira: window.__t.count('madeira') }));
   check('Coleta: socar palmeira dá palha', thatch.palha >= 4, `${JSON.stringify(tree)} ${JSON.stringify(thatch)}`);
+  // árvore fina (sub-bosque): o soco rende 1 madeira + 1 palha por golpe e custa 5% da vida
+  await page.evaluate(() => { window.__t.faceRec('arvore_media'); const st = window.__ilha.ctx.player.stats; st.health = st.max.health; });
+  await frames(page, 6);
+  const thin0 = await page.evaluate(() => ({ h: window.__ilha.ctx.player.stats.health, m: window.__t.count('madeira'), p: window.__t.count('palha') }));
+  await page.evaluate(() => { window.__ilha.ctx.player.stats.stamina = 100; });
+  await page.mouse.down();
+  await page.mouse.up();
+  await gameWait(page, 520);
+  const thin1 = await page.evaluate(() => ({ h: window.__ilha.ctx.player.stats.health, m: window.__t.count('madeira'), p: window.__t.count('palha') }));
+  check('Coleta: socar árvore fina dá 1 madeira + 1 palha e custa ~5% da vida', thin1.m === thin0.m + 1 && thin1.p === thin0.p + 1 && thin0.h - thin1.h > 3 && thin0.h - thin1.h < 8, JSON.stringify({ thin0, thin1 }));
 
   // Pedra: soco dá pedra
   await page.evaluate(() => window.__t.faceRec('pedra_musgo'));
