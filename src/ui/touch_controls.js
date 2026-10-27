@@ -181,7 +181,7 @@ export class TouchControls {
     const P = new Map();      // dedo -> estado do gesto
     let lastTapL = 0;
     let lastTapR = 0;
-    const EDGE = 26;          // px: o que conta como "borda da tela"
+    const EDGE = 40;          // px: o que conta como "borda da tela"
     const stickZone = this.el.querySelector('.tc-stick-zone');
 
     const start = (e) => {

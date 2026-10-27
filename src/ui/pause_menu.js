@@ -6,21 +6,25 @@
 import { settings, QUALITY_PRESETS } from '../core/settings.js';
 import { listSlots, slotLabel } from '../core/save.js';
 
-// Lista de controles (aba Controles)
-const CONTROLS = [
-  ['Andar', 'joystick à esquerda (celular) · WASD (PC)'],
-  ['Olhar', 'arrastar o lado direito · mouse'],
-  ['Pular / correr', 'botão seta · Espaço / Shift'],
-  ['Atacar / coletar', 'botão espada · clique'],
-  ['Usar / colher / beber', 'botão mão · E'],
-  ['Inventário', 'botão mochila · Tab ou I'],
-  ['Barra rápida', 'tocar no espaço · teclas 1 a 8'],
-  ['Montar / descer', 'botão sela · F'],
-  ['Assovios (bichos domados)', 'botão apito · T'],
-  ['Trocar munição', 'Q'],
-  ['Mapa', 'tocar no minimapa · M'],
-  ['Inspecionar bicho', 'lupa · R'],
-  ['Câmera / FPS / pausa', 'V / F3 / Esc'],
+// Lista de controles (aba Controles): na ordem do ARK Mobile, gesto -> o que faz
+const GESTURES = [
+  ['Arrastar a partir da borda esquerda', 'Roda de ações (agachar, interagir, montar, inventário, construir, mapa, recarregar, pausar)'],
+  ['Arrastar a partir da borda direita', 'Roda de assovios / bichos'],
+  ['Deslizar para cima (lado esquerdo)', 'Pular'],
+  ['Deslizar para baixo (lado esquerdo)', 'Trocar munição / recarregar'],
+  ['Tocar e segurar (lado esquerdo)', 'Andar (arrastar para a direção) · toque duplo e segurar: correr'],
+  ['Tocar (lado direito)', 'Usar / coletar · atacar / atirar · ativar'],
+  ['Tocar e segurar (lado direito)', 'Olhar ao redor (arrastando) · segurar parado: abrir inventário · montar / descer'],
+  ['Toque duplo e segurar (lado direito)', 'Repetir coleta / ataque · armar o arco · atirar'],
+  ['Toque duplo em item do inventário', 'Passar o item entre mochila e barra rápida · com baú aberto: transferir'],
+];
+const KEYS = [
+  ['Andar / correr / pular', 'WASD · Shift · Espaço'],
+  ['Atacar / usar', 'clique · E'],
+  ['Inventário / mapa', 'Tab ou I · M'],
+  ['Barra rápida', 'teclas 1 a 8'],
+  ['Montar / assovios / munição', 'F · T · Q'],
+  ['Inspecionar / câmera / pausa', 'R · V · Esc'],
 ];
 
 export class PauseMenu {
@@ -112,8 +116,10 @@ export class PauseMenu {
               <input type="range" id="opt-sens" min="0.3" max="2.5" step="0.1">
             </div>
             <div class="po-page po-controls" data-page="controles">
-              <h3>CONTROLES BÁSICOS</h3>
-              ${CONTROLS.map(([k, d]) => `<div class="po-ctrl"><b>${k}</b><span>${d}</span></div>`).join('')}
+              <h3>CONTROLES BÁSICOS (GESTOS)</h3>
+              ${GESTURES.map(([k, d]) => `<div class="po-ctrl"><b>${k}</b><span>${d}</span></div>`).join('')}
+              <h3>TECLADO (PC)</h3>
+              ${KEYS.map(([k, d]) => `<div class="po-ctrl"><b>${k}</b><span>${d}</span></div>`).join('')}
             </div>
           </form>
         </div>
