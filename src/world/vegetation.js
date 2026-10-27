@@ -546,6 +546,8 @@ export class Vegetation {
       rec.cap = recursos.tipos[TYPES[res.esvazia].res]?.capacidade ?? 5;
     } else {
       rec.alive = false;
+      // árvore esgotada tomba de verdade (física em falling_trees.js)
+      if ((res.key === 'arvore' || res.key === 'arvore_mole') && !TYPES[rec.type].log) this.onFelled?.(rec);
     }
     rec.respawnAt = performance.now() / 1000 + recursos.reaparece_min * 60;
     if (!this.depleted.includes(rec)) this.depleted.push(rec);

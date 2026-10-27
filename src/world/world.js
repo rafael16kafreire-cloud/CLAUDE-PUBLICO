@@ -16,6 +16,7 @@ import { Effects } from './effects.js';
 import { Underwater } from './underwater.js';
 import { findRespawnPoints } from './respawn_points.js';
 import { DeathBag } from './death_bag.js';
+import { FallingTrees } from './falling_trees.js';
 import { sharedTime } from './materials.js';
 import { createStructure } from './structures.js';
 import { Projectiles } from './projectiles.js';
@@ -50,6 +51,9 @@ export class World {
     this.grass = new Grass(this.map, this.water, scene);
     this.sky = new Sky(scene);
     this.effects = new Effects(scene);
+    this._focus = null;
+    this.fallingTrees = new FallingTrees(scene, this.vegetation, this.effects, this.map);
+    this.vegetation.onFelled = (rec) => this.fallingTrees.spawn(rec, this._focus);
     this.projectiles = new Projectiles(this);
     this.effects.groundAt = (x, z) => this.heightAt(x, z);
     this.underwater = new Underwater(scene);
@@ -223,6 +227,7 @@ export class World {
     this.vegetation.setLod(q.lodHi, q.lodLo);
     this.grass.setQuality(q.grassRadius, q.grassDensity);
     this.grass.setEnabled(q.grassRadius > 0);
+    this.fallingTrees.setDetail(q.post === 'cinema' ? 2 : 1);
   }
 
   // ---------- atualização por quadro ----------
@@ -272,6 +277,8 @@ export class World {
     this.grass.update(focus);
     this.vegetation.update(dt, camera, this.viewDistance);
     this.effects.update(dt);
+    this._focus = focus;
+    this.fallingTrees.update(dt);
 
     this.water.update(camera);
     const body = this.water.bodyAt(camera.position.x, camera.position.z);
