@@ -1110,7 +1110,8 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     const c = window.__ilha.ctx; const p = c.player.position; const out = { ok: true, bad: [], distinct: 0 };
     const seen = new Set();
     for (let i = 0; i < 12; i++) {
-      const cr = c.creatures.spawn('raptor', p.x + 200 + i * 3, p.z + 200, 1);
+      // onça tem faixas de atributos (o raptor é fixo: mínimo = máximo em todos)
+      const cr = c.creatures.spawn('onca', p.x + 200 + i * 3, p.z + 200, 1);
       const at = cr.species.atributos;
       for (const k of ['vida', 'forca', 'peso', 'stamina', 'velocidade', 'torpor']) {
         const v = cr.stats[k]; const [a, b] = at[k];
