@@ -47,6 +47,9 @@ const TYPES = {
   planta_praia: { hi: () => vegGeometry('planta_praia', 1.1), mat: () => vegMaterial('planta_praia'), collider: 0, shadow: false, scale: [0.7, 1.4], res: 'arbusto', maxDist: 80, textured: true },
   capim_praia: { hi: () => vegGeometry('capim_praia', 0.9), mat: () => vegMaterial('capim_praia'), collider: 0, shadow: false, scale: [0.7, 1.4], res: null, maxDist: 60, textured: true },
   // floresta (Low Poly Tree Scene Free): árvores folhosas e tufos de capim
+  arvore_bl_a: { hiDist: 28, foot: 0.75, hi: () => vegGeometry('arvore_bl_a', 22), lo: P.makeCanopyTreeLow, mat: () => vegMaterial('arvore_bl_a'), collider: 0.55, shadow: true, scale: [0.85, 1.35], res: 'arvore', textured: true, maxDist: 320 },
+  arvore_bl_b: { hiDist: 28, foot: 0.75, hi: () => vegGeometry('arvore_bl_b', 22), lo: P.makeCanopyTreeLow, mat: () => vegMaterial('arvore_bl_b'), collider: 0.55, shadow: true, scale: [0.85, 1.35], res: 'arvore', textured: true, maxDist: 320 },
+  arvore_bl_c: { hiDist: 28, foot: 0.75, hi: () => vegGeometry('arvore_bl_c', 22), lo: P.makeCanopyTreeLow, mat: () => vegMaterial('arvore_bl_c'), collider: 0.55, shadow: true, scale: [0.85, 1.35], res: 'arvore', textured: true, maxDist: 320 },
   arvore_folhosa: { hiDist: 26, foot: 0.5, hi: () => vegGeometry('arvore_folhosa', 15), lo: P.makeCanopyTreeLow, mat: () => vegMaterial('arvore_folhosa'), collider: 0.45, shadow: true, scale: [0.8, 1.3], res: 'arvore_mole', textured: true, maxDist: 320 },
   arvore_folhosa2: { foot: 0.35, hi: () => vegGeometry('arvore_folhosa2', 11), lo: P.makeUnderstoryTreeLow, mat: () => vegMaterial('arvore_folhosa2'), collider: 0.35, shadow: true, scale: [0.8, 1.3], res: 'arvore_mole', textured: true, maxDist: 320 },
   // árvore alta da mata (Agarwood): tronco liso, copa no alto e cipós

@@ -152,7 +152,7 @@
     "biomas": {
       "praia": { "coqueiro": 0.06, "tamareira": 0.014, "tamareira2": 0.012, "planta_praia": 0.035, "arbusto_frutas": 0.012, "pedra_musgo": 0.014, "tronco_caido": 0.02 },
       "selva": {
-        "sumauma": 0.045, "arvore_dossel": 0.17, "arvore_media": 0.12, "acai": 0.07,
+        "sumauma": 0.045, "arvore_dossel": 0.07, "arvore_bl_a": 0.035, "arvore_bl_b": 0.035, "arvore_bl_c": 0.035, "arvore_media": 0.12, "acai": 0.07,
         "samambaia_gigante": 0.08, "bananeira": 0.035, "samambaia": 0.16,
         "arbusto_mejo": 0.025, "arbusto_escura": 0.02, "arbusto_frutas": 0.015,
         "tronco_caido": 0.016, "tronco_pinho": 0.01, "pedra_musgo": 0.022, "arvore_folhosa": 0.022, "arvore_folhosa2": 0.022, "arvore_agar": 0.025

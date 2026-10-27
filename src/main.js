@@ -174,8 +174,10 @@ function boot(hotData = {}) {
     return c;
   }
   // Os raios de sol precisam da luz do sol, que só existe depois de gerar o mundo.
+  // Desligado: com sol alto e mata fechada o efeito vela a imagem inteira (testado).
+  const USE_GODRAYS = false;
   function ensureGodrays() {
-    if (!cinema || godrays || !ctx) return;
+    if (!USE_GODRAYS || !cinema || godrays || !ctx) return;
     try {
       const sun = ctx.world.sky.sun;
       godrays = new GodraysPass(sun, camera, {

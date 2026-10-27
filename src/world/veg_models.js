@@ -9,9 +9,10 @@ import * as THREE from 'three';
 import { VEG_MODELOS as M1, VEG_TEXTURAS as T1, FOLHAGEM_COR } from './textures/veg_modelos.js';
 import { VEG_MODELOS2, VEG_TEXTURAS2 } from './textures/veg_modelos2.js';
 import { VEG_TRONCOS, VEG_TRONCOS_TEX } from './textures/veg_troncos.js';
+import { VEG_BL_MODELOS, VEG_BL_TEXTURAS } from './textures/veg_blender.js';
 
-const VEG_MODELOS = { ...M1, ...VEG_MODELOS2, ...VEG_TRONCOS };
-const VEG_TEXTURAS = { ...T1, ...VEG_TEXTURAS2, ...VEG_TRONCOS_TEX, folhagem_arbusto: FOLHAGEM_COR };
+const VEG_MODELOS = { ...M1, ...VEG_MODELOS2, ...VEG_TRONCOS, ...VEG_BL_MODELOS };
+const VEG_TEXTURAS = { ...T1, ...VEG_TEXTURAS2, ...VEG_TRONCOS_TEX, ...VEG_BL_TEXTURAS, folhagem_arbusto: FOLHAGEM_COR };
 import { addWind } from './materials.js';
 import { addLeafLight } from './foliage_texture.js';
 
