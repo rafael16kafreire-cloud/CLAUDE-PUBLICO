@@ -72,7 +72,7 @@ export class TouchControls {
 
     this.scheme = 'gestos';
     // tempos dos gestos em ms (padrão de dedo no celular; os testes automáticos alargam)
-    this.timing = { flick: 280, double: 330, hold: 480, tap: 260, edge: 600 };
+    this.timing = { flick: 280, double: 330, hold: 480, tap: 260, edge: 600, early: 45 };
     this.onEdge = null;   // (lado 'L' | 'R') chamado quando arrasta a partir da borda
     this._mounted = false;
     this._swimming = false;
@@ -223,6 +223,15 @@ export class TouchControls {
         st.holdAttack = true;
         this.input.press('attack');
       } else {
+        // mirando algo para bater (árvore, bicho, carcaça): bate já, sem esperar soltar o dedo
+        st.early = setTimeout(() => {
+          const pr = document.querySelector('.hud .prompt:not([hidden])');
+          if (!st.moved && !st.cancelled && P.has(e.pointerId) && pr?.classList.contains('prompt-attack')) {
+            st.fired = true;
+            clearTimeout(st.timer);
+            this._tap('attack');
+          }
+        }, this.timing.early);
         // segurar parado: inventário / montar
         st.timer = setTimeout(() => {
           if (!st.moved && !st.cancelled && P.has(e.pointerId)) {
@@ -241,9 +250,10 @@ export class TouchControls {
       const y = e.clientY;
       const dx = x - st.x0;
       const dy = y - st.y0;
-      if (Math.hypot(dx, dy) > 14) {
+      if (Math.hypot(dx, dy) > 10) {
         st.moved = true;
         clearTimeout(st.timer);
+        clearTimeout(st.early);
       }
       // arrasto a partir da borda: abre a roda (esquerda: ações; direita: assovios)
       if (st.edge && now - st.t0 < this.timing.edge && ((st.edge === 'L' && dx > 48) || (st.edge === 'R' && dx < -48))) {
@@ -280,6 +290,7 @@ export class TouchControls {
       if (!st) return;
       P.delete(e.pointerId);
       clearTimeout(st.timer);
+      clearTimeout(st.early);
       const now = e.timeStamp;
       const quick = now - st.t0 < this.timing.tap && !st.moved && !st.cancelled;
       if (st.left) {
@@ -290,9 +301,9 @@ export class TouchControls {
       } else {
         if (st.holdAttack) this.input.release('attack');
         else if (quick && !st.held) {
-          this._tapAction();
+          if (!st.fired) this._tapAction();
           lastTapR = now;
-        }
+        } else if (st.fired && !st.moved) lastTapR = now;
       }
     };
     layer.addEventListener('pointerdown', start);
@@ -371,12 +382,14 @@ export class TouchControls {
     const nx = dx / r;
     const ny = dy / r;
     const mag = Math.hypot(nx, ny);
-    if (mag < 0.12) {
+    if (mag < 0.05) {
       this.input.stick.x = 0;
       this.input.stick.y = 0;
     } else {
-      this.input.stick.x = nx;
-      this.input.stick.y = -ny; // para cima na tela = para frente
+      // curva rápida: ~60% do arrasto já dá velocidade cheia (resposta imediata)
+      const k = Math.min(1, mag * 1.7) / mag;
+      this.input.stick.x = nx * k;
+      this.input.stick.y = -ny * k; // para cima na tela = para frente
     }
   }
 

@@ -273,7 +273,7 @@ export class Player {
       } else if (this.stats.useStamina(C.soco_stamina)) {
         const tool = actions?.tool ?? { tipo: 'mao', intervalo: C.soco_intervalo_seg };
         this._attackTimer = tool.intervalo;
-        this._pendingHit = tool.tipo === 'mao' ? 0.14 : 0.22; // acerta no meio da animação
+        this._pendingHit = tool.tipo === 'mao' ? 0.06 : 0.11; // acerta logo no início da animação
         this.model.swing();
         this.onPunch?.(tool.tipo);
       }
@@ -336,7 +336,7 @@ export class Player {
     const len = Math.hypot(dirX, dirZ);
     const tx = len > 0.001 ? (dirX / len) * speed : 0;
     const tz = len > 0.001 ? (dirZ / len) * speed : 0;
-    const k = Math.min(1, (this.onGround ? 14 : 3) * dt);
+    const k = Math.min(1, (this.onGround ? 24 : 3) * dt);
     vel.x += (tx - vel.x) * k;
     vel.z += (tz - vel.z) * k;
 

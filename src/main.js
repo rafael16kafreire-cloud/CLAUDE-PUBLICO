@@ -3,6 +3,7 @@
 // Cria o desenho 3D (renderer), o mundo, o jogador e as telas, e
 // roda o "loop": a cada quadro atualiza tudo e desenha.
 // =============================================================
+import { playIntro } from './ui/intro.js';
 import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
@@ -478,17 +479,31 @@ function boot(hotData = {}) {
     ctx.hud.setCoop(n.active ? n.code : null, n.playerCount);
   });
 
+  let entrando = false;
   function play() {
-    if (!ctx) return;
+    if (!ctx || entrando) return;
     sound.unlock();
     sound.setPaused(false);
+    // tela cheia e mouse precisam do toque/clique: pede já, antes da animação
+    requestFullscreenLandscape();
+    if (!game.isTouch) input.requestPointerLock();
+    // testes automáticos (e quem pedir) entram direto, sem a animação
+    let pular = false;
+    try { pular = navigator.webdriver && !localStorage.getItem('ilha-primordial:intro-forcar'); } catch { /* ok */ }
+    if (pular) {
+      comecarAJogar();
+      return;
+    }
+    entrando = true;
+    playIntro(ui, { onStart: comecarAJogar, onDone: () => { entrando = false; } });
+  }
+
+  function comecarAJogar() {
     start.hide();
     ctx.hud.setVisible(true);
     ctx.hotbar.setVisible(true);
     ctx.touch.setVisible(game.isTouch);
     game.setState(STATE.PLAYING);
-    requestFullscreenLandscape();
-    if (!game.isTouch) input.requestPointerLock();
     if (game.playTime < 1) {
       events.emit(EV.MESSAGE, { text: 'Bata nas árvores para pegar palha e madeira. Abaixado (agachar) os predadores te veem menos.', kind: 'info' });
       events.emit(EV.MESSAGE, { text: 'Água doce: o pântano fica no meio da ilha.', kind: 'info' });
