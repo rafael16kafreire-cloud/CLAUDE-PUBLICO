@@ -8,6 +8,8 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { events, EV } from './core/event_bus.js';
 import { game, STATE } from './core/game_manager.js';
 import { settings, QUALITY_PRESETS, hdTextures } from './core/settings.js';
@@ -113,21 +115,53 @@ function boot(hotData = {}) {
   });
   start.setLoading('Gerando a ilha…');
 
-  // SMAA: suaviza as bordas serrilhadas depois de desenhar a cena
-  // (opção "Suavizar bordas"; desligado = desenha direto, mais leve)
+  // Pós-processamento: SMAA (bordas lisas, opção "Suavizar bordas") e os efeitos
+  // da qualidade gráfica: "grade" = cor de cinema + vinheta; "full" = também brilho (bloom).
+  // Ordem: cena -> brilho -> tom (OutputPass) -> cor -> SMAA.
+  const GRADE_SHADER = {
+    uniforms: { tDiffuse: { value: null } },
+    vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: `
+      uniform sampler2D tDiffuse;
+      varying vec2 vUv;
+      void main() {
+        vec4 c = texture2D(tDiffuse, vUv);
+        float l = dot(c.rgb, vec3(0.299, 0.587, 0.114));
+        c.rgb = mix(vec3(l), c.rgb, 1.14);                           // cores mais vivas
+        c.rgb = mix(c.rgb, c.rgb * c.rgb * (3.0 - 2.0 * c.rgb), 0.3); // contraste suave
+        c.rgb += vec3(0.016, 0.005, -0.014) * l;                      // luz quente
+        c.rgb += vec3(-0.006, 0.002, 0.012) * (1.0 - l);              // sombra fria
+        vec2 d = vUv - 0.5;
+        c.rgb *= 1.0 - dot(d, d) * 0.5;                               // vinheta
+        gl_FragColor = vec4(clamp(c.rgb, 0.0, 1.0), c.a);
+      }`,
+  };
   let composer = null;
+  let composerKey = '';
   function setupSMAA() {
-    const on = settings.get('smaa') !== false;
-    if (!on) {
+    const smaa = settings.get('smaa') !== false;
+    const post = settings.quality.post ?? 'none';
+    const key = `${smaa}|${post}`;
+    if (!smaa && post === 'none') {
       composer?.dispose();
       composer = null;
+      composerKey = '';
       return;
+    }
+    if (composer && composerKey !== key) {
+      composer.dispose();
+      composer = null;
     }
     if (!composer) {
       composer = new EffectComposer(renderer);
       composer.addPass(new RenderPass(scene, camera));
-      composer.addPass(new SMAAPass(window.innerWidth, window.innerHeight));
+      if (post === 'full') {
+        composer.addPass(new UnrealBloomPass(new THREE.Vector2(window.innerWidth / 2, window.innerHeight / 2), 0.2, 0.55, 0.92));
+      }
       composer.addPass(new OutputPass());
+      if (post !== 'none') composer.addPass(new ShaderPass(GRADE_SHADER));
+      if (smaa) composer.addPass(new SMAAPass(window.innerWidth, window.innerHeight));
+      composerKey = key;
     }
     composer.setPixelRatio(renderer.getPixelRatio());
     composer.setSize(window.innerWidth, window.innerHeight);

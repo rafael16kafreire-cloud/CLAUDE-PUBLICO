@@ -262,7 +262,7 @@ function trunk(rTop, rBase, h, flare, hex, radial = 9, hSeg = 6, seed = 1) {
 const BARK_LIGHT = '#8a8070';
 const BARK = '#5e4a35';
 const BARK_DARK = '#3f3326';
-const GREENS = ['#2c4f22', '#335a27', '#284a1f', '#3a632b', '#2f5524', '#3f6a2e'];
+const GREENS = ['#3b6a2a', '#44762e', '#35622a', '#4f8434', '#3f7228', '#5a8c36', '#6a9a3c'];
 
 // ------------------------------------------------------------
 // Cartões de folhas: vários retângulos com a foto de um tufo de
@@ -348,7 +348,7 @@ function leafCards(spots, { squash = [1.2, 0.6, 1.2], perSpot = 2.2, minCards = 
 }
 
 function crown(spots, segs = [7, 5], squash = [1.25, 0.5, 1.25], seed = 10) {
-  return leafCards(spots, { squash, seed, perSpot: segs[0] >= 7 ? 2.2 : 1.8 });
+  return leafCards(spots, { squash, seed, perSpot: segs[0] >= 7 ? 3.6 : 3.0 });
 }
 
 // Copa simples (de média distância): bolas sólidas com o tapete de

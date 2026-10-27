@@ -13,6 +13,7 @@ import { VEG_TRONCOS, VEG_TRONCOS_TEX } from './textures/veg_troncos.js';
 const VEG_MODELOS = { ...M1, ...VEG_MODELOS2, ...VEG_TRONCOS };
 const VEG_TEXTURAS = { ...T1, ...VEG_TEXTURAS2, ...VEG_TRONCOS_TEX, folhagem_arbusto: FOLHAGEM_COR };
 import { addWind } from './materials.js';
+import { addLeafLight } from './foliage_texture.js';
 
 function bytes(b64) {
   const bin = atob(b64);
@@ -95,7 +96,8 @@ export function vegMaterial(key, berry) {
     });
     // relevo (normal map), se o modelo tiver
     if (VEG_TEXTURAS[`${part.tex}_relevo`]) m.normalMap = texture(`${part.tex}_relevo`, false);
-    return addWind(m, opaque ? 0.004 : 0.01, opaque ? 0 : 0.03);
+    addWind(m, opaque ? 0.004 : 0.01, opaque ? 0 : 0.03);
+    return opaque ? m : addLeafLight(m, 0.55);
   });
   return mats.length === 1 ? mats[0] : mats;
 }
