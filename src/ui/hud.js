@@ -13,14 +13,19 @@ import { ICONS } from './icons.js';
 import { STAT_ICONS } from './inspect_panel.js';
 import { BUTTON_ICONS } from './button_icons.js';
 
-// Ordem do ARK Mobile (embaixo, no meio): stamina, vida, fome, sede, fôlego
+// Ordem do ARK Mobile (embaixo, no meio): stamina, vida, XP/nível, peso (e fôlego quando
+// mergulha). Fome e sede aparecem ao lado só quando estão baixas (abaixo de 50%).
 const BARS = [
   { key: 'stamina', label: 'Stamina' },
   { key: 'health', label: 'Vida' },
+  { key: 'xp', label: 'Nível' },
+  { key: 'weight', label: 'Peso' },
+  { key: 'oxygen', label: 'Fôlego' },
   { key: 'food', label: 'Fome' },
   { key: 'water', label: 'Sede' },
-  { key: 'oxygen', label: 'Fôlego' },
 ];
+// só aparecem quando baixos
+const SHOW_WHEN_LOW = { food: 0.5, water: 0.5 };
 
 function tempState(t) {
   const T = BALANCE.temperatura;
@@ -62,9 +67,9 @@ export class Hud {
       <!-- status como no ARK Mobile: ícones que enchem de baixo para cima -->
       <div class="hud-gauges">
         ${BARS.map((b) => `
-          <div class="stat stat-${b.key}" data-stat="${b.key}" title="${b.label}" ${b.key === 'oxygen' ? 'hidden' : ''}>
+          <div class="stat stat-${b.key}" data-stat="${b.key}" title="${b.label}" ${b.key === 'oxygen' || SHOW_WHEN_LOW[b.key] ? 'hidden' : ''}>
             <div class="track"><i class="fill"></i></div>
-            <span class="ico">${ICONS[b.key]}</span>
+            <span class="ico">${ICONS[b.key] ?? ''}</span>
             <b class="num">100</b>
           </div>`).join('')}
       </div>
@@ -231,9 +236,20 @@ export class Hud {
     this.refs.levelup.hidden = !(st.points > 0);
     for (const b of BARS) {
       const r = this.rows[b.key];
-      const value = st[b.key];
-      const max = st.max[b.key];
-      const shown = Math.ceil(value);
+      let value = st[b.key];
+      let max = st.max[b.key];
+      let shown = null;
+      if (b.key === 'xp') {
+        value = st.xp;
+        max = st.xpToNext();
+        shown = st.level;                      // o número é o nível
+      } else if (b.key === 'weight') {
+        const inv = this.player.actions?.inv;
+        value = inv ? inv.weight() : 0;
+        max = st.maxWeight;
+        shown = Math.round(value);             // o número é a carga em kg
+      }
+      if (shown === null) shown = Math.ceil(value);
       if (b.key === 'oxygen') {
         r.row.hidden = !(this.player.headUnderwater || value < max - 0.5);
       }
@@ -242,8 +258,10 @@ export class Hud {
         r.num.textContent = String(shown);
       }
       const ratio = Math.max(0, Math.min(1, value / max));
-      r.fill.style.transform = `scaleY(${ratio.toFixed(3)})`;
-      r.row.classList.toggle('low', ratio < 0.2);
+      if (SHOW_WHEN_LOW[b.key] !== undefined) r.row.hidden = ratio >= SHOW_WHEN_LOW[b.key];
+      r.fill.style.transform = `scaleY(${Math.min(1, ratio).toFixed(3)})`;
+      // vermelho: vida/stamina/comida/água/fôlego baixos, ou carga acima do máximo
+      r.row.classList.toggle('low', b.key === 'weight' ? ratio > 1 : b.key === 'xp' ? false : ratio < 0.2);
     }
 
     this.refs.lvl.textContent = String(st.level);

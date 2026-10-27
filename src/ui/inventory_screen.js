@@ -634,9 +634,24 @@ export class InventoryScreen {
         this._toBox(i);
         this.refresh();
       } else {
-        this.selSlot = i;
-        this.showTab('item');
-        this.refresh();
+        // toque duplo no mesmo item (como no ARK): mochila -> barra rápida; barra rápida -> mochila
+        const now = performance.now();
+        const dbl = this._lastTap && this._lastTap.i === i && now - this._lastTap.t < 380 && this.inv.slots[i];
+        this._lastTap = dbl ? null : { i, t: now };
+        if (dbl) {
+          const inHot = i < HOTBAR;
+          const target = this.inv.slots.findIndex((x, k) => !x && (inHot ? k >= HOTBAR : k < HOTBAR));
+          const to = target >= 0 ? target : (inHot ? -1 : HOTBAR - 1);
+          if (to >= 0) {
+            this.inv.move(i, to);
+            this.selSlot = to;
+          }
+          this.refresh();
+        } else {
+          this.selSlot = i;
+          this.showTab('item');
+          this.refresh();
+        }
       }
       start = null;
       dragging = false;

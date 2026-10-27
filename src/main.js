@@ -10,13 +10,6 @@ import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
-import {
-  EffectComposer as CineComposer, RenderPass as CineRenderPass, EffectPass as CineEffectPass,
-  BloomEffect, ToneMappingEffect, ToneMappingMode, HueSaturationEffect, BrightnessContrastEffect,
-  VignetteEffect, SMAAEffect, SMAAPreset,
-} from 'postprocessing';
-import { N8AOPostPass } from 'n8ao';
-import { GodraysPass } from 'three-good-godrays';
 import { events, EV } from './core/event_bus.js';
 import { game, STATE } from './core/game_manager.js';
 import { settings, QUALITY_PRESETS, hdTextures } from './core/settings.js';
@@ -33,6 +26,7 @@ import { saddleFor } from './creatures/saddle.js';
 import { itemName } from './items/items.js';
 import { DamageNumbers } from './ui/damage_numbers.js';
 import { CreatureMenu } from './ui/creature_menu.js';
+import { ActionWheel } from './ui/action_wheel.js';
 import { WhistleWheel } from './ui/whistle_wheel.js';
 import { loadGame, saveGame, clearSave, saveSlot, useSlot } from './core/save.js';
 import { Messages } from './ui/messages.js';
@@ -84,6 +78,12 @@ function boot(hotData = {}) {
     powerPreference: 'high-performance',
   });
   renderer.info.autoReset = false; // zerado a cada quadro (veja o fim do loop)
+  // um shader que o aparelho recusa deixa partes (ou tudo) pretas: avisa e oferece o modo seguro
+  renderer.debug.onShaderError = (gl, program, vs, fs) => {
+    const log = gl.getProgramInfoLog(program) || '';
+    const e1 = (gl.getShaderInfoLog(fs) || gl.getShaderInfoLog(vs) || '').split('\n').find((l) => /ERROR/.test(l)) ?? '';
+    window.__ilhaFail?.('shader', (e1 || log).slice(0, 220));
+  };
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   // Cores mais naturais (luz forte não "estoura").
@@ -147,48 +147,45 @@ function boot(hotData = {}) {
   let composer = null;
   let composerKey = '';
   let cinema = false;      // true: composer é o da biblioteca "postprocessing" (qualidade alta)
-  let godrays = null;
+  let godrays = null;      // (raios de sol: desligado; velava a imagem inteira)
   let aoPass = null;
-  // Qualidade alta: oclusão ambiental (n8ao, ISC), raios de sol que atravessam a copa
-  // (three-good-godrays, Zlib), brilho, tom ACES, cor e vinheta. Bibliotecas em
-  // "postprocessing" (Zlib). Créditos na tela inicial.
-  function buildCinema(smaa) {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    const c = new CineComposer(renderer, { frameBufferType: THREE.HalfFloatType });
-    c.addPass(new CineRenderPass(scene, camera));
-    const ao = new N8AOPostPass(scene, camera, w, h);
-    ao.configuration.aoRadius = 2.6;
-    ao.configuration.distanceFalloff = 1.2;
-    ao.configuration.intensity = 2.4;
-    ao.configuration.halfRes = true;
-    ao.setQualityMode('Medium');
-    c.addPass(ao);
-    aoPass = ao;
-    const bloom = new BloomEffect({ intensity: 0.32, luminanceThreshold: 0.88, luminanceSmoothing: 0.25, mipmapBlur: true });
-    const tone = new ToneMappingEffect({ mode: ToneMappingMode.ACES_FILMIC });
-    const sat = new HueSaturationEffect({ saturation: 0.14, hue: 0 });
-    const bc = new BrightnessContrastEffect({ brightness: 0.03, contrast: 0.1 });
-    const vig = new VignetteEffect({ offset: 0.32, darkness: 0.5 });
-    c.addPass(new CineEffectPass(camera, bloom, tone, sat, bc, vig));
-    if (smaa) c.addPass(new CineEffectPass(camera, new SMAAEffect({ preset: SMAAPreset.MEDIUM })));
-    return c;
-  }
-  // Os raios de sol precisam da luz do sol, que só existe depois de gerar o mundo.
-  // Desligado: com sol alto e mata fechada o efeito vela a imagem inteira (testado).
-  const USE_GODRAYS = false;
-  function ensureGodrays() {
-    if (!USE_GODRAYS || !cinema || godrays || !ctx) return;
+  // Qualidade alta: oclusão ambiental (n8ao), brilho (bloom), tom ACES, cor e vinheta, com as
+  // bibliotecas "postprocessing" e "n8ao". Elas só são carregadas AQUI, quando a qualidade alta
+  // pede (import dinâmico dentro de try/catch): se alguma falhar no aparelho, o jogo continua
+  // com o modo leve em vez de nem abrir.
+  let cinemaTry = 0;
+  async function upgradeToCinema(smaa, key) {
+    const my = ++cinemaTry;
     try {
-      const sun = ctx.world.sky.sun;
-      godrays = new GodraysPass(sun, camera, {
-        density: 1 / 110, maxDensity: 0.55, edgeStrength: 2, edgeRadius: 2,
-        distanceAttenuation: 1.6, color: new THREE.Color('#ffe9bf'), raymarchSteps: 44, blur: true, gammaCorrection: true,
-      });
-      composer.addPass(godrays, 2);
+      const pp = await import('postprocessing');
+      const { N8AOPostPass } = await import('n8ao');
+      if (my !== cinemaTry || composerKey !== key) return; // as opções mudaram nesse meio tempo
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const c = new pp.EffectComposer(renderer, { frameBufferType: THREE.HalfFloatType });
+      c.addPass(new pp.RenderPass(scene, camera));
+      const ao = new N8AOPostPass(scene, camera, w, h);
+      ao.configuration.aoRadius = 2.6;
+      ao.configuration.distanceFalloff = 1.2;
+      ao.configuration.intensity = 2.4;
+      ao.configuration.halfRes = true;
+      ao.setQualityMode('Medium');
+      c.addPass(ao);
+      const bloom = new pp.BloomEffect({ intensity: 0.32, luminanceThreshold: 0.88, luminanceSmoothing: 0.25, mipmapBlur: true });
+      const tone = new pp.ToneMappingEffect({ mode: pp.ToneMappingMode.ACES_FILMIC });
+      const sat = new pp.HueSaturationEffect({ saturation: 0.14, hue: 0 });
+      const bc = new pp.BrightnessContrastEffect({ brightness: 0.03, contrast: 0.1 });
+      const vig = new pp.VignetteEffect({ offset: 0.32, darkness: 0.5 });
+      c.addPass(new pp.EffectPass(camera, bloom, tone, sat, bc, vig));
+      if (smaa) c.addPass(new pp.EffectPass(camera, new pp.SMAAEffect({ preset: pp.SMAAPreset.MEDIUM })));
+      c.setSize(w, h);
+      aoPass = ao;
+      composer?.dispose();
+      composer = c;
+      cinema = true;
     } catch (e) {
-      console.warn('raios de sol indisponíveis:', e?.message);
-      godrays = null;
+      console.warn('efeitos de cinema indisponíveis, ficando no modo leve:', e?.message);
+      cinema = false;
     }
   }
   function setupSMAA() {
@@ -200,26 +197,17 @@ function boot(hotData = {}) {
       composer = null;
       composerKey = '';
       cinema = false;
-      godrays = null;
+      cinemaTry++;
       return;
     }
     if (composer && composerKey !== key) {
       composer.dispose();
       composer = null;
       cinema = false;
-      godrays = null;
-    }
-    if (!composer && post === 'cinema') {
-      try {
-        composer = buildCinema(smaa);
-        cinema = true;
-      } catch (e) {
-        console.warn('efeitos de cinema indisponíveis, usando o modo leve:', e?.message);
-        composer = null;
-        cinema = false;
-      }
+      cinemaTry++;
     }
     if (!composer) {
+      // modo leve (também é o ponto de partida da qualidade alta: o cinema entra depois)
       composer = new EffectComposer(renderer);
       composer.addPass(new RenderPass(scene, camera));
       if (post === 'full') {
@@ -228,6 +216,8 @@ function boot(hotData = {}) {
       composer.addPass(new OutputPass());
       if (post !== 'none') composer.addPass(new ShaderPass(GRADE_SHADER));
       if (smaa) composer.addPass(new SMAAPass(window.innerWidth, window.innerHeight));
+      composerKey = key;
+      if (post === 'cinema') upgradeToCinema(smaa, key);
     }
     composerKey = key;
     composer.setPixelRatio?.(renderer.getPixelRatio());
@@ -264,8 +254,9 @@ function boot(hotData = {}) {
     camera.far = vd + 40;
     camera.updateProjectionMatrix();
     const inGame = [STATE.PLAYING, STATE.PAUSED, STATE.DEAD].includes(game.state);
-    ctx.touch.setVisible((game.isTouch && inGame && !ctx.invScreen.visible && !ctx.creatureMenu.visible && !ctx.whistle.visible) || ctx.touch.editing);
+    ctx.touch.setVisible((game.isTouch && inGame && !ctx.invScreen.visible && !ctx.creatureMenu.visible && !ctx.whistle.visible && !ctx.actionWheel.visible) || ctx.touch.editing);
     ctx.touch.applySettings(settings.get('buttonOpacity'), settings.get('buttonSize'));
+    ctx.touch.setScheme(settings.get('touchScheme'));
     if (!ctx.touch.editing) ctx.touch.applyLayout(settings.get('buttonLayout'));
     ctx.debug.setVisible(settings.get('showDebug'));
     ctx.camCtl.setMode(settings.get('cameraMode'));
@@ -327,6 +318,15 @@ function boot(hotData = {}) {
     const hotbar = new Hotbar(ui, inventory, (i) => actions.pressHotbar(i));
     const damageNumbers = new DamageNumbers(ui);
     const whistle = new WhistleWheel(ui, { creatures, player, camCtl, onClose: () => closeCreatureMenu() });
+    const actionWheel = new ActionWheel(ui, {
+      onClose: () => closeCreatureMenu(),
+      onAction: (a) => {
+        input.press(a);
+        setTimeout(() => input.release(a), 90);
+      },
+    });
+    // arrastar a partir da borda: esquerda = roda de ações; direita = roda de assovios
+    touch.onEdge = (side) => (side === 'R' ? openWhistle() : openActionWheel());
     const creatureMenu = new CreatureMenu(ui, {
       inventory,
       onClose: () => closeCreatureMenu(),
@@ -370,7 +370,7 @@ function boot(hotData = {}) {
     game.player = player;
     ctx = {
       world, player, camCtl, interaction, hud, minimap, mapScreen, inspect, buildGhost, messages, touch, death, debug, pause, creatures, hands, damageNumbers,
-      inventory, crafting, actions, hotbar, invScreen, creatureMenu, whistle,
+      inventory, crafting, actions, hotbar, invScreen, creatureMenu, whistle, actionWheel,
     };
     ctx.net = new Multiplayer({ world, player, creatures, inventory, actions, camCtl });
 
@@ -404,6 +404,7 @@ function boot(hotData = {}) {
       console.warn('[Ilha] compile', err);
     }
     start.setReady(hotData.player ? 'Continuar' : 'Jogar', !!hotData.player);
+    window.__ilhaReady = true;
     // veio de "Carregar" um espaço: entra direto no jogo
     try {
       if (sessionStorage.getItem('ilha-primordial:auto-continuar')) {
@@ -536,6 +537,16 @@ function boot(hotData = {}) {
     input.blocked = true;
     ctx.touch.setVisible(false);
     ctx.creatureMenu.open(c);
+    input.exitPointerLock();
+  }
+
+  // Roda de ações (arrasto a partir da borda esquerda, no celular)
+  function openActionWheel() {
+    if (game.state !== STATE.PLAYING || ctx.player.dead || ctx.invScreen.visible || ctx.creatureMenu.visible || ctx.whistle.visible || ctx.actionWheel.visible) return;
+    input.clear();
+    input.blocked = true;
+    ctx.touch.setVisible(false);
+    ctx.actionWheel.open();
     input.exitPointerLock();
   }
 
@@ -697,6 +708,7 @@ function boot(hotData = {}) {
     }
     if (action === 'whistle') {
       if (ctx.whistle.visible) ctx.whistle.close();
+      if (ctx.actionWheel.visible) ctx.actionWheel.close();
       else openWhistle();
       return;
     }
@@ -756,7 +768,7 @@ function boot(hotData = {}) {
   // Mouse solto com Esc no PC = pausa.
   document.addEventListener('pointerlockchange', () => {
     if (document.pointerLockElement || game.state !== STATE.PLAYING || game.isTouch) return;
-    if (ctx?.invScreen.visible || ctx?.creatureMenu.visible || ctx?.whistle.visible) {
+    if (ctx?.invScreen.visible || ctx?.creatureMenu.visible || ctx?.whistle.visible || ctx?.actionWheel.visible) {
       input.selfUnlock = false; // soltou com o inventário/menu aberto: tudo certo
       return;
     }
@@ -792,6 +804,7 @@ function boot(hotData = {}) {
       else if (ctx.invScreen.visible) closeInventory();
       else if (ctx.creatureMenu.visible) ctx.creatureMenu.close();
       else if (ctx.whistle.visible) ctx.whistle.close();
+      else if (ctx.actionWheel.visible) ctx.actionWheel.close();
       else if (game.state === STATE.PLAYING) pauseGame();
       else if (game.state === STATE.PAUSED && !justUnlocked) resume();
     }
@@ -816,6 +829,32 @@ function boot(hotData = {}) {
   }
 
   // ---------- Qualidade automática ----------
+  // Tela preta: depois de alguns segundos desenhando, lê alguns pontos do quadro. Se estão todos
+  // pretos, o aparelho não aceitou algum efeito: avisa e oferece o modo seguro.
+  let _frames = 0;
+  let _blackHits = 0;
+  function checkBlackFrame() {
+    _frames++;
+    if (_frames !== 150 && _frames !== 400 && _frames !== 900) return;
+    try {
+      const gl = renderer.getContext();
+      const px = new Uint8Array(4);
+      const w = gl.drawingBufferWidth;
+      const h = gl.drawingBufferHeight;
+      let lit = 0;
+      for (let j = 1; j <= 5; j++) {
+        for (let i = 1; i <= 7; i++) {
+          gl.readPixels(Math.floor((w * i) / 8), Math.floor((h * j) / 6), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+          if (px[0] + px[1] + px[2] > 12) lit++;
+        }
+      }
+      _blackHits = lit === 0 ? _blackHits + 1 : 0;
+      if (_blackHits >= 1) window.__ilhaFail?.('tela preta', `o quadro desenhado está todo preto (${w}x${h}, qualidade ${settings.get('quality')})`);
+    } catch (e) {
+      console.warn('[Ilha] checkBlackFrame', e);
+    }
+  }
+
   // Quem anda empurra a grama e as plantas baixas: o jogador e os bichos mais perto.
   const _pushers = [];
   function updatePushers(focus) {
@@ -1089,9 +1128,9 @@ function boot(hotData = {}) {
       camera.fov += (wantFov - camera.fov) * Math.min(1, dt * 10);
       camera.updateProjectionMatrix();
     }
-    ensureGodrays();
     if (composer) composer.render(dt);
     else renderer.render(scene, camera);
+    checkBlackFrame();
     camera.rotation.z -= wob;
     debug.frame(dt);
     input.endFrame();

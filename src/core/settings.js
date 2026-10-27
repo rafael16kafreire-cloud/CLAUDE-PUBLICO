@@ -38,6 +38,7 @@ const DEFAULTS = {
   showDebug: false,        // overlay de FPS
   smaa: true,              // suavizar bordas (SMAA)
   touchControls: 'auto',   // auto | sempre | nunca
+  touchScheme: 'gestos',   // gestos (ARK Mobile) | botoes
   cameraMode: 'primeira',  // primeira | terceira
   autoQuality: true,       // baixa a qualidade sozinho se ficar lento
   playerName: '',          // nome no co-op

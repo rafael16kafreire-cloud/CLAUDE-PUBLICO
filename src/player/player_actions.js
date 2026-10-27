@@ -90,12 +90,20 @@ export class PlayerActions {
   }
 
   // Peso: até o máximo anda normal; acima anda devagar; muito acima, para.
+  // Quanto a carga atrapalha o andar (como no ARK): até metade da carga máxima não
+  // pesa nada; daí até a carga máxima vai caindo de 100% para 75% da velocidade;
+  // passou da carga máxima cai rápido até ~20% (a 150%) e acima disso não anda.
   weightFactor() {
-    const max = this.player.stats.maxWeight;
-    const w = this.inv.weight();
-    if (w <= max) return 1;
-    if (w <= max * 1.5) return 0.45;
+    const r = this.inv.weight() / this.player.stats.maxWeight;
+    if (r <= 0.5) return 1;
+    if (r <= 1) return 1 - (r - 0.5) * 0.5;
+    if (r <= 1.5) return 0.75 - (r - 1) * 1.1;
     return 0;
+  }
+
+  // Passou da carga máxima: não dá para correr.
+  overloaded() {
+    return this.inv.weight() > this.player.stats.maxWeight;
   }
 
   // ---------------------------------------------------------

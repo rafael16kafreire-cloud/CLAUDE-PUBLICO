@@ -94,7 +94,12 @@ export class PauseMenu {
                 <option value="sempre">Sempre mostrar</option>
                 <option value="nunca">Nunca mostrar</option>
               </select>
-              <button type="button" class="btn btn-small touch-only" id="pause-buttons">Ajustar posição dos botões</button>
+              <label for="opt-scheme">Esquema de toque</label>
+              <select id="opt-scheme">
+                <option value="gestos">Gestos (como no ARK)</option>
+                <option value="botoes">Botões na tela</option>
+              </select>
+              <button type="button" class="btn btn-small touch-only" id="pause-buttons">Ajustar posição dos botões (esquema Botões)</button>
             </div>
             <div class="po-page" data-page="jogo">
               <h3>JOGABILIDADE</h3>
@@ -136,6 +141,7 @@ export class PauseMenu {
       opacity: $('opt-opacity'),
       size: $('opt-size'),
       touch: $('opt-touch'),
+      scheme: $('opt-scheme'),
       camera: $('opt-camera'),
       debug: $('opt-debug'),
       smaa: $('opt-smaa'),
@@ -200,6 +206,7 @@ export class PauseMenu {
       this.refresh();
     });
     f.touch.addEventListener('change', () => settings.set('touchControls', f.touch.value));
+    f.scheme.addEventListener('change', () => settings.set('touchScheme', f.scheme.value));
     f.camera.addEventListener('change', () => settings.set('cameraMode', f.camera.value));
     f.debug.addEventListener('change', () => settings.set('showDebug', f.debug.checked));
     f.smaa.addEventListener('change', () => settings.set('smaa', f.smaa.checked));
@@ -220,6 +227,7 @@ export class PauseMenu {
     f.opacity.value = String(v.buttonOpacity);
     f.size.value = String(v.buttonSize);
     f.touch.value = v.touchControls;
+    f.scheme.value = v.touchScheme;
     f.camera.value = v.cameraMode;
     f.debug.checked = !!v.showDebug;
     f.smaa.checked = v.smaa !== false;

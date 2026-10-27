@@ -330,7 +330,7 @@ export class Player {
     // carregando peso demais: anda devagar ou nem anda
     const wf = this.actions ? this.actions.weightFactor() : 1;
     speed *= wf;
-    if (wf < 1) this.running = false;
+    if (this.actions?.overloaded?.()) this.running = false;
     speed *= mag;
 
     const len = Math.hypot(dirX, dirZ);

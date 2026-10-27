@@ -5,6 +5,16 @@
 // - Arrastar no resto da tela: gira a câmera.
 // - Botões grandes à direita. Tamanho e opacidade vêm das Opções.
 // Vários dedos ao mesmo tempo funcionam (cada dedo tem um id).
+//
+// ESQUEMA "GESTOS" (padrão, como no ARK Mobile):
+//   Metade esquerda: tocar e arrastar = andar (joystick que nasce onde o dedo
+//     encosta); tocar duas vezes e segurar = correr; arrastar rápido para cima = pular
+//     (para baixo = recarregar).
+//   Metade direita: arrastar = olhar em volta; tocar = usar/colher ou atacar; segurar sem
+//     mexer = abrir o inventário (ou montar/desmontar se estiver mirando um bicho domado);
+//     tocar duas vezes e segurar = repetir (colher/atacar sem parar).
+//   Arrastar a partir da borda esquerda = roda de ações; da borda direita = roda de assovios.
+// ESQUEMA "BOTÕES": os botões na tela (opção nas configurações).
 // - Ajustar botões (menu de pausa): arraste cada botão para onde
 //   quiser e aperte Travar; a posição fica salva (em fração da tela,
 //   então funciona em pé e deitado).
@@ -30,6 +40,7 @@ export class TouchControls {
     const el = document.createElement('div');
     el.className = 'tc';
     el.innerHTML = `
+      <div class="tc-gestos"></div>
       <div class="tc-look"></div>
       <div class="tc-stick-zone">
         <div class="tc-stick-base"><div class="tc-stick-knob"></div></div>
@@ -59,9 +70,22 @@ export class TouchControls {
     this.editBar.querySelector('[data-act="reset"]').addEventListener('click', () => this.applyLayout(null));
     this.editBar.querySelector('[data-act="lock"]').addEventListener('click', () => this.stopEdit());
 
+    this.scheme = 'gestos';
+    this.onEdge = null;   // (lado 'L' | 'R') chamado quando arrasta a partir da borda
+    this._mounted = false;
+    this._swimming = false;
     this._setupLook(el.querySelector('.tc-look'));
     this._setupStick(el.querySelector('.tc-stick-zone'));
+    this._setupGestures(el.querySelector('.tc-gestos'));
     this._setupButtons();
+    this.setScheme('gestos');
+  }
+
+  // 'gestos' (padrão) ou 'botoes'
+  setScheme(scheme) {
+    this.scheme = scheme === 'botoes' ? 'botoes' : 'gestos';
+    this.el.classList.toggle('tc-esquema-gestos', this.scheme === 'gestos');
+    this._resetStick();
   }
 
   setVisible(v) {
@@ -118,12 +142,163 @@ export class TouchControls {
     this.btn.crouch.classList.toggle('on', player.crouching);
     // nadando: subir/descer (só troca o ícone quando muda)
     const sw = !!player.swimming;
+    this._swimming = sw;
+    this._mounted = !!player.riding;
     if (this._swimIcons !== sw) {
       this._swimIcons = sw;
       this.btn.crouch.innerHTML = sw ? BUTTON_ICONS.down : BUTTON_ICONS.crouch;
       this.btn.crouch.setAttribute('aria-label', sw ? 'Descer' : 'Agachar');
       this.btn.jump.setAttribute('aria-label', sw ? 'Subir' : 'Pular');
     }
+  }
+
+  // ----- Esquema de gestos (ARK Mobile) -----
+  // Tocar na metade direita: usa/colhe se houver o que usar (aviso com a tecla "E"),
+  // senão ataca. Segurar sem mexer: monta/desmonta (mirando bicho domado) ou abre o inventário.
+  // Aperta e solta uma ação. Só solta depois de passar um quadro do jogo com ela apertada
+  // (em quadros lentos, soltar cedo demais faria o jogo nem perceber o toque).
+  _tap(action) {
+    this.input.press(action);
+    setTimeout(() => requestAnimationFrame(() => requestAnimationFrame(() => this.input.release(action))), 70);
+  }
+
+  _tapAction() {
+    const pr = document.querySelector('.hud .prompt:not([hidden])');
+    this._tap(pr && !pr.classList.contains('prompt-attack') ? 'interact' : 'attack');
+  }
+
+  _holdAction() {
+    const txt = document.querySelector('.hud .prompt:not([hidden])')?.textContent ?? '';
+    navigator.vibrate?.(18);
+    this._tap(this._mounted || /botão Montar/.test(txt) ? 'mount' : 'inventory');
+  }
+
+  _setupGestures(layer) {
+    const W = () => window.innerWidth;
+    const P = new Map();      // dedo -> estado do gesto
+    let lastTapL = 0;
+    let lastTapR = 0;
+    const FLICK_MS = 280;     // arrasto rápido
+    const DOUBLE_MS = 330;    // intervalo do toque duplo
+    const EDGE = 26;          // px: o que conta como "borda da tela"
+    const stickZone = this.el.querySelector('.tc-stick-zone');
+
+    const start = (e) => {
+      if (this.scheme !== 'gestos' || this.editing) return;
+      e.preventDefault();
+      try { layer.setPointerCapture(e.pointerId); } catch { /* ok */ }
+      const now = e.timeStamp;
+      const x = e.clientX;
+      const y = e.clientY;
+      const left = x < W() * 0.5;
+      const st = {
+        left, x0: x, y0: y, lx: x, ly: y, t0: now, moved: false, cancelled: false,
+        edge: x < EDGE ? 'L' : x > W() - EDGE ? 'R' : null,
+        jumped: false, downed: false, dbl: false, held: false, timer: null, holdAttack: false,
+      };
+      P.set(e.pointerId, st);
+      if (left) {
+        // joystick flutuante: a base nasce onde o dedo encostou
+        if (this._stickId === null) {
+          this._stickId = e.pointerId;
+          const r = STICK_RADIUS * this.scale;
+          this._cx = Math.max(r + 8, x);
+          this._cy = Math.min(window.innerHeight - r - 8, y);
+          const zr = stickZone.getBoundingClientRect();
+          this.base.classList.add('active');
+          this.base.style.left = `${this._cx - zr.left}px`;
+          this.base.style.top = `${this._cy - zr.top}px`;
+          this._moveKnob(x, y);
+        }
+        // tocar duas vezes e segurar = correr
+        if (now - lastTapL < DOUBLE_MS) {
+          st.dbl = true;
+          this.input.runToggle = true;
+          navigator.vibrate?.(12);
+        }
+      } else if (now - lastTapR < DOUBLE_MS) {
+        // tocar duas vezes e segurar = repetir (colher/atacar sem parar)
+        st.dbl = true;
+        st.holdAttack = true;
+        this.input.press('attack');
+      } else {
+        // segurar parado: inventário / montar
+        st.timer = setTimeout(() => {
+          if (!st.moved && !st.cancelled && P.has(e.pointerId)) {
+            st.held = true;
+            this._holdAction();
+          }
+        }, 480);
+      }
+    };
+
+    const move = (e) => {
+      const st = P.get(e.pointerId);
+      if (!st || st.cancelled) return;
+      const now = e.timeStamp;
+      const x = e.clientX;
+      const y = e.clientY;
+      const dx = x - st.x0;
+      const dy = y - st.y0;
+      if (Math.hypot(dx, dy) > 14) {
+        st.moved = true;
+        clearTimeout(st.timer);
+      }
+      // arrasto a partir da borda: abre a roda (esquerda: ações; direita: assovios)
+      if (st.edge && now - st.t0 < 600 && ((st.edge === 'L' && dx > 48) || (st.edge === 'R' && dx < -48))) {
+        st.cancelled = true;
+        if (st.left) this._resetStick();
+        navigator.vibrate?.(15);
+        this.onEdge?.(st.edge);
+        return;
+      }
+      if (st.left) {
+        this._moveKnob(x, y);
+        if (!st.jumped && now - st.t0 < FLICK_MS && dy < -52 && Math.abs(dx) < -dy * 0.75) {
+          st.jumped = true;
+          this._tap('jump');
+        }
+        if (!st.downed && now - st.t0 < FLICK_MS && dy > 52 && Math.abs(dx) < dy * 0.75) {
+          st.downed = true;
+          this._tap('ammo');   // recarregar
+        }
+        // nadando: segurar o dedo para cima sobe
+        if (this._swimming) {
+          if (dy < -40) this.input.press('jump');
+          else this.input.release('jump');
+        }
+      } else {
+        this.input.addLook((x - st.lx) * TOUCH_LOOK_FACTOR, (y - st.ly) * TOUCH_LOOK_FACTOR);
+        st.lx = x;
+        st.ly = y;
+      }
+    };
+
+    const end = (e) => {
+      const st = P.get(e.pointerId);
+      if (!st) return;
+      P.delete(e.pointerId);
+      clearTimeout(st.timer);
+      const now = e.timeStamp;
+      const quick = now - st.t0 < 260 && !st.moved && !st.cancelled;
+      if (st.left) {
+        if (this._stickId === e.pointerId) this._resetStick();
+        if (st.dbl) this.input.runToggle = false;
+        if (this._swimming) this.input.release('jump');
+        if (quick) lastTapL = now;
+      } else {
+        if (st.holdAttack) this.input.release('attack');
+        else if (quick && !st.held) {
+          this._tapAction();
+          lastTapR = now;
+        }
+      }
+    };
+    layer.addEventListener('pointerdown', start);
+    layer.addEventListener('pointermove', move);
+    layer.addEventListener('pointerup', end);
+    layer.addEventListener('pointercancel', end);
+    layer.addEventListener('contextmenu', (e) => e.preventDefault());
   }
 
   // ----- Câmera: arrastar o dedo -----

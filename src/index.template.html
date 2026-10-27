@@ -3,6 +3,72 @@
 <style>
 /*__CSS__*/
 </style>
+<script>
+// Rede de proteção: se o jogo não conseguir iniciar (erro de script, shader que o aparelho
+// recusa, tela preta, falta de memória), mostra o motivo em vez de uma tela preta e oferece
+// o "modo seguro" (qualidade baixa, sem efeitos). Funciona mesmo se o script do jogo falhar.
+(function () {
+  var errs = [];
+  window.__ilhaErrs = errs;
+  window.__ilhaReady = false;
+  var shown = false;
+  function lines() { return errs.slice(0, 6).join('\n') || '(sem detalhes)'; }
+  function show(title) {
+    if (shown) return;
+    shown = true;
+    var d = document.createElement('div');
+    d.id = 'ilha-fatal';
+    d.setAttribute('style', 'position:fixed;inset:0;z-index:99999;background:#0b1216;color:#e8f4f8;font:14px/1.45 system-ui,sans-serif;padding:18px;overflow:auto');
+    var h = document.createElement('h2');
+    h.setAttribute('style', 'margin:0 0 8px;font-size:18px;color:#7fe3ff');
+    h.textContent = title;
+    var p = document.createElement('p');
+    p.textContent = 'Toque em "Modo seguro" para abrir com gráficos simples (qualidade baixa, sem efeitos). Se continuar assim, tire uma foto desta tela e mande para o desenvolvedor.';
+    var pre = document.createElement('pre');
+    pre.setAttribute('style', 'white-space:pre-wrap;word-break:break-word;background:#04080a;padding:10px;border-radius:6px;font-size:12px;color:#ffb4a8;max-height:40vh;overflow:auto');
+    pre.textContent = lines() + '\n\n' + (navigator.userAgent || '');
+    var b1 = document.createElement('button');
+    b1.textContent = 'Modo seguro';
+    b1.setAttribute('style', 'margin:8px 8px 0 0;padding:12px 18px;font-size:15px;border:0;border-radius:6px;background:#35c3e8;color:#04202a;font-weight:700');
+    b1.onclick = function () {
+      try {
+        var k = 'ilha-primordial:opcoes';
+        var o = JSON.parse(localStorage.getItem(k) || '{}');
+        o.version = 3; o.quality = 'baixa'; o.smaa = false; o.autoQuality = false;
+        localStorage.setItem(k, JSON.stringify(o));
+      } catch (e) { /* sem armazenamento */ }
+      location.reload();
+    };
+    var b2 = document.createElement('button');
+    b2.textContent = 'Recarregar';
+    b2.setAttribute('style', 'margin:8px 0 0;padding:12px 18px;font-size:15px;border:1px solid #35c3e8;border-radius:6px;background:transparent;color:#7fe3ff');
+    b2.onclick = function () { location.reload(); };
+    d.appendChild(h); d.appendChild(p); d.appendChild(pre); d.appendChild(b1); d.appendChild(b2);
+    if (window.__ilhaReady) {
+      var b3 = document.createElement('button');
+      b3.textContent = 'Continuar mesmo assim';
+      b3.setAttribute('style', 'margin:8px 0 0 8px;padding:12px 18px;font-size:15px;border:1px solid #5a7;border-radius:6px;background:transparent;color:#9fd');
+      b3.onclick = function () { d.parentNode.removeChild(d); };
+      d.appendChild(b3);
+    }
+    (document.body || document.documentElement).appendChild(d);
+  }
+  window.__ilhaFail = function (kind, detail) {
+    errs.push(kind + ': ' + detail);
+    show('O jogo teve um problema (' + kind + ')');
+  };
+  window.addEventListener('error', function (e) {
+    var f = (e.filename || '').split('/').pop();
+    errs.push((e.message || 'erro') + (f ? ' @' + f + ':' + e.lineno + ':' + e.colno : ''));
+    if (!window.__ilhaReady) setTimeout(function () { if (!window.__ilhaReady) show('O jogo não conseguiu iniciar'); }, 1500);
+  });
+  window.addEventListener('unhandledrejection', function (e) {
+    errs.push('promessa recusada: ' + ((e.reason && e.reason.message) || e.reason));
+  });
+  // geração da ilha + compilação dos gráficos: aparelhos fracos demoram, mas não tanto
+  setTimeout(function () { if (!window.__ilhaReady) show('O jogo demorou demais para iniciar'); }, 45000);
+})();
+</script>
 <div id="app"></div>
 <noscript>Este jogo precisa de JavaScript ligado.</noscript>
 <script>

@@ -1600,3 +1600,47 @@ body { font-weight: 600; }
 .title { font-family: "Lilita One", var(--font-ui); } /* logo do jogo continua igual */
 .stat .num, .hb-qty, .is-qty, .sk-val, .target-name b { font-weight: 700; font-variant-numeric: tabular-nums; }
 .item-svg { overflow: visible; }
+
+
+/* ---------- HUD estilo ARK Mobile: ícones novos (nível e peso) ---------- */
+.stat-xp { --c: #35c3e8; --mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2l9 9h-5v4H8v-4H3z M10.5 17h3v2.5H16v3h-2.5V24h-3v-1.5H8v-3h2.5z'/%3E%3C/svg%3E"); }
+.stat-weight { --c: #35c3e8; --mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 3h6a3 3 0 0 1 3 3v1h-2V6a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v1H6V6a3 3 0 0 1 3-3z M7 8h10l2.7 12.2a1.5 1.5 0 0 1-1.5 1.8H5.8a1.5 1.5 0 0 1-1.5-1.8z'/%3E%3C/svg%3E"); }
+/* fome e sede ficam um pouco menores, ao lado, e só aparecem quando baixas */
+.hud-gauges .stat-food, .hud-gauges .stat-water { width: 24px; height: 24px; align-self: center; }
+.hud-gauges .stat-xp .num, .hud-gauges .stat-weight .num { color: #bff1ff; }
+.hud-gauges .stat-weight.low .num { color: #ff7a6a; }
+
+/* Celular: barra rápida em grade 2x4 no canto de baixo à direita, translúcida */
+body.is-touch .hotbar {
+  --hb: clamp(34px, 7.4vh, 48px);
+  left: auto; right: calc(var(--safe-r, 0px) + 8px);
+  bottom: calc(8px + var(--safe-b));
+  transform: none;
+  display: grid;
+  grid-template-columns: repeat(4, var(--hb));
+  grid-auto-rows: var(--hb);
+  gap: 0; padding: 0; border-radius: 0;
+  background: rgba(8, 40, 56, 0.28);
+  border: 1px solid rgba(110, 215, 245, 0.45);
+}
+body.is-touch .hb-slot {
+  border: 1px solid rgba(110, 215, 245, 0.35);
+  border-radius: 0;
+  background: rgba(8, 40, 56, 0.18);
+}
+
+
+/* ---------- Controles de toque: esquema de gestos (ARK Mobile) ---------- */
+.tc-gestos { position: absolute; inset: 0; pointer-events: none; touch-action: none; }
+.tc-esquema-gestos .tc-gestos { pointer-events: auto; }
+.tc-esquema-gestos .tc-look, .tc-esquema-gestos .tc-stick-zone { pointer-events: none; }
+.tc:not(.tc-esquema-gestos) .tc-gestos { display: none; }
+/* só sobra o botão de agachar (o bonequinho agachado, embaixo à esquerda) */
+.tc-esquema-gestos .tc-btn:not(.b-crouch) { display: none; }
+.tc-esquema-gestos .tc-btn.b-crouch {
+  left: calc(var(--safe-l, 0px) + 12px); bottom: calc(var(--safe-b, 0px) + 12px);
+  right: auto; top: auto; position: absolute;
+  width: 48px; height: 48px; opacity: 0.85;
+  background: transparent; border: none; box-shadow: none; color: #35c3e8;
+}
+.tc-esquema-gestos .tc-btn.b-crouch.on { color: #bff1ff; }
