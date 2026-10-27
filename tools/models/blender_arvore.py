@@ -175,13 +175,13 @@ def monta_tronco(ramos, rng, P):
     V, U, F = [], [], []
     for r in ramos:
         if r.nivel == 0:
-            lados, comp_u = 12, 1.3
+            lados, comp_u = 10, 1.3
         elif r.nivel == 1:
-            lados, comp_u = 6, 1.3
-        elif r.nivel == 2:
             lados, comp_u = 5, 1.3
-        else:
+        elif r.nivel == 2:
             lados, comp_u = 4, 1.3
+        else:
+            lados, comp_u = 3, 1.3
         r0 = max(r.raios[0], 0.02)
         urep = max(1, round(math.tau * r0 / comp_u))
         v, u, f = tubo(r, lados, urep, 2.6, rng.random())
@@ -226,6 +226,46 @@ def monta_folhas(ramos, rng, P):
             F += [(base, base + 1, base + 2), (base, base + 2, base + 3)]
     return V, U, F
 
+
+
+def monta_lod(ramos, rng, P):
+    """Versão leve para a distância: tronco e galhos grandes (poucos lados) e cartões de
+    folha maiores só nos galhos grandes e em alguns médios (~2 mil triângulos)."""
+    Vt, Ut, Ft, Vf, Uf, Ff = [], [], [], [], [], []
+    centro = Vector((0, 0, P['altura'] * P['galho_fim'] * 0.92))
+    for i, r in enumerate(ramos):
+        if r.nivel > 1 and not (r.nivel == 2 and i % 3 == 0):
+            continue
+        lados = 8 if r.nivel == 0 else 4
+        urep = max(1, round(math.tau * max(r.raios[0], 0.02) / 1.3))
+        if r.nivel <= 1:
+            v, u, f = tubo(r, lados, urep, 2.6, rng.random())
+            b = len(Vt)
+            Vt += v
+            Ut += u
+            Ft += [(x + b, y + b, z + b) for x, y, z in f]
+        if r.nivel == 0 or (r.nivel == 1 and r.pts[0].z < 1.5):
+            continue
+        n = 5 if r.nivel == 1 else 4
+        for k in range(n):
+            t = 0.5 + 0.5 * rng.random() if k else 1.0
+            pos, d, _ = ponto_em(r, t)
+            pos = pos + Vector((rng.uniform(-1, 1), rng.uniform(-1, 1), rng.uniform(-0.6, 0.8))) * 0.7
+            fora = (pos - centro)
+            fora = (fora.normalized() * 0.7 + Vector((rng.uniform(-1, 1), rng.uniform(-1, 1), rng.uniform(-0.3, 1))) * 0.7 + UP * 0.2).normalized()
+            t1 = fora.cross(Vector((rng.uniform(-1, 1), rng.uniform(-1, 1), rng.uniform(-1, 1))))
+            if t1.length < 1e-3:
+                t1 = Vector((1, 0, 0))
+            t1.normalize()
+            t2 = fora.cross(t1).normalized()
+            h = P['cartao'] * rng.uniform(1.3, 1.9) / 2
+            flip = rng.random() < 0.5
+            base = len(Vf)
+            for a, b2 in [(-1, -1), (1, -1), (1, 1), (-1, 1)]:
+                Vf.append(pos + t1 * a * h + t2 * b2 * h)
+                Uf.append((1.0 if ((a > 0) != flip) else 0.0, 1.0 if b2 > 0 else 0.0))
+            Ff += [(base, base + 1, base + 2), (base, base + 2, base + 3)]
+    return Vt, Ut, Ft, Vf, Uf, Ff
 
 # ---------------------------------------------------------------
 # Exportação para o jogo
@@ -401,7 +441,7 @@ def cena_preview(Vt, Ut, Ft, Vf, Uf, Ff, pasta, saida, largura=900, altura=1100,
 PARAMS = {
     'dossel': dict(altura=22.0, r_base=0.62, r_topo=0.16, flare=1.1, raizes=6,
                    galhos=10, galho_ini=0.42, galho_fim=0.92, galho_comp=10.5,
-                   medios=(5, 7), finos=(3, 4), cartao=3.3, cartoes_medio=10, cartoes_fino=8, cartoes_galho=14),
+                   medios=(4, 5), finos=(2, 3), cartao=3.3, cartoes_medio=8, cartoes_fino=6, cartoes_galho=10),
 }
 
 if __name__ == '__main__':
@@ -423,6 +463,10 @@ if __name__ == '__main__':
         chave = f'arvore_bl_{"abcdefgh"[k]}'
         modelos[chave] = [parte_jogo(Vt, Ut, Ft, 'tronco_bl', origem, alt), parte_jogo(Vf, Uf, Ff, 'folhas_bl', origem, alt)]
         alturas[chave] = round(alt, 2)
+        # versão de longe (mesma textura): altura igual à de perto, para a troca não pular
+        Lt, LUt, LFt, Lf, LUf, LFf = monta_lod(ramos, random.Random(sd + 99), P)
+        modelos[chave + '_lo'] = [parte_jogo(Lt, LUt, LFt, 'tronco_bl', origem, alt), parte_jogo(Lf, LUf, LFf, 'folhas_bl', origem, alt)]
+        print(f'   lod: tronco {len(LFt)} tri / folhas {len(LFf)} tri')
     if js:
         texs = {
             'tronco_bl': png_para_jpg_b64(f'{pasta}/casca_cor.png'),

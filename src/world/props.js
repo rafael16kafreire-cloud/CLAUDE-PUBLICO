@@ -348,7 +348,7 @@ function leafCards(spots, { squash = [1.2, 0.6, 1.2], perSpot = 2.2, minCards = 
 }
 
 function crown(spots, segs = [7, 5], squash = [1.25, 0.5, 1.25], seed = 10) {
-  return leafCards(spots, { squash, seed, perSpot: segs[0] >= 7 ? 3.6 : 3.0 });
+  return leafCards(spots, { squash, seed, perSpot: segs[0] >= 7 ? 3.0 : 2.5 });
 }
 
 // Copa simples (de média distância): bolas sólidas com o tapete de
@@ -1039,8 +1039,9 @@ export function makeGrassTuft() {
   const mid = new THREE.Color('#6f9238');
   const tip = new THREE.Color('#b0c862');
   const idx = [];
-  // 12 lâminas em dois anéis; cada uma é uma tira curva (2 triângulos, vento no topo)
-  for (let i = 0; i < 12; i++) {
+  // 10 lâminas em dois anéis; cada uma é uma tira curva (3 triângulos, só a face da frente:
+  // o material do mato é "dos dois lados", com a luz sempre para cima)
+  for (let i = 0; i < 10; i++) {
     const a = i * 2.39;
     const r = 0.05 + (i % 4) * 0.045;
     const x = Math.sin(a) * r;
@@ -1051,7 +1052,6 @@ export function makeGrassTuft() {
     const px = Math.cos(a) * w;
     const pz = -Math.sin(a) * w;
     const b = verts.length / 3;
-    // base, meio (já inclinado) e ponta
     verts.push(
       x - px, 0, z - pz, x + px, 0, z + pz,
       x - px * 0.6 + Math.sin(a) * lean * 0.35, h * 0.55, z - pz * 0.6 + Math.cos(a) * lean * 0.35,
@@ -1060,9 +1060,7 @@ export function makeGrassTuft() {
     );
     winds.push(0, 0, 0.5, 0.5, 1);
     cols.push(base.r, base.g, base.b, base.r, base.g, base.b, mid.r, mid.g, mid.b, mid.r, mid.g, mid.b, tip.r, tip.g, tip.b);
-    idx.push(b, b + 1, b + 3, b, b + 3, b + 2, b + 2, b + 3, b + 4, b + 3, b + 2, b + 4);
-    // verso (a lâmina aparece dos dois lados)
-    idx.push(b + 3, b + 1, b, b + 2, b + 3, b, b + 4, b + 3, b + 2, b + 4, b + 2, b + 3);
+    idx.push(b, b + 1, b + 3, b, b + 3, b + 2, b + 2, b + 3, b + 4);
   }
   const g = sheet(verts, idx, winds);
   g.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));

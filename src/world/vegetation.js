@@ -47,9 +47,9 @@ const TYPES = {
   planta_praia: { hi: () => vegGeometry('planta_praia', 1.1), mat: () => vegMaterial('planta_praia'), collider: 0, shadow: false, scale: [0.7, 1.4], res: 'arbusto', maxDist: 80, textured: true },
   capim_praia: { hi: () => vegGeometry('capim_praia', 0.9), mat: () => vegMaterial('capim_praia'), collider: 0, shadow: false, scale: [0.7, 1.4], res: null, maxDist: 60, textured: true },
   // floresta (Low Poly Tree Scene Free): árvores folhosas e tufos de capim
-  arvore_bl_a: { hiDist: 28, foot: 0.75, hi: () => vegGeometry('arvore_bl_a', 22), lo: P.makeCanopyTreeLow, mat: () => vegMaterial('arvore_bl_a'), collider: 0.55, shadow: true, scale: [0.85, 1.35], res: 'arvore', textured: true, maxDist: 320 },
-  arvore_bl_b: { hiDist: 28, foot: 0.75, hi: () => vegGeometry('arvore_bl_b', 22), lo: P.makeCanopyTreeLow, mat: () => vegMaterial('arvore_bl_b'), collider: 0.55, shadow: true, scale: [0.85, 1.35], res: 'arvore', textured: true, maxDist: 320 },
-  arvore_bl_c: { hiDist: 28, foot: 0.75, hi: () => vegGeometry('arvore_bl_c', 22), lo: P.makeCanopyTreeLow, mat: () => vegMaterial('arvore_bl_c'), collider: 0.55, shadow: true, scale: [0.85, 1.35], res: 'arvore', textured: true, maxDist: 320 },
+  arvore_bl_a: { hiDist: 16, hiScale: true, foot: 0.75, hi: () => vegGeometry('arvore_bl_a', 22), lo: () => vegGeometry('arvore_bl_a_lo', 22), loMat: () => vegMaterial('arvore_bl_a_lo'), mat: () => vegMaterial('arvore_bl_a'), collider: 0.55, shadow: true, scale: [0.85, 1.35], res: 'arvore', textured: true, maxDist: 320 },
+  arvore_bl_b: { hiDist: 16, hiScale: true, foot: 0.75, hi: () => vegGeometry('arvore_bl_b', 22), lo: () => vegGeometry('arvore_bl_b_lo', 22), loMat: () => vegMaterial('arvore_bl_b_lo'), mat: () => vegMaterial('arvore_bl_b'), collider: 0.55, shadow: true, scale: [0.85, 1.35], res: 'arvore', textured: true, maxDist: 320 },
+  arvore_bl_c: { hiDist: 16, hiScale: true, foot: 0.75, hi: () => vegGeometry('arvore_bl_c', 22), lo: () => vegGeometry('arvore_bl_c_lo', 22), loMat: () => vegMaterial('arvore_bl_c_lo'), mat: () => vegMaterial('arvore_bl_c'), collider: 0.55, shadow: true, scale: [0.85, 1.35], res: 'arvore', textured: true, maxDist: 320 },
   arvore_folhosa: { hiDist: 26, foot: 0.5, hi: () => vegGeometry('arvore_folhosa', 15), lo: P.makeCanopyTreeLow, mat: () => vegMaterial('arvore_folhosa'), collider: 0.45, shadow: true, scale: [0.8, 1.3], res: 'arvore_mole', textured: true, maxDist: 320 },
   arvore_folhosa2: { foot: 0.35, hi: () => vegGeometry('arvore_folhosa2', 11), lo: P.makeUnderstoryTreeLow, mat: () => vegMaterial('arvore_folhosa2'), collider: 0.35, shadow: true, scale: [0.8, 1.3], res: 'arvore_mole', textured: true, maxDist: 320 },
   // árvore alta da mata (Agarwood): tronco liso, copa no alto e cipós
@@ -344,7 +344,7 @@ export class Vegetation {
       const ts = { def, meshes: {}, n: { hi: 0, lo: 0, imp: 0 } };
       const hiGeo = P.ensureUv(def.hi());
       ts.meshes.hi = this._mesh(hiGeo, def.mat ? def.mat() : this.material, cap, `${t}_perto`, def.shadow);
-      if (def.lo) ts.meshes.lo = this._mesh(P.ensureUv(def.lo()), this.materialSolid, cap, `${t}_medio`, false);
+      if (def.lo) ts.meshes.lo = this._mesh(P.ensureUv(def.lo()), def.loMat ? def.loMat() : this.materialSolid, cap, `${t}_medio`, false);
       if (def.imp && renderer) {
         const imp = renderImpostor(renderer, hiGeo, this.material.map);
         ts.meshes.imp = this._mesh(imp.geometry, makeImpostorMaterial(imp.texture), cap, `${t}_longe`, false);
@@ -423,7 +423,9 @@ export class Vegetation {
         const d = Math.hypot(rec.x - cp.x, rec.z - cp.z);
         if (d > viewDistance || d > (ts.def.maxDist ?? Infinity)) continue;
         let band = 'hi';
-        if (d > Math.min(hi, ts.def.hiDist ?? Infinity) && ts.meshes.lo) band = 'lo';
+        // hiScale: a distância do modelo detalhado cresce com a qualidade (celular: curta; PC alto: longa)
+        const capHi = ts.def.hiDist ? (ts.def.hiScale ? ts.def.hiDist * Math.max(1, hi / 42) : ts.def.hiDist) : Infinity;
+        if (d > Math.min(hi, capHi) && ts.meshes.lo) band = 'lo';
         if (d > lo && ts.meshes.imp) band = 'imp';
         const mesh = ts.meshes[band];
         const n = ts.n[band]++;

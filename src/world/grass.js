@@ -36,7 +36,15 @@ export class Grass {
     this.water = water;
     this.radius = 28;
     this.density = 1;
-    const material = addWind(new THREE.MeshLambertMaterial({ vertexColors: true }), 0.25, 0.05, 1);
+    const material = addWind(new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }), 0.25, 0.05, 1);
+    // lâmina de um lado só desenhada dos dois lados: a luz não pode virar de cabeça para baixo atrás dela
+    const prevCompile = material.onBeforeCompile;
+    material.onBeforeCompile = (shader, renderer) => {
+      prevCompile?.(shader, renderer);
+      shader.fragmentShader = shader.fragmentShader.replace('#include <normal_fragment_begin>', THREE.ShaderChunk.normal_fragment_begin.replace('gl_FrontFacing ? 1.0 : - 1.0', '1.0'));
+    };
+    const prevKey = material.customProgramCacheKey;
+    material.customProgramCacheKey = () => `${prevKey ? prevKey() : ''}-mato1`;
     this.kinds = {
       capim: this._mesh(makeGrassTuft(), material, 9000, 'Capim'),
       folha: this._mesh(makeBroadPlant(), material, 2600, 'Folhagem'),
