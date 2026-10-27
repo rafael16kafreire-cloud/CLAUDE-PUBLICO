@@ -1035,24 +1035,84 @@ export function makeGrassTuft() {
   const verts = [];
   const winds = [];
   const cols = [];
-  const base = new THREE.Color('#3f5a2a');
-  const tip = new THREE.Color('#8aa652');
+  const base = new THREE.Color('#38521f');
+  const mid = new THREE.Color('#6f9238');
+  const tip = new THREE.Color('#b0c862');
   const idx = [];
-  for (let i = 0; i < 7; i++) {
+  // 12 lâminas em dois anéis; cada uma é uma tira curva (2 triângulos, vento no topo)
+  for (let i = 0; i < 12; i++) {
     const a = i * 2.39;
-    const r = 0.08 + (i % 3) * 0.05;
+    const r = 0.05 + (i % 4) * 0.045;
     const x = Math.sin(a) * r;
     const z = Math.cos(a) * r;
-    const h = 0.32 + (i % 4) * 0.09;
-    const lean = 0.1 + (i % 2) * 0.08;
-    const w = 0.035;
+    const h = 0.5 + ((i * 7) % 5) * 0.12;
+    const lean = 0.12 + (i % 3) * 0.1;
+    const w = 0.04;
     const px = Math.cos(a) * w;
     const pz = -Math.sin(a) * w;
     const b = verts.length / 3;
-    verts.push(x - px, 0, z - pz, x + px, 0, z + pz, x + Math.sin(a) * lean, h, z + Math.cos(a) * lean);
+    // base, meio (já inclinado) e ponta
+    verts.push(
+      x - px, 0, z - pz, x + px, 0, z + pz,
+      x - px * 0.6 + Math.sin(a) * lean * 0.35, h * 0.55, z - pz * 0.6 + Math.cos(a) * lean * 0.35,
+      x + px * 0.6 + Math.sin(a) * lean * 0.35, h * 0.55, z + pz * 0.6 + Math.cos(a) * lean * 0.35,
+      x + Math.sin(a) * lean, h, z + Math.cos(a) * lean,
+    );
+    winds.push(0, 0, 0.5, 0.5, 1);
+    cols.push(base.r, base.g, base.b, base.r, base.g, base.b, mid.r, mid.g, mid.b, mid.r, mid.g, mid.b, tip.r, tip.g, tip.b);
+    idx.push(b, b + 1, b + 3, b, b + 3, b + 2, b + 2, b + 3, b + 4, b + 3, b + 2, b + 4);
+    // verso (a lâmina aparece dos dois lados)
+    idx.push(b + 3, b + 1, b, b + 2, b + 3, b, b + 4, b + 3, b + 2, b + 4, b + 2, b + 3);
+  }
+  const g = sheet(verts, idx, winds);
+  g.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
+  g.computeBoundingSphere();
+  return g;
+}
+
+// Tufo com flores (cor da flor vem da cor da instância)
+export function makeFlowerTuft() {
+  const verts = [];
+  const winds = [];
+  const cols = [];
+  const idx = [];
+  const stem = new THREE.Color('#3c5a22');
+  const leaf = new THREE.Color('#5f8a30');
+  const bloom = new THREE.Color('#ffffff');
+  for (let i = 0; i < 6; i++) {
+    const a = i * 2.39;
+    const r = 0.04 + (i % 3) * 0.05;
+    const x = Math.sin(a) * r;
+    const z = Math.cos(a) * r;
+    const h = 0.34 + (i % 3) * 0.1;
+    // folha estreita
+    let b = verts.length / 3;
+    const w = 0.03;
+    const px = Math.cos(a) * w;
+    const pz = -Math.sin(a) * w;
+    verts.push(x - px, 0, z - pz, x + px, 0, z + pz, x + Math.sin(a) * 0.12, h * 0.8, z + Math.cos(a) * 0.12);
     winds.push(0, 0, 1);
-    cols.push(base.r, base.g, base.b, base.r, base.g, base.b, tip.r, tip.g, tip.b);
-    idx.push(b, b + 1, b + 2, b + 1, b, b + 2);
+    cols.push(stem.r, stem.g, stem.b, stem.r, stem.g, stem.b, leaf.r, leaf.g, leaf.b);
+    idx.push(b, b + 1, b + 2, b + 2, b + 1, b);
+    // florzinha: pequeno leque de pétalas no topo
+    const cx = x + Math.sin(a) * 0.04;
+    const cz = z + Math.cos(a) * 0.04;
+    b = verts.length / 3;
+    const R = 0.07;
+    verts.push(cx, h, cz);
+    winds.push(1);
+    cols.push(bloom.r * 0.85, bloom.g * 0.85, bloom.b * 0.7);
+    for (let k = 0; k < 5; k++) {
+      const t = (k / 5) * Math.PI * 2 + a;
+      verts.push(cx + Math.cos(t) * R, h + 0.015, cz + Math.sin(t) * R);
+      winds.push(1);
+      cols.push(bloom.r, bloom.g, bloom.b);
+    }
+    for (let k = 0; k < 5; k++) {
+      const n1 = b + 1 + k;
+      const n2 = b + 1 + ((k + 1) % 5);
+      idx.push(b, n1, n2, b, n2, n1);
+    }
   }
   const g = sheet(verts, idx, winds);
   g.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));

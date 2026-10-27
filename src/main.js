@@ -75,7 +75,7 @@ function boot(hotData = {}) {
   });
   renderer.info.autoReset = false; // zerado a cada quadro (veja o fim do loop)
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = high ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   // Cores mais naturais (luz forte não "estoura").
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.15;
