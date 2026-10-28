@@ -68,7 +68,10 @@ export default {
     na_agua_rasa: 0.7,         // andando com água pela cintura: 70% da velocidade
     nadar: 3.0,
     nadar_rapido: 4.8,
-    pulo: 7.2,                 // força do pulo
+    pulo: 8.8,                 // força do pulo (altura ~1,75 m)
+    pulo_frente_parado: 2.6,   // m/s para frente ao pular parado
+    pulo_frente_andando: 1.4,  // extra ao pular andando
+    pulo_frente_correndo: 2.6, // extra ao pular correndo (vai bem mais longe)
     gravidade: 22,
     inclinacao_max_graus: 55,  // rampas mais íngremes que isso não dá para subir
   },

@@ -336,7 +336,8 @@ export class Player {
     const len = Math.hypot(dirX, dirZ);
     const tx = len > 0.001 ? (dirX / len) * speed : 0;
     const tz = len > 0.001 ? (dirZ / len) * speed : 0;
-    const k = Math.min(1, (this.onGround ? 24 : 3) * dt);
+    // no ar o corpo mantém o embalo (o pulo leva para frente); com o dedo no joystick dá para corrigir um pouco
+    const k = Math.min(1, (this.onGround ? 24 : len > 0.001 ? 2.2 : 0.2) * dt);
     vel.x += (tx - vel.x) * k;
     vel.z += (tz - vel.z) * k;
 
@@ -347,6 +348,13 @@ export class Player {
       } else if (this.onGround && st.useStamina(BALANCE.stamina.gasto_pulo)) {
         vel.y = M.pulo;
         this.onGround = false;
+        // o personagem vai para frente no pulo: parado dá um salto curto, andando vai mais longe e correndo vai bem longe
+        const hs = Math.hypot(vel.x, vel.z);
+        const dx = hs > 0.5 ? vel.x / hs : -Math.sin(this.facing);
+        const dz = hs > 0.5 ? vel.z / hs : -Math.cos(this.facing);
+        const extra = this.running ? M.pulo_frente_correndo : hs > 0.5 ? M.pulo_frente_andando : M.pulo_frente_parado;
+        vel.x += dx * extra;
+        vel.z += dz * extra;
       }
     }
 

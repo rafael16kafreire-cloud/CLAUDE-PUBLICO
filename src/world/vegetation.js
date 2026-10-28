@@ -356,7 +356,7 @@ export class Vegetation {
     for (const [t, def] of Object.entries(TYPES)) {
       const cap = (counts[t] ?? 0) + (extra[t] ?? 0);
       if (!cap) continue;
-      const ts = { def, meshes: {}, n: { hi: 0, lo: 0, imp: 0 } };
+      const ts = { def, cap, meshes: {}, n: { hi: 0, lo: 0, imp: 0 } };
       const hiGeo = P.ensureUv(def.hi());
       ts.meshes.hi = this._mesh(hiGeo, def.mat ? def.mat() : this.material, cap, `${t}_perto`, def.shadow);
       if (def.lo) ts.meshes.lo = this._mesh(P.ensureUv(def.lo()), def.loMat ? def.loMat() : this.materialSolid, cap, `${t}_medio`, false);
@@ -396,8 +396,18 @@ export class Vegetation {
   // ---------------------------------------------------------
   // Separa as plantas visíveis em perto/médio/longe
   // ---------------------------------------------------------
+  // A seleção do que aparece é feita aos poucos (fatias de ~2 ms por quadro), em duas fases:
+  // A) decide, chunk por chunk, quais plantas vão em cada faixa (perto/médio/longe);
+  // B) copia as matrizes de cada malha para a placa de vídeo, uma malha por vez.
+  // Assim nunca há uma pausa grande quando o jogador anda ou vira (antes eram ~15 ms de uma vez
+  // no computador, bem mais num celular). Com force = true faz tudo de uma vez.
   update(dt, camera, viewDistance, force = false) {
     this._last.t -= dt;
+    if (force) this._job = null;
+    if (this._job) {
+      this._step(2.0);
+      return;
+    }
     const cp = camera.position;
     const e = camera.matrixWorld.elements;
     const yaw = Math.atan2(e[8], e[10]);
@@ -418,47 +428,90 @@ export class Vegetation {
     this._m4.multiplyMatrices(cc.projectionMatrix, cc.matrixWorldInverse);
     this._frustum.setFromProjectionMatrix(this._m4);
 
-    for (const ts of Object.values(this.types)) {
-      ts.n.hi = 0;
-      ts.n.lo = 0;
-      ts.n.imp = 0;
-    }
     const { hi, lo } = this.lod;
-    const M = this.matrices;
-    const C = this.colors;
+    const chunks = [];
     for (const chunk of this.chunks.values()) {
       const s = chunk.sphere;
       const dc = Math.hypot(s.center.x - cp.x, s.center.z - cp.z);
       if (dc - s.radius > viewDistance) continue;
       if (dc > s.radius && !this._frustum.intersectsSphere(s)) continue;
-      for (const rec of chunk.recs) {
-        if (!rec.alive) continue;
-        const ts = this.types[rec.type];
-        if (!ts) continue;
-        const d = Math.hypot(rec.x - cp.x, rec.z - cp.z);
-        if (d > viewDistance || d > (ts.def.maxDist ?? Infinity)) continue;
-        let band = 'hi';
-        // hiScale: a distância do modelo detalhado cresce com a qualidade (celular: curta; PC alto: longa)
-        const capHi = ts.def.hiDist ? (ts.def.hiScale ? ts.def.hiDist * Math.max(1, hi / 42) : ts.def.hiDist) : Infinity;
-        if (d > Math.min(hi, capHi) && ts.meshes.lo) band = 'lo';
-        if (d > lo && ts.meshes.imp) band = 'imp';
-        const mesh = ts.meshes[band];
-        const n = ts.n[band]++;
-        mesh.instanceMatrix.array.set(M.subarray(rec.id * 16, rec.id * 16 + 16), n * 16);
-        mesh.instanceColor.array.set(C.subarray(rec.id * 3, rec.id * 3 + 3), n * 3);
-      }
+      chunks.push(chunk);
     }
+    // limites por tipo (distâncias ao quadrado: sem raiz quadrada no laço)
+    const info = [];
     for (const ts of Object.values(this.types)) {
-      for (const band of ['hi', 'lo', 'imp']) {
-        const mesh = ts.meshes[band];
-        if (!mesh) continue;
-        const n = ts.n[band];
-        if (n === 0 && mesh.count === 0) continue;
-        mesh.count = n;
-        mesh.instanceMatrix.needsUpdate = true;
-        mesh.instanceColor.needsUpdate = true;
-      }
+      ts.sel = ts.sel ?? { hi: new Int32Array(ts.cap), lo: new Int32Array(ts.cap), imp: new Int32Array(ts.cap) };
+      ts.cnt = { hi: 0, lo: 0, imp: 0 };
+      const capHi = ts.def.hiDist ? (ts.def.hiScale ? ts.def.hiDist * Math.max(1, hi / 42) : ts.def.hiDist) : Infinity;
+      const dHi = Math.min(hi, capHi);
+      const dMax = Math.min(viewDistance, ts.def.maxDist ?? Infinity);
+      ts.lim = { max2: dMax * dMax, hi2: dHi * dHi, lo2: lo * lo, hasLo: !!ts.meshes.lo, hasImp: !!ts.meshes.imp };
     }
+    this._job = { phase: 'A', chunks, ci: 0, cx: cp.x, cz: cp.z, vd2: viewDistance * viewDistance, mi: 0, list: null };
+    this._step(force ? Infinity : 2.0);
+  }
+
+  _step(budgetMs) {
+    const job = this._job;
+    const t0 = performance.now();
+    if (job.phase === 'A') {
+      const M_ = this.types;
+      const { cx, cz, vd2 } = job;
+      while (job.ci < job.chunks.length) {
+        const chunk = job.chunks[job.ci++];
+        const recs = chunk.recs;
+        for (let i = 0; i < recs.length; i++) {
+          const rec = recs[i];
+          if (!rec.alive) continue;
+          const ts = M_[rec.type];
+          if (!ts) continue;
+          const dx = rec.x - cx;
+          const dz = rec.z - cz;
+          const d2 = dx * dx + dz * dz;
+          if (d2 > vd2) continue;
+          const L = ts.lim;
+          if (d2 > L.max2) continue;
+          let band = 0; // 0 perto, 1 médio, 2 longe
+          if (d2 > L.hi2 && L.hasLo) band = 1;
+          if (d2 > L.lo2 && L.hasImp) band = 2;
+          const key = band === 0 ? 'hi' : band === 1 ? 'lo' : 'imp';
+          ts.sel[key][ts.cnt[key]++] = rec.id;
+        }
+        if (performance.now() - t0 > budgetMs) return;
+      }
+      job.phase = 'B';
+      job.list = [];
+      for (const ts of Object.values(this.types)) for (const band of ['hi', 'lo', 'imp']) if (ts.meshes[band]) job.list.push([ts, band]);
+    }
+    // fase B: uma malha por vez (cada uma é atualizada inteira de uma só vez)
+    const M = this.matrices;
+    const C = this.colors;
+    while (job.mi < job.list.length) {
+      const [ts, band] = job.list[job.mi++];
+      const mesh = ts.meshes[band];
+      const n = ts.cnt[band];
+      if (n === 0 && mesh.count === 0) continue;
+      const sel = ts.sel[band];
+      const MA = mesh.instanceMatrix.array;
+      const CA = mesh.instanceColor.array;
+      for (let i = 0; i < n; i++) {
+        const id = sel[i];
+        let a = id * 16;
+        let b = i * 16;
+        for (let k = 0; k < 16; k++) MA[b + k] = M[a + k];
+        a = id * 3;
+        b = i * 3;
+        CA[b] = C[a];
+        CA[b + 1] = C[a + 1];
+        CA[b + 2] = C[a + 2];
+      }
+      ts.n[band] = n;
+      mesh.count = n;
+      mesh.instanceMatrix.needsUpdate = true;
+      mesh.instanceColor.needsUpdate = true;
+      if (performance.now() - t0 > budgetMs) return;
+    }
+    this._job = null;
   }
 
   // ---------------------------------------------------------

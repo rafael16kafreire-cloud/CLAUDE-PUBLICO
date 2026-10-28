@@ -215,6 +215,9 @@ export class TouchControls {
         if (now - lastTapL < this.timing.double) {
           st.dbl = true;
           this.input.runToggle = true;
+          this._autoFwd = true;       // dois toques e segurar: já corre para frente, sem arrastar
+          this.input.stick.x = 0;
+          this.input.stick.y = 1;
           navigator.vibrate?.(12);
         }
       } else if (now - lastTapR < this.timing.double) {
@@ -382,7 +385,11 @@ export class TouchControls {
     const nx = dx / r;
     const ny = dy / r;
     const mag = Math.hypot(nx, ny);
-    if (mag < 0.05) {
+    if (mag < 0.18 && this._autoFwd) {
+      // correndo por toque duplo: sem arrastar, vai reto; arrastando, o dedo dirige
+      this.input.stick.x = 0;
+      this.input.stick.y = 1;
+    } else if (mag < 0.05) {
       this.input.stick.x = 0;
       this.input.stick.y = 0;
     } else {
@@ -395,6 +402,7 @@ export class TouchControls {
 
   _resetStick() {
     this._stickId = null;
+    this._autoFwd = false;
     this.input.stick.x = 0;
     this.input.stick.y = 0;
     this.knob.style.transform = 'translate(0px, 0px)';
