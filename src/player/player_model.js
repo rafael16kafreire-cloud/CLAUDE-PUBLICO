@@ -65,13 +65,13 @@ export function skinGeometry(part) {
   return g;
 }
 
-// Material da pele (textura de pele + cor por vértice); um só para o corpo todo.
-export function skinMaterial() {
-  const tex = new THREE.TextureLoader().load(SKIN_TEXTURA);
+// Material da pele: textura do personagem (ou outra) e, se a peça tiver, cor por vértice.
+export function skinMaterial(textura = SKIN_TEXTURA, vertexColors = false) {
+  const tex = new THREE.TextureLoader().load(textura);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
   tex.anisotropy = 4;
-  return new THREE.MeshLambertMaterial({ map: tex, vertexColors: true });
+  return new THREE.MeshLambertMaterial({ map: tex, vertexColors });
 }
 
 export class PlayerModel {

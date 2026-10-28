@@ -5,7 +5,7 @@
 // de lança. A ferramenta em uso aparece na mão direita.
 // =============================================================
 import * as THREE from 'three';
-import { FP_BRACO } from './skin_data.js';
+import { FP_BRACO, FP_TEXTURA } from './skin_data.js';
 import { skinGeometry, skinMaterial } from './player_model.js';
 
 const WOOD = new THREE.MeshLambertMaterial({ color: '#7a5a3a' });
@@ -21,7 +21,7 @@ function skinArm() {
   const g = new THREE.Group();
   const hand = new THREE.Group();
   hand.position.z = -0.26;
-  const arm = new THREE.Mesh(skinGeometry(FP_BRACO), skinMaterial());
+  const arm = new THREE.Mesh(skinGeometry(FP_BRACO), skinMaterial(FP_TEXTURA, true));
   hand.add(arm);
   // gema verde da pulseira (brilha e pulsa devagar)
   const gem = new THREE.Mesh(
