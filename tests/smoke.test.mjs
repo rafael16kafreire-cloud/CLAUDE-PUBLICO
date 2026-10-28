@@ -252,7 +252,8 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   // Embaixo d'água (mar): fôlego cai
   await page.evaluate(() => {
     const { ctx } = window.__ilha;
-    ctx.player.position.set(0, ctx.world.heightAt(0, 1630) + 0.1, 1630);
+    const sul = ctx.world.respawnPoint('sul').position;
+    ctx.player.position.set(sul.x, ctx.world.heightAt(sul.x, sul.z + 218) + 0.1, sul.z + 218);
     ctx.camCtl.pitch = -0.2;
   });
   await page.keyboard.down('KeyC'); // segurar C = descer
@@ -699,7 +700,8 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   const before = await page.evaluate(() => window.__ilha.ctx.inventory.slots.filter(Boolean).length);
   await page.evaluate(() => {
     const { ctx } = window.__ilha;
-    ctx.player.position.set(0, ctx.world.heightAt(0, 1630) + 0.1, 1630);
+    const sul = ctx.world.respawnPoint('sul').position;
+    ctx.player.position.set(sul.x, ctx.world.heightAt(sul.x, sul.z + 218) + 0.1, sul.z + 218);
     ctx.player.stats.oxygen = 0;
     ctx.player.stats.health = 3;
   });
@@ -800,7 +802,8 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   check('Pântano: tem deinosuchus e titanoboa', swamp.includes('deinosuchus') && swamp.includes('titanoboa'), swamp.join(','));
   await page.evaluate(() => {
     const c = window.__ilha.ctx;
-    c.player.position.set(0, -4, 1590);
+    const sul = c.world.respawnPoint('sul').position;
+    c.player.position.set(sul.x, -4, sul.z + 178);
     c.player.velocity.set(0, 0, 0);
   });
   await gameWait(page, 3000);
@@ -811,7 +814,8 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   const dive = await page.evaluate(() => ({ cam: window.__ilha.ctx.world.cameraUnderwater, cls: document.body.classList.contains('underwater'), dust: window.__ilha.ctx.world.underwater.dust.visible }));
   check('Mergulho: visual embaixo d\'água (cor, partículas)', dive.cam && dive.cls && dive.dust, JSON.stringify(dive));
   await page.screenshot({ path: `${SHOTS}/10b-pc-mergulho.png` });
-  await page.evaluate(() => { const c = window.__ilha.ctx; c.player.position.set(0, c.world.heightAt(0, 1410), 1410); c.player.stats.oxygen = 100; });
+  await page.evaluate(() => { const c = window.__ilha.ctx; const sul = c.world.respawnPoint('sul').position;
+    c.player.position.set(sul.x, c.world.heightAt(sul.x, sul.z - 2), sul.z - 2); c.player.stats.oxygen = 100; });
   await gameWait(page, 300);
   await page.screenshot({ path: `${SHOTS}/10-pc-pantano.png` });
 

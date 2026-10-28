@@ -1,9 +1,9 @@
 // =============================================================
 // GERADOR DO MAPA
-// Formato da Finlândia (contorno em ilha.json). Floresta (morros,
-// grotas e mata fechada) com pântano/lagos no sul, igapó em volta,
-// praia na costa e, no norte, a Lapônia: montanhas gigantes com
-// neve e rocha (relevo tirado do modelo "Snow alps").
+// Formato do The Island do ARK (contorno em ilha.json). Floresta (morros,
+// grotas e mata fechada) com pântano no sudoeste, igapó em volta,
+// praia na costa, o Vulcão perto do centro e, no noroeste, as montanhas
+// nevadas: gigantes com neve e rocha (relevo tirado do modelo "Snow alps").
 // Tudo vem de uma "semente": a mesma semente gera sempre a mesma
 // ilha (importante para o save nas próximas fases).
 // =============================================================
@@ -91,6 +91,8 @@ const COLORS = {
   serraGrass: C('#5e6a3a'),
   plainsGrass: C('#7a8a3e'),
   plainsDry: C('#9a8e52'),
+  ash: C('#35302d'),
+  ember: C('#6a2e1c'),
 };
 
 export class IslandMap {
@@ -124,10 +126,14 @@ export class IslandMap {
     this.nRegion = createNoise2D(seed + 7);
     this.nRock = createNoise2D(seed + 8);
 
-    // contorno da Finlândia em metros do jogo
-    const pr = layout.projecao;
+    // contorno da ilha em metros do jogo (+ ilhotas em volta)
     this.poly = layout.contorno.map(([lon, lat]) => this.project(lon, lat));
+    this.islets = (layout.ilhotas ?? []).map((o) => {
+      const [x, z] = this.project(o.lon, o.lat);
+      return { x, z, r: o.raio * layout.projecao.m_por_unidade };
+    });
     this.lap = layout.laponia;
+    this.volc = layout.vulcao;
     this.alpsH = decodeU16(ALPES_ALTURAS, ALPES_N);
     this.mtnH = decodeU16(MONTANHA_ALTURAS, MONTANHA_N);
     this.mtnS = decodeU8(MONTANHA_NEVE, MONTANHA_N);
@@ -148,19 +154,13 @@ export class IslandMap {
   }
 
   // ----------------------------------------------------------
-  // [longitude, latitude] -> [x, z] do jogo. Do paralelo laponia_lat para
-  // o norte o mapa alarga e estica aos poucos (a Lapônia fica maior).
+  // [longitude, latitude] (0 a 100, como o mapa do ARK) -> [x, z] do jogo.
   project(lon, lat) {
     const pr = this.L.projecao;
-    const k = smoothstep(pr.laponia_lat - 0.6, pr.laponia_lat + 0.9, lat);
-    const wide = 1 + (pr.laponia_largura - 1) * k;
-    const x = (lon - pr.lon0 - 0.3 * k) * pr.m_por_grau_lon * wide;
-    let z = -(lat - pr.lat0) * pr.m_por_grau_lat;
-    if (lat > pr.laponia_lat) z -= (lat - pr.laponia_lat) ** 2 / (lat - pr.laponia_lat + 1) * pr.m_por_grau_lat * (pr.laponia_altura - 1);
-    return [x, z];
+    return [(lon - pr.lon0) * pr.m_por_unidade, (lat - pr.lat0) * pr.m_por_unidade];
   }
 
-  // Distância até a costa (positivo = em terra), pelo contorno da Finlândia.
+  // Distância até a costa (positivo = em terra), pelo contorno da ilha e das ilhotas.
   coastDistance(x, z) {
     const P = this.poly;
     let inside = false;
@@ -176,13 +176,41 @@ export class IslandMap {
       if (d < best) best = d;
     }
     const wobble = fbm(this.nCoast, x * 0.0045, z * 0.0045, 4) * this.L.variacao_costa_m;
-    return (inside ? Math.sqrt(best) : -Math.sqrt(best)) + wobble;
+    let d = inside ? Math.sqrt(best) : -Math.sqrt(best);
+    for (const o of this.islets) d = Math.max(d, o.r - Math.hypot(x - o.x, z - o.z));
+    return d + wobble;
   }
 
-  // Lapônia: 0 = sul, 1 = neve. Borda irregular.
+  // Montanhas nevadas: 0 = fora, 1 = neve (círculo de laponia.regiao, borda irregular).
   snowRegion(x, z) {
-    const zs = this.lap.inicio_z + fbm(this.nRegion, x * 0.004 + 9, 3.1, 3) * 45;
-    return smoothstep(zs + 50, zs - 50, z);
+    const R = this.lap.regiao;
+    const d = Math.hypot(x - R.x, z - R.z) + fbm(this.nRegion, x * 0.004 + 9, z * 0.004 + 3.1, 3) * 70;
+    return smoothstep(R.raio_m + 50, R.raio_m - 50, d);
+  }
+
+  // O Vulcão: 1 no topo, 0 fora do cone.
+  volcanoWeight(x, z) {
+    const V = this.volc;
+    if (!V) return 0;
+    const d = Math.hypot(x - V.x, z - V.z) + fbm(this.nRegion, x * 0.005 + 21, z * 0.005 - 7, 3) * 40;
+    return smoothstep(V.raio_m, V.raio_m * 0.15, d);
+  }
+
+  // Altura do cone do Vulcão: encostas com ravinas e cratera no topo.
+  volcanoHeight(x, z) {
+    const V = this.volc;
+    const w = this.volcanoWeight(x, z);
+    if (w <= 0) return 0;
+    const d = Math.hypot(x - V.x, z - V.z);
+    // cone um pouco côncavo (sobe mais rápido perto do topo)
+    let h = V.altura_m * Math.pow(w, 1.35);
+    // ravinas de lava escorrendo pelas encostas
+    const ang = Math.atan2(z - V.z, x - V.x);
+    h *= 1 + 0.07 * Math.sin(ang * 9 + fbm(this.nRock, x * 0.01, z * 0.01, 2) * 4) * smoothstep(0.1, 0.5, w);
+    // cratera
+    const cr = V.cratera_raio_m;
+    if (d < cr * 1.6) h -= V.cratera_fundo_m * smoothstep(cr * 1.6, cr * 0.5, d);
+    return h;
   }
 
   // Quanto a Grande Montanha "manda" aqui (1 perto do pico, 0 longe).
@@ -293,6 +321,7 @@ export class IslandMap {
       const pf = this.plainsField(x, z);
       if (pf > 0) h -= (colinas + grotas) * inland * smoothstep(0, 0.4, pf) * 0.6;
       h += this.highlandHeight(x, z) * inland;
+      h += this.volcanoHeight(x, z) * inland;
       h += this.mountainHeight(x, z, d);
       h = this._plateaus(x, z, h);
     }
@@ -540,6 +569,7 @@ export class IslandMap {
     const S = this.swampField(x, z);
     if (S > 0.08) return BIOME.SWAMP;
     if (S > -0.3 && h < this.swamp.level + 4) return BIOME.IGAPO;
+    if (this.volcanoWeight(x, z) > 0.12) return BIOME.HIGHLAND;
     if (this.highlandField(x, z) > 0.12) return BIOME.HIGHLAND;
     if (this.plainsField(x, z) > 0.05) return BIOME.PLAINS;
     return BIOME.JUNGLE;
@@ -591,6 +621,14 @@ export class IslandMap {
         out.copy(COLORS.serraRock).lerp(COLORS.serraDark, clamp(n2 * 0.8 + 0.4, 0, 1));
         out.multiplyScalar(0.85 + 0.25 * (0.5 + 0.5 * Math.sin(h * 0.7 + n1 * 3)));
         out.lerp(COLORS.serraGrass, smoothstep(0.82, 0.95, normalY) * smoothstep(55, 25, h) * 0.75);
+        // Vulcão: cinza escura e basalto, com veios avermelhados perto da cratera
+        {
+          const vw = this.volcanoWeight(x, z);
+          if (vw > 0) {
+            out.lerp(COLORS.ash, smoothstep(0.05, 0.4, vw) * 0.85);
+            out.lerp(COLORS.ember, smoothstep(0.82, 1, vw) * (0.3 + 0.4 * (0.5 + 0.5 * n1)));
+          }
+        }
         break;
       case BIOME.PLAINS:
         out.copy(COLORS.plainsGrass).lerp(COLORS.plainsDry, clamp(n2 * 0.9 + 0.4, 0, 1));
