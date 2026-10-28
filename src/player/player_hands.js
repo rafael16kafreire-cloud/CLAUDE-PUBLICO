@@ -18,8 +18,8 @@ function skinArm() {
   const g = new THREE.Group();
   const hand = new THREE.Group();
   hand.position.z = -0.26;
-  const arm = new THREE.Mesh(new THREE.BoxGeometry(0.095, 0.095, 0.6), BRACO_FP);
-  arm.position.z = 0.05; // a ponta da frente fica um pouco além do ponto da mão
+  const arm = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.15, 0.38), BRACO_FP);
+  arm.position.z = 0.0; // a ponta da frente fica na altura da mão
   hand.add(arm);
   g.add(hand);
   g.userData.fist = hand;

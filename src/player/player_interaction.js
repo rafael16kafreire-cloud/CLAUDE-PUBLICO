@@ -13,8 +13,8 @@ import { ITEMS, itemName } from '../items/items.js';
 import { sound } from '../audio/audio.js';
 import { game } from '../core/game_manager.js';
 
-const REACH = 3.4;        // alcance para objetos (m)
-const WATER_REACH = 4.5;  // alcance para beber (m)
+const REACH = 2.4;        // alcance para objetos (m)
+const WATER_REACH = 3.2;  // alcance para beber (m)
 
 const SADDLES = ['sela', 'sela_media', 'sela_grande'];
 

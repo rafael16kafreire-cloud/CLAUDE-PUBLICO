@@ -34,7 +34,7 @@ export class PlayerActions {
     const f = s && ITEMS[s.id]?.ferramenta;
     const C = BALANCE.combate;
     if (!f) return { ...FIST, dano: C.soco_dano, alcance: C.soco_alcance_m, intervalo: C.soco_intervalo_seg };
-    return { tipo: f.tipo, dano: f.dano, alcance: f.alcance, intervalo: INTERVAL[f.tipo] ?? 0.6, id: s.id, rende: f.rende ?? 1, projetil: !!f.projetil };
+    return { tipo: f.tipo, dano: f.dano, alcance: f.projetil ? f.alcance : f.alcance * 0.75, intervalo: INTERVAL[f.tipo] ?? 0.6, id: s.id, rende: f.rende ?? 1, projetil: !!f.projetil };
   }
 
   // Munições que a arma na mão usa (arco: flechas; pistola: balas).
