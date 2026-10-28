@@ -5,42 +5,22 @@
 // de lança. A ferramenta em uso aparece na mão direita.
 // =============================================================
 import * as THREE from 'three';
-import { FP_BRACO, FP_TEXTURA } from './skin_data.js';
-import { skinGeometry, skinMaterial } from './player_model.js';
 
 const WOOD = new THREE.MeshLambertMaterial({ color: '#7a5a3a' });
 const STONE = new THREE.MeshLambertMaterial({ color: '#8a8a90' });
 const FLINT = new THREE.MeshLambertMaterial({ color: '#4c505a' });
 const ROPE = new THREE.MeshLambertMaterial({ color: '#a89058' });
 
-// Braço direito em primeira pessoa (gerado em tools/models/personagem.py): ombro e bíceps
-// perto da câmera, antebraço grosso com veias, punho fechado com os nós dos dedos e o polegar
-// por cima, pulseira de couro com a gema verde. A origem do modelo é o centro do punho
-// (onde as ferramentas encaixam); o antebraço vem para +z e o punho aponta para -z.
+// Braço direito em primeira pessoa, simples como o do Minecraft: um bloco comprido na cor da
+// pele do personagem. A ponta da frente é a mão (onde as ferramentas encaixam).
+const BRACO_FP = new THREE.MeshLambertMaterial({ color: '#d0a088' });
 function skinArm() {
   const g = new THREE.Group();
   const hand = new THREE.Group();
   hand.position.z = -0.26;
-  const arm = new THREE.Mesh(skinGeometry(FP_BRACO), skinMaterial(FP_TEXTURA, true));
+  const arm = new THREE.Mesh(new THREE.BoxGeometry(0.115, 0.115, 0.66), BRACO_FP);
+  arm.position.z = 0.05; // a ponta da frente fica um pouco além do ponto da mão
   hand.add(arm);
-  // pulseira de couro com placa de metal e a gema verde (brilha e pulsa devagar)
-  const couro = new THREE.MeshLambertMaterial({ color: '#3a2618' });
-  const metal = new THREE.MeshLambertMaterial({ color: '#5b5f63' });
-  const faixa = new THREE.Mesh(new THREE.CylinderGeometry(0.056, 0.058, 0.04, 22), couro);
-  faixa.rotation.x = Math.PI / 2;
-  faixa.scale.set(1.06, 1, 0.97);
-  faixa.position.set(0, 0, 0.17);
-  const placa = new THREE.Mesh(new THREE.CylinderGeometry(0.021, 0.021, 0.008, 18), metal);
-  placa.position.set(0, 0.0545, 0.17);
-  hand.add(faixa, placa);
-  const gem = new THREE.Mesh(
-    new THREE.SphereGeometry(0.0125, 14, 10),
-    new THREE.MeshBasicMaterial({ color: '#12d964', toneMapped: false }),
-  );
-  gem.scale.set(1, 0.6, 1);
-  gem.position.set(0, 0.0585, 0.17);
-  hand.add(gem);
-  g.userData.gem = gem;
   g.add(hand);
   g.userData.fist = hand;
   g.scale.setScalar(1.25);
