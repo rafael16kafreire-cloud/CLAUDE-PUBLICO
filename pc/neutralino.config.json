@@ -10,7 +10,7 @@
   "logging": { "enabled": false, "writeToLogFile": false },
   "modes": {
     "window": {
-      "title": "Ilha Primordial",
+      "title": "ISLA",
       "width": 1600,
       "height": 900,
       "minWidth": 800,

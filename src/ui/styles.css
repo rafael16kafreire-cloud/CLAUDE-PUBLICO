@@ -1814,3 +1814,32 @@ html, body, button, input, select, textarea, .title { font-family: var(--font-ui
 .ark-btn.hud-bag .ab-ico { width: 62%; height: 62%; }
 .ark-btn.hud-bag .ab-ico svg { filter: none; }
 .hud-status { left: calc(var(--safe-l) + 0.75vw + 10.6vh); top: calc(4.3vh + var(--safe-t)); }
+
+/* ---------- Tela inicial no estilo do menu do ARK Mobile: fundo preto, logo ISLA no meio, menu em texto à esquerda ---------- */
+.overlay.start { background: #08090a !important; backdrop-filter: none !important; }
+.start .start-panel { position: absolute; inset: 0; width: auto; max-width: none; padding: 0; background: none; border: 0; box-shadow: none; display: block; }
+.start .start-panel > * { animation: none !important; }
+.start .title, .start .tagline, .start .menu-tab[data-page="jogar"] { display: none !important; }
+.start-logo { position: absolute; left: 50%; top: 50%; width: min(52vw, 100vh); transform: translate(-50%, -52%); filter: drop-shadow(0 0 2.4vh rgba(120, 200, 200, 0.12)); }
+.start .logo-carga { display: none !important; }
+.start-menu { position: absolute; left: 11.4vw; top: 30vh; display: flex; flex-direction: column; gap: 2.6vh; z-index: 2; }
+.start-menu .menu-tabs { display: flex; flex-direction: column; align-items: flex-start; gap: 2.6vh; border: 0; flex-wrap: nowrap; }
+.start .menu-item, .start .menu-tab {
+  background: none !important; border: 0 !important; padding: 0 !important; margin: 0; cursor: pointer; text-align: left;
+  font: 700 5.4vh/1 var(--font-ui); letter-spacing: 0.02em; text-transform: uppercase; color: #c8f1ff;
+  text-shadow: 0 0 1.6vh rgba(110, 215, 245, 0.7), 0 0 0.5vh rgba(110, 215, 245, 0.9);
+  box-shadow: none !important; transform: none !important; animation: none !important;
+}
+.start .menu-item:disabled { opacity: 0.6; cursor: default; }
+.start .menu-tab[aria-selected="true"], .start .menu-item:not(:disabled):hover, .start .menu-tab:hover { color: #fff; }
+.start .menu-tab[aria-selected="true"] { text-shadow: 0 0 2.2vh rgba(140, 230, 255, 1); }
+.start .eyebrow { position: absolute; left: 11.4vw; bottom: 4.5vh; margin: 0; font-size: 2.4vh; letter-spacing: 0.04em; color: #cfeeff; }
+/* painel à direita (como a caixa de novidades do ARK) */
+.start .menu-page {
+  position: absolute; right: 8vw; top: 11.5vh; width: min(37vw, 640px); max-height: 74vh; overflow-y: auto; box-sizing: border-box;
+  padding: 2.4vh 2vw; background: rgba(10, 44, 58, 0.78); border: 1px solid #2a94aa; color: #e8f6ff;
+  display: flex; flex-direction: column; gap: 1.6vh; font-size: 2.6vh;
+}
+.start .menu-page[hidden] { display: none; }
+.start .menu-page[data-page="jogar"]:not(:has(*:not([hidden]) )) { display: none; }
+@media (max-height: 460px) { .start .menu-page { font-size: 3vh; } }

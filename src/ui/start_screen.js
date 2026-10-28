@@ -63,26 +63,35 @@ export class StartScreen {
     el.className = 'overlay start';
     el.innerHTML = `
       <div class="start-panel">
-        <div class="logo-carga" aria-hidden="true">
-          <svg viewBox="0 0 120 120">
-            <circle class="logo-anel" cx="60" cy="60" r="52" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="60 267" stroke-linecap="round"/>
-            <circle cx="60" cy="60" r="44" fill="none" stroke="currentColor" stroke-width="1" opacity="0.35"/>
-            <path d="M40 28 L58 92" stroke="currentColor" stroke-width="7" stroke-linecap="round"/>
-            <path d="M58 24 L74 96" stroke="currentColor" stroke-width="7" stroke-linecap="round"/>
-            <path d="M78 28 L90 88" stroke="currentColor" stroke-width="7" stroke-linecap="round"/>
-          </svg>
+        <svg class="start-logo" viewBox="0 0 1280 560" role="img" aria-label="ISLA">
+          <defs>
+            <linearGradient id="lg-laranja" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f58a3e"/><stop offset="1" stop-color="#d23a1c"/></linearGradient>
+            <linearGradient id="lg-fade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.45"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+            <mask id="lg-mask"><rect x="150" y="392" width="1000" height="120" fill="url(#lg-fade)"/></mask>
+            <g id="lg-letras">
+              <rect x="217" y="112" width="55" height="263" fill="#e8dcc2"/>
+              <path d="M380 112H507V168H418L410 176V200L426 216H507L534 243V334L492 375H381L353 348V320H466L478 308V284L466 272H396L353 229V139Z" fill="#e8dcc2"/>
+              <path d="M616 112H671V320H779V375H616Z" fill="#e8dcc2"/>
+              <path d="M863 375L945 112H992L1074 375Z" fill="#e8dcc2"/>
+              <path d="M926 375L967 247L1008 375Z" fill="url(#lg-laranja)"/>
+              <path d="M960 112H975L967 130Z" fill="#f58a3e"/>
+            </g>
+          </defs>
+          <use href="#lg-letras"/>
+          <path d="M185 383 q15 -12 30 0 t30 0 q15 -12 30 0 t30 0 q15 -12 30 0 t30 0 q15 -12 30 0 t30 0 q15 -12 30 0 t30 0 q15 -12 30 0 t30 0 q15 -12 30 0 t30 0 q15 -12 30 0 t30 0 q15 -12 30 0 t30 0 q15 -12 30 0 t30 0 q15 -12 30 0 t30 0 q15 -12 30 0 t30 0 q15 -12 30 0 t30 0 q15 -12 30 0 t30 0 q15 -12 30 0 t30 0 q15 -12 30 0 t30 0 q15 -12 30 0 t30 0 q15 -12 30 0 t30 0 q15 -12 30 0 t30 0 q15 -12 30 0 t30 0 q15 -12 30 0 t30 0 q15 -12 30 0 t30 0 q15 -12 30 0 t30 0 q15 -12 30 0 t30 0 q15 -12 30 0 t30 0 q15 -12 30 0 t30 0 q15 -12 30 0 t30 0 q15 -12 30 0 t30 0 q15 -12 30 0 t30 0 q15 -12 30 0 t30 0 q15 -12 30 0 t30 0" fill="none" stroke="#3f9393" stroke-width="8" stroke-linecap="round"/>
+          <g mask="url(#lg-mask)"><use href="#lg-letras" transform="translate(0 780) scale(1 -1)"/></g>
+        </svg>
+        <div class="logo-carga" aria-hidden="true"><svg viewBox="0 0 120 120"><circle class="logo-anel" cx="60" cy="60" r="52" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="60 267" stroke-linecap="round"/></svg></div>
+        <div class="start-menu">
+          <button type="button" class="menu-item" id="btn-play" disabled>Gerando a ilha…</button>
+          <nav class="menu-tabs" role="tablist">
+            <button type="button" class="menu-tab" id="tab-coop" data-page="coop">Co-op</button>
+            <button type="button" class="menu-tab" id="tab-ajuda" data-page="ajuda">Guia de sobrevivência</button>
+            <button type="button" class="menu-tab" id="tab-creditos" data-page="creditos">Créditos</button>
+          </nav>
         </div>
-        <p class="eyebrow">Protótipo · v${typeof __VERSION__ !== 'undefined' ? __VERSION__ : ''} · sobreviver, domar e construir</p>
-        <h1 class="title"><span>Ilha</span><br><span>Primordial</span></h1>
-        <p class="tagline">Você acordou na beira da mata sem nada. Pegue madeira, crie ferramentas e sobreviva aos predadores da floresta.</p>
-        <nav class="menu-tabs" role="tablist">
-          <button type="button" class="menu-tab" id="tab-jogar" data-page="jogar" aria-selected="true">Jogar</button>
-          <button type="button" class="menu-tab" id="tab-coop" data-page="coop">Co-op</button>
-          <button type="button" class="menu-tab" id="tab-ajuda" data-page="ajuda">Como jogar</button>
-          <button type="button" class="menu-tab" id="tab-creditos" data-page="creditos">Créditos</button>
-        </nav>
+        <p class="eyebrow">v${typeof __VERSION__ !== 'undefined' ? __VERSION__ : ''}</p>
         <section class="menu-page" data-page="jogar">
-        <button type="button" class="btn btn-primary btn-play" id="btn-play" disabled>Gerando a ilha…</button>
         <button type="button" class="btn btn-small btn-new" id="btn-new" hidden>Novo jogo (apaga o salvo)</button>
         <details class="load-box" id="load-box" hidden><summary>Carregar jogo salvo</summary><div class="save-list" id="start-slots"></div></details>
         <p class="menu-tip" id="menu-tip"></p>
@@ -131,8 +140,11 @@ export class StartScreen {
     const pages = [...el.querySelectorAll('.menu-page')];
     for (const t of tabs) {
       t.addEventListener('click', () => {
-        for (const o of tabs) o.setAttribute('aria-selected', String(o === t));
-        for (const pg of pages) pg.hidden = pg.dataset.page !== t.dataset.page;
+        // clicar de novo no mesmo item volta para a página inicial (dica e jogos salvos)
+        const ja = t.getAttribute('aria-selected') === 'true';
+        for (const o of tabs) o.setAttribute('aria-selected', String(!ja && o === t));
+        const alvo = ja ? 'jogar' : t.dataset.page;
+        for (const pg of pages) pg.hidden = pg.dataset.page !== alvo;
       });
     }
     // dicas passando
