@@ -12,8 +12,10 @@ if errorlevel 1 (
   exit /b 1
 )
 echo [1/3] Instalando as dependencias (so na primeira vez)...
-call npm ci
-if errorlevel 1 ( echo Erro no npm ci & pause & exit /b 1 )
+call npm install
+if errorlevel 1 ( echo Erro no npm install & pause & exit /b 1 )
+call npm install --no-save playwright
+if errorlevel 1 ( echo Erro ao instalar o playwright & pause & exit /b 1 )
 echo.
 echo [2/3] Baixando o navegador de teste (so na primeira vez)...
 call npx playwright install chromium
