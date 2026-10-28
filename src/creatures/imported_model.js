@@ -52,7 +52,53 @@ function texture(dataUri, srgb) {
   return t;
 }
 
-export function buildImportedModel(d) {
+// Modelos cuja textura original é só cinza (sem cor): pintamos os vértices
+// (costas x barriga, com listras) e a textura cinza dá as escamas e o relevo.
+// costas/barriga/listra = cores; freq = listras por metro; forca = quanto escurece;
+// materiais = quais materiais do modelo recebem a tinta; brilho = clareia.
+const TINTAS = {
+  estegossauro: { costas: '#8f7f3d', barriga: '#d8cc9a', listra: '#3a301c', freq: 1.7, forca: 0.5, brilho: 1.9 },
+  anquilossauro: { costas: '#75603c', barriga: '#bba67a', listra: '#2e2414', freq: 1.4, forca: 0.35, brilho: 1.9 },
+  titanoboa: { costas: '#55612f', barriga: '#d3c48c', listra: '#1b2210', freq: 1.0, forca: 0.55, brilho: 1.8 },
+  argentavis: { costas: '#5d4630', barriga: '#c4b391', listra: '#2a1d10', freq: 1.2, forca: 0.3, brilho: 1.9 },
+};
+
+const _c = new THREE.Color();
+function paintVertices(g, d, tinta) {
+  const n = d.vertices;
+  const pos = g.getAttribute('position');
+  const nor = g.getAttribute('normal');
+  const costas = new THREE.Color(tinta.costas);
+  const barriga = new THREE.Color(tinta.barriga);
+  const listra = new THREE.Color(tinta.listra);
+  // eixo mais comprido do corpo (as listras correm ao longo dele)
+  const [bmin, bmax] = d.box;
+  let ax = 0;
+  for (let q = 1; q < 3; q++) if (bmax[q] - bmin[q] > bmax[ax] - bmin[ax]) ax = q;
+  const col = new Float32Array(n * 3).fill(1);
+  const mats = new Set(tinta.materiais ?? d.groups.map((gr) => gr[2]));
+  const idx = g.getIndex();
+  for (const [start, count, m] of d.groups) {
+    if (!mats.has(m)) continue;
+    for (let k = start; k < start + count; k++) {
+      const v = idx.getX(k);
+      const ny = nor.getY(v);
+      const dorsal = THREE.MathUtils.smoothstep(ny, -0.35, 0.55);
+      _c.copy(barriga).lerp(costas, dorsal);
+      // listras suaves nas costas, com um pouco de irregularidade
+      const along = pos.getX(v) * (ax === 0) + pos.getY(v) * (ax === 1) + pos.getZ(v) * (ax === 2);
+      const wob = Math.sin(pos.getX(v) * 7.1 + pos.getY(v) * 5.3 + pos.getZ(v) * 6.7) * 0.6;
+      const st = Math.max(0, Math.sin(along * tinta.freq * 6.28 + wob)) ** 3;
+      _c.lerp(listra, st * tinta.forca * dorsal);
+      col[v * 3] = _c.r;
+      col[v * 3 + 1] = _c.g;
+      col[v * 3 + 2] = _c.b;
+    }
+  }
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+}
+
+export function buildImportedModel(d, id) {
   const n = d.vertices;
   const [bmin, bmax] = d.box;
   const qp = view(d.position, Uint16Array);
@@ -75,12 +121,15 @@ export function buildImportedModel(d) {
   // modelos com textura colorida (um material por textura)
   if (d.materiais) {
     for (const [start, count, m] of d.groups) g.addGroup(start, count, m);
-    const material = d.materiais.map((m) => {
+    const tinta = TINTAS[id];
+    if (tinta) paintVertices(g, d, tinta);
+    const material = d.materiais.map((m, mi) => {
       // qualidade alta: luz "de verdade" (brilho e relevo mais bonitos)
       const mat = hdTextures()
         ? new THREE.MeshStandardMaterial({ map: texture(m.map, true), roughness: 0.82, metalness: 0 })
         : new THREE.MeshLambertMaterial({ map: texture(m.map, true) });
-      mat.color.setScalar(d.brilho ?? 1); // textura muito escura: clareia
+      mat.color.setScalar((d.brilho ?? 1) * (tinta?.brilho ?? 1)); // textura muito escura: clareia
+      if (tinta && (tinta.materiais ?? [mi]).includes(mi)) mat.vertexColors = true;
       if (m.normalMap) mat.normalMap = texture(m.normalMap, false);
       // modelo com faces de um lado só pintado dos dois lados
       if (d.doisLados) mat.side = THREE.DoubleSide;

@@ -62,7 +62,7 @@ export class CreatureManager {
       let d = IMPORTED[id];
       // qualidade alta: textura e relevo em 2048 px
       if (d && id === 'espinossauro' && hdTextures()) d = { ...d, map: ESPINO_COR_HD, normalMap: ESPINO_RELEVO_HD };
-      this.models[id] = d ? buildImportedModel(d) : buildSpeciesModel(MODELS[id]);
+      this.models[id] = d ? buildImportedModel(d, id) : buildSpeciesModel(MODELS[id]);
     }
     return this.models[id];
   }
