@@ -1401,6 +1401,9 @@ export class Creature {
       wantYaw = Math.sin(t * 0.5 + this.id) * 0.5;
       wantPitch = Math.sin(t * 0.3 + this.id * 2) * 0.12;
     }
+    // crocodilo deitado: cabeça sempre baixa, perto do chão (nunca levantada)
+    const croc = spec.body === 'croc' && !dead;
+    if (croc && !tgt) wantPitch = Math.min(wantPitch, 0) - 0.05;
     A.headYaw += (wantYaw - A.headYaw) * k(3);
     A.headPitch += (wantPitch - A.headPitch) * k(3);
     const eating = this.state === CSTATE.EAT;
@@ -1414,17 +1417,17 @@ export class Creature {
     if (b.neck) {
       // cabeça sobe e desce um pouco a cada passo
       const nod = Math.sin(this.phase * TAU * 2) * amp * 0.08;
-      b.neck.rotation.x = dead ? -0.35 : A.neck + lunge + A.headPitch * 0.5 + this.hurtAnim * 0.25 + nod;
+      b.neck.rotation.x = dead ? -0.35 : A.neck + lunge + A.headPitch * 0.5 + this.hurtAnim * 0.25 + nod - (croc ? 0.16 : 0);
       b.neck.rotation.y = A.headYaw * 0.5;
     }
     if (b.neck2) b.neck2.rotation.x = eating ? -0.35 : A.headPitch * 0.3;
     if (b.head) {
       // mastigando: a cabeça puxa e solta
-      b.head.rotation.x = eating ? -0.3 + Math.sin(t * 5.5) * 0.12 : A.headPitch * 0.5 + lunge * 0.4;
+      b.head.rotation.x = eating ? -0.3 + Math.sin(t * 5.5) * 0.12 : A.headPitch * 0.5 + lunge * 0.4 - (croc ? 0.1 : 0);
       b.head.rotation.y = A.headYaw * 0.5;
     }
     if (b.jaw && eating) b.jaw.rotation.x = -Math.max(0, Math.sin(t * 5.5)) * 0.3;
-    else if (b.jaw) b.jaw.rotation.x = this.attackAnim > 0 ? -Math.sin(at * Math.PI) * 0.65 : -0.03 - Math.max(0, Math.sin(t * 0.7)) * 0.05;
+    else if (b.jaw) b.jaw.rotation.x = this.attackAnim > 0 ? -Math.sin(at * Math.PI) * 0.65 : 0.02; // parado: boca fechada (só abre ao comer, rugir ou atacar)
     if (b.hips) b.hips.position.z = (b.hips.userData.rest.z) - lunge * 0.15 * legLen / this.scale;
   }
 

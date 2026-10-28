@@ -8,6 +8,7 @@
 import * as THREE from 'three';
 import { hdTextures } from '../core/settings.js';
 import { parseClips } from './clip_player.js';
+import { BOCAS } from './bocas.js';
 import espinossauro from './imported/espinossauro.js';
 import trex from './imported/trex.js';
 import braquiossauro from './imported/braquiossauro.js';
@@ -98,6 +99,48 @@ function paintVertices(g, d, tinta) {
   g.setAttribute('color', new THREE.BufferAttribute(col, 3));
 }
 
+// Cria o osso 'jaw' e fecha a boca na pose parada (ver bocas.js): os vértices
+// da mandíbula de baixo giram em volta da dobradiça e passam a seguir o osso.
+function fecharBoca(cfg, pos, nor, sIdx, sWt, bones, n) {
+  const hi = bones.findIndex((b) => b.name === 'head');
+  let ji = bones.findIndex((b) => b.name === 'jaw');
+  if (hi < 0) return;
+  if (ji < 0) {
+    bones.push({ name: 'jaw', parent: 'head', pos: [0, cfg.hy, cfg.hz] });
+    ji = bones.length - 1;
+  } else {
+    bones[ji] = { ...bones[ji], pos: [0, cfg.hy, cfg.hz] };
+  }
+  const th = -cfg.dir * cfg.fecha;
+  const zh = Math.abs(cfg.zr - cfg.hz);
+  for (let v = 0; v < n; v++) {
+    let best = 0;
+    for (let k = 1; k < 4; k++) if (sWt[v * 4 + k] > sWt[v * 4 + best]) best = k;
+    const dom = sIdx[v * 4 + best];
+    if (dom !== hi && dom !== ji) continue;
+    const y = pos[v * 3 + 1];
+    const z = pos[v * 3 + 2];
+    const zf = (z - cfg.zr) * cfg.dir; // distância da nuca (cresce até o focinho)
+    if (y >= cfg.A + cfg.B * zf) continue; // de cima: fica com a cabeça
+    const w = THREE.MathUtils.smoothstep(zf, zh * 0.6, zh * 1.8);
+    if (w <= 0) continue;
+    const a = th * w;
+    const c = Math.cos(a);
+    const sn = Math.sin(a);
+    const dy = y - cfg.hy;
+    const dz = z - cfg.hz;
+    pos[v * 3 + 1] = cfg.hy + dy * c - dz * sn;
+    pos[v * 3 + 2] = cfg.hz + dy * sn + dz * c;
+    const ny = nor[v * 3 + 1];
+    const nz = nor[v * 3 + 2];
+    nor[v * 3 + 1] = Math.round(ny * c - nz * sn);
+    nor[v * 3 + 2] = Math.round(ny * sn + nz * c);
+    const wj = Math.round(255 * w);
+    sIdx[v * 4] = ji; sIdx[v * 4 + 1] = hi; sIdx[v * 4 + 2] = 0; sIdx[v * 4 + 3] = 0;
+    sWt[v * 4] = wj; sWt[v * 4 + 1] = 255 - wj; sWt[v * 4 + 2] = 0; sWt[v * 4 + 3] = 0;
+  }
+}
+
 export function buildImportedModel(d, id) {
   const n = d.vertices;
   const [bmin, bmax] = d.box;
@@ -106,13 +149,18 @@ export function buildImportedModel(d, id) {
   for (let i = 0; i < n; i++) {
     for (let q = 0; q < 3; q++) pos[i * 3 + q] = bmin[q] + (qp[i * 3 + q] / 65535) * (bmax[q] - bmin[q]);
   }
+  const nor = view(d.normal, Int8Array).slice();
+  const sIdx = bytes(d.skinIndex);
+  const sWt = bytes(d.skinWeight);
+  const boneDefs = d.bones.map((b) => ({ ...b }));
+  if (BOCAS[id]) fecharBoca(BOCAS[id], pos, nor, sIdx, sWt, boneDefs, n);
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  g.setAttribute('normal', new THREE.BufferAttribute(view(d.normal, Int8Array), 3, true));
+  g.setAttribute('normal', new THREE.BufferAttribute(nor, 3, true));
   g.setAttribute('uv', new THREE.BufferAttribute(view(d.uv, Uint16Array), 2, true));
   if (d.color) g.setAttribute('color', new THREE.BufferAttribute(bytes(d.color), 3, true));
-  g.setAttribute('skinIndex', new THREE.BufferAttribute(bytes(d.skinIndex), 4));
-  g.setAttribute('skinWeight', new THREE.BufferAttribute(bytes(d.skinWeight), 4, true));
+  g.setAttribute('skinIndex', new THREE.BufferAttribute(sIdx, 4));
+  g.setAttribute('skinWeight', new THREE.BufferAttribute(sWt, 4, true));
   g.setIndex(new THREE.BufferAttribute(view(d.index, d.index32 ? Uint32Array : Uint16Array), 1));
   g.computeBoundingBox();
   g.computeBoundingSphere();
@@ -139,7 +187,7 @@ export function buildImportedModel(d, id) {
       }
       return mat;
     });
-    const bones = d.bones.map((b) => ({ name: b.name, parent: b.parent, pos: new THREE.Vector3(...b.pos) }));
+    const bones = boneDefs.map((b) => ({ name: b.name, parent: b.parent, pos: new THREE.Vector3(...b.pos) }));
     return { geometry: g, bones, material, imported: true, clipes: parseClips(d.clipes) };
   }
 
@@ -152,6 +200,6 @@ export function buildImportedModel(d, id) {
   material.normalScale.set(0.9, 0.9);
   material.color.setScalar(2.2); // a textura é escura (média ~0,45): compensa
 
-  const bones = d.bones.map((b) => ({ name: b.name, parent: b.parent, pos: new THREE.Vector3(...b.pos) }));
+  const bones = boneDefs.map((b) => ({ name: b.name, parent: b.parent, pos: new THREE.Vector3(...b.pos) }));
   return { geometry: g, bones, material, imported: true };
 }
