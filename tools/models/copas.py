@@ -223,8 +223,8 @@ def tubo(M, pts, raios, lados, vtile=2.6, comp_u=1.3, off=0.0):
         for j in range(lados):
             a, b = filas[i][j], filas[i][j + 1]
             c, d = filas[i + 1][j], filas[i + 1][j + 1]
-            M.tri(a, c, b)
-            M.tri(b, c, d)
+            M.tri(a, b, c)   # normais para fora (a ordem contrária deixava o tronco do avesso)
+            M.tri(b, d, c)
 
 
 def cartao(M, C, pos, t1, t2, h, cor, flip=False, hv=None):

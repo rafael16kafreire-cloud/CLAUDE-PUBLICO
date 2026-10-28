@@ -182,8 +182,8 @@ def tronco(rng, H, r0, r1, lados, aneis, malha):
         for j in range(lados):
             a, b = filas[i][j], filas[i][j + 1]
             c, d = filas[i + 1][j], filas[i + 1][j + 1]
-            malha.tri(a, c, b)
-            malha.tri(b, c, d)
+            malha.tri(a, b, c)   # normais para fora
+            malha.tri(b, d, c)
     return pts, raios
 
 

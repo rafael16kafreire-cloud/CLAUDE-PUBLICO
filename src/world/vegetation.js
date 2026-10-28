@@ -430,7 +430,15 @@ export class Vegetation {
 
     const { hi, lo } = this.lod;
     const chunks = [];
-    for (const chunk of this.chunks.values()) {
+    // só os blocos da grade em volta do jogador (antes: a ilha inteira, ~7 mil blocos, a cada atualização)
+    const R = viewDistance + CHUNK * 0.75 + 24;
+    const gx0 = Math.floor((cp.x - R) / CHUNK);
+    const gx1 = Math.floor((cp.x + R) / CHUNK);
+    const gz0 = Math.floor((cp.z - R) / CHUNK);
+    const gz1 = Math.floor((cp.z + R) / CHUNK);
+    for (let gx = gx0; gx <= gx1; gx++) for (let gz = gz0; gz <= gz1; gz++) {
+      const chunk = this.chunks.get(`${gx},${gz}`);
+      if (!chunk) continue;
       const s = chunk.sphere;
       const dc = Math.hypot(s.center.x - cp.x, s.center.z - cp.z);
       if (dc - s.radius > viewDistance) continue;
@@ -454,6 +462,8 @@ export class Vegetation {
   _step(budgetMs) {
     const job = this._job;
     const t0 = performance.now();
+    this._dbg = this._dbg ?? { calls: 0, ms: 0, max: 0 };
+    this._dbg.calls++;
     if (job.phase === 'A') {
       const M_ = this.types;
       const { cx, cz, vd2 } = job;
