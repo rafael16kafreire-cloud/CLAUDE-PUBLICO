@@ -126,7 +126,12 @@
     { "nome": "Pico Vermelho", "x": -84, "z": 264 },
     { "nome": "Presa Congelada", "x": 136, "z": -1124 },
     { "nome": "Campos do Sul", "x": 250, "z": 1150 },
-    { "nome": "Campos do Leste", "x": 1050, "z": 150 }
+    { "nome": "Campos do Leste", "x": 1050, "z": 150 },
+    { "nome": "Pastagem Oeste", "x": -950, "z": 100 },
+    { "nome": "Pastagem Central", "x": 600, "z": 300 },
+    { "nome": "Pastagem Sudeste", "x": 700, "z": 800 },
+    { "nome": "Pastagem Norte", "x": -150, "z": -850 },
+    { "nome": "Pastagem Nordeste", "x": 1450, "z": -550 }
   ],
 
   "_zonas": "Cada ponto de renascer vira 3 zonas na tela de morte (a posição varia um pouco). zona = nome, dificuldade = Fácil, Médio ou Difícil.",
@@ -181,7 +186,7 @@
         "igapo": { "capim_bq_a": 0.03, "samambaia": 0.22, "junco": 0.1, "arbusto": 0.04, "gravetos": 0.03, "pedrinhas": 0.03 },
         "praia": { "capim_praia": 0.05, "arbusto": 0.02, "pedrinhas": 0.13, "gravetos": 0.03 },
         "neve": { "arbusto_neve": 0.16, "capim": 0.04 },
-        "campos": { "capim": 0.5, "capim_bq_a": 0.13, "capim_bq_d": 0.09, "margarida_bq": 0.04, "arbusto": 0.04, "pedrinhas": 0.02 },
+        "campos": { "capim": 0.5, "capim_bq_a": 0.22, "capim_bq_d": 0.15, "margarida_bq": 0.07, "arbusto": 0.04, "pedrinhas": 0.02 },
         "serra": { "capim": 0.12, "capim_bq_a": 0.05, "capim_bq_d": 0.03, "arbusto": 0.05, "pedrinhas": 0.05 }
       }
     }
@@ -196,6 +201,11 @@
   ],
   "campos": [
     { "x": 250, "z": 1150, "raio_m": 200 },
-    { "x": 1050, "z": 150, "raio_m": 190 }
+    { "x": 1050, "z": 150, "raio_m": 190 },
+    { "x": -950, "z": 100, "raio_m": 175 },
+    { "x": 600, "z": 300, "raio_m": 190 },
+    { "x": 700, "z": 800, "raio_m": 180 },
+    { "x": -150, "z": -850, "raio_m": 160 },
+    { "x": 1450, "z": -550, "raio_m": 150 }
   ]
 }
