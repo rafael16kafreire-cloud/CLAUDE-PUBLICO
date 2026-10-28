@@ -15,7 +15,7 @@ export class Messages {
     this.el.className = 'hud-msgs';
     this.el.setAttribute('aria-live', 'polite');
     root.appendChild(this.el);
-    events.on(EV.MESSAGE, (m) => m && this.push(m.text, m.kind));
+    // avisos de texto ('Ai! Sumaúma é dura demais...') não aparecem mais; só a lista '+N item' ao pegar coisas
     events.on(EV.ITEM_GAINED, ({ id, amount }) => this.pushItem(id, amount));
   }
 

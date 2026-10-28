@@ -1797,3 +1797,20 @@ body .hud-gauges, body.is-touch .hud-gauges, body.is-touch:not(.touch-botoes) .h
 .hud-gauges .stat .track { background: rgba(42, 148, 170, 0.2); }
 .hud-gauges .stat-food, .hud-gauges .stat-water { width: 4.6vh; height: 4.6vh; }
 .hud-gauges .stat.low { --c: #ff4a3a; }
+
+/* ---- Uma fonte só em tudo (a do HUD) ---- */
+:root { --font-display: "Rajdhani", "Barlow Semi Condensed", system-ui, sans-serif; --font-ui: "Rajdhani", "Barlow Semi Condensed", system-ui, sans-serif; }
+html, body, button, input, select, textarea, .title { font-family: var(--font-ui) !important; }
+
+/* ---- Canto de cima à esquerda como no ARK Mobile: só a mochilinha, pequena ---- */
+.hud-left { top: calc(4.3vh + var(--safe-t)); left: calc(0.75vw + var(--safe-l)); display: block; }
+.ark-btn.hud-bag {
+  width: 9.2vh; height: 9.2vh; min-height: 0; padding: 0;
+  display: grid; place-items: center;
+  background: rgba(30, 50, 48, 0.4) !important;
+  border: 1px solid rgba(150, 210, 205, 0.32) !important; border-radius: 0 !important;
+  color: #2a94aa !important;
+}
+.ark-btn.hud-bag .ab-ico { width: 62%; height: 62%; }
+.ark-btn.hud-bag .ab-ico svg { filter: none; }
+.hud-status { left: calc(var(--safe-l) + 0.75vw + 10.6vh); top: calc(4.3vh + var(--safe-t)); }

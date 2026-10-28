@@ -10,7 +10,6 @@ import { sound } from '../audio/audio.js';
 const ITEMS = [
   { id: 'crouch', label: 'Agachar' },
   { id: 'interact', label: 'Interagir' },
-  { id: 'mount', label: 'Montar / Descer' },
   { id: 'inventory', label: 'Inventário' },
   { id: 'build', label: 'Construir' },
   { id: 'map', label: 'Mapa' },
