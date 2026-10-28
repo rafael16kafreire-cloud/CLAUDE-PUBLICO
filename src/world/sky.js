@@ -26,8 +26,8 @@ export const NIGHT_END = 0.22;
 // força da luz, céu do hemisfério, força do hemisfério, nuvens]
 const KEYS = [
   // noite: escura de verdade, luar azulado fraco (dá para ver só o mínimo)
-  [0.0, '#18243c', '#060a14', '#93b3f2', 0.9, '#4d68ad', 0.8, 0.16],
-  [0.19, '#1a263f', '#070b16', '#93b3f2', 0.9, '#4d68ad', 0.8, 0.16],
+  [0.0, '#18243c', '#060a14', '#8aaaea', 0.62, '#44609f', 0.52, 0.16],
+  [0.19, '#1a263f', '#070b16', '#8aaaea', 0.62, '#44609f', 0.52, 0.16],
   // nascer do sol: laranja e rosa no horizonte
   [0.26, '#f0a272', '#4c6a9c', '#ffae6a', 1.5, '#c9b2a0', 0.8, 0.9],
   [0.33, '#c6d4cc', '#3f86c8', '#fff1d0', 3.0, '#dcecf0', 1.1, 1.0],
@@ -36,8 +36,8 @@ const KEYS = [
   [0.67, '#c7cfc0', '#3f7fc0', '#ffe8c4', 3.0, '#e0e8de', 1.1, 1.0],
   // pôr do sol: dourado e vermelho
   [0.75, '#ee8450', '#46598a', '#ff8f4a', 1.4, '#ca9f86', 0.8, 0.9],
-  [0.8, '#1a263f', '#070b16', '#93b3f2', 0.9, '#4d68ad', 0.8, 0.16],
-  [1.0, '#18243c', '#060a14', '#93b3f2', 0.9, '#4d68ad', 0.8, 0.16],
+  [0.8, '#1a263f', '#070b16', '#8aaaea', 0.62, '#44609f', 0.52, 0.16],
+  [1.0, '#18243c', '#060a14', '#8aaaea', 0.62, '#44609f', 0.52, 0.16],
 ].map(([t, h, z, sc, si, hs, hi, cl]) => ({ t, h: new THREE.Color(h), z: new THREE.Color(z), sc: new THREE.Color(sc), si, hs: new THREE.Color(hs), hi, cl }));
 
 export class Sky {
@@ -105,12 +105,12 @@ export class Sky {
     SUN_DIR.copy(up).normalize();
     this.sunDir.copy(SUN_DIR);
     u.uSunColor.value.copy(this.sun.color).multiplyScalar(sun.y > -0.05 ? 1 : 0.35);
-    this.daylight = Math.min(1, Math.max(0.38, (this.sun.intensity - 0.9) / 2.6 * 0.62 + 0.38));
+    this.daylight = Math.min(1, Math.max(0.3, (this.sun.intensity - 0.62) / 2.9 * 0.7 + 0.3));
     // 0 = dia, 1 = noite fechada (vale para o céu: estrelas e lua) e para o brilho do sol na tela
-    this.night = Math.min(1, Math.max(0, 1 - (this.sun.intensity - 0.9) / 0.7));
+    this.night = Math.min(1, Math.max(0, 1 - (this.sun.intensity - 0.62) / 0.88));
     u.uNight.value = this.night;
     // o filme (exposição) sobe um pouco no sol forte e desce à noite
-    this.exposure = 1.4 - 0.16 * Math.min(1, (this.sun.intensity - 0.9) / 2.6);
+    this.exposure = 1.3 - 0.06 * Math.min(1, (this.sun.intensity - 0.62) / 2.9);
     sharedDay.value = this.daylight;
     if (!this.underwater) {
       this.scene.fog.color.copy(this._horizon);
