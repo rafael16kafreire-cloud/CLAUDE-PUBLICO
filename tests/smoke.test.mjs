@@ -169,13 +169,15 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
       return null;
     };
     // Coloca o jogador na frente de uma planta do tipo pedido.
+    // 'type' pode ser um nome ou uma lista (as árvores têm vários modelos)
     T.faceRec = (type, near = { x: 0, z: -200 }) => {
       const c = ctx();
       const veg = c.world.vegetation;
+      const types = Array.isArray(type) ? type : [type];
       let best = null;
       let bd = Infinity;
       for (const r of veg.recs) {
-        if (r.type !== type || !r.alive) continue;
+        if (!types.includes(r.type) || !r.alive) continue;
         if (c.world.waterAt(r.x, r.z)) continue;
         const d = Math.hypot(r.x - near.x, r.z - near.z);
         if (d < bd) { bd = d; best = r; }
@@ -275,21 +277,15 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     ctx.player.stats.water = 40;
   });
   await frames(page, 20);
+  let seaMsg = '';
   for (let t = 0; t < 10; t++) {
     await gameWait(page, 400);
-    const pr = await page.evaluate(() => document.querySelector('.prompt:not([hidden])')?.textContent ?? '');
-    if (/salgada|beber/i.test(pr)) break;
+    seaMsg = await page.evaluate(() => document.querySelector('.prompt:not([hidden])')?.textContent ?? '');
+    if (/salgada|beber/i.test(seaMsg)) break;
   }
-  // guarda os avisos que aparecerem (no navegador lento eles somem rápido)
-  await page.evaluate(() => {
-    window.__seaMsgs = [];
-    const box = document.querySelector('.hud-msgs');
-    window.__seaObs = new MutationObserver(() => box.querySelectorAll('.msg').forEach((m) => window.__seaMsgs.push(m.textContent)));
-    window.__seaObs.observe(box, { childList: true, subtree: true, characterData: true });
-  });
+  // os avisos de texto foram tirados do jogo: o rótulo da mira ("Água do mar (salgada)") é quem avisa
   await page.keyboard.press('KeyE');
   await gameWait(page, 400);
-  const seaMsg = await page.evaluate(() => { window.__seaObs.disconnect(); return [...new Set(window.__seaMsgs)].join(' | '); });
   const water2 = await page.evaluate(() => window.__ilha.ctx.player.stats.water);
   check('Mar: água salgada não mata a sede', water2 <= 40.01 && /salgada/i.test(seaMsg), seaMsg);
 
@@ -330,10 +326,11 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
 
   // ---------- Coleta ----------
   // Soco numa árvore: palha (e às vezes madeira)
-  const tree = await page.evaluate(() => window.__t.faceRec('arvore_dossel'));
+  const tree = await page.evaluate(() => window.__t.faceRec(['arvore_dossel', 'arvore_bl_a', 'arvore_bl_b', 'arvore_bl_c', 'copa_a', 'copa_b', 'copa_c']));
   await frames(page, 10);
   await gameWait(page, 250);
   const treePrompt = await page.evaluate(() => document.querySelector('.prompt:not([hidden])')?.textContent ?? null);
+  check('Coleta: achou uma árvore para testar', !!tree, JSON.stringify(tree));
   check('Coleta: mirar numa árvore mostra o que sai dela', !!treePrompt && /Árvore/.test(treePrompt), treePrompt ?? 'nada');
   await page.screenshot({ path: `${SHOTS}/07-pc-coleta-arvore.png` });
   for (let i = 0; i < 4; i++) {
@@ -356,7 +353,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   const thatch = await page.evaluate(() => ({ palha: window.__t.count('palha'), madeira: window.__t.count('madeira') }));
   check('Coleta: socar palmeira dá palha', thatch.palha >= 4, `${JSON.stringify(tree)} ${JSON.stringify(thatch)}`);
   // árvore fina (sub-bosque): o soco rende 1 madeira + 1 palha por golpe e custa 5% da vida
-  await page.evaluate(() => { window.__t.faceRec('arvore_media'); const st = window.__ilha.ctx.player.stats; st.health = st.max.health; });
+  await page.evaluate(() => { window.__t.faceRec(['arvore_media', 'media_a', 'media_b', 'arvore_folhosa', 'arvore_folhosa2']); const st = window.__ilha.ctx.player.stats; st.health = st.max.health; });
   await frames(page, 6);
   const thin0 = await page.evaluate(() => ({ h: window.__ilha.ctx.player.stats.health, m: window.__t.count('madeira'), p: window.__t.count('palha') }));
   await page.evaluate(() => { window.__ilha.ctx.player.stats.stamina = 100; });
@@ -469,7 +466,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   check('Inventário: Tab fecha de novo', invClosed);
 
   // Árvore gigante: com a mão machuca e não dá nada
-  await page.evaluate(() => window.__t.faceRec('sumauma'));
+  await page.evaluate(() => window.__t.faceRec(['sumauma', 'copa_g_a', 'copa_g_b']));
   await frames(page, 6);
   const giant0 = await page.evaluate(() => ({ h: window.__ilha.ctx.player.stats.health, m: window.__t.count('madeira'), p: window.__t.count('palha'), sel: window.__ilha.ctx.inventory.selected }));
   await page.evaluate(() => { window.__ilha.ctx.inventory.selected = -1; window.__ilha.ctx.player.stats.stamina = 100; });
@@ -588,7 +585,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   // Machado na mão: muito mais madeira
   const axeSlot = await page.evaluate(() => window.__ilha.ctx.inventory.slots.findIndex((s) => s && s.id === 'machado_pedra'));
   await page.keyboard.press(`Digit${axeSlot + 1}`);
-  await page.evaluate(() => window.__t.faceRec('arvore_dossel', { x: 100, z: -300 }));
+  await page.evaluate(() => window.__t.faceRec(['arvore_dossel', 'arvore_bl_a', 'arvore_bl_b', 'arvore_bl_c', 'copa_a', 'copa_b', 'copa_c'], { x: 100, z: -300 }));
   await frames(page, 6);
   const wood0 = await page.evaluate(() => window.__t.count('madeira'));
   for (let i = 0; i < 3; i++) {
