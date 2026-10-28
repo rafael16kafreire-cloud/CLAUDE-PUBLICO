@@ -224,7 +224,9 @@ export class TouchControls {
         // tocar duas vezes e segurar = repetir (colher/atacar sem parar)
         st.dbl = true;
         st.holdAttack = true;
-        this.input.press('attack');
+        // dois toques e segurar: repete bater/colher (a ação certa para o que está na mira) até soltar o dedo
+        this._tapAction();
+        st.repeat = setInterval(() => this._tapAction(), 130);
       } else {
         // mirando algo para bater (árvore, bicho, carcaça): bate já, sem esperar soltar o dedo
         st.early = setTimeout(() => {
@@ -302,7 +304,7 @@ export class TouchControls {
         if (this._swimming) this.input.release('jump');
         if (quick) lastTapL = now;
       } else {
-        if (st.holdAttack) this.input.release('attack');
+        if (st.holdAttack) clearInterval(st.repeat);
         else if (quick && !st.held) {
           if (!st.fired) this._tapAction();
           lastTapR = now;

@@ -103,7 +103,8 @@ export function vegMaterial(key, berry) {
       vertexColors: true,
       alphaTest: opaque ? 0 : 0.42,
       // cipós são cartões sem recorte: dos dois lados
-      side: opaque && part.tex !== 'agar_cipo' ? THREE.FrontSide : THREE.DoubleSide,
+      // troncos gerados por código ficam dos dois lados (se uma face sair virada, nunca aparece oco)
+      side: opaque && part.tex !== 'agar_cipo' && part.tex !== 'tronco_bl' && part.tex !== 'tronco_palma' ? THREE.FrontSide : THREE.DoubleSide,
     });
     // relevo (normal map), se o modelo tiver
     if (VEG_TEXTURAS[`${part.tex}_relevo`]) m.normalMap = texture(`${part.tex}_relevo`, false);
