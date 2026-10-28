@@ -1766,3 +1766,5 @@ body.is-touch:not(.touch-botoes) .hud-gauges { bottom: calc(var(--safe-b) + 10px
 body:not(.is-touch) .hotbar,
 body.is-touch .hotbar { grid-auto-rows: calc(var(--hb) * 1.3); }
 body.is-touch.touch-botoes .hotbar { grid-auto-rows: calc(var(--hb) * 1.3); }
+.hotbar .hb-slot { height: 100%; width: 100%; }
+.hud-gauges .stat-xp .fill { transform: none !important; }
