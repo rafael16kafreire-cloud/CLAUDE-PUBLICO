@@ -39,7 +39,7 @@ export class WhistleWheel {
           const a = (i / n) * Math.PI * 2 - Math.PI / 2 + Math.PI / n;
           const x = 50 + Math.cos(a) * 36;
           const y = 50 + Math.sin(a) * 36;
-          return `<button type="button" class="wheel-item" data-w="${it.id}" style="left:${x.toFixed(1)}%;top:${y.toFixed(1)}%">${it.label}</button>`;
+          return `<button type="button" class="wheel-item" data-w="${it.id}" style="left:${x.toFixed(1)}%;top:${y.toFixed(1)}%;--i:${i}">${it.label}</button>`;
         }).join('')}
         <div class="wheel-hole"></div>
         ${ITEMS.map((_, i) => `<i class="wheel-line" style="transform:rotate(${(i / n) * 360}deg)"></i>`).join('')}
@@ -49,23 +49,38 @@ export class WhistleWheel {
     el.addEventListener('pointerdown', (e) => e.stopPropagation());
     el.addEventListener('click', (e) => {
       const b = e.target.closest('[data-w]');
-      if (b) this.run(b.dataset.w);
+      if (b) {
+        b.classList.add('escolhido');
+        this.run(b.dataset.w);
+      }
       this.close();
     });
   }
 
   get visible() {
-    return !this.el.hidden;
+    return !this.el.hidden && !this.el.classList.contains('fechando');
   }
 
+  // Abre com animação (a roda cresce girando um pouco e os itens entram um por um) e fecha encolhendo.
   open() {
+    clearTimeout(this._t);
+    this.el.classList.remove('fechando');
     this.el.hidden = false;
+    for (const b of this.el.querySelectorAll('.wheel-item')) b.classList.remove('escolhido');
+    this.el.classList.add('abrindo');
+    this._t = setTimeout(() => this.el.classList.remove('abrindo'), 480);
   }
 
   close() {
-    if (this.el.hidden) return;
-    this.el.hidden = true;
-    this.onClose?.();
+    if (this.el.hidden || this.el.classList.contains('fechando')) return;
+    clearTimeout(this._t);
+    this.el.classList.remove('abrindo');
+    this.el.classList.add('fechando');
+    this.onClose?.(); // o jogo já volta a responder; só a roda ainda está sumindo
+    this._t = setTimeout(() => {
+      this.el.hidden = true;
+      this.el.classList.remove('fechando');
+    }, 220);
   }
 
   // Bichos domados do jogador que escutam (perto)

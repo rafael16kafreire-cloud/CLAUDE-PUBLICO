@@ -1851,3 +1851,19 @@ html, body, button, input, select, textarea, .title { font-family: var(--font-ui
 .start .menu-page { right: 5vw; width: min(24vw, 440px); font-size: 2.3vh; }
 .start .menu-tip { opacity: 1 !important; color: #e8f6ff !important; margin: 0; }
 .start-logo { left: 57vw; width: min(32vw, 82vh); }
+
+/* ---------- Rodas (assovios e ações): animação de abrir, escolher e fechar ---------- */
+.wheel.abrindo { animation: roda-fundo-in 0.25s ease both; }
+.wheel.abrindo .wheel-ring { animation: roda-abre 0.34s cubic-bezier(0.2, 0.9, 0.3, 1.15) both; }
+.wheel.abrindo .wheel-item { animation: roda-item 0.34s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; animation-delay: calc(60ms + var(--i, 0) * 32ms); }
+.wheel.fechando { animation: roda-fundo-out 0.22s ease both; pointer-events: none; }
+.wheel.fechando .wheel-ring { animation: roda-fecha 0.22s ease-in both; }
+.wheel-item { transition: background 0.12s, transform 0.12s; }
+.wheel-item:hover, .wheel-item:focus-visible { transform: translate(-50%, -50%) scale(1.08); }
+.wheel-item.escolhido { background: rgba(60, 182, 216, 0.75) !important; transform: translate(-50%, -50%) scale(1.18) !important; box-shadow: 0 0 2.4vh rgba(120, 225, 255, 0.8); }
+.wheel.fechando .wheel-item:not(.escolhido) { opacity: 0.3; transition: opacity 0.15s; }
+@keyframes roda-abre { from { transform: scale(0.35) rotate(-28deg); opacity: 0; } to { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes roda-fecha { from { transform: scale(1); opacity: 1; } to { transform: scale(0.5) rotate(12deg); opacity: 0; } }
+@keyframes roda-item { from { opacity: 0; transform: translate(-50%, -50%) scale(0.4); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+@keyframes roda-fundo-in { from { background-color: rgba(0, 0, 0, 0); } to { background-color: rgba(0, 0, 0, 0.25); } }
+@keyframes roda-fundo-out { from { background-color: rgba(0, 0, 0, 0.25); } to { background-color: rgba(0, 0, 0, 0); } }
