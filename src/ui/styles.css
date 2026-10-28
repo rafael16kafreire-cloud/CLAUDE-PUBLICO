@@ -1867,3 +1867,32 @@ html, body, button, input, select, textarea, .title { font-family: var(--font-ui
 @keyframes roda-item { from { opacity: 0; transform: translate(-50%, -50%) scale(0.4); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
 @keyframes roda-fundo-in { from { background-color: rgba(0, 0, 0, 0); } to { background-color: rgba(0, 0, 0, 0.25); } }
 @keyframes roda-fundo-out { from { background-color: rgba(0, 0, 0, 0.25); } to { background-color: rgba(0, 0, 0, 0); } }
+
+/* ---------- Itens coletados: lista no canto esquerdo (como no ARK) ---------- */
+.hud-msgs {
+  right: auto;
+  left: calc(4.2vw + var(--safe-l));
+  top: 21.5%;
+  align-items: flex-start;
+  gap: 0.35vh;
+  max-width: 38vw;
+}
+.msg.msg-item {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  gap: 1.2vh;
+  height: 5.3vh;
+  font-size: max(18px, 3.9vh);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #fff;
+  text-shadow: 0 0 3px #000, 0 1px 3px #000, 1px 1px 2px rgba(0, 0, 0, 0.9);
+  white-space: nowrap;
+}
+.msg.msg-item .msg-icon { width: 5.2vh; height: 5.2vh; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8)); }
+.msg.msg-item .msg-plus { color: var(--ark-cyan); font-size: 0.62em; margin-right: -0.3vh; text-shadow: 0 0 3px #000; }
+.msg.msg-item.out { transform: none; }
+.msg.msg-item { animation: msg-in-l 0.2s ease-out; }
+@keyframes msg-in-l { from { opacity: 0; transform: translateX(-16px); } }

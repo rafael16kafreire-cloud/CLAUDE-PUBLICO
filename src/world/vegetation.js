@@ -452,7 +452,10 @@ export class Vegetation {
       ts.cnt = { hi: 0, lo: 0, imp: 0 };
       const capHi = ts.def.hiDist ? (ts.def.hiScale ? ts.def.hiDist * Math.max(1, hi / 42) : ts.def.hiDist) : Infinity;
       const dHi = Math.min(hi, capHi);
-      const dMax = Math.min(viewDistance, ts.def.maxDist ?? Infinity);
+      // árvores sem versão "foto" (impostor): a neblina já cobre quase tudo depois de ~70% do alcance,
+      // então não vale desenhar a malha média até o fim (custa centenas de milhares de triângulos)
+      const semFoto = ts.def.lo && !ts.meshes.imp;
+      const dMax = Math.min(viewDistance * (semFoto ? 0.72 : 1), ts.def.maxDist ?? Infinity);
       ts.lim = { max2: dMax * dMax, hi2: dHi * dHi, lo2: lo * lo, hasLo: !!ts.meshes.lo, hasImp: !!ts.meshes.imp };
     }
     this._job = { phase: 'A', chunks, ci: 0, cx: cp.x, cz: cp.z, vd2: viewDistance * viewDistance, mi: 0, list: null };

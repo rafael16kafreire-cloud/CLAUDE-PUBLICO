@@ -152,10 +152,10 @@
     "biomas": {
       "praia": { "coqueiro": 0.012, "palma_bl_a": 0.03, "palma_bl_b": 0.03, "palma_bl_c": 0.026, "planta_praia": 0.035, "arbusto_frutas": 0.012, "pedra_musgo": 0.014, "tronco_caido": 0.02 },
       "selva": {
-        "copa_g_a": 0.02, "copa_g_b": 0.02, "copa_a": 0.026, "copa_b": 0.022, "copa_c": 0.022, "arvore_bl_a": 0.035, "arvore_bl_b": 0.035, "arvore_bl_c": 0.035, "media_a": 0.06, "media_b": 0.06, "acai": 0.07,
+        "copa_g_a": 0.014, "copa_g_b": 0.014, "copa_a": 0.016, "copa_b": 0.014, "copa_c": 0.014, "arvore_bl_a": 0.02, "arvore_bl_b": 0.02, "arvore_bl_c": 0.02, "media_a": 0.03, "media_b": 0.03, "acai": 0.04,
         "samambaia_gigante": 0.08, "bananeira": 0.035, "samambaia": 0.16,
         "arbusto_mejo": 0.025, "arbusto_escura": 0.02, "arbusto_frutas": 0.015,
-        "tronco_caido": 0.016, "tronco_pinho": 0.01, "pedra_musgo": 0.022, "arvore_folhosa": 0.022, "arvore_folhosa2": 0.022, "arvore_agar": 0.025
+        "tronco_caido": 0.016, "tronco_pinho": 0.01, "pedra_musgo": 0.022, "arvore_folhosa": 0.012, "arvore_folhosa2": 0.012, "arvore_agar": 0.014
       },
       "igapo": {
         "copa_a": 0.035, "copa_b": 0.03, "copa_c": 0.035, "acai": 0.12, "mangue": 0.1, "samambaia_gigante": 0.06,
@@ -183,7 +183,7 @@
     "sub_bosque": {
       "passo_m": 3,
       "biomas": {
-        "selva": { "capim": 0.1, "samambaia": 0.34, "arbusto": 0.08, "pedrinhas": 0.07, "gravetos": 0.05, "samambaia_gigante": 0.045, "media_a": 0.015, "media_b": 0.015, "acai": 0.015, "arbusto_mejo": 0.008, "arbusto_escura": 0.006 },
+        "selva": { "capim": 0.1, "samambaia": 0.34, "arbusto": 0.08, "pedrinhas": 0.07, "gravetos": 0.05, "samambaia_gigante": 0.045, "media_a": 0.008, "media_b": 0.008, "acai": 0.008, "arbusto_mejo": 0.008, "arbusto_escura": 0.006 },
         "igapo": { "samambaia": 0.22, "junco": 0.1, "arbusto": 0.04, "gravetos": 0.03, "pedrinhas": 0.03 },
         "praia": { "capim_praia": 0.05, "arbusto": 0.02, "pedrinhas": 0.13, "gravetos": 0.03 },
         "neve": { "arbusto_neve": 0.16, "capim": 0.04 },

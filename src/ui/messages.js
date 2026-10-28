@@ -6,8 +6,8 @@
 import { events, EV } from '../core/event_bus.js';
 import { itemIcon, itemName } from '../items/items.js';
 
-const MAX_ITEMS = 5;
-const LIFETIME_MS = 2800;
+const MAX_ITEMS = 8;
+const LIFETIME_MS = 3600;
 
 export class Messages {
   constructor(root) {
@@ -19,7 +19,7 @@ export class Messages {
     events.on(EV.ITEM_GAINED, ({ id, amount }) => this.pushItem(id, amount));
   }
 
-  // "+3 Madeira" com ícone; somando se pegar o mesmo item seguido.
+  // "+ 3x Madeira" com ícone (lista no canto esquerdo, como no ARK); somando se pegar o mesmo item seguido.
   pushItem(id, amount) {
     let item = [...this.el.children].find((c) => c.dataset.item === id && !c.classList.contains('out'));
     if (item) {
@@ -30,11 +30,11 @@ export class Messages {
       item.className = 'msg msg-gain msg-item';
       item.dataset.item = id;
       item.dataset.amount = String(amount);
-      item.innerHTML = `<span class="msg-icon">${itemIcon(id)}</span><span class="msg-text"></span>`;
+      item.innerHTML = `<span class="msg-icon">${itemIcon(id)}</span><span class="msg-plus">+</span><span class="msg-text"></span>`;
       this.el.appendChild(item);
       while (this.el.children.length > MAX_ITEMS) this.el.firstElementChild.remove();
     }
-    item.querySelector('.msg-text').textContent = `+${item.dataset.amount} ${itemName(id)}`;
+    item.querySelector('.msg-text').textContent = `${item.dataset.amount}x  ${itemName(id)}`;
     this._schedule(item);
   }
 
