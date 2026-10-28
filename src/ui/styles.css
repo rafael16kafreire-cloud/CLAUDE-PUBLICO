@@ -1850,3 +1850,4 @@ html, body, button, input, select, textarea, .title { font-family: var(--font-ui
 .start-menu .menu-tabs { gap: 2.8vh; }
 .start .menu-page { right: 5vw; width: min(24vw, 440px); font-size: 2.3vh; }
 .start .menu-tip { opacity: 1 !important; color: #e8f6ff !important; margin: 0; }
+.start-logo { left: 57vw; width: min(32vw, 82vh); }
