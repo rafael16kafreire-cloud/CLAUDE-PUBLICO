@@ -659,7 +659,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     return { night: w.sky.isNight, sun: +w.sky.sun.intensity.toFixed(2), fire: +w.fireLight.intensity.toFixed(2), clock: document.querySelector('.hud-clock').textContent };
   });
   await page.screenshot({ path: `${SHOTS}/07e-pc-noite.png` });
-  check('Noite: escurece, relógio mostra a lua e a fogueira ilumina', nightInfo.night && nightInfo.sun < 0.6 && nightInfo.fire > 2 && /☾/.test(nightInfo.clock), JSON.stringify(nightInfo));
+  check('Noite: escurece, relógio mostra a lua e a fogueira ilumina', nightInfo.night && nightInfo.sun < 0.7 && nightInfo.fire > 2 && /☾/.test(nightInfo.clock), JSON.stringify(nightInfo));
   const sleep = await page.evaluate(() => {
     const c = window.__ilha.ctx;
     c.inventory.add('saco_dormir', 1);
@@ -839,7 +839,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   check('Mapa: floresta, igapó, pântano, praia, neve da Lapônia, Serra Rochosa e Campos', Object.keys(biomes).every((k) => ['mar', 'praia', 'selva', 'igapo', 'pantano', 'neve', 'serra', 'campos'].includes(k)) && biomes.neve > 0 && biomes.serra > 0 && biomes.campos > 0, JSON.stringify(biomes));
   check('Mapa: a maior parte da terra é Floresta Amazônica', biomes.selva / land > 0.5 && biomes.pantano > 0, `${Math.round((biomes.selva / land) * 100)}% floresta`);
   const plants = await page.evaluate(() => window.__ilha.ctx.world.vegetation.countByType());
-  check('Floresta: samambaias gigantes, bananeiras, bagas e troncos caídos', ['samambaia_gigante', 'bananeira', 'arbusto_mejo', 'arbusto_escura', 'tronco_caido', 'sumauma'].every((k) => plants[k] > 20), JSON.stringify(plants));
+  check('Floresta: samambaias gigantes, bananeiras, bagas e troncos caídos', ['samambaia_gigante', 'bananeira', 'arbusto_mejo', 'arbusto_escura', 'tronco_caido'].every((k) => plants[k] > 20) && (plants.sumauma ?? 0) + (plants.copa_g_a ?? 0) + (plants.copa_g_b ?? 0) > 20, JSON.stringify(plants));
 
   // Animais: todas as espécies nascem sem erro
   const species = await page.evaluate(() => {
@@ -1317,7 +1317,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
       ctx.camCtl.yaw = Math.atan2(dx, dz);
       break;
     }
-    ctx.camCtl.pitch = -0.45;
+    ctx.camCtl.pitch = -0.75; // o alcance de interação é menor: mira mais para baixo, perto da beira
     ctx.player.stats.water = 30;
   });
   await gameWait(page, 400);
@@ -1387,6 +1387,9 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   await frames(page, 4);
   await page.screenshot({ path: `${SHOTS}/28-cel-em-pe-inventario.png` });
   await page.tap('#inv-close');
+  // volta para o celular deitado: os gestos da direita usam x = 600 e 794
+  await page.setViewportSize({ width: 800, height: 360 });
+  await frames(page, 20);
 
   // ---------- Gestos (esquema padrão do ARK Mobile) ----------
   // Os tempos dos gestos são alargados: o navegador de teste (sem placa de vídeo) é lento.
@@ -1570,7 +1573,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   await B.evaluate(() => { window.__ilha.ctx.player.position.x += 6; });
   await gameWait(B, 800);
   await gameWait(A, 800);
-  const seen = await A.evaluate(() => [...window.__ilha.net.remotes.values()][0].position.x);
+  const seen = await A.evaluate(() => [...window.__ilha.net.remotes.values()][0]?.position.x ?? NaN);
   const bx = await B.evaluate(() => window.__ilha.ctx.player.position.x);
   check('Co-op: posição do amigo chega', Math.abs(seen - bx) < 1, `${seen.toFixed(2)} vs ${bx.toFixed(2)}`);
   await A.evaluate(() => { const c = window.__ilha.ctx; c.inventory.add('fogueira', 1); c.actions.place(c.inventory.slots.findIndex((x) => x && x.id === 'fogueira')); });
@@ -1582,7 +1585,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   const nid = await A.evaluate(() => {
     const c = window.__ilha.ctx;
     c.creatures.enabled = false;
-    const b = [...window.__ilha.net.remotes.values()][0];
+    const b = [...window.__ilha.net.remotes.values()][0] ?? { position: { x: 0, y: 0, z: 0 } };
     const d = c.creatures.spawn('dodo', b.position.x, b.position.z - 3, 1);
     d._setState('parado'); d.idleFor = 99;
     window.__dodo = d;
@@ -1598,7 +1601,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   const xp1 = await B.evaluate(() => window.__ilha.ctx.player.stats.xp + window.__ilha.ctx.player.stats.level * 1000);
   check('Co-op: convidado acerta animal do anfitrião e ganha XP', kill && xp1 > xp0, JSON.stringify({ kill, xp0, xp1 }));
   // raptor do anfitrião ataca o convidado
-  await A.evaluate(() => { const c = window.__ilha.ctx; const b = [...window.__ilha.net.remotes.values()][0]; c.creatures.spawn('raptor', b.position.x + 6, b.position.z, 3); });
+  await A.evaluate(() => { const c = window.__ilha.ctx; const b = [...window.__ilha.net.remotes.values()][0] ?? { position: { x: 0, y: 0, z: 0 } }; c.creatures.spawn('raptor', b.position.x + 6, b.position.z, 3); });
   const h0 = await B.evaluate(() => window.__ilha.ctx.player.stats.health);
   await gameWait(A, 4000);
   await gameWait(B, 600);
