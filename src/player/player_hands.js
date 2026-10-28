@@ -185,7 +185,7 @@ export class PlayerHands {
 
     const moving = speed > 0.3;
     this._bob += dt * (moving ? 2 + speed * 1.2 : 0);
-    const amp = moving ? Math.min(running ? 0.045 : 0.025, speed * 0.005) : 0;
+    const amp = moving ? Math.min(running ? 0.09 : 0.05, speed * 0.01) : 0;
     const breathe = Math.sin(this._t * 1.6) * 0.004;
     const by = Math.sin(this._bob * 2) * amp + breathe - this._land * 0.05;
     const bx = Math.cos(this._bob) * amp;
@@ -193,6 +193,9 @@ export class PlayerHands {
     this.right.position.set(this.restR.x + bx, this.restR.y + by, this.restR.z);
     this.left.position.set(this.restL.x + bx, this.restL.y + by, this.restL.z);
     this.right.rotation.copy(this.restRotR);
+    // balanço do braço ao andar e respiração parado
+    this.right.rotation.z += bx * 1.6 + Math.sin(this._t * 1.4) * 0.012;
+    this.right.rotation.x += by * 1.4;
     const holding = this.toolKind !== 'mao';
     // segurando ferramenta: mão esquerda mais para baixo
     if (holding) this.left.position.y -= 0.08;
@@ -224,11 +227,14 @@ export class PlayerHands {
       this._swing = Math.max(0, this._swing - dt * (this._kind === 'mao' ? 3.5 : 2.3));
       const t = 1 - this._swing;
       if (this._kind === 'mao') {
+        // soco em arco, como no Minecraft: o braço gira para baixo e para frente e volta
         const k = Math.sin(t * Math.PI);
         const hand = this._side > 0 ? this.right : this.left;
-        hand.position.z -= k * 0.28;
-        hand.position.x -= k * 0.1 * this._side;
-        hand.position.y += k * 0.06;
+        hand.position.z -= k * 0.14;
+        hand.position.x -= k * 0.06 * this._side;
+        hand.position.y -= k * 0.05;
+        hand.rotation.x = this.restRotR.x - k * 1.15;
+        hand.rotation.y = this.restRotR.y + k * 0.35;
       } else if (this._kind === 'arco') {
         // tiro: recua um pouco (coice da corda)
         const k = Math.sin(t * Math.PI);
