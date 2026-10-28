@@ -774,8 +774,9 @@ function boot(hotData = {}) {
     ctx.world.spawnDeathBag(position, ctx.inventory.takeAll());
     input.exitPointerLock();
     input.runToggle = false;
-    // primeiro o jogador cai (animação); depois aparece a tela de morte
-    ctx.deathPending = { cause, position, t: 1.6 };
+    // primeiro o jogador cai e a visão fica vermelha e escurece; depois aparece o mapa de respawn
+    ctx.death.startFade();
+    ctx.deathPending = { cause, position, t: 3.3 };
   });
 
   events.on(EV.RESPAWN_REQUESTED, ({ pointId }) => {

@@ -74,6 +74,10 @@ const FONTS = [
   ['Rajdhani', 500, 'rajdhani-medium.woff2'],
   ['Rajdhani', 600, 'rajdhani-semibold.woff2'],
   ['Rajdhani', 700, 'rajdhani-bold.woff2'],
+  // Jost (estilo Futura) para os títulos
+  ['Jost', 500, 'jost-500.woff2'],
+  ['Jost', 600, 'jost-600.woff2'],
+  ['Jost', 700, 'jost-700.woff2'],
   ['Barlow Semi Condensed', 500, 'barlow-semi-condensed-500.woff2'],
   ['Barlow Semi Condensed', 600, 'barlow-semi-condensed-600.woff2'],
   ['Barlow Semi Condensed', 700, 'barlow-semi-condensed-700.woff2'],

@@ -129,14 +129,15 @@
     { "nome": "Campos do Leste", "x": 1050, "z": 150 }
   ],
 
+  "_zonas": "Cada ponto de renascer vira 3 zonas na tela de morte (a posição varia um pouco). zona = nome, dificuldade = Fácil, Médio ou Difícil.",
   "pontos_renascer": [
-    { "id": "sul", "nome": "Praia Sul", "direcao": [0, 1] },
-    { "id": "sudeste", "nome": "Praia Sudeste", "direcao": [0.72, 0.7] },
-    { "id": "leste", "nome": "Praia Leste", "direcao": [1, 0.05] },
-    { "id": "montanha_leste", "nome": "Pé da Montanha Nevada – leste (frio!)", "pos": [-440, -900] },
-    { "id": "montanha_oeste", "nome": "Pé da Montanha Nevada – oeste (frio!)", "pos": [-1480, -1080] },
-    { "id": "oeste", "nome": "Praia Oeste", "direcao": [-1, 0.1] },
-    { "id": "sudoeste", "nome": "Praia Sudoeste", "direcao": [-0.5, 0.86] }
+    { "id": "sul", "nome": "Praia Sul", "zona": "Sul", "dificuldade": "Fácil", "direcao": [0, 1] },
+    { "id": "sudeste", "nome": "Praia Sudeste", "zona": "Sudeste", "dificuldade": "Fácil", "direcao": [0.72, 0.7] },
+    { "id": "leste", "nome": "Praia Leste", "zona": "Leste", "dificuldade": "Médio", "direcao": [1, 0.05] },
+    { "id": "montanha_leste", "nome": "Pé da Montanha Nevada – leste (frio!)", "zona": "Norte", "dificuldade": "Difícil", "pos": [-440, -900] },
+    { "id": "montanha_oeste", "nome": "Pé da Montanha Nevada – oeste (frio!)", "zona": "Norte", "dificuldade": "Difícil", "pos": [-1480, -1080] },
+    { "id": "oeste", "nome": "Praia Oeste", "zona": "Oeste", "dificuldade": "Médio", "direcao": [-1, 0.1] },
+    { "id": "sudoeste", "nome": "Praia Sudoeste", "zona": "Sudoeste", "dificuldade": "Fácil", "direcao": [-0.5, 0.86] }
   ],
 
   "vegetacao": {

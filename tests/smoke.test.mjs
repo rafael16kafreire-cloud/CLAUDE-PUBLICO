@@ -724,8 +724,14 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   check('Morte: tela de morte e itens no saco de morte', dead.state === 'dead' && dead.screen && dead.bagItems === before && dead.invLeft === 0, JSON.stringify({ ...dead, before }));
   await page.screenshot({ path: `${SHOTS}/09-pc-tela-de-morte.png` });
 
-  const pins = await page.evaluate(() => ({ pins: document.querySelectorAll('.map-pin').length, labels: [...document.querySelectorAll('.map-label')].map((l) => l.textContent) }));
-  check('Morte: mapa mostra os pontos de renascer e o Pântano', pins.pins >= 6 && pins.labels.includes('Pântano'), JSON.stringify(pins));
+  const pins = await page.evaluate(() => ({
+    zonas: [...document.querySelectorAll('.zone-btn')].map((b) => b.textContent),
+    pontos: document.querySelectorAll('.map-pin').length,
+    mapa: !!document.querySelector('.death-map')?.src,
+    xVermelho: !!document.querySelector('.map-death'),
+    criarNovo: /criar novo/i.test(document.querySelector('.death').textContent),
+  }));
+  check('Morte: mapa de relevo, X vermelho e lista de zonas de respawn (sem "criar novo sobrevivente")', pins.zonas.length >= 6 && pins.pontos === pins.zonas.length && pins.mapa && pins.xVermelho && !pins.criarNovo && pins.zonas.some((z) => /^Zona Leste 1 \(Médio\)$/.test(z)), JSON.stringify(pins));
   await page.click('#respawn-leste');
   await page.click('#respawn-confirm');
   await frames(page, 20);

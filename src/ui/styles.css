@@ -1896,3 +1896,99 @@ html, body, button, input, select, textarea, .title { font-family: var(--font-ui
 .msg.msg-item.out { transform: none; }
 .msg.msg-item { animation: msg-in-l 0.2s ease-out; }
 @keyframes msg-in-l { from { opacity: 0; transform: translateX(-16px); } }
+
+/* ---------- Tela de morte (estilo ARK): visão vermelha que escurece + mapa de respawn ---------- */
+.death-fade { position: absolute; inset: 0; z-index: 19; pointer-events: none; }
+.death-fade[hidden] { display: none; }
+.death-fade::before, .death-fade::after { content: ""; position: absolute; inset: 0; opacity: 0; }
+.death-fade::before { background: radial-gradient(ellipse at center, rgba(150, 12, 12, 0.4) 0%, rgba(105, 0, 0, 0.92) 100%); }
+.death-fade::after { background: #000; }
+.death-fade.run::before { animation: df-red 3.2s ease-out forwards; }
+.death-fade.run::after { animation: df-black 3.2s ease-in forwards; }
+@keyframes df-red { 0% { opacity: 0; } 14% { opacity: 1; } 100% { opacity: 1; } }
+@keyframes df-black { 0%, 38% { opacity: 0; } 100% { opacity: 1; } }
+
+.overlay.death {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.42fr);
+  gap: 1.4vw;
+  align-items: center;
+  padding: 6vh 12vw 5vh;
+  background:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='56' height='97'><path d='M28 2 54 17v30L28 62 2 47V17Z M28 62v33 M2 47-26 62 M54 47l28 15' fill='none' stroke='%237fe3ff' stroke-opacity='0.07' stroke-width='1.2'/></svg>") 0 0 / 56px 97px,
+    #02080d;
+  font-family: var(--font-ui);
+  color: #cfeffa;
+}
+.overlay.death[hidden] { display: none; }
+.dz-time { position: absolute; top: 1.2vh; left: 3.5vw; font-size: max(13px, 2.3vh); font-weight: 600; letter-spacing: 0.04em; color: #4fd0f0; }
+.dz-cause { position: absolute; top: 1.2vh; left: 50%; transform: translateX(-50%); margin: 0; font-size: max(13px, 2.3vh); font-weight: 600; color: #ff9a8c; text-shadow: 0 0 4px #000; white-space: nowrap; }
+.dz-left { display: flex; flex-direction: column; gap: 1.2vh; min-width: 0; align-items: stretch; }
+.dz-frame { display: flex; justify-content: center; padding: 1vh; border: 1px solid rgba(127, 227, 255, 0.35); background: rgba(3, 20, 31, 0.72); box-shadow: inset 0 0 3vh rgba(60, 180, 220, 0.12); }
+.dz-plot {
+  position: relative;
+  width: min(74vh, 100%);
+  aspect-ratio: 1 / 1;
+  border: 1px solid rgba(127, 227, 255, 0.3);
+  background:
+    linear-gradient(rgba(127, 227, 255, 0.07) 1px, transparent 1px) 0 0 / 10% 10%,
+    linear-gradient(90deg, rgba(127, 227, 255, 0.07) 1px, transparent 1px) 0 0 / 10% 10%,
+    radial-gradient(ellipse at 40% 20%, rgba(60, 170, 210, 0.18), transparent 55%),
+    #020b11;
+}
+.dz-plot .death-map { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.dz-ticks, .death-pins { position: absolute; inset: 0; pointer-events: none; }
+.death-pins > * { pointer-events: auto; }
+.dz-tick { position: absolute; font-size: max(11px, 2.3vh); font-weight: 600; color: #3fb8da; text-shadow: 0 0 3px #000; }
+.dz-tick-y { left: 1.4%; transform: translateY(-50%); }
+.dz-tick-x { bottom: 1%; transform: translateX(-50%); }
+.dz-plot .map-death { font-size: max(22px, 5.2vh); line-height: 1; color: #ff6a5c; text-shadow: 0 0 8px rgba(255, 70, 60, 0.9), 0 0 2px #000; }
+.dz-plot .map-pin {
+  position: absolute;
+  width: 1.7vh; height: 1.7vh; min-width: 9px; min-height: 9px;
+  padding: 0;
+  transform: translate(-50%, -50%) rotate(45deg);
+  border: 1px solid rgba(170, 240, 255, 0.85);
+  background: rgba(60, 190, 230, 0.35);
+  box-shadow: 0 0 5px rgba(80, 210, 255, 0.6);
+}
+.dz-plot .map-pin.selected { width: 2.6vh; height: 2.6vh; background: #bff4ff; border-color: #fff; box-shadow: 0 0 10px #7fe3ff; z-index: 2; }
+.dz-filter { display: flex; align-items: center; gap: 1.2vh; font-size: max(13px, 2.5vh); font-weight: 700; letter-spacing: 0.05em; color: #e4f8ff; }
+.dz-filter input {
+  flex: 1; min-width: 0; height: 4.8vh; padding: 0 1.2vh;
+  border: 1px solid rgba(127, 227, 255, 0.35); background: rgba(3, 20, 31, 0.8);
+  color: #cfeffa; font: inherit; font-weight: 500; letter-spacing: 0;
+}
+.dz-filter input::placeholder { color: rgba(127, 227, 255, 0.35); }
+.dz-side { display: flex; flex-direction: column; gap: 1.4vh; min-width: 0; max-height: 88vh; }
+.dz-title { margin: 0 0 0.4vh; text-align: center; font-size: max(18px, 4.4vh); font-weight: 700; letter-spacing: 0.03em; color: #c9f1ff; text-shadow: 0 0 10px rgba(80, 210, 255, 0.5); }
+.dz-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-right: 0.8vh; scrollbar-width: thin; scrollbar-color: #3a97b4 rgba(10, 40, 56, 0.6); }
+.dz-list::-webkit-scrollbar { width: 1.1vh; }
+.dz-list::-webkit-scrollbar-track { background: rgba(10, 40, 56, 0.6); }
+.dz-list::-webkit-scrollbar-thumb { background: #3a97b4; }
+.zone-btn {
+  display: block; width: 100%; height: 7.4vh; margin: 0 0 1.2vh; padding: 0 1.6vh;
+  text-align: left; font: 600 max(14px, 2.6vh) var(--font-ui); letter-spacing: 0.02em; color: #bfe6f4;
+  background: rgba(10, 48, 68, 0.55); border: 1px solid rgba(127, 227, 255, 0.22); border-radius: 0;
+}
+.zone-btn[hidden] { display: none; }
+.zone-btn.selected { background: rgba(32, 150, 182, 0.78); border-color: #c4f4ff; color: #fff; }
+.dz-btn {
+  min-height: 9vh; padding: 0.6vh 1.2vh;
+  font: 700 max(14px, 2.7vh)/1.15 var(--font-ui); letter-spacing: 0.03em; text-transform: uppercase; color: #e2f8ff;
+  background: rgba(18, 112, 142, 0.92); border: 1px solid rgba(170, 238, 255, 0.55); border-radius: 0;
+}
+.dz-btn:active { background: rgba(30, 150, 185, 0.95); }
+@media (orientation: portrait) {
+  .overlay.death { grid-template-columns: 1fr; padding: 6vh 4vw 3vh; overflow-y: auto; }
+  .dz-plot { width: 100%; }
+}
+
+/* ---------- Títulos: Jost (estilo Futura); interface: Rajdhani ---------- */
+:root { --font-title: "Jost", "Josefin Sans", "Century Gothic", "Trebuchet MS", system-ui, sans-serif; }
+.overlay h2, .overlay h3, .pause-head h2, .inv-head h2, .rd-head h3, .death-title, .dz-title {
+  font-family: var(--font-title);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+.dz-title { font-weight: 700; font-size: max(17px, 3.9vh); }
