@@ -1843,3 +1843,10 @@ html, body, button, input, select, textarea, .title { font-family: var(--font-ui
 .start .menu-page[hidden] { display: none; }
 .start .menu-page[data-page="jogar"]:not(:has(*:not([hidden]) )) { display: none; }
 @media (max-height: 460px) { .start .menu-page { font-size: 3vh; } }
+/* ajuste de proporção: logo no centro sem encostar no menu; painel da direita mais estreito */
+.start-logo { left: 56vw; width: min(26vw, 70vh); top: 50%; }
+.start .menu-item, .start .menu-tab { font-size: 4.6vh; }
+.start-menu { top: 29vh; gap: 2.8vh; }
+.start-menu .menu-tabs { gap: 2.8vh; }
+.start .menu-page { right: 5vw; width: min(24vw, 440px); font-size: 2.3vh; }
+.start .menu-tip { opacity: 1 !important; color: #e8f6ff !important; margin: 0; }
