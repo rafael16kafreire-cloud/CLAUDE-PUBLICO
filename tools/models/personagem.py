@@ -413,7 +413,7 @@ def braco_fp():
         # sobe o perfil do braço: pulso (s ~0) -> cotovelo (0.26) -> bíceps (0.5)
         sa = 0.56 - s            # posição no perfil BRACO (0.56 = pulso)
         rx, rz = interp(BRACO, max(0.0, sa))
-        k = 1.1
+        k = 0.96
         est.append(((0, 0.0, float(z)), (1, 0, 0), (0, 1, 0), rx * k, rz * k, float(s)))
     # theta=0 -> +x ; theta=pi/2 -> +y (costas da mão para cima). No perfil BRACO "front" era o lado do bíceps:
     # aqui o bíceps aponta para baixo (-y), então espelhamos o relevo usando 3*pi/2 como frente.
@@ -437,8 +437,10 @@ def braco_fp():
     th_pts = [(-0.046, 0.0, 0.0), (-0.052, -0.004, -0.028), (-0.044, -0.014, -0.058), (-0.03, -0.028, -0.082), (-0.012, -0.036, -0.088)]
     hand.add(cano(th_pts, [0.022, 0.019, 0.0165, 0.0145, 0.013], 10, pele))
     hand.add(elipsoide((-0.052, -0.004, -0.028), 0.018, tuple(PELE), 8, 6, (1.1, 1.0, 1.1)))
+    hand.V = [(v[0] * 1.3, v[1] * 1.3, v[2] * 1.3) for v in hand.V]
     m.add(hand)
-    # pulseira de couro (no antebraço) + placa com gema verde, para cima
+    return m
+    # (pulseira e gema: peças separadas no jogo)
     est2 = []
     for z in np.linspace(0.19, 0.25, 5):
         s = z - 0.045

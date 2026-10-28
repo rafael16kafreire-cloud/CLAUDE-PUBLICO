@@ -23,13 +23,22 @@ function skinArm() {
   hand.position.z = -0.26;
   const arm = new THREE.Mesh(skinGeometry(FP_BRACO), skinMaterial(FP_TEXTURA, true));
   hand.add(arm);
-  // gema verde da pulseira (brilha e pulsa devagar)
+  // pulseira de couro com placa de metal e a gema verde (brilha e pulsa devagar)
+  const couro = new THREE.MeshLambertMaterial({ color: '#3a2618' });
+  const metal = new THREE.MeshLambertMaterial({ color: '#5b5f63' });
+  const faixa = new THREE.Mesh(new THREE.CylinderGeometry(0.056, 0.058, 0.04, 22), couro);
+  faixa.rotation.x = Math.PI / 2;
+  faixa.scale.set(1.06, 1, 0.97);
+  faixa.position.set(0, 0, 0.17);
+  const placa = new THREE.Mesh(new THREE.CylinderGeometry(0.021, 0.021, 0.008, 18), metal);
+  placa.position.set(0, 0.0545, 0.17);
+  hand.add(faixa, placa);
   const gem = new THREE.Mesh(
-    new THREE.SphereGeometry(0.014, 12, 8),
+    new THREE.SphereGeometry(0.0125, 14, 10),
     new THREE.MeshBasicMaterial({ color: '#3dff86' }),
   );
-  gem.scale.set(1, 0.55, 1.25);
-  gem.position.set(0, 0.0745, 0.22);
+  gem.scale.set(1, 0.6, 1);
+  gem.position.set(0, 0.0585, 0.17);
   hand.add(gem);
   g.userData.gem = gem;
   g.add(hand);
