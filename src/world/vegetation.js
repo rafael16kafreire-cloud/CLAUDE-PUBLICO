@@ -419,7 +419,7 @@ export class Vegetation {
 
     // Frustum mais largo que a câmera (não "pisca" nas bordas ao virar).
     const cc = this._cullCam;
-    cc.copy(camera);
+    cc.copy(camera, false); // sem copiar os filhos da câmera (mãos, braço...): era o que custava ~7 ms
     cc.fov = Math.min(170, camera.fov + 55);
     cc.near = 0.5;
     cc.far = viewDistance + 40;
@@ -462,8 +462,6 @@ export class Vegetation {
   _step(budgetMs) {
     const job = this._job;
     const t0 = performance.now();
-    this._dbg = this._dbg ?? { calls: 0, ms: 0, max: 0 };
-    this._dbg.calls++;
     if (job.phase === 'A') {
       const M_ = this.types;
       const { cx, cz, vd2 } = job;
