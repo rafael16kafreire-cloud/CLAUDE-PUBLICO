@@ -13,12 +13,12 @@ const ROPE = new THREE.MeshLambertMaterial({ color: '#a89058' });
 
 // Braço direito em primeira pessoa, simples como o do Minecraft: um bloco comprido na cor da
 // pele do personagem. A ponta da frente é a mão (onde as ferramentas encaixam).
-const BRACO_FP = new THREE.MeshLambertMaterial({ color: '#d0a088' });
+const BRACO_FP = new THREE.MeshLambertMaterial({ color: '#d0a088', emissive: '#7a5a48' });
 function skinArm() {
   const g = new THREE.Group();
   const hand = new THREE.Group();
   hand.position.z = -0.26;
-  const arm = new THREE.Mesh(new THREE.BoxGeometry(0.115, 0.115, 0.66), BRACO_FP);
+  const arm = new THREE.Mesh(new THREE.BoxGeometry(0.095, 0.095, 0.6), BRACO_FP);
   arm.position.z = 0.05; // a ponta da frente fica um pouco além do ponto da mão
   hand.add(arm);
   g.add(hand);
