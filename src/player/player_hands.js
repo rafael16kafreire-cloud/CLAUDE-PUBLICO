@@ -35,7 +35,7 @@ function skinArm() {
   hand.add(faixa, placa);
   const gem = new THREE.Mesh(
     new THREE.SphereGeometry(0.0125, 14, 10),
-    new THREE.MeshBasicMaterial({ color: '#3dff86' }),
+    new THREE.MeshBasicMaterial({ color: '#12d964', toneMapped: false }),
   );
   gem.scale.set(1, 0.6, 1);
   gem.position.set(0, 0.0585, 0.17);
@@ -195,7 +195,7 @@ export class PlayerHands {
     if (!visible) return;
     this._t += dt;
     const gem = this.right.userData.gem;
-    if (gem) gem.material.color.setRGB(0.16 + 0.1 * Math.sin(this._t * 2.2), 0.85 + 0.15 * Math.sin(this._t * 2.2), 0.42 + 0.1 * Math.sin(this._t * 2.2));
+    if (gem) gem.material.color.setRGB(0.05 + 0.04 * Math.sin(this._t * 2.2), 0.75 + 0.2 * Math.sin(this._t * 2.2), 0.3 + 0.1 * Math.sin(this._t * 2.2));
     const fl = this.tools.tocha?.userData.flame;
     if (fl && this.toolKind === 'tocha') fl.scale.set(1, 0.85 + Math.sin(this._t * 17) * 0.12 + Math.sin(this._t * 41) * 0.06, 1);
     // aterrissagem: as mãos "afundam"
