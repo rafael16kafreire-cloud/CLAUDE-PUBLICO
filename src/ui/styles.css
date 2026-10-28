@@ -1738,3 +1738,20 @@ body.is-touch.touch-botoes .hotbar {
 .sg-g1 { width: 15vmin; height: 15vmin; }
 .sg-g2 { width: 26vmin; height: 26vmin; background: radial-gradient(circle, rgba(255, 200, 140, 0.1) 0, rgba(160, 200, 255, 0.14) 50%, transparent 72%); }
 .sg-g3 { width: 9vmin; height: 9vmin; background: radial-gradient(circle, rgba(255, 240, 200, 0.3) 0, transparent 70%); }
+
+/* PC: barra rápida no canto de baixo à direita em grade 4x2 (como no ARK Mobile); status no centro embaixo */
+body:not(.is-touch) .hotbar {
+  --hb: clamp(40px, 7.4vh, 58px);
+  left: auto; right: calc(var(--safe-r, 0px) + 12px);
+  bottom: calc(12px + var(--safe-b));
+  transform: none;
+  display: grid;
+  grid-template-columns: repeat(4, var(--hb));
+  grid-auto-rows: var(--hb);
+  gap: 0; padding: 0; border-radius: 0;
+  background: rgba(8, 40, 56, 0.28);
+  border: 1px solid rgba(110, 215, 245, 0.45);
+}
+body:not(.is-touch) .hb-slot { border: 1px solid rgba(110, 215, 245, 0.35); border-radius: 0; background: rgba(8, 40, 56, 0.18); }
+body:not(.is-touch) .hud-gauges { bottom: calc(var(--safe-b) + 12px); }
+body.is-touch:not(.touch-botoes) .hud-gauges { bottom: calc(var(--safe-b) + 10px); }
