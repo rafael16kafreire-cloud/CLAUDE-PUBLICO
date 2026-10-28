@@ -13,14 +13,76 @@ const ROPE = new THREE.MeshLambertMaterial({ color: '#a89058' });
 
 // Braço direito em primeira pessoa, simples como o do Minecraft: um bloco comprido na cor da
 // pele do personagem. A ponta da frente é a mão (onde as ferramentas encaixam).
-const BRACO_FP = new THREE.MeshLambertMaterial({ color: '#d0a088', emissive: '#7a5a48' });
+// Textura de pele em pixels (com pontinhos de cor, sardas e borda mais escura em cada
+// face) + sombra suave pintada nos vértices: o ombro (perto da câmera) fica mais escuro, a
+// mão mais clara, e a parte de baixo escurece. Assim o bloco tem volume e não vira uma
+// mancha chapada.
+function skinTexture() {
+  const N = 16;
+  const c = document.createElement('canvas');
+  c.width = N;
+  c.height = N;
+  const g = c.getContext('2d');
+  let seed = 7;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  for (let y = 0; y < N; y++) {
+    for (let x = 0; x < N; x++) {
+      const k = 0.965 + rnd() * 0.07; // pixel um pouco mais claro/escuro
+      let r = 226 * k;
+      let gg = 178 * k;
+      let b = 150 * k;
+      if (rnd() < 0.02) { r *= 0.9; gg *= 0.85; b *= 0.83; } // sarda bem leve
+      // borda da face um pouco mais escura (marca os cantos do bloco)
+      const edge = x === 0 || y === 0 || x === N - 1 || y === N - 1;
+      if (edge) { r *= 0.95; gg *= 0.94; b *= 0.93; }
+      g.fillStyle = `rgb(${r | 0},${gg | 0},${b | 0})`;
+      g.fillRect(x, y, 1, 1);
+    }
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.magFilter = THREE.NearestFilter;
+  t.minFilter = THREE.NearestFilter;
+  t.generateMipmaps = false;
+  return t;
+}
+
+function armGeometry() {
+  const geo = new THREE.BoxGeometry(0.15, 0.15, 0.38, 2, 2, 6);
+  const pos = geo.getAttribute('position');
+  const col = new Float32Array(pos.count * 3);
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i);
+    const y = pos.getY(i);
+    const z = pos.getZ(i);
+    const t = THREE.MathUtils.clamp(0.5 - z / 0.38, 0, 1); // 0 = ombro (perto da câmera), 1 = mão
+    let k = 0.72 + 0.34 * t; // ombro um pouco escuro -> mão clara
+    k *= 1 - 0.18 * THREE.MathUtils.smoothstep(-y, 0.0, 0.075); // barriga do braço escurece
+    k *= 1 - 0.08 * THREE.MathUtils.smoothstep(Math.abs(x), 0.02, 0.075); // lados mais escuros que o meio
+    k *= 0.9 + 0.1 * THREE.MathUtils.smoothstep(t, 0.78, 0.9); // punho um pouco mais claro (nós dos dedos)
+    col[i * 3] = k;
+    col[i * 3 + 1] = k * 0.985;
+    col[i * 3 + 2] = k * 0.98;
+  }
+  geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  return geo;
+}
+
+let BRACO_FP = null;
 function skinArm() {
+  if (!BRACO_FP) BRACO_FP = new THREE.MeshLambertMaterial({ map: skinTexture(), vertexColors: true, emissive: '#3a2a24' });
   const g = new THREE.Group();
   const hand = new THREE.Group();
   hand.position.z = -0.26;
-  const arm = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.15, 0.38), BRACO_FP);
+  const arm = new THREE.Mesh(armGeometry(), BRACO_FP);
   arm.position.z = 0.0; // a ponta da frente fica na altura da mão
   hand.add(arm);
+  // dedos: um bloco menor na ponta, com uma divisória (dá cara de mão fechada)
+  const fgeo = new THREE.BoxGeometry(0.15, 0.06, 0.07);
+  fgeo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(fgeo.getAttribute('position').count * 3).fill(0.92), 3));
+  const fingers = new THREE.Mesh(fgeo, BRACO_FP);
+  fingers.position.set(0, -0.045, -0.2);
+  hand.add(fingers);
   g.add(hand);
   g.userData.fist = hand;
   g.scale.setScalar(1.25);
