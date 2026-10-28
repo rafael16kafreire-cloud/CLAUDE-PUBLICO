@@ -20,6 +20,18 @@ export class SunGlare {
     el.hidden = true;
     el.innerHTML = '<i class="sg-core"></i><i class="sg-streak"></i><i class="sg-g sg-g1"></i><i class="sg-g sg-g2"></i><i class="sg-g sg-g3"></i>';
     parent.appendChild(el);
+    // lavagem branca em volta do sol (tela clareia), some devagar quando desvia o olhar
+    const wash = document.createElement('div');
+    wash.className = 'sun-wash';
+    wash.hidden = true;
+    parent.appendChild(wash);
+    this.wash = wash;
+    this.dazzle = 0;      // 0 a 1: quão ofuscado o olho está (sobe rápido, desce devagar)
+    this.amt = 0;         // força do clarão neste quadro (antes da adaptação)
+    this._sx = 0;
+    this._sy = 0;
+    this._ray = new THREE.Raycaster();
+    this._occB = 0;       // sol atrás de construção
     this.el = el;
     this.parts = [...el.children];
     this._sc = '';
@@ -29,7 +41,11 @@ export class SunGlare {
   }
 
   // world: precisa de heightAt(x, z). active: false no menu e embaixo d'água.
-  update(dt, camera, sky, world, active) {
+  update(dt, camera, sky, world, active, brightness = 1) {
+    // adaptação do olho: ofusca rápido, recupera devagar
+    this.dazzle += (this.amt - this.dazzle) * Math.min(1, dt * (this.amt > this.dazzle ? 5 : 0.7));
+    this.amt = 0;
+    this._wash(brightness);
     const night = sky.night ?? 0;
     const sunUp = 1 - smooth(0.25, 0.75, night);
     if (!active || sunUp < 0.02) {
@@ -58,8 +74,22 @@ export class SunGlare {
         }
       }
       this._occluded = hit;
+      // atrás de uma construção? (só as peças perto, poucas vezes por segundo)
+      let b = 0;
+      if (!hit && world.structures?.length) {
+        const near = [];
+        for (const st of world.structures) {
+          if (st.root && st.root.visible !== false && Math.hypot(st.root.position.x - p.x, st.root.position.z - p.z) < 40) near.push(st.root);
+        }
+        if (near.length) {
+          this._ray.set(p, dir);
+          this._ray.far = 60;
+          b = this._ray.intersectObjects(near, true).length ? 1 : 0;
+        }
+      }
+      this._occB = b;
     }
-    this._occCur += (this._occluded - this._occCur) * Math.min(1, dt * 6);
+    this._occCur += (Math.max(this._occluded, this._occB) - this._occCur) * Math.min(1, dt * 6);
 
     _v.copy(camera.position).addScaledVector(dir, 1000).project(camera);
     const W = window.innerWidth;
@@ -67,7 +97,11 @@ export class SunGlare {
     const sx = (_v.x * 0.5 + 0.5) * W;
     const sy = (-_v.y * 0.5 + 0.5) * H;
     const edge = 1 - smooth(1.0, 1.7, Math.max(Math.abs(_v.x), Math.abs(_v.y)));
-    const amt = sunUp * smooth(0.1, 0.45, dot) * edge * (1 - this._occCur * 0.92);
+    // o brilho (gamma) da pessoa muda a força do clarão
+    const amt = sunUp * smooth(0.1, 0.45, dot) * edge * (1 - this._occCur * 0.92) * Math.min(1.35, 0.6 + 0.4 * brightness);
+    this.amt = Math.min(1, amt * smooth(0.3, 1, dot));
+    this._sx = sx;
+    this._sy = sy;
     if (amt < 0.01) {
       this.el.hidden = true;
       return;
@@ -95,5 +129,19 @@ export class SunGlare {
     put(g1, cx + (cx - sx) * 0.55, cy + (cy - sy) * 0.55, ghost * 0.9, 1);
     put(g2, cx + (cx - sx) * 1.05, cy + (cy - sy) * 1.05, ghost * 0.75, 1.7);
     put(g3, cx + (cx - sx) * 0.15, cy + (cy - sy) * 0.15, ghost * 0.6, 0.7);
+  }
+
+  // lavagem branca: círculo grande em volta do sol + véu leve na tela toda
+  _wash(brightness) {
+    const d = this.dazzle;
+    if (d < 0.015) {
+      this.wash.hidden = true;
+      return;
+    }
+    this.wash.hidden = false;
+    const k = Math.min(1.4, 0.55 + 0.45 * brightness);
+    this.wash.style.setProperty('--wx', `${this._sx.toFixed(0)}px`);
+    this.wash.style.setProperty('--wy', `${this._sy.toFixed(0)}px`);
+    this.wash.style.opacity = Math.min(0.92, d * 0.85 * k).toFixed(3);
   }
 }

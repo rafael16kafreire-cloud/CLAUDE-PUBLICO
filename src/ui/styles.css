@@ -1992,3 +1992,13 @@ html, body, button, input, select, textarea, .title { font-family: var(--font-ui
   letter-spacing: 0.06em;
 }
 .dz-title { font-weight: 700; font-size: max(17px, 3.9vh); }
+
+/* ---------- Ofuscamento do sol: lavagem branca (some devagar quando desvia o olhar) ---------- */
+.sun-wash {
+  position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen; opacity: 0;
+  --wx: 50%; --wy: 50%;
+  background:
+    radial-gradient(circle at var(--wx) var(--wy), rgba(255, 252, 240, 0.95) 0, rgba(255, 246, 220, 0.7) 14%, rgba(255, 240, 205, 0.35) 38%, rgba(255, 236, 200, 0.16) 70%),
+    rgba(255, 244, 224, 0.1);
+}
+.sun-wash[hidden] { display: none; }

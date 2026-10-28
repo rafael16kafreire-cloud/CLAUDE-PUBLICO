@@ -13,9 +13,10 @@ import { VEG_BL_MODELOS, VEG_BL_TEXTURAS } from './textures/veg_blender.js';
 import { VEG_CX_MODELOS, VEG_CX_TEXTURAS } from './textures/veg_caixa.js';
 import { VEG_PL_MODELOS, VEG_PL_TEXTURAS } from './textures/veg_palmas.js';
 import { VEG_CP_MODELOS, VEG_CP_TEXTURAS } from './textures/veg_copas.js';
+import { VEG_CAP_MODELOS, VEG_CAP_TEXTURAS } from './textures/veg_capim.js';
 
-const VEG_MODELOS = { ...M1, ...VEG_MODELOS2, ...VEG_TRONCOS, ...VEG_BL_MODELOS, ...VEG_CX_MODELOS, ...VEG_PL_MODELOS, ...VEG_CP_MODELOS };
-const VEG_TEXTURAS = { ...T1, ...VEG_TEXTURAS2, ...VEG_TRONCOS_TEX, ...VEG_BL_TEXTURAS, ...VEG_CX_TEXTURAS, ...VEG_PL_TEXTURAS, ...VEG_CP_TEXTURAS, folhagem_arbusto: FOLHAGEM_COR };
+const VEG_MODELOS = { ...M1, ...VEG_MODELOS2, ...VEG_TRONCOS, ...VEG_BL_MODELOS, ...VEG_CX_MODELOS, ...VEG_PL_MODELOS, ...VEG_CP_MODELOS, ...VEG_CAP_MODELOS };
+const VEG_TEXTURAS = { ...T1, ...VEG_TEXTURAS2, ...VEG_TRONCOS_TEX, ...VEG_BL_TEXTURAS, ...VEG_CX_TEXTURAS, ...VEG_PL_TEXTURAS, ...VEG_CP_TEXTURAS, ...VEG_CAP_TEXTURAS, folhagem_arbusto: FOLHAGEM_COR };
 import { addWind } from './materials.js';
 import { addLeafLight } from './foliage_texture.js';
 

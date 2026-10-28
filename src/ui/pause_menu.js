@@ -77,6 +77,8 @@ export class PauseMenu {
                 <option value="media">Média</option>
                 <option value="alta">Alta</option>
               </select>
+              <label for="opt-bright">Brilho (gamma) <output id="opt-bright-out"></output></label>
+              <input type="range" id="opt-bright" min="0.6" max="1.6" step="0.05">
               <label for="opt-view">Distância de visão <output id="opt-view-out"></output></label>
               <input type="range" id="opt-view" min="100" max="320" step="10">
               <label for="opt-smaa">Suavizar bordas (SMAA)</label>
@@ -141,6 +143,7 @@ export class PauseMenu {
     this.fields = {
       quality: $('opt-quality'),
       view: $('opt-view'),
+      bright: $('opt-bright'),
       vol: $('opt-vol'),
       music: $('opt-music'),
       sens: $('opt-sens'),
@@ -155,6 +158,7 @@ export class PauseMenu {
     };
     this.outs = {
       view: $('opt-view-out'),
+      bright: $('opt-bright-out'),
       vol: $('opt-vol-out'),
       music: $('opt-music-out'),
       sens: $('opt-sens-out'),
@@ -199,6 +203,10 @@ export class PauseMenu {
       settings.set('volume', Number(f.vol.value));
       this.refresh();
     });
+    f.bright.addEventListener('input', () => {
+      settings.set('brightness', Number(f.bright.value));
+      this.refresh();
+    });
     f.sens.addEventListener('input', () => {
       settings.set('sensitivity', Number(f.sens.value));
       this.refresh();
@@ -226,6 +234,8 @@ export class PauseMenu {
     f.quality.value = v.quality;
     f.view.value = String(v.viewDistance);
     f.sens.value = String(v.sensitivity);
+    f.bright.value = String(v.brightness ?? 1);
+    this.outs.bright.textContent = `${Math.round((v.brightness ?? 1) * 100)}%`;
     f.vol.value = String(v.volume ?? 0.8);
     f.music.value = String(v.music ?? 0.35);
     this.outs.music.textContent = `${Math.round((v.music ?? 0.35) * 100)}%`;

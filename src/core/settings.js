@@ -42,6 +42,7 @@ const DEFAULTS = {
   cameraMode: 'primeira',  // primeira | terceira
   autoQuality: true,       // baixa a qualidade sozinho se ficar lento
   playerName: '',          // nome no co-op
+  brightness: 1.0,         // gamma/brilho da imagem (0.6 a 1.6); também muda a força do clarão do sol
   volume: 0.8,             // som (0 = mudo)
   music: 0.35,             // música de fundo (0 = sem música)
   buttonLayout: null,      // posição de cada botão de toque ({ id: [x, y] } em fração da tela) ou null = padrão

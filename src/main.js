@@ -1093,8 +1093,11 @@ function boot(hotData = {}) {
     if (ctx && game.state !== STATE.MENU) updatePushers(focus);
     world.update(dt, camera, focus);
     // exposição do filme acompanha o sol (mais luz de dia, menos à noite) e brilho do sol na tela
-    renderer.toneMappingExposure += ((world.sky.exposure ?? 1.15) - renderer.toneMappingExposure) * Math.min(1, dt * 2);
-    sunGlare.update(dt, camera, world.sky, world, game.state === STATE.PLAYING && !world.cameraUnderwater);
+    // brilho (gamma) escolhido nas opções + ofuscamento (olhando para o sol a imagem clareia e depois o olho se adapta)
+    const bright = settings.get('brightness') ?? 1;
+    const expTarget = (world.sky.exposure ?? 1.15) * bright * (1 + 0.45 * sunGlare.dazzle * bright);
+    renderer.toneMappingExposure += (expTarget - renderer.toneMappingExposure) * Math.min(1, dt * (expTarget > renderer.toneMappingExposure ? 6 : 1.2));
+    sunGlare.update(dt, camera, world.sky, world, game.state === STATE.PLAYING && !world.cameraUnderwater, bright);
     if (game.state !== STATE.MENU) {
       hud.update(dt);
       minimap.update(dt, player, camCtl.yaw);

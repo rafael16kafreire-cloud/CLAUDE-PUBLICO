@@ -177,12 +177,12 @@
     "sub_bosque": {
       "passo_m": 3,
       "biomas": {
-        "selva": { "capim": 0.1, "samambaia": 0.34, "arbusto": 0.08, "pedrinhas": 0.07, "gravetos": 0.05, "samambaia_gigante": 0.045, "media_a": 0.008, "media_b": 0.008, "acai": 0.008, "arbusto_mejo": 0.008, "arbusto_escura": 0.006 },
-        "igapo": { "samambaia": 0.22, "junco": 0.1, "arbusto": 0.04, "gravetos": 0.03, "pedrinhas": 0.03 },
+        "selva": { "capim": 0.1, "capim_bq_a": 0.03, "capim_bq_d": 0.02, "margarida_bq": 0.006, "samambaia": 0.34, "arbusto": 0.08, "pedrinhas": 0.07, "gravetos": 0.05, "samambaia_gigante": 0.045, "media_a": 0.008, "media_b": 0.008, "acai": 0.008, "arbusto_mejo": 0.008, "arbusto_escura": 0.006 },
+        "igapo": { "capim_bq_a": 0.03, "samambaia": 0.22, "junco": 0.1, "arbusto": 0.04, "gravetos": 0.03, "pedrinhas": 0.03 },
         "praia": { "capim_praia": 0.05, "arbusto": 0.02, "pedrinhas": 0.13, "gravetos": 0.03 },
         "neve": { "arbusto_neve": 0.16, "capim": 0.04 },
-        "campos": { "capim": 0.5, "arbusto": 0.04, "pedrinhas": 0.02 },
-        "serra": { "capim": 0.12, "arbusto": 0.05, "pedrinhas": 0.05 }
+        "campos": { "capim": 0.5, "capim_bq_a": 0.13, "capim_bq_d": 0.09, "margarida_bq": 0.04, "arbusto": 0.04, "pedrinhas": 0.02 },
+        "serra": { "capim": 0.12, "capim_bq_a": 0.05, "capim_bq_d": 0.03, "arbusto": 0.05, "pedrinhas": 0.05 }
       }
     }
   },
