@@ -136,15 +136,17 @@ export function buildSaddle(c, kind) {
     g.add(box(pw * 1.15, 0.06 * s, len2 * 1.2, 0, back + SELA.seat * f * 0.7, 0, WOOD));
     for (const side of [-1, 1]) g.add(box(0.05 * s, 0.35 * s, len2 * 1.2, side * pw * 0.57, back + SELA.seat * f * 0.7 + 0.17 * s, 0, WOOD));
   }
-  // presa no quadril: a sela acompanha o balanço do corpo
+  // presa no quadril: a sela acompanha o balanço do corpo. Usa a pose de ligação do
+  // esqueleto (boneInverses), não a pose de agora: assim o encaixe não depende de o
+  // bicho estar no meio de uma animação quando a sela é posta.
   const hips = c.bones?.hips;
-  if (hips) {
-    hips.updateWorldMatrix(true, false);
-    const inv = new THREE.Matrix4().copy(c.mesh.matrixWorld).invert().multiply(hips.matrixWorld).invert();
-    // ponto da sela no espaço do modelo -> espaço do osso
+  const sk = c.mesh.skeleton;
+  const bi = hips && sk ? sk.bones.indexOf(hips) : -1;
+  if (bi >= 0) {
     const holder = new THREE.Group();
+    holder.matrixAutoUpdate = false;
+    holder.matrix.copy(sk.boneInverses[bi]); // espaço do modelo -> espaço do osso
     holder.add(g);
-    holder.applyMatrix4(inv);
     hips.add(holder);
     return holder;
   }
