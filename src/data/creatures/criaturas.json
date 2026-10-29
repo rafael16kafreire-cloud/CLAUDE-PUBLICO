@@ -281,8 +281,7 @@
     "carne_crua": [6, 10],
     "couro": [4, 8],
     "ossos": [2, 4],
-    "queratina": [5, 9],
-    "quitina": [3, 6]
+    "queratina": [5, 9]
    },
    "pode_domar": true,
    "comida_preferida": "baga_mejo",
@@ -719,8 +718,7 @@
     "carne_crua": [8, 14],
     "couro": [6, 10],
     "ossos": [2, 4],
-    "queratina": [4, 7],
-    "quitina": [3, 5]
+    "queratina": [4, 7]
    },
    "pode_domar": true,
    "comida_preferida": "carne_crua",

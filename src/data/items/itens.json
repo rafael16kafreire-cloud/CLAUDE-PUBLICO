@@ -913,19 +913,6 @@
    }
   },
   {
-   "id": "quitina",
-   "nome": "Quitina",
-   "tipo": "recurso",
-   "peso": 0.1,
-   "pilha": 100,
-   "descricao": "Casca dura e placas de bichos blindados (Anquilossauro e Deinosuchus). Armadura e Pasta de Cimento.",
-   "icone": {
-    "forma": "couro",
-    "cor": "#4a3a2a",
-    "cor2": "#8a7050"
-   }
-  },
-  {
    "id": "queratina",
    "nome": "Queratina",
    "tipo": "recurso",
@@ -996,7 +983,7 @@
    "tipo": "recurso",
    "peso": 0.01,
    "pilha": 100,
-   "descricao": "Quitina ou Queratina com pedra, no Pilão. Para construir de pedra e para o Pote.",
+   "descricao": "Queratina com pedra, no Pilão. Para construir de pedra e para o Pote.",
    "icone": {
     "forma": "po",
     "cor": "#a8a49a",
@@ -1194,101 +1181,6 @@
     "forma": "botas",
     "cor": "#8a6a4a",
     "cor2": "#d8c4a4"
-   }
-  },
-  {
-   "id": "capuz_quitina",
-   "nome": "Capuz de Quitina",
-   "tipo": "equipamento",
-   "peso": 4.0,
-   "pilha": 1,
-   "descricao": "Armadura de quitina: protege muito, mas esquenta pouco. Vista no Inventário (Vestir): 50 de armadura.",
-   "equipamento": {
-    "slot": "cabeca",
-    "armadura": 50,
-    "frio": 2,
-    "durabilidade": 50
-   },
-   "icone": {
-    "forma": "capuz",
-    "cor": "#4a3a2a",
-    "cor2": "#8a7050"
-   }
-  },
-  {
-   "id": "camisa_quitina",
-   "nome": "Camisa de Quitina",
-   "tipo": "equipamento",
-   "peso": 6.0,
-   "pilha": 1,
-   "descricao": "Armadura de quitina: protege muito, mas esquenta pouco. Vista no Inventário (Vestir): 50 de armadura.",
-   "equipamento": {
-    "slot": "peito",
-    "armadura": 50,
-    "frio": 2,
-    "durabilidade": 50
-   },
-   "icone": {
-    "forma": "casaco",
-    "cor": "#4a3a2a",
-    "cor2": "#8a7050"
-   }
-  },
-  {
-   "id": "luvas_quitina",
-   "nome": "Luvas de Quitina",
-   "tipo": "equipamento",
-   "peso": 3.0,
-   "pilha": 1,
-   "descricao": "Armadura de quitina: protege muito, mas esquenta pouco. Vista no Inventário (Vestir): 50 de armadura.",
-   "equipamento": {
-    "slot": "maos",
-    "armadura": 50,
-    "frio": 2,
-    "durabilidade": 50
-   },
-   "icone": {
-    "forma": "luvas",
-    "cor": "#4a3a2a",
-    "cor2": "#8a7050"
-   }
-  },
-  {
-   "id": "calca_quitina",
-   "nome": "Calça de Quitina",
-   "tipo": "equipamento",
-   "peso": 6.0,
-   "pilha": 1,
-   "descricao": "Armadura de quitina: protege muito, mas esquenta pouco. Vista no Inventário (Vestir): 50 de armadura.",
-   "equipamento": {
-    "slot": "pernas",
-    "armadura": 50,
-    "frio": 2,
-    "durabilidade": 50
-   },
-   "icone": {
-    "forma": "calca",
-    "cor": "#4a3a2a",
-    "cor2": "#8a7050"
-   }
-  },
-  {
-   "id": "botas_quitina",
-   "nome": "Botas de Quitina",
-   "tipo": "equipamento",
-   "peso": 3.0,
-   "pilha": 1,
-   "descricao": "Armadura de quitina: protege muito, mas esquenta pouco. Vista no Inventário (Vestir): 50 de armadura.",
-   "equipamento": {
-    "slot": "pes",
-    "armadura": 50,
-    "frio": 2,
-    "durabilidade": 50
-   },
-   "icone": {
-    "forma": "botas",
-    "cor": "#4a3a2a",
-    "cor2": "#8a7050"
    }
   },
   {

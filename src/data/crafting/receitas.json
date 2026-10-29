@@ -542,22 +542,6 @@
    "nivel": 13,
    "engrama": 3,
    "ingredientes": {
-    "quitina": 4,
-    "pedra": 8
-   },
-   "estacao": "pilao"
-  },
-  {
-   "id": "pasta_cimento_q",
-   "resultado": "pasta_cimento",
-   "quantidade": 1,
-   "tempo": 1,
-   "xp": 2,
-   "categoria": "Construção",
-   "nivel": 13,
-   "engrama": 3,
-   "engrama_id": "pasta_cimento",
-   "ingredientes": {
     "queratina": 4,
     "pedra": 8
    },
@@ -720,86 +704,6 @@
    "ingredientes": {
     "pelo": 48,
     "lingote_metal": 8,
-    "couro": 6,
-    "fibra": 4
-   },
-   "estacao": "bancada"
-  },
-  {
-   "id": "capuz_quitina",
-   "resultado": "capuz_quitina",
-   "quantidade": 1,
-   "tempo": 3,
-   "xp": 10,
-   "categoria": "Roupas",
-   "nivel": 37,
-   "engrama": 18,
-   "ingredientes": {
-    "quitina": 15,
-    "couro": 7,
-    "fibra": 3
-   },
-   "estacao": "bancada"
-  },
-  {
-   "id": "camisa_quitina",
-   "resultado": "camisa_quitina",
-   "quantidade": 1,
-   "tempo": 3,
-   "xp": 10,
-   "categoria": "Roupas",
-   "nivel": 37,
-   "engrama": 18,
-   "ingredientes": {
-    "quitina": 20,
-    "couro": 10,
-    "fibra": 4
-   },
-   "estacao": "bancada"
-  },
-  {
-   "id": "luvas_quitina",
-   "resultado": "luvas_quitina",
-   "quantidade": 1,
-   "tempo": 3,
-   "xp": 10,
-   "categoria": "Roupas",
-   "nivel": 37,
-   "engrama": 15,
-   "ingredientes": {
-    "quitina": 10,
-    "couro": 5,
-    "fibra": 2
-   },
-   "estacao": "bancada"
-  },
-  {
-   "id": "calca_quitina",
-   "resultado": "calca_quitina",
-   "quantidade": 1,
-   "tempo": 3,
-   "xp": 10,
-   "categoria": "Roupas",
-   "nivel": 37,
-   "engrama": 15,
-   "ingredientes": {
-    "quitina": 25,
-    "couro": 12,
-    "fibra": 5
-   },
-   "estacao": "bancada"
-  },
-  {
-   "id": "botas_quitina",
-   "resultado": "botas_quitina",
-   "quantidade": 1,
-   "tempo": 3,
-   "xp": 10,
-   "categoria": "Roupas",
-   "nivel": 37,
-   "engrama": 15,
-   "ingredientes": {
-    "quitina": 12,
     "couro": 6,
     "fibra": 4
    },

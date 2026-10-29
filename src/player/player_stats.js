@@ -169,8 +169,8 @@ export class PlayerStats {
 
   // Receita já sabida? (custo 0 = sabe desde o começo)
   knows(recipe) {
-    // engrama_id: receitas diferentes do mesmo item (ex.: Pasta de Cimento
-    // com quitina ou queratina) se aprendem juntas
+    // engrama_id: receitas diferentes do mesmo item (ex.: a mesma
+    // receita feita com materiais diferentes) se aprendem juntas
     return !recipe.engrama || this.learned.has(recipe.engrama_id ?? recipe.id);
   }
 
