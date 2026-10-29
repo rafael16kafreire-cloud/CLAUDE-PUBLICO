@@ -1516,6 +1516,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     window.IlhaAndroid = { exit() { window.__fechou = true; } };
   });
   const page = await context.newPage();
+  page.setDefaultTimeout(180000); // gerar a ilha trava a página alguns segundos: o toque em Jogar demora
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(url);
