@@ -186,7 +186,7 @@
         "igapo": { "capim_bq_a": 0.03, "samambaia": 0.22, "junco": 0.1, "arbusto": 0.04, "gravetos": 0.03, "pedrinhas": 0.03 },
         "praia": { "capim_praia": 0.05, "arbusto": 0.02, "pedrinhas": 0.13, "gravetos": 0.03 },
         "neve": { "arbusto_neve": 0.16, "capim": 0.04 },
-        "campos": { "capim": 0.5, "capim_bq_a": 0.22, "capim_bq_d": 0.15, "margarida_bq": 0.07, "arbusto": 0.04, "pedrinhas": 0.02 },
+        "campos": { "capim": 0.04, "capim_bq_a": 0.2, "capim_bq_d": 0.14, "margarida_bq": 0.07, "arbusto": 0.04, "pedrinhas": 0.02 },
         "serra": { "capim": 0.12, "capim_bq_a": 0.05, "capim_bq_d": 0.03, "arbusto": 0.05, "pedrinhas": 0.05 }
       }
     }

@@ -1068,6 +1068,37 @@ export function makeGrassTuft() {
   return g;
 }
 
+// Relva: tufo baixinho (altura de tornozelo, 11 a 20 cm) para cobrir o chão das pastagens.
+// 9 lâminas de 1 triângulo cada (só 9 triângulos por tufo): leve para desenhar milhares juntos.
+export function makeShortTurf() {
+  const verts = [];
+  const winds = [];
+  const cols = [];
+  const base = new THREE.Color('#2f4a1b');
+  const tip = new THREE.Color('#9fbf56');
+  const idx = [];
+  for (let i = 0; i < 9; i++) {
+    const a = i * 2.39;
+    const r = 0.02 + (i % 3) * 0.06;
+    const x = Math.sin(a) * r;
+    const z = Math.cos(a) * r;
+    const h = 0.11 + ((i * 5) % 7) * 0.014;
+    const lean = 0.06 + (i % 3) * 0.05;
+    const w = 0.04;
+    const px = Math.cos(a) * w;
+    const pz = -Math.sin(a) * w;
+    const b0 = verts.length / 3;
+    verts.push(x - px, 0, z - pz, x + px, 0, z + pz, x + Math.sin(a) * lean, h, z + Math.cos(a) * lean);
+    winds.push(0, 0, 1);
+    cols.push(base.r, base.g, base.b, base.r, base.g, base.b, tip.r, tip.g, tip.b);
+    idx.push(b0, b0 + 1, b0 + 2);
+  }
+  const g = sheet(verts, idx, winds);
+  g.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
+  g.computeBoundingSphere();
+  return g;
+}
+
 // Tufo com flores (cor da flor vem da cor da instância)
 export function makeFlowerTuft() {
   const verts = [];
