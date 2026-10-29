@@ -40,7 +40,7 @@ export default {
   // Stamina (energia para correr, pular e nadar)
   // ---------------------------------------------------------
   stamina: {
-    gasto_correr_seg: 8,       // por segundo correndo (100 de stamina = 12,5 s)
+    gasto_correr_seg: 6.7,     // por segundo correndo (100 de stamina = ~15 s). Andar não gasta nada
     gasto_pulo: 10,            // por pulo (10 pulos)
     gasto_nado_seg: 5,         // por segundo nadando (20 s)
     gasto_nado_rapido_seg: 8,  // por segundo nadando rápido
