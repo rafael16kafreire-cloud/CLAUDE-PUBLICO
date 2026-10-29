@@ -227,6 +227,11 @@ export class PlayerHands {
     this._side = 1; // um braço só
   }
 
+  // Beber: a mão desce, pega a água em concha e leva até a boca.
+  drink() {
+    this._drink = 1;
+  }
+
   // Coletar: a mão desce, pega e volta.
   gather() {
     this._gather = 1;
@@ -275,6 +280,20 @@ export class PlayerHands {
       this.left.position.y -= 0.05;
     }
 
+    if (this._drink > 0) {
+      this._drink = Math.max(0, this._drink - dt * 1.3);
+      const t = 1 - this._drink;
+      // 0..0.4 desce até a água; 0.4..0.75 sobe em concha até a boca; 0.75..1 volta
+      const down = t < 0.4 ? Math.sin((t / 0.4) * Math.PI * 0.5) : t < 0.75 ? 1 - (t - 0.4) / 0.35 : 0;
+      const up = t < 0.4 ? 0 : t < 0.75 ? Math.sin(((t - 0.4) / 0.35) * Math.PI * 0.5) : 1 - (t - 0.75) / 0.25;
+      this.right.position.y += -down * 0.2 + up * 0.14;
+      this.right.position.z += -down * 0.1 + up * 0.08;
+      this.right.position.x -= up * 0.1;
+      this.right.rotation.x = this.restRotR.x - down * 0.8 + up * 0.9;
+      this.right.rotation.z += up * 0.5;
+      this.left.position.y += -down * 0.1 + up * 0.1;
+      this.left.position.x += up * 0.1;
+    }
     if (this._gather > 0) {
       this._gather = Math.max(0, this._gather - dt * 1.8);
       const t = 1 - this._gather;

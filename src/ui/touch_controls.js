@@ -13,7 +13,7 @@
 //   Metade direita: arrastar = olhar em volta; tocar = usar/colher ou atacar; segurar sem
 //     mexer = abrir o inventário (ou montar/desmontar se estiver mirando um bicho domado);
 //     tocar duas vezes e segurar = repetir (colher/atacar sem parar).
-//   Arrastar a partir da borda esquerda = roda de ações; da borda direita = roda de assovios.
+//   Arrastar a partir da borda esquerda = roda de assovios; da borda direita = roda de ações.
 // ESQUEMA "BOTÕES": os botões na tela (opção nas configurações).
 // - Ajustar botões (menu de pausa): arraste cada botão para onde
 //   quiser e aperte Travar; a posição fica salva (em fração da tela,
@@ -173,7 +173,8 @@ export class TouchControls {
   _holdAction() {
     const txt = document.querySelector('.hud .prompt:not([hidden])')?.textContent ?? '';
     navigator.vibrate?.(18);
-    this._tap(this._mounted || /botão Montar/.test(txt) ? 'mount' : 'inventory');
+    // segurar parado só monta/desmonta; não abre mais a mochila (abria sem querer)
+    if (this._mounted || /botão Montar/.test(txt)) this._tap('mount');
   }
 
   _setupGestures(layer) {
@@ -260,7 +261,7 @@ export class TouchControls {
         clearTimeout(st.timer);
         clearTimeout(st.early);
       }
-      // arrasto a partir da borda: abre a roda (esquerda: ações; direita: assovios)
+      // arrasto a partir da borda: abre a roda (esquerda: assovios; direita: ações)
       if (st.edge && now - st.t0 < this.timing.edge && ((st.edge === 'L' && dx > 48) || (st.edge === 'R' && dx < -48))) {
         st.cancelled = true;
         if (st.left) this._resetStick();

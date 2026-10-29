@@ -334,8 +334,8 @@ function boot(hotData = {}) {
         setTimeout(() => input.release(a), 90);
       },
     });
-    // arrastar a partir da borda: esquerda = roda de ações; direita = roda de assovios
-    touch.onEdge = (side) => (side === 'R' ? openWhistle() : openActionWheel());
+    // arrastar a partir da borda: esquerda = roda de assovios; direita = roda de ações
+    touch.onEdge = (side) => (side === 'L' ? openWhistle() : openActionWheel());
     const creatureMenu = new CreatureMenu(ui, {
       inventory,
       onClose: () => closeCreatureMenu(),
@@ -983,7 +983,10 @@ function boot(hotData = {}) {
   });
   events.on(EV.CRAFTED, () => sound.play('criar'));
   events.on(EV.ATE, () => sound.play('comer'));
-  events.on(EV.WATER_DRUNK, () => sound.play('beber'));
+  events.on(EV.WATER_DRUNK, () => {
+    sound.play('beber');
+    ctx?.hands.drink();
+  });
   events.on(EV.PLAYER_HURT, () => sound.play('dor'));
   events.on(EV.PLAYER_DIED, () => sound.play('morte'));
   events.on(EV.LEVEL_UP, ({ level }) => {

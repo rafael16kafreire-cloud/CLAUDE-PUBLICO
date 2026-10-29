@@ -1,5 +1,5 @@
 // =============================================================
-// ÁGUA – mar (salgado) e pântano (doce, dá para beber)
+// ÁGUA – mar, pântano e córregos (toda a água do jogo dá para beber)
 // Cada "corpo d'água" sabe seu nível (altura da superfície) e se
 // é doce. A física (nadar) e o "beber" perguntam aqui.
 // =============================================================
@@ -30,7 +30,7 @@ export class WaterSystem {
     const s = map.swamp;
 
     this.swamp = new WaterBody({ id: 'pantano', name: 'Pântano', fresh: true, level: s.level, rect: s.rect });
-    this.sea = new WaterBody({ id: 'mar', name: 'Mar', fresh: false, level: 0 });
+    this.sea = new WaterBody({ id: 'mar', name: 'Mar', fresh: true, level: 0 });
     this.bodies = [this.swamp, this.sea];
     this.sea.wave = BALANCE.agua.altura_onda_mar_m / 2;
     this.swamp.wave = BALANCE.agua.altura_onda_pantano_m / 2;

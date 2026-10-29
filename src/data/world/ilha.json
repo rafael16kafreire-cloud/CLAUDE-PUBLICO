@@ -109,7 +109,7 @@
     "selva": { "nome": "Floresta", "descricao": "Mata fechada e úmida. Nada aqui é seguro.", "temperatura_c": 3 },
     "igapo": { "nome": "Igapó", "descricao": "Floresta alagada na beira do pântano.", "temperatura_c": 2 },
     "pantano": { "nome": "Pântano", "descricao": "Água parada, lama e predadores escondidos.", "temperatura_c": 2 },
-    "mar": { "nome": "Mar", "descricao": "Água salgada. Não beba.", "temperatura_c": 0 },
+    "mar": { "nome": "Mar", "descricao": "O mar aberto. Dá para nadar e beber.", "temperatura_c": 0 },
     "neve": { "nome": "Montanhas Nevadas", "descricao": "Montanhas geladas, pinheiros e minério de ferro.", "temperatura_c": -20 },
     "serra": { "nome": "Serra Rochosa", "descricao": "Morros de pedra: metal, obsidiana e cristal no alto.", "temperatura_c": -4 },
     "campos": { "nome": "Campos", "descricao": "Planície aberta de capim. Manadas e predadores à vista.", "temperatura_c": 4 }

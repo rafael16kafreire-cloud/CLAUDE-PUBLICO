@@ -3,7 +3,7 @@
 // ESQUERDA da tela. Atalhos para o que não tem botão na tela:
 // agachar, interagir, montar/desmontar, inventário, construir, mapa,
 // recarregar e pausar. Cada item aperta a ação do jogo correspondente.
-// (A roda de assovios, dos bichos, abre pela borda DIREITA.)
+// (A roda de assovios, dos bichos, abre pela borda ESQUERDA.)
 // =============================================================
 import { sound } from '../audio/audio.js';
 

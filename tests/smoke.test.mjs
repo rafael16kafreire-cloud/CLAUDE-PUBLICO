@@ -272,7 +272,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   await page.keyboard.up('KeyC');
   check('Água: embaixo d\'água o fôlego cai e aparece no HUD', under.head && under.oxygen < 99.95 && under.shown, JSON.stringify(under));
 
-  // Mar: água salgada não mata a sede
+  // Mar: toda a água do jogo dá para beber (sem água salgada)
   await page.evaluate(() => {
     const { ctx } = window.__ilha;
     const sul = ctx.world.respawnPoint('sul').position;
@@ -287,13 +287,12 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   for (let t = 0; t < 10; t++) {
     await gameWait(page, 400);
     seaMsg = await page.evaluate(() => document.querySelector('.prompt:not([hidden])')?.textContent ?? '');
-    if (/salgada|beber/i.test(seaMsg)) break;
+    if (/beber/i.test(seaMsg)) break;
   }
-  // os avisos de texto foram tirados do jogo: o rótulo da mira ("Água do mar (salgada)") é quem avisa
   await page.keyboard.press('KeyE');
   await gameWait(page, 400);
   const water2 = await page.evaluate(() => window.__ilha.ctx.player.stats.water);
-  check('Mar: água salgada não mata a sede', water2 <= 40.01 && /salgada/i.test(seaMsg), seaMsg);
+  check('Mar: dá para beber a água do mar (sem "salgada")', water2 > 40.5 && !/salgada/i.test(seaMsg), `${water2} ${seaMsg}`);
 
   // Overlay de debug (F3)
   await page.keyboard.press('F3');
@@ -1479,7 +1478,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   await touch('touchStart', [{ x: 600, y: 160, id: 2 }]); await gwait(1000);
   await touch('touchEnd', []);
   await gwait(800);
-  check('Gestos: segurar parado na direita abre o inventário', await page.evaluate(() => !document.querySelector('.inv').hidden));
+  check('Gestos: segurar parado na direita NÃO abre mais o inventário', await page.evaluate(() => document.querySelector('.inv').hidden));
   await page.keyboard.press('Tab');
   await gwait(800);
   await page.evaluate(() => { const c = window.__ilha.ctx; if (c.invScreen.visible) { c.invScreen.hide(); document.body.classList.remove('inv-open'); c.touch.input.blocked = false; c.touch.setVisible(true); } });
@@ -1491,12 +1490,12 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     await touch('touchEnd', []);
     await gwait(800);
   };
-  await swipeEdge(794, 720);
-  check('Gestos: arrastar da borda direita abre a roda de assovios', await page.evaluate(() => window.__ilha.ctx.whistle.visible));
+  await swipeEdge(6, 90);
+  check('Gestos: arrastar da borda esquerda abre a roda de assovios', await page.evaluate(() => window.__ilha.ctx.whistle.visible));
   await page.evaluate(() => window.__ilha.ctx.whistle.close());
   await gwait(800);
-  await swipeEdge(6, 90);
-  check('Gestos: arrastar da borda esquerda abre a roda de ações', await page.evaluate(() => window.__ilha.ctx.actionWheel.visible));
+  await swipeEdge(794, 720);
+  check('Gestos: arrastar da borda direita abre a roda de ações', await page.evaluate(() => window.__ilha.ctx.actionWheel.visible));
   await page.screenshot({ path: `${SHOTS}/25-cel-roda-acoes.png` });
   await page.evaluate(() => window.__ilha.ctx.actionWheel.close());
   await gwait(500);

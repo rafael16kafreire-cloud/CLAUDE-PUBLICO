@@ -83,7 +83,7 @@ export class PlayerInteraction {
     let water = null;
     let waterD = Infinity;
     const here = this.world.waterAt(p.x, p.z);
-    if (here && here.level > p.y + 0.15) {
+    if (here && (here.level > p.y + 0.15 || this.player.swimming)) {
       water = here;
       waterD = 0;
     } else {
@@ -205,7 +205,7 @@ export class PlayerInteraction {
   _waterTarget(body) {
     const held = this.inv.equipped;
     const filling = body.fresh && held && ITEMS[held.id]?.cantil;
-    return { kind: 'water', body, text: filling ? `Encher: ${ITEMS[held.id].nome}` : body.fresh ? 'Beber água' : 'Água do mar (salgada)' };
+    return { kind: 'water', body, text: filling ? `Encher: ${ITEMS[held.id].nome}` : 'Beber água' };
   }
 
   _interact(target) {
@@ -284,10 +284,6 @@ export class PlayerInteraction {
           sound.play('beber');
         }
         this._timer = 0;
-        return;
-      }
-      if (!target.body.fresh) {
-        events.emit(EV.MESSAGE, { text: 'Água salgada não mata a sede!', kind: 'warn' });
         return;
       }
       const st = this.player.stats;

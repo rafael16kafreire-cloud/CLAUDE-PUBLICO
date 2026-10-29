@@ -8,8 +8,8 @@ import { listSlots, slotLabel } from '../core/save.js';
 
 // Lista de controles (aba Controles): na ordem do ARK Mobile, gesto -> o que faz
 const GESTURES = [
-  ['Arrastar a partir da borda esquerda', 'Roda de ações (agachar, interagir, montar, inventário, construir, mapa, recarregar, pausar)'],
-  ['Arrastar a partir da borda direita', 'Roda de assovios / bichos'],
+  ['Arrastar a partir da borda direita', 'Roda de ações (agachar, interagir, montar, inventário, construir, mapa, recarregar, pausar)'],
+  ['Arrastar a partir da borda esquerda', 'Roda de assovios / bichos'],
   ['Deslizar para cima (lado esquerdo)', 'Pular'],
   ['Deslizar para baixo (lado esquerdo)', 'Trocar munição / recarregar'],
   ['Tocar e segurar (lado esquerdo)', 'Andar (arrastar para a direção) · toque duplo e segurar: correr'],

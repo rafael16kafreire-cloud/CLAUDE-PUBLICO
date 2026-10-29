@@ -1,5 +1,5 @@
 // =============================================================
-// AVISOS LATERAIS ("+12 Sede", "Água salgada não mata a sede!")
+// AVISOS LATERAIS ("+12 Sede", "Você não está com sede.")
 // Qualquer sistema pode avisar com:
 //   events.emit(EV.MESSAGE, { text: '...', kind: 'gain' | 'warn' | 'info' })
 // =============================================================
