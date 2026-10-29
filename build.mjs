@@ -53,8 +53,28 @@ const recordedSounds = {
   },
 };
 
+// Imagens da tela de Ajuda (assets/ajuda/<aba>_<assunto>.jpg): entram no jogo como data URI.
+const helpImages = {
+  name: 'imagens-ajuda',
+  setup(build) {
+    build.onResolve({ filter: /^virtual:ajuda$/ }, () => ({ path: 'ajuda', namespace: 'ajuda' }));
+    build.onLoad({ filter: /.*/, namespace: 'ajuda' }, async () => {
+      const dir = 'assets/ajuda';
+      const files = await readdir(dir).catch(() => []);
+      const out = {};
+      for (const f of files) {
+        const m = f.match(/^(.+)\.(jpg|jpeg|png|webp)$/i);
+        if (!m) continue;
+        const mime = m[2].toLowerCase() === 'jpg' ? 'jpeg' : m[2].toLowerCase();
+        out[m[1]] = `data:image/${mime};base64,${(await readFile(`${dir}/${f}`)).toString('base64')}`;
+      }
+      return { contents: `export default ${JSON.stringify(out)};`, loader: 'js' };
+    });
+  },
+};
+
 const js = await esbuild.build({
-  plugins: [placeholderIcons, recordedSounds],
+  plugins: [placeholderIcons, recordedSounds, helpImages],
   entryPoints: ['src/main.js'],
   bundle: true,
   minify: true,

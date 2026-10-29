@@ -42,6 +42,7 @@ import { DebugOverlay } from './ui/debug_overlay.js';
 import { PauseMenu } from './ui/pause_menu.js';
 import { StartScreen } from './ui/start_screen.js';
 import { PlayerHands } from './player/player_hands.js';
+import { HelpScreen } from './ui/help_screen.js';
 import { CreatureManager, SPECIES } from './creatures/creature_manager.js';
 import { Inventory } from './inventory/inventory.js';
 import { Crafting } from './crafting/crafting.js';
@@ -354,8 +355,13 @@ function boot(hotData = {}) {
       world: () => world,
       tamedCount: () => creatures.tamedBy(player).length,
     });
+    const help = new HelpScreen(ui, { onClose: () => ctx.pause.show() });
     const pause = new PauseMenu(ui, {
       onResume: () => resume(),
+      onHelp: () => {
+        ctx.pause.hide();
+        ctx.help.open();
+      },
       onQuitToMenu: () => toMenu(),
       onCloseApp: androidApp?.exit ? () => androidApp.exit() : null,
       onSaveSlot: (n) => {
@@ -379,7 +385,7 @@ function boot(hotData = {}) {
     game.world = world;
     game.player = player;
     ctx = {
-      world, player, camCtl, interaction, hud, minimap, mapScreen, inspect, buildGhost, messages, touch, death, debug, pause, creatures, hands, damageNumbers,
+      world, player, camCtl, interaction, hud, minimap, mapScreen, inspect, buildGhost, messages, touch, death, debug, pause, help, creatures, hands, damageNumbers,
       inventory, crafting, actions, hotbar, invScreen, creatureMenu, whistle, actionWheel,
     };
     ctx.net = new Multiplayer({ world, player, creatures, inventory, actions, camCtl });
@@ -850,7 +856,8 @@ function boot(hotData = {}) {
 
   // Botão "voltar" do Android: pausa / continua.
   window.__ilhaBack = () => {
-    if (ctx?.invScreen.visible) closeInventory();
+    if (ctx?.help.visible) ctx.help.close();
+    else if (ctx?.invScreen.visible) closeInventory();
     else if (ctx?.creatureMenu.visible) ctx.creatureMenu.close();
     else if (game.state === STATE.PLAYING) pauseGame();
     else if (game.state === STATE.PAUSED) resume();
@@ -861,7 +868,8 @@ function boot(hotData = {}) {
     if (input.wasPressed('pause')) {
       // Evita pausar/despausar duas vezes quando o Esc também solta o mouse.
       const justUnlocked = performance.now() - input.lastUnlockTime < 300;
-      if (ctx.mapScreen.visible) ctx.mapScreen.hide();
+      if (ctx.help.visible) ctx.help.close();
+      else if (ctx.mapScreen.visible) ctx.mapScreen.hide();
       else if (ctx.invScreen.visible) closeInventory();
       else if (ctx.creatureMenu.visible) ctx.creatureMenu.close();
       else if (ctx.whistle.visible) ctx.whistle.close();

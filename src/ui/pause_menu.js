@@ -14,7 +14,7 @@ const GESTURES = [
   ['Deslizar para baixo (lado esquerdo)', 'Trocar munição / recarregar'],
   ['Tocar e segurar (lado esquerdo)', 'Andar (arrastar para a direção) · toque duplo e segurar: correr'],
   ['Tocar (lado direito)', 'Usar / coletar · atacar / atirar · ativar'],
-  ['Tocar e segurar (lado direito)', 'Olhar ao redor (arrastando) · segurar parado: abrir inventário · montar / descer'],
+  ['Tocar e segurar (lado direito)', 'Olhar ao redor (arrastando) · segurar parado: montar / descer (se estiver mirando um bicho)'],
   ['Toque duplo e segurar (lado direito)', 'Repetir coleta / ataque · armar o arco · atirar'],
   ['Toque duplo em item do inventário', 'Passar o item entre mochila e barra rápida · com baú aberto: transferir'],
 ];
@@ -28,7 +28,7 @@ const KEYS = [
 ];
 
 export class PauseMenu {
-  constructor(root, { onResume, onQuitToMenu, onCloseApp, onSaveSlot, onLoadSlot, onLeaveCoop, onAdjustButtons }) {
+  constructor(root, { onResume, onHelp, onQuitToMenu, onCloseApp, onSaveSlot, onLoadSlot, onLeaveCoop, onAdjustButtons }) {
     const el = document.createElement('div');
     el.className = 'overlay pause';
     el.hidden = true;
@@ -38,6 +38,7 @@ export class PauseMenu {
         <button type="button" class="ark-big" id="pause-resume">RESUMIR</button>
         <button type="button" class="ark-big" data-go="opts">OPÇÕES</button>
         <button type="button" class="ark-big" data-go="saves">SALVAR JOGO</button>
+        <button type="button" class="ark-big" id="pause-help">AJUDA</button>
         <button type="button" class="ark-big" id="pause-menu">VOLTAR AO MENU PRINCIPAL</button>
         <button type="button" class="ark-big" id="pause-close" hidden>FECHAR O APP</button>
         <div class="pause-coop" id="pause-coop" hidden>
@@ -175,6 +176,7 @@ export class PauseMenu {
     this.onSaveSlot = onSaveSlot;
     this.onLoadSlot = onLoadSlot;
     $('pause-resume').addEventListener('click', () => onResume());
+    $('pause-help').addEventListener('click', () => onHelp?.());
     $('pause-buttons').addEventListener('click', () => onAdjustButtons?.());
     $('pause-leave').addEventListener('click', () => onLeaveCoop?.());
     this.coopEls = { box: $('pause-coop'), code: $('pause-code'), players: $('pause-players') };

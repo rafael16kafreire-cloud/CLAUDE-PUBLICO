@@ -2049,3 +2049,53 @@ html, body, button, input, select, textarea, .title { font-family: var(--font-ui
 .levelup-toast b { font-size: 14px; letter-spacing: 0.08em; color: #ffd45a; }
 .levelup-toast span { font-size: 10.5px; font-weight: 700; color: #bff1ff; }
 @keyframes lvlup-in { from { opacity: 0; transform: translateX(-50%) translateY(-14px); } }
+
+/* =============================================================
+   TELA DE AJUDA (mesmo formato da ajuda do ARK Mobile)
+   ============================================================= */
+.helpscr { background: #000; z-index: 40; }
+.hs-wrap { position: absolute; left: 10%; right: 10%; top: 2%; bottom: 1.2%; display: flex; flex-direction: column; gap: 1.2%; }
+.hs-top { display: flex; gap: 0.55%; height: 7.4%; min-height: 34px; flex: none; }
+.hs-tab {
+  width: calc(var(--hs-sq, 7vh)); min-width: 34px; height: 100%; padding: 0; display: grid; place-items: center;
+  background: rgba(2, 20, 32, 0.9); border: 2px solid #1f8fb4; color: #29b7e0; cursor: pointer;
+}
+.hs-tab svg { width: 62%; height: 62%; }
+.hs-tab.on { background: rgba(6, 40, 58, 0.95); border-color: #e8f8ff; color: #eaf9ff; }
+.hs-tab:hover { border-color: #7fe3ff; }
+.hs-x { margin-left: auto; }
+.hs-body { flex: 1; min-height: 0; display: flex; gap: 1.6%; }
+.hs-left, .hs-right {
+  position: relative; min-height: 0; border: 2px solid #1f8fb4; overflow: hidden;
+  background: var(--ark-hex), linear-gradient(180deg, rgba(8, 54, 76, 0.92), rgba(2, 24, 38, 0.95));
+}
+.hs-left { width: 27.5%; flex: none; display: flex; flex-direction: column; align-items: center; padding: 2% 7% 1.5%; }
+.hs-right { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 1.6% 4.5% 1.5%; }
+.hs-ltitle, .hs-rtitle {
+  margin: 0; font: 700 clamp(18px, 4.3vh, 40px)/1.1 "Rajdhani", var(--font-ui); text-transform: uppercase; text-align: center;
+  color: #e9f7ff; letter-spacing: 0.01em; transform: scaleX(0.86); transform-origin: center; white-space: nowrap;
+}
+.hs-list { margin-top: 6%; width: 100%; display: flex; flex-direction: column; gap: 1.3vh; }
+.hs-item {
+  width: 100%; padding: 1.1vh 4px; background: rgba(18, 112, 146, 0.78); border: 1px solid #3cb6d8; color: #dff5ff;
+  font: 600 clamp(11px, 2.4vh, 20px)/1.15 "Rajdhani", var(--font-ui); letter-spacing: 0.03em; text-transform: uppercase; cursor: pointer;
+}
+.hs-item:hover { background: rgba(30, 140, 176, 0.85); }
+.hs-item.on { background: rgba(30, 150, 186, 0.95); border-color: #e8f8ff; color: #fff; box-shadow: 0 0 0 1px rgba(232, 248, 255, 0.5) inset; }
+.hs-brand { margin-top: auto; text-align: center; color: #cfeaf5; display: flex; flex-direction: column; align-items: center; gap: 0.8vh; }
+.hs-brand b { font: 700 clamp(22px, 6.5vh, 58px)/1 "Lilita One", var(--font-ui); letter-spacing: 0.12em; color: #7fe3ff; text-shadow: 0 0 12px rgba(127, 227, 255, 0.5); }
+.hs-brand span { font: 600 clamp(9px, 1.9vh, 16px)/1.15 var(--font-ui); text-align: left; }
+.hs-img {
+  margin-top: 2.2%; width: 71%; aspect-ratio: 16 / 9; flex: none; border: 1px solid rgba(60, 182, 216, 0.5);
+  background: rgba(0, 12, 20, 0.6); overflow: hidden; max-height: 50%;
+}
+.hs-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hs-img.vazio { background: linear-gradient(135deg, rgba(10, 60, 84, 0.6), rgba(2, 14, 22, 0.8)); }
+.hs-text {
+  margin: 1.4vh 0 0; width: 100%; font: 700 clamp(11px, 2.45vh, 21px)/1.14 "Rajdhani", var(--font-ui); color: #fff;
+  text-shadow: 0 1px 2px #000, 0 0 3px #000; overflow: auto;
+}
+@media (max-aspect-ratio: 3/2) {
+  .hs-wrap { left: 2%; right: 2%; }
+  .hs-left { width: 32%; }
+}
