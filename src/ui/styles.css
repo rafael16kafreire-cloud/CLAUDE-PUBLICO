@@ -2086,7 +2086,7 @@ html, body, button, input, select, textarea, .title { font-family: var(--font-ui
 .hs-brand b { font: 700 clamp(22px, 6.5vh, 58px)/1 "Lilita One", var(--font-ui); letter-spacing: 0.12em; color: #7fe3ff; text-shadow: 0 0 12px rgba(127, 227, 255, 0.5); }
 .hs-brand span { font: 600 clamp(9px, 1.9vh, 16px)/1.15 var(--font-ui); text-align: left; }
 .hs-img {
-  margin-top: 2.2%; width: 71%; aspect-ratio: 16 / 9; flex: none; border: 1px solid rgba(60, 182, 216, 0.5);
+  margin-top: 2.2%; width: 84%; aspect-ratio: 16 / 9; flex: none; border: 1px solid rgba(60, 182, 216, 0.5);
   background: rgba(0, 12, 20, 0.6); overflow: hidden;
 }
 .hs-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
