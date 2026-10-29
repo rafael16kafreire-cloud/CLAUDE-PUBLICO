@@ -2250,3 +2250,7 @@ body.inv-open #ui > .hud, body.inv-open #ui > .hotbar, body.inv-open #ui > .hud-
 .ark-inv .sk-plus:disabled { color: #4d6874 !important; }
 .ark-inv .sk-plus.sk-none { background: transparent !important; }
 .ark-inv .ai-title, .ark-inv .ai-tab { font-family: "Rajdhani", system-ui, sans-serif !important; }
+.ark-inv .skill-row { height: 3.9vh; max-height: 3.9vh; overflow: hidden; }
+.ark-inv .sk-name { white-space: nowrap !important; overflow: hidden; text-overflow: clip; }
+.ark-inv .skill-melee .sk-name, .ark-inv .skill-speed .sk-name, .ark-inv .skill-craft .sk-name { font-size: clamp(7px, 1.45vh, 13px); }
+.ark-inv .sk-plus { font-size: 4vh !important; line-height: 3.8vh; font-weight: 800 !important; color: #dcebf1 !important; }
