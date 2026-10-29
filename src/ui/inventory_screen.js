@@ -256,6 +256,8 @@ export class InventoryScreen {
   show() {
     this.el.hidden = false;
     this.refresh();
+    // a textura do personagem pode demorar um instante: desenha de novo
+    if (!this.rightMode) [150, 700].forEach((ms) => setTimeout(() => this.visible && !this.rightMode && this._renderPreview(), ms));
   }
 
   hide() {
@@ -360,9 +362,8 @@ export class InventoryScreen {
         sun.position.set(-2, 3, -3);
         scene.add(sun);
         const model = new PlayerModel();
-        model.root.rotation.y = Math.PI;
         scene.add(model.root);
-        model.update(0, { position: new THREE.Vector3(), facing: Math.PI, visible: true, dead: false, speed: 0, swimming: false, crouching: false, onGround: true });
+        model.update(0, { position: new THREE.Vector3(), facing: 0, visible: true, dead: false, speed: 0, swimming: false, crouching: false, onGround: true });
         this._pv = { renderer, scene, cam };
       }
       this._pv.renderer.render(this._pv.scene, this._pv.cam);

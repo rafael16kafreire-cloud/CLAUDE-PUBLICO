@@ -2154,7 +2154,7 @@ html, body, button, input, select, textarea, .title { font-family: var(--font-ui
 
 /* meio: VOCÊ */
 .ark-inv .ai-title { margin: 0 0 0.8%; text-align: left; font: 700 clamp(16px, 4.2vh, 40px)/1 "Rajdhani", var(--font-ui) !important; letter-spacing: 0.01em !important; color: #eef9ff; transform: scaleX(0.88); transform-origin: left; flex: none; }
-.ark-inv .ai-you { display: grid; grid-template-columns: 21% 1fr 21%; grid-auto-rows: auto; gap: 1.2%; align-items: start; flex: none; }
+.ark-inv .ai-you { display: grid; grid-template-columns: minmax(0, 21%) minmax(0, 1fr) minmax(0, 21%); grid-auto-rows: auto; gap: 1.2%; align-items: start; flex: none; }
 .ark-inv .ai-equip { display: contents !important; }
 .ark-inv .ai-equip .eq-slot:nth-child(1) { grid-column: 1; grid-row: 1; }
 .ark-inv .ai-equip .eq-slot:nth-child(2) { grid-column: 1; grid-row: 2; }
@@ -2162,7 +2162,7 @@ html, body, button, input, select, textarea, .title { font-family: var(--font-ui
 .ark-inv .ai-equip .eq-slot:nth-child(4) { grid-column: 3; grid-row: 1; }
 .ark-inv .ai-equip .eq-slot:nth-child(5) { grid-column: 3; grid-row: 2; }
 .ark-inv .ai-equip .eq-name { display: none !important; }
-.ark-inv .ai-info { grid-column: 2; grid-row: 1 / span 3; font: 600 clamp(8px, 1.65vh, 15px)/1.35 var(--font-ui); color: #dff5ff; text-transform: uppercase; align-self: stretch; }
+.ark-inv .ai-info { min-width: 0; overflow: hidden; grid-column: 2; grid-row: 1 / span 3; font: 600 clamp(8px, 1.65vh, 15px)/1.35 var(--font-ui); color: #dff5ff; text-transform: uppercase; align-self: stretch; }
 .ark-inv .ai-info .you-name { margin: 0 0 4px; text-align: center; text-transform: none; font-weight: 600; }
 .ark-inv .ai-info div { display: flex; justify-content: space-between; gap: 4px; }
 .ark-inv .ai-info b { font-weight: 700; color: #fff; }
@@ -2215,3 +2215,6 @@ html, body, button, input, select, textarea, .title { font-family: var(--font-ui
   .ark-inv .ai-bottom { left: 1.5%; right: 1.5%; }
   .ark-inv .ai-x { right: 1.5%; }
 }
+
+/* com o inventário aberto, o HUD de jogo sai da frente (como no ARK) */
+body.inv-open #ui > .hud, body.inv-open #ui > .hotbar, body.inv-open #ui > .hud-corner, body.inv-open .hud-left { visibility: hidden; }
