@@ -375,8 +375,6 @@ export class InventoryScreen {
     const st = this.stats;
     if (!st) return;
     this.refs.spoints.textContent = String(st.points);
-    this.refs.sdot.hidden = st.points <= 0;
-    this.refs.sdot.textContent = String(st.points);
     for (const s of SKILLS) {
       // como no ARK: atual/máximo nas barras do corpo
       const cur = CUR[s.key]?.(st, this.inv);
