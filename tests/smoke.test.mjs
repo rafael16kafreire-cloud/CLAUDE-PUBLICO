@@ -1448,6 +1448,19 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   const gRun = await rec();
   const gRunOff = await page.evaluate(() => window.__ilha.ctx.touch.input.runToggle);
   check('Gestos: tocar duas vezes e segurar corre (e solta ao levantar)', gRun.runSeen === true && gRunOff === false, `${gRun.runSeen}/${gRunOff}`);
+  // pular correndo: dois toques e segurar (corre), depois um peteleco para cima bem depois do início
+  await gwait(800);
+  await page.evaluate(() => { window.__resetRec(); window.__ilha.ctx.touch.timing.flick = 1; });
+  await touch('touchStart', [{ x: 120, y: 300, id: 1 }]); await gwait(50); await touch('touchEnd', []);
+  await gwait(100);
+  await touch('touchStart', [{ x: 120, y: 300, id: 1 }]); await gwait(900);
+  await touch('touchMove', [{ x: 121, y: 270, id: 1 }]);
+  await touch('touchMove', [{ x: 121, y: 225, id: 1 }]); await gwait(500);
+  await touch('touchEnd', []);
+  await gwait(300);
+  const gRunJump = await rec();
+  await page.evaluate(() => { window.__ilha.ctx.touch.timing.flick = 6000; });
+  check('Gestos: dá para pular correndo (peteleco para cima com o dedo já segurando)', gRunJump.runSeen && gRunJump.press.includes('jump'), JSON.stringify(gRunJump));
   await gwait(800);
   await page.evaluate(() => window.__resetRec());
   await touch('touchStart', [{ x: 600, y: 160, id: 2 }]); await gwait(50); await touch('touchEnd', []);

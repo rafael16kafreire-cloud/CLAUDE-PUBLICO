@@ -272,6 +272,18 @@ export class TouchControls {
         this._moveKnob(x, y);
         if (!st.jumped && now - st.t0 < this.timing.flick && dy < -52 && Math.abs(dx) < -dy * 0.75) {
           st.jumped = true;
+          st.lastJump = now;
+          this._tap('jump');
+        }
+        // pular correndo: o dedo já está parado/esticado para frente, então vale um "peteleco"
+        // para cima em qualquer momento (60 px em até 220 ms), com intervalo entre pulos
+        const h = (st.hist ??= [{ t: st.t0, x: st.x0, y: st.y0 }]);
+        h.push({ t: now, x, y });
+        while (h.length > 1 && now - h[1].t > 220) h.shift(); // h[0] = onde o dedo estava ao começar a janela
+        const dyw = y - h[0].y;
+        if (dyw < -60 && Math.abs(x - h[0].x) < -dyw * 0.75 && now - (st.lastJump ?? -1e9) > 450) {
+          st.lastJump = now;
+          st.hist = [{ t: now, x, y }];
           this._tap('jump');
         }
         if (!st.downed && now - st.t0 < this.timing.flick && dy > 52 && Math.abs(dx) < dy * 0.75) {
