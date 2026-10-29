@@ -46,7 +46,6 @@ const VOICES = {
   estegossauro: { kind: 'mugido', f: 80, d: 1.1 },
   anquilossauro: { kind: 'mugido', f: 75, d: 1.0 },
   braquiossauro: { kind: 'buzina', f: 45, d: 2.4 },
-  dilofossauro: { kind: 'chiado', f: 420, d: 0.7 },
   raptor: { kind: 'grito', f: 360, d: 0.6 },
   carnotauro: { kind: 'rugido', f: 85, d: 1.4 },
   trex: { kind: 'rugido', f: 48, d: 2.2 },

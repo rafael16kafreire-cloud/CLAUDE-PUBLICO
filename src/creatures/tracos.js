@@ -68,16 +68,6 @@ const TRACOS = {
     add(b.tail1, 'y', Math.sin(t * 7) * 0.2 * k.parado);
     add(b.tail2, 'y', Math.sin(t * 7 - 0.8) * 0.25 * k.parado);
   },
-  // Dilofossauro: agachado e com o pescoço em S para frente ao atacar; cabeça trêmula (cuspe)
-  dilofossauro(c, b, t, k) {
-    const bote = Math.max(k.atk, k.perseguindo * 0.8);
-    add(b.neck, 'x', 0.32 * bote);
-    add(b.head, 'x', -0.3 * bote);
-    add(b.head, 'z', Math.sin(t * 15) * 0.14 * k.atk);
-    add(b.chest, 'x', 0.12 * bote);
-    add(b.tail1, 'x', -0.16 * bote);
-    add(b.head, 'y', olhadas(t, 1.5, c.id) * 0.3 * k.parado);
-  },
   // Piranha: ondula o corpo todo e dá mordidas rápidas
   piranha(c, b, t, k) {
     const v = 0.35 + 0.9 * Math.min(1, c.speed / 3);

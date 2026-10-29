@@ -479,49 +479,6 @@
    }
   },
   {
-   "id": "dilofossauro",
-   "comprimento_m": [6, 7],
-   "nome": "Dilofossauro",
-   "dieta": "carnivoro",
-   "temperamento": "agressivo",
-   "vida": 130,
-   "dano": 10.0,
-   "vel_andar": 1.2,
-   "vel_correr": 3.6,
-   "tamanho": 1,
-   "raio": 0.5,
-   "altura": 1.5,
-   "biomas": ["selva", "neve", "serra"],
-   "peso_spawn": 4.5,
-   "grupo": [1, 3],
-   "xp": 18,
-   "loot": {
-    "carne_crua": [2, 3],
-    "couro": [1, 2]
-   },
-   "pode_domar": true,
-   "comida_preferida": "carne_crua",
-   "alcance_agro": 22,
-   "alcance_ataque": 1.4,
-   "intervalo_ataque": 0.9,
-   "carga": 45,
-   "atributos": {
-    "vida": [130, 130],
-    "forca": [100, 100],
-    "peso": [45, 45],
-    "stamina": [100, 100],
-    "velocidade": [100, 100],
-    "torpor": [75, 75]
-   },
-   "ark_por_nivel": {
-    "vida": 0.2,
-    "stamina": 0.1,
-    "peso": 0.02,
-    "forca": 0.05,
-    "torpor": 0.06
-   }
-  },
-  {
    "id": "raptor",
    "comprimento_m": [3, 3.4],
    "nome": "Raptor",
