@@ -32,6 +32,7 @@ export default {
     regen_limite: 0.5,         // só regenera com fome E sede acima de 50%
     gole_agua: 12,             // quanto de sede cada "beber" recupera
     satisfeito: 0.6,           // só bebe se faltar pelo menos 60% de um gole
+    cura_por_fome: 0.5,        // comer recupera vida: metade da fome que o alimento dá (carne assada tem o seu valor próprio)
     vida_comer_cheio: 0.8,     // com a fome 100% só come se a vida estiver abaixo de 80%
   },
 
