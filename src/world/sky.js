@@ -26,8 +26,8 @@ export const NIGHT_END = 0.22;
 // força da luz, céu do hemisfério, força do hemisfério, nuvens]
 const KEYS = [
   // noite: escura de verdade, luar azulado fraco (dá para ver só o mínimo)
-  [0.0, '#18243c', '#060a14', '#8aaaea', 0.62, '#44609f', 0.52, 0.16],
-  [0.19, '#1a263f', '#070b16', '#8aaaea', 0.62, '#44609f', 0.52, 0.16],
+  [0.0, '#18243c', '#060a14', '#8aaaea', 0.45, '#44609f', 0.36, 0.16],
+  [0.19, '#1a263f', '#070b16', '#8aaaea', 0.45, '#44609f', 0.36, 0.16],
   // nascer do sol: laranja e rosa no horizonte
   [0.26, '#f0a272', '#4c6a9c', '#ffae6a', 1.5, '#c9b2a0', 0.8, 0.9],
   [0.33, '#c6d4cc', '#3f86c8', '#fff1d0', 3.0, '#dcecf0', 1.1, 1.0],
@@ -36,8 +36,8 @@ const KEYS = [
   [0.67, '#c7cfc0', '#3f7fc0', '#ffe8c4', 3.0, '#e0e8de', 1.1, 1.0],
   // pôr do sol: dourado e vermelho
   [0.75, '#ee8450', '#46598a', '#ff8f4a', 1.4, '#ca9f86', 0.8, 0.9],
-  [0.8, '#1a263f', '#070b16', '#8aaaea', 0.62, '#44609f', 0.52, 0.16],
-  [1.0, '#18243c', '#060a14', '#8aaaea', 0.62, '#44609f', 0.52, 0.16],
+  [0.8, '#1a263f', '#070b16', '#8aaaea', 0.45, '#44609f', 0.36, 0.16],
+  [1.0, '#18243c', '#060a14', '#8aaaea', 0.45, '#44609f', 0.36, 0.16],
 ].map(([t, h, z, sc, si, hs, hi, cl]) => ({ t, h: new THREE.Color(h), z: new THREE.Color(z), sc: new THREE.Color(sc), si, hs: new THREE.Color(hs), hi, cl }));
 
 export class Sky {
@@ -110,7 +110,7 @@ export class Sky {
     this.night = Math.min(1, Math.max(0, 1 - (this.sun.intensity - 0.62) / 0.88));
     u.uNight.value = this.night;
     // o filme (exposição) sobe um pouco no sol forte e desce à noite
-    this.exposure = 1.3 - 0.06 * Math.min(1, (this.sun.intensity - 0.62) / 2.9);
+    this.exposure = 1.06 + 0.2 * Math.max(0, Math.min(1, (this.sun.intensity - 0.62) / 2.9)); // noite mais escura (antes 1,3)
     sharedDay.value = this.daylight;
     if (!this.underwater) {
       this.scene.fog.color.copy(this._horizon);
