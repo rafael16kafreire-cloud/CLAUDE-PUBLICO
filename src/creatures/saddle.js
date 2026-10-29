@@ -136,20 +136,57 @@ export function buildSaddle(c, kind) {
     g.add(box(pw * 1.15, 0.06 * s, len2 * 1.2, 0, back + SELA.seat * f * 0.7, 0, WOOD));
     for (const side of [-1, 1]) g.add(box(0.05 * s, 0.35 * s, len2 * 1.2, side * pw * 0.57, back + SELA.seat * f * 0.7 + 0.17 * s, 0, WOOD));
   }
-  // presa no quadril: a sela acompanha o balanço do corpo. Usa a pose de ligação do
-  // esqueleto (boneInverses), não a pose de agora: assim o encaixe não depende de o
-  // bicho estar no meio de uma animação quando a sela é posta.
+  // Presa no corpo: a sela acompanha o quadril (giro e balanço) e, a cada quadro, é
+  // corrigida pelo que a pele do bicho fez de verdade naquele ponto das costas
+  // (as animações levantam e abaixam o corpo; só o osso do quadril não basta).
   const hips = c.bones?.hips;
   const sk = c.mesh.skeleton;
   const bi = hips && sk ? sk.bones.indexOf(hips) : -1;
   if (bi >= 0) {
+    // vértices das costas ali perto (pose de ligação)
+    const pos = geo.attributes.position;
+    const idx = [];
+    const yLow = back - Math.max(0.15 * s, (back - spot.belly) * 0.3);
+    for (let i = 0; i < pos.count && idx.length < 48; i++) {
+      if (Math.abs(pos.getX(i)) < spot.w * 0.25 && Math.abs(pos.getZ(i) - spot.z) < spot.trunk * 0.3 && pos.getY(i) > yLow) idx.push(i);
+    }
+    const bind = new THREE.Vector3();
+    for (const i of idx) bind.add(new THREE.Vector3(pos.getX(i), pos.getY(i), pos.getZ(i)));
+    if (idx.length) bind.multiplyScalar(1 / idx.length);
     const holder = new THREE.Group();
     holder.matrixAutoUpdate = false;
-    holder.matrix.copy(sk.boneInverses[bi]); // espaço do modelo -> espaço do osso
     holder.add(g);
-    hips.add(holder);
+    c.mesh.add(holder);
+    c._sadAnchor = { idx, bind, bi, holder, tmp: new THREE.Vector3(), acc: new THREE.Vector3(), exp: new THREE.Vector3(), m: new THREE.Matrix4(), t: new THREE.Matrix4() };
+    ajustarSela(c);
     return holder;
   }
   c.mesh.add(g);
   return g;
+}
+
+// Põe a sela onde o corpo está AGORA (chamado todo quadro, depois das animações).
+export function ajustarSela(c) {
+  const A = c._sadAnchor;
+  if (!A || !c._saddleMesh) return;
+  const hips = c.bones.hips;
+  const sk = c.mesh.skeleton;
+  c.mesh.updateMatrixWorld(true);
+  sk.update();
+  // matriz do osso do quadril no espaço do modelo (movimento em relação à pose de ligação)
+  A.m.copy(c.mesh.matrixWorld).invert().multiply(hips.matrixWorld).multiply(sk.boneInverses[A.bi]);
+  if (A.idx.length) {
+    A.acc.set(0, 0, 0);
+    for (const i of A.idx) {
+      c.mesh.getVertexPosition(i, A.tmp);
+      A.acc.add(A.tmp);
+    }
+    A.acc.multiplyScalar(1 / A.idx.length);
+    A.exp.copy(A.bind).applyMatrix4(A.m); // onde o quadril levaria o ponto
+    A.acc.sub(A.exp); // quanto a pele andou além disso
+    A.t.makeTranslation(A.acc.x, A.acc.y, A.acc.z);
+    A.m.premultiply(A.t);
+  }
+  A.holder.matrix.copy(A.m);
+  A.holder.matrixWorldNeedsUpdate = true;
 }

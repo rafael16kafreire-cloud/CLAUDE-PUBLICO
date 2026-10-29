@@ -17,7 +17,7 @@ import { BALANCE } from '../core/balance.js';
 import { sound } from '../audio/audio.js';
 import { mulberry32 } from '../core/math.js';
 import { shakeAt } from '../world/materials.js';
-import { backSpot, buildSaddle, saddleFor } from './saddle.js';
+import { ajustarSela, backSpot, buildSaddle, saddleFor } from './saddle.js';
 import { events, EV } from '../core/event_bus.js';
 
 // O que cada herbívoro come (tipos de vegetação). Bicho alto (pescoço
@@ -1557,6 +1557,7 @@ export class Creature {
   // Copia posição e rotação para a malha 3D.
   _sync(dt) {
     const m = this.mesh;
+    if (this._saddleMesh) ajustarSela(this); // a sela acompanha o corpo (animações levantam e abaixam o dorso)
     if (this.state === CSTATE.DEAD) {
       // tomba de lado aos poucos (cobras e jacarés ficam de barriga para cima)
       const k = Math.min(1, this.deadTime * 1.6);
