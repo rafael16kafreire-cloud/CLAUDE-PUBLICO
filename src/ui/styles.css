@@ -2254,3 +2254,10 @@ body.inv-open #ui > .hud, body.inv-open #ui > .hotbar, body.inv-open #ui > .hud-
 .ark-inv .sk-name { white-space: nowrap !important; overflow: hidden; text-overflow: clip; }
 .ark-inv .skill-melee .sk-name, .ark-inv .skill-speed .sk-name, .ark-inv .skill-craft .sk-name { font-size: clamp(7px, 1.45vh, 13px); }
 .ark-inv .sk-plus { font-size: 4vh !important; line-height: 3.8vh; font-weight: 800 !important; color: #dcebf1 !important; }
+.ark-inv .skill-row { height: 3.55vh; max-height: 3.55vh; }
+.ark-inv .ai-skills { gap: 0.3vh; }
+.ark-inv .sk-name { line-height: 1.5 !important; overflow: visible; }
+.ark-inv .skill-row { overflow: visible; }
+.ark-inv .skill-melee .sk-name, .ark-inv .skill-speed .sk-name, .ark-inv .skill-craft .sk-name { font-size: clamp(6px, 1.2vh, 11px); letter-spacing: 0; }
+.ark-inv .sk-plus { width: 3.55vh; height: 3.55vh; line-height: 3.4vh; }
+.ark-inv .skill-row .ico { width: 2.6vh; height: 2.6vh; }
