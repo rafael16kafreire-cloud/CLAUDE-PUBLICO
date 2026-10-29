@@ -11,6 +11,7 @@
 import * as THREE from 'three';
 import { ClipPlayer } from './clip_player.js';
 import { PASSOS } from './gait_profiles.js';
+import { aplicarTraco } from './tracos.js';
 import { angleDelta, clamp } from '../core/math.js';
 import { BALANCE } from '../core/balance.js';
 import { sound } from '../audio/audio.js';
@@ -1149,6 +1150,8 @@ export class Creature {
     const cp = this.clipPlayer;
     if (!cp) {
       this._animateCode(dt, ctx, yawVel);
+      // jeito próprio de cada espécie (dodô bica, onça se agacha, triceratops investe...)
+      aplicarTraco(this, this.bones, this.time, this.anim, CSTATE);
       return;
     }
     // bicho com animação do próprio modelo: escolhe o clipe pelo que ele
