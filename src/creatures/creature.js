@@ -28,7 +28,7 @@ const FOOD_LOW = new Set(['arbusto', 'arbusto_mejo', 'arbusto_escura', 'arbusto_
 // baixo = Sauropelta (quadrúpede de perna curta), alto = Argentinossauro
 // (perna reta de coluna). Quem não está aqui anda com a curva simples.
 const GAIT_OF = {
-  anquilossauro: 'baixo', estegossauro: 'baixo', triceratops: 'baixo', parassauro: 'baixo', capivara: 'baixo',
+  anquilossauro: 'baixo', estegossauro: 'baixo', triceratops: 'baixo', parassauro: 'baixo',
   sauropelta: 'baixo', braquiossauro: 'alto', mamute: 'alto', argentinossauro: 'alto',
 };
 // valor da curva (n pontos por passo) na fase p (0..1), com interpolação
@@ -1182,6 +1182,7 @@ export class Creature {
     const active = cp.update(dt, want, rate);
     if (active) cp.reset();
     this._animateCode(dt, ctx, yawVel);
+    aplicarTraco(this, this.bones, this.time, this.anim, CSTATE);
     if (active) cp.apply();
   }
 

@@ -44,13 +44,6 @@ const TRACOS = {
     add(b.head, 'y', olhadas(t, 1.8, c.id) * 0.3 * k.parado);
     add(b.chest, 'x', 0.06 * k.corre);
   },
-  // Capivara: anda gingando e, parada, mastiga devagar e mexe a cabeça
-  capivara(c, b, t, k) {
-    add(b.hips, 'z', Math.sin(c.phase * TAU) * 0.09 * k.mov);
-    add(b.chest, 'z', -Math.sin(c.phase * TAU) * 0.06 * k.mov);
-    add(b.head, 'x', Math.sin(t * 4.5) * 0.05 * (k.parado + k.comendo));
-    add(b.head, 'y', olhadas(t, 2.6, c.id) * 0.25 * k.parado);
-  },
   // Paquicefalossauro: cabeçada de verdade (pescoço e quadril vão para frente e a cabeça baixa)
   paquicefalossauro(c, b, t, k) {
     add(b.neck, 'x', -0.55 * k.atk - 0.18 * k.perseguindo);
@@ -63,7 +56,7 @@ const TRACOS = {
   triceratops(c, b, t, k) {
     const inv = Math.max(k.atk, k.perseguindo * 0.9);
     add(b.neck, 'x', -0.5 * inv);
-    add(b.head, 'x', -0.3 * inv);
+    add(b.head, 'x', (b.neck ? -0.3 : -0.55) * inv);
     add(b.head, 'y', Math.sin(t * 9) * 0.16 * k.atk);
     add(b.chest, 'x', 0.05 * inv);
     add(b.tail1, 'y', Math.sin(t * 1.2) * 0.1 * k.parado);
@@ -85,23 +78,6 @@ const TRACOS = {
     add(b.tail1, 'x', -0.16 * bote);
     add(b.head, 'y', olhadas(t, 1.5, c.id) * 0.3 * k.parado);
   },
-  // Onça: caça agachada (corpo baixo, cabeça baixa) e pula no bote
-  onca(c, b, t, k) {
-    const espreita = k.perseguindo * (1 - k.atk) * (1 - k.corre * 0.6);
-    if (b.hips?.userData.rest) b.hips.position.y = b.hips.userData.rest.y - 0.12 * espreita * c.scale;
-    add(b.neck, 'x', -0.3 * espreita);
-    add(b.head, 'x', -0.2 * espreita);
-    add(b.chest, 'x', 0.12 * espreita - 0.3 * k.atk);
-    add(b.tail1, 'x', -0.35 * k.atk + 0.2 * espreita);
-    add(b.tail2, 'y', Math.sin(t * 2.2) * 0.45 * (k.parado + espreita)); // cauda balançando
-  },
-  // Aranha: treme as patas ao andar e levanta a frente do corpo para morder
-  aranha(c, b, t, k) {
-    add(b.hips, 'z', Math.sin(t * 28) * 0.025 * k.mov);
-    add(b.chest, 'x', -0.5 * k.atk - 0.12 * k.perseguindo);
-    add(b.head, 'x', -0.25 * k.atk);
-    add(b.hips, 'y', Math.sin(t * 0.7 + c.id) * 0.06 * k.parado);
-  },
   // Piranha: ondula o corpo todo e dá mordidas rápidas
   piranha(c, b, t, k) {
     const v = 0.35 + 0.9 * Math.min(1, c.speed / 3);
@@ -109,13 +85,6 @@ const TRACOS = {
     add(b.tail2, 'y', Math.sin(t * 13 - 0.9) * 0.38 * v);
     add(b.chest, 'y', Math.sin(t * 13 + 0.9) * 0.1 * v);
     add(b.head, 'y', -Math.sin(t * 13) * 0.1 * v + Math.sin(t * 26) * 0.35 * k.atk);
-  },
-  // Arara: balança a cabeça de lado, dá cabeçadinhas e se ajeita no chão
-  arara(c, b, t, k) {
-    add(b.head, 'z', Math.sin(t * 1.1 + c.id) * 0.25 * (k.parado + 0.5 * k.mov));
-    add(b.head, 'y', olhadas(t, 0.8, c.id) * 0.5 * k.parado);
-    add(b.head, 'x', -0.3 * pulso(t, 3.4, c.id, 0.14) * k.parado);
-    add(b.tail1, 'x', Math.sin(t * 2.4) * 0.07 * k.parado);
   },
 };
 

@@ -250,5 +250,47 @@
     "loop": false
    }
   }
+ },
+ "triceratops": {
+  "arquivo": "Triceratops",
+  "fbx": true,
+  "animado": true,
+  "giro": "y180",
+  "repouso": "ligacao",
+  "triangulos": 2000,
+  "textura": 1024,
+  "ossos": {
+   "hips": 0,
+   "tail1": 1,
+   "tail2": 2,
+   "tail3": 3,
+   "chest": 4,
+   "head": 5,
+   "jaw": 6,
+   "frenteD": 7,
+   "frenteD_joelho": 8,
+   "frenteD_pe": 9,
+   "frenteE": 10,
+   "frenteE_joelho": 11,
+   "frenteE_pe": 12,
+   "trásD": 13,
+   "trásD_joelho": 14,
+   "trásD_pe": 15,
+   "trásE": 16,
+   "trásE_joelho": 17,
+   "trásE_pe": 18
+  },
+  "clipes": {
+   "parado": {
+    "de": 245,
+    "ate": 340
+   }
+  },
+  "credito": {
+   "title": "Triceratops",
+   "author": "autor não informado (modelo enviado pelo jogador)",
+   "copyright": "uso pessoal",
+   "url": "-"
+  }
  }
 }

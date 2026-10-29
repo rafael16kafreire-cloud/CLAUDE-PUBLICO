@@ -183,7 +183,7 @@ export default {
     chocar_min: 4,             // ovo choca em X min (no calor certo)
     ovo_temp_c: [18, 38],      // temperatura boa para o ovo; fora dela choca 4x mais devagar
     gestacao_min: 5,           // mamífero: filhote nasce depois de X min
-    mamiferos: ['mamute', 'onca', 'capivara'],
+    mamiferos: ['mamute'],
     chance_maior: 0.55,        // cada atributo do filhote: chance de vir o MAIOR dos pais
     mutacao: 0.03,             // chance de um atributo vir 10% maior (mutação)
     cuidado_min: 2,            // filhote domado pede carinho a cada X min

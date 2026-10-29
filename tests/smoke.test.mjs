@@ -311,7 +311,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     ctx.player.position.set(j.x, ctx.world.heightAt(j.x, j.z), j.z);
     ctx.camCtl.yaw = Math.PI * 0.75;
     ctx.camCtl.pitch = -0.05;
-    const ids = ['raptor', 'raptor', 'raptor', 'trex', 'parassauro', 'parassauro', 'braquiossauro', 'titanoboa', 'pterodactilo', 'dodo', 'onca', 'paquicefalossauro', 'triceratops', 'aranha', 'dodo'];
+    const ids = ['raptor', 'raptor', 'raptor', 'trex', 'parassauro', 'parassauro', 'braquiossauro', 'titanoboa', 'pterodactilo', 'dodo', 'carnotauro', 'paquicefalossauro', 'triceratops', 'espinossauro', 'dodo'];
     ids.forEach((id, i) => {
       const a = (i / ids.length) * Math.PI * 2;
       const cr = ctx.creatures.spawn(id, j.x + Math.sin(a) * 30, j.z + Math.cos(a) * 30, 5);
@@ -1122,8 +1122,8 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     const c = window.__ilha.ctx; const p = c.player.position; const out = { ok: true, bad: [], distinct: 0 };
     const seen = new Set();
     for (let i = 0; i < 12; i++) {
-      // onça tem faixas de atributos (o raptor é fixo: mínimo = máximo em todos)
-      const cr = c.creatures.spawn('onca', p.x + 200 + i * 3, p.z + 200, 1);
+      // o sauropelta tem faixas de atributos (o raptor é fixo: mínimo = máximo em todos)
+      const cr = c.creatures.spawn('sauropelta', p.x + 200 + i * 3, p.z + 200, 1);
       const at = cr.species.atributos;
       for (const k of ['vida', 'forca', 'peso', 'stamina', 'velocidade', 'torpor']) {
         const v = cr.stats[k]; const [a, b] = at[k];

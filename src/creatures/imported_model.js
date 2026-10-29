@@ -27,12 +27,13 @@ import argentinossauro from './imported/argentinossauro.js';
 import mosassauro from './imported/mosassauro.js';
 import pterodactilo from './imported/pterodactilo.js';
 import carnotauro from './imported/carnotauro.js';
+import triceratops from './imported/triceratops.js';
 
 export const IMPORTED = {
   espinossauro, trex, braquiossauro, titanoboa, deinosuchus, estegossauro,
   anquilossauro, parassauro, raptor, quetzalcoatlus, mamute, argentavis, reidodo,
   // com animação do próprio modelo
-  sauropelta, argentinossauro, mosassauro, pterodactilo, carnotauro,
+  sauropelta, argentinossauro, mosassauro, pterodactilo, carnotauro, triceratops,
 };
 
 function bytes(b64) {

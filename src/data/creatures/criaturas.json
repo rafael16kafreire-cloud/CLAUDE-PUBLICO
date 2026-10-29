@@ -124,40 +124,6 @@
    }
   },
   {
-   "id": "capivara",
-   "comprimento_m": [1.1, 1.35],
-   "nome": "Capivara",
-   "dieta": "herbivoro",
-   "temperamento": "medroso",
-   "vida": 80,
-   "dano": 0,
-   "vel_andar": 0.8,
-   "vel_correr": 4.5,
-   "tamanho": 1,
-   "raio": 0.5,
-   "altura": 0.7,
-   "biomas": ["igapo", "pantano"],
-   "peso_spawn": 6,
-   "grupo": [2, 4],
-   "xp": 8,
-   "loot": {
-    "carne_crua": [2, 3],
-    "couro": [1, 2]
-   },
-   "pode_domar": true,
-   "comida_preferida": "baga_mejo",
-   "nada": true,
-   "carga": 30,
-   "atributos": {
-    "vida": [68, 92],
-    "forca": [85, 125],
-    "peso": [26, 36],
-    "stamina": [85, 120],
-    "velocidade": [90, 112],
-    "torpor": [75, 105]
-   }
-  },
-  {
    "id": "paquicefalossauro",
    "comprimento_m": [4, 4.6],
    "nome": "Paquicefalossauro",
@@ -315,7 +281,8 @@
     "carne_crua": [6, 10],
     "couro": [4, 8],
     "ossos": [2, 4],
-    "queratina": [5, 9]
+    "queratina": [5, 9],
+    "quitina": [3, 6]
    },
    "pode_domar": true,
    "comida_preferida": "baga_mejo",
@@ -600,84 +567,6 @@
    }
   },
   {
-   "id": "onca",
-   "comprimento_m": [1.8, 2.3],
-   "nome": "Onça-pintada",
-   "dieta": "carnivoro",
-   "temperamento": "agressivo",
-   "vida": 300,
-   "dano": 20,
-   "vel_andar": 1.3,
-   "vel_correr": 9,
-   "tamanho": 1,
-   "raio": 0.6,
-   "altura": 1.0,
-   "biomas": ["selva", "igapo"],
-   "peso_spawn": 3,
-   "grupo": [1, 1],
-   "xp": 40,
-   "loot": {
-    "carne_crua": [3, 5],
-    "couro": [2, 4]
-   },
-   "pode_domar": true,
-   "comida_preferida": "carne_crua",
-   "alcance_agro": 26,
-   "alcance_ataque": 1.6,
-   "intervalo_ataque": 0.8,
-   "carga": 80,
-   "atributos": {
-    "vida": [255, 345],
-    "forca": [85, 125],
-    "peso": [68, 96],
-    "stamina": [130, 185],
-    "velocidade": [90, 112],
-    "torpor": [185, 265]
-   }
-  },
-  {
-   "id": "aranha",
-   "nome": "Aranha-gigante",
-   "dieta": "carnivoro",
-   "temperamento": "agressivo",
-   "vida": 200,
-   "dano": 15.0,
-   "vel_andar": 1.4,
-   "vel_correr": 3.2,
-   "tamanho": 1,
-   "raio": 0.9,
-   "altura": 1.0,
-   "biomas": ["selva", "serra"],
-   "peso_spawn": 3,
-   "grupo": [1, 2],
-   "xp": 30,
-   "loot": {
-    "couro": [1, 3],
-    "quitina": [3, 6]
-   },
-   "pode_domar": true,
-   "comida_preferida": "carne_crua",
-   "alcance_agro": 20,
-   "alcance_ataque": 1.6,
-   "intervalo_ataque": 1.0,
-   "carga": 150,
-   "atributos": {
-    "vida": [200, 200],
-    "forca": [100, 100],
-    "peso": [150, 150],
-    "stamina": [150, 150],
-    "velocidade": [100, 100],
-    "torpor": [80, 80]
-   },
-   "ark_por_nivel": {
-    "vida": 0.2,
-    "stamina": 0.1,
-    "peso": 0.02,
-    "forca": 0.05,
-    "torpor": 0.06
-   }
-  },
-  {
    "id": "carnotauro",
    "comprimento_m": [7.5, 8],
    "nome": "Carnotauro",
@@ -830,7 +719,8 @@
     "carne_crua": [8, 14],
     "couro": [6, 10],
     "ossos": [2, 4],
-    "queratina": [4, 7]
+    "queratina": [4, 7],
+    "quitina": [3, 5]
    },
    "pode_domar": true,
    "comida_preferida": "carne_crua",
@@ -1079,38 +969,6 @@
     "peso": 0.02,
     "forca": 0.04,
     "torpor": 0.06
-   }
-  },
-  {
-   "id": "arara",
-   "nome": "Arara",
-   "dieta": "herbivoro",
-   "temperamento": "medroso",
-   "vida": 20,
-   "dano": 0,
-   "vel_andar": 5,
-   "vel_correr": 8,
-   "tamanho": 1,
-   "raio": 0.3,
-   "altura": 0.4,
-   "biomas": ["selva"],
-   "peso_spawn": 6,
-   "grupo": [3, 6],
-   "xp": 2,
-   "loot": {
-    "carne_crua": [0, 1]
-   },
-   "voa": true,
-   "altura_voo": [16, 30],
-   "ambiente": true,
-   "carga": 0,
-   "atributos": {
-    "vida": [17, 23],
-    "forca": [85, 125],
-    "peso": [4, 6],
-    "stamina": [70, 100],
-    "velocidade": [90, 112],
-    "torpor": [45, 60]
    }
   },
   {

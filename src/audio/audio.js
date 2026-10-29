@@ -38,10 +38,8 @@ const VOWELS = {
 // Voz de cada espécie: tipo, tom base (Hz) e duração base (s).
 const VOICES = {
   dodo: { kind: 'ave', f: 520, d: 0.35 },
-  arara: { kind: 'arara', f: 900, d: 0.4 },
   compsognato: { kind: 'pio', f: 1300, d: 0.25 },
   galimimo: { kind: 'ave', f: 420, d: 0.5 },
-  capivara: { kind: 'assobio', f: 700, d: 0.3 },
   parassauro: { kind: 'buzina', f: 95, d: 1.6 },
   paquicefalossauro: { kind: 'mugido', f: 140, d: 0.9 },
   triceratops: { kind: 'mugido', f: 70, d: 1.2 },
@@ -50,8 +48,6 @@ const VOICES = {
   braquiossauro: { kind: 'buzina', f: 45, d: 2.4 },
   dilofossauro: { kind: 'chiado', f: 420, d: 0.7 },
   raptor: { kind: 'grito', f: 360, d: 0.6 },
-  onca: { kind: 'rosnado', f: 110, d: 0.9 },
-  aranha: { kind: 'chiado', f: 900, d: 0.5 },
   carnotauro: { kind: 'rugido', f: 85, d: 1.4 },
   trex: { kind: 'rugido', f: 48, d: 2.2 },
   titanoboa: { kind: 'chiado', f: 260, d: 1.2 },
@@ -659,11 +655,6 @@ class Sound {
       case 'assobio': {
         const n = v.kind === 'ave' ? 2 : v.kind === 'pio' ? 3 : 1;
         for (let i = 0; i < n; i++) this._osc('sine', f * R(0.95, 1.2), t + i * d * 0.45, d * 0.35, out, 0.4, 0.01, f * R(0.6, 1.5));
-        break;
-      }
-      case 'arara': {
-        this._osc('sawtooth', f, t, d, out, 0.18, 0.01, f * 0.7);
-        this._noise(t, d, out, { f: f * 2.2, q: 4, peak: 0.3 });
         break;
       }
       default:
