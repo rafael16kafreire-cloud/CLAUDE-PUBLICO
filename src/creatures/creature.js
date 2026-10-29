@@ -855,20 +855,23 @@ export class Creature {
       }
     }
 
-    const g = this._groundY(this.pos.x, this.pos.z);
-    this.pos.y += (g - this.pos.y) * Math.min(1, dt * 10);
+    let g = this._groundY(this.pos.x, this.pos.z);
 
-    // Inclina o corpo acompanhando o terreno.
+    // Inclina o corpo acompanhando o terreno. Mede o chão na frente e atrás
+    // (pelo comprimento do corpo) e deixa as pontas tocarem o chão: em cima
+    // de morro o bicho desce em vez de ficar flutuando com o corpo empinado.
     if (this.spec.body !== 'biped' && !this.aquatic) {
-      const len = Math.max(1, this.radius * 2.2);
+      const len = Math.max(1.6, this.radius * 2.8);
       const fx = -Math.sin(this.yaw);
       const fz = -Math.cos(this.yaw);
       const hf = this.world.heightAt(this.pos.x + fx * len * 0.5, this.pos.z + fz * len * 0.5);
       const hb = this.world.heightAt(this.pos.x - fx * len * 0.5, this.pos.z - fz * len * 0.5);
       const inWater = this.swims && this.world.waterAt(this.pos.x, this.pos.z);
-      const target = inWater ? 0 : clamp(Math.atan2(hf - hb, len), -0.5, 0.5);
+      const target = inWater ? 0 : clamp(Math.atan2(hf - hb, len), -0.3, 0.3);
       this.pitch += (target - this.pitch) * Math.min(1, dt * 4);
+      if (!inWater && !this.landed) g = Math.min(g, (hf + hb) * 0.5);
     }
+    this.pos.y += (g - this.pos.y) * Math.min(1, dt * 10);
   }
 
   // Voadores: planam em círculos; os caçadores mergulham para atacar.
