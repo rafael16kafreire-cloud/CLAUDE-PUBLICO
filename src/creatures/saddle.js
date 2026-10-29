@@ -193,9 +193,10 @@ export function ajustarSela(c) {
     if (Math.hypot(A.tmp.x - A.exp.x, A.tmp.z - A.exp.z) < A.R) A.ys.push(A.tmp.y);
   }
   let dy = 0;
-  if (A.ys.length >= 4) {
-    A.ys.sort((a, b) => a - b);
-    const top = A.ys[Math.floor(A.ys.length * 0.85)];
+  if (A.ys.length) {
+    // o ponto mais alto da pele ali (a malha tem poucos vértices: percentil pegaria a barriga)
+    let top = -Infinity;
+    for (const y of A.ys) if (y > top) top = y;
     dy = top - A.exp.y;
   }
   A.dy = A.dy === null ? dy : A.dy + (dy - A.dy) * 0.4;
