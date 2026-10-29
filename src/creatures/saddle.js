@@ -118,7 +118,10 @@ export function buildSaddle(c, kind) {
   const g = new THREE.Group();
   g.name = 'Sela';
   g.position.z = spot.z;
-  const pw = Math.min(width * 0.75, 1.7 * s * (kind === 'sela_grande' ? 1.6 : 1));
+  // tamanho da sela pelo lugar onde ela vai: ~40% da largura do tronco, sem passar de metade
+  // do comprimento dele (a sela tem 1,32× mais comprida que larga) e com mínimo/máximo em metros
+  const maxW = kind === 'sela_grande' ? 2.2 * s : kind === 'sela_media' ? 1.0 * s : 0.7 * s;
+  const pw = Math.max(0.26 * s, Math.min(width * 0.4, maxW, (spot.trunk * 0.5) / (SELA.l / SELA.w)));
   // a sela (modelo): escala pela largura; a frente (o "chifre") aponta para a cabeça
   const f = pw / SELA.w;
   const model = new THREE.Mesh(selaGeometry(), SELA_COURO);
