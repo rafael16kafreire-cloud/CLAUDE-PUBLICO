@@ -339,7 +339,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   check('Coleta: mirar numa árvore mostra o que sai dela', !!treePrompt && /Árvore/.test(treePrompt), treePrompt ?? 'nada');
   await page.screenshot({ path: `${SHOTS}/07-pc-coleta-arvore.png` });
   for (let i = 0; i < 4; i++) {
-    await page.evaluate(() => { window.__ilha.ctx.player.stats.stamina = 100; });
+    await page.evaluate(() => { window.__ilha.ctx.player.stats.stamina = 100; window.__ilha.ctx.player.stats.exhausted = false; });
     await page.mouse.down();
     await page.mouse.up();
     await gameWait(page, 520);
@@ -350,7 +350,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   await page.evaluate(() => { const s = window.__ilha.ctx.world.respawnPoint('sul').position; window.__t.faceRec('coqueiro', { x: s.x, z: s.z }); });
   await frames(page, 6);
   for (let i = 0; i < 4; i++) {
-    await page.evaluate(() => { window.__ilha.ctx.player.stats.stamina = 100; window.__ilha.ctx.player.stats.health = 100; });
+    await page.evaluate(() => { window.__ilha.ctx.player.stats.stamina = 100; window.__ilha.ctx.player.stats.exhausted = false; window.__ilha.ctx.player.stats.health = 100; });
     await page.mouse.down();
     await page.mouse.up();
     await gameWait(page, 520);
@@ -361,7 +361,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   await page.evaluate(() => { window.__t.faceRec(['arvore_media', 'media_a', 'media_b', 'arvore_folhosa', 'arvore_folhosa2']); const st = window.__ilha.ctx.player.stats; st.health = st.max.health; });
   await frames(page, 6);
   const thin0 = await page.evaluate(() => ({ h: window.__ilha.ctx.player.stats.health, m: window.__t.count('madeira'), p: window.__t.count('palha') }));
-  await page.evaluate(() => { window.__ilha.ctx.player.stats.stamina = 100; });
+  await page.evaluate(() => { window.__ilha.ctx.player.stats.stamina = 100; window.__ilha.ctx.player.stats.exhausted = false; });
   await page.mouse.down();
   await page.mouse.up();
   await gameWait(page, 520);
@@ -372,7 +372,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   await page.evaluate(() => window.__t.faceRec('pedra_musgo'));
   await frames(page, 6);
   for (let i = 0; i < 3; i++) {
-    await page.evaluate(() => { window.__ilha.ctx.player.stats.stamina = 100; });
+    await page.evaluate(() => { window.__ilha.ctx.player.stats.stamina = 100; window.__ilha.ctx.player.stats.exhausted = false; });
     await page.mouse.down();
     await page.mouse.up();
     await gameWait(page, 520);
@@ -474,7 +474,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   await page.evaluate(() => window.__t.faceRec(['sumauma', 'copa_g_a', 'copa_g_b']));
   await frames(page, 6);
   const giant0 = await page.evaluate(() => ({ h: window.__ilha.ctx.player.stats.health, m: window.__t.count('madeira'), p: window.__t.count('palha'), sel: window.__ilha.ctx.inventory.selected }));
-  await page.evaluate(() => { window.__ilha.ctx.inventory.selected = -1; window.__ilha.ctx.player.stats.stamina = 100; });
+  await page.evaluate(() => { window.__ilha.ctx.inventory.selected = -1; window.__ilha.ctx.player.stats.stamina = 100; window.__ilha.ctx.player.stats.exhausted = false; });
   await page.mouse.down();
   await page.mouse.up();
   await gameWait(page, 600);
@@ -594,7 +594,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   await frames(page, 6);
   const wood0 = await page.evaluate(() => window.__t.count('madeira'));
   for (let i = 0; i < 3; i++) {
-    await page.evaluate(() => { window.__ilha.ctx.player.stats.stamina = 100; });
+    await page.evaluate(() => { window.__ilha.ctx.player.stats.stamina = 100; window.__ilha.ctx.player.stats.exhausted = false; });
     await page.mouse.down();
     await page.mouse.up();
     await gameWait(page, 680);
@@ -921,7 +921,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   const xp0 = await page.evaluate(() => {
     const c = window.__ilha.ctx;
     c.player.stats.health = 100;
-    c.player.stats.stamina = 100;
+    c.player.stats.stamina = 100; c.player.stats.exhausted = false;
     c.inventory.selected = -1;
     const f = c.camCtl.forward;
     const p = c.player.position;
@@ -934,7 +934,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     await page.evaluate(() => {
       const c = window.__ilha.ctx; const d = window.__dodo; const p = c.player.position;
       if (d.alive) { const f = c.camCtl.forward; d.pos.x = p.x + f.x * 1.6; d.pos.z = p.z + f.z * 1.6; }
-      c.player.stats.stamina = 100;
+      c.player.stats.stamina = 100; c.player.stats.exhausted = false;
     });
     await page.mouse.down();
     await page.mouse.up();
