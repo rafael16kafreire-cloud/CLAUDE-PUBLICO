@@ -45,34 +45,54 @@ export function saddleFor(c) {
   return L < T[0] ? 'sela' : L < T[1] ? 'sela_media' : 'sela_grande';
 }
 
-// Onde a sela fica no modelo (unidades do modelo): no meio entre o
-// quadril e o peito, em cima das costas (o vértice mais alto ali).
-// Guardado na geometria (igual para todos os bichos da espécie).
+// Onde a sela fica no modelo (unidades do modelo): no meio do TRONCO, em cima das
+// costas. Mede o corpo de verdade: acha o trecho mais largo (o tronco, sem pescoço,
+// cabeça nem cauda), pega o meio dele e a altura das costas ali (ignorando espinhos
+// e placas). Guardado na geometria (igual para todos os bichos da espécie).
 export function backSpot(c) {
   const geo = c.mesh.geometry;
   if (geo.userData.backSpot) return geo.userData.backSpot;
   if (!geo.boundingBox) geo.computeBoundingBox();
   const bb = geo.boundingBox;
-  const b = c.bones ?? {};
-  // posição dos ossos no espaço do modelo (pose de descanso)
-  const restZ = (bone) => {
-    if (!bone) return null;
-    let z = 0;
-    for (let o = bone; o && o.isBone; o = o.parent) z += o.userData?.rest?.z ?? o.position.z;
-    return z;
-  };
-  const zh = restZ(b.hips);
-  const zc = restZ(b.chest);
-  const zMid = zh !== null && zc !== null ? (zh * 0.6 + zc * 0.4) : (bb.min.z + bb.max.z) / 2;
-  const len = bb.max.z - bb.min.z;
-  const wid = bb.max.x - bb.min.x;
   const pos = geo.attributes.position;
-  let top = -Infinity;
+  const H = bb.max.y - bb.min.y;
+  const len = bb.max.z - bb.min.z;
+  const N = 48;
+  const bins = Array.from({ length: N }, () => ({ lo: Infinity, hi: -Infinity, ys: [] }));
+  const floor = bb.min.y + H * 0.3; // acima das pernas
   for (let i = 0; i < pos.count; i++) {
-    if (Math.abs(pos.getZ(i) - zMid) < len * 0.06 && Math.abs(pos.getX(i)) < wid * 0.2) top = Math.max(top, pos.getY(i));
+    const y = pos.getY(i);
+    if (y < floor) continue;
+    const k = Math.min(N - 1, Math.floor(((pos.getZ(i) - bb.min.z) / len) * N));
+    const bn = bins[k];
+    const x = pos.getX(i);
+    bn.lo = Math.min(bn.lo, x);
+    bn.hi = Math.max(bn.hi, x);
+    bn.ys.push([x, y]);
   }
-  if (!Number.isFinite(top)) top = bb.max.y * 0.7;
-  geo.userData.backSpot = { z: zMid, y: top };
+  const wid = bins.map((bn) => (bn.hi > bn.lo ? bn.hi - bn.lo : 0));
+  const maxW = Math.max(...wid, 1e-6);
+  // maior trecho seguido de "tronco" (largo)
+  let best = { n: 0, a: 0 };
+  for (let a0 = 0; a0 < N; a0++) {
+    let e = a0;
+    while (e < N && wid[e] >= maxW * 0.55) e++;
+    if (e - a0 > best.n) best = { n: e - a0, a: a0 };
+    a0 = Math.max(a0, e);
+  }
+  const first = best.n ? best.a : Math.floor(N * 0.3);
+  const last = best.n ? best.a + best.n - 1 : Math.floor(N * 0.7);
+  const zOf = (k) => bb.min.z + ((k + 0.5) / N) * len;
+  const zc = (zOf(first) + zOf(last)) / 2;
+  // altura das costas no meio do tronco (percentil alto: ignora espinhos soltos)
+  const mid0 = Math.max(first, Math.floor((first + last) / 2 - 2));
+  const mid1 = Math.min(last, Math.ceil((first + last) / 2 + 2));
+  const ys = [];
+  for (let k = mid0; k <= mid1; k++) for (const [x, y] of bins[k].ys) if (Math.abs(x) < maxW * 0.2) ys.push(y);
+  ys.sort((a, b2) => a - b2);
+  const top = ys.length ? ys[Math.floor(ys.length * 0.82)] : bb.max.y * 0.7;
+  const belly = Math.max(bb.min.y, floor);
+  geo.userData.backSpot = { z: zc, y: top, w: maxW, belly, trunk: (zOf(last) - zOf(first)) + len / N };
   return geo.userData.backSpot;
 }
 
@@ -90,11 +110,11 @@ export function buildSaddle(c, kind) {
   if (!geo.boundingBox) geo.computeBoundingBox();
   const bb = geo.boundingBox;
   const s = 1 / c.adultScale; // 1 m do mundo em unidades do modelo
-  const width = Math.min(bb.max.x - bb.min.x, 3.2 * s * (kind === 'sela_grande' ? 2 : 1));
-  // em cima das costas, entre quadril e peito
+  // em cima das costas, no meio do tronco
   const spot = backSpot(c);
+  const width = Math.min(spot.w, 3.2 * s * (kind === 'sela_grande' ? 2 : 1));
   const back = spot.y;
-  const len = Math.max(0.9 * s, Math.min((bb.max.z - bb.min.z) * 0.22, 2.4 * s));
+  const len = Math.max(0.9 * s, Math.min(spot.trunk * 0.6, 2.4 * s));
   const g = new THREE.Group();
   g.name = 'Sela';
   g.position.z = spot.z;
@@ -109,7 +129,7 @@ export function buildSaddle(c, kind) {
   c._seatLift = SELA.seat * f; // o jogador senta em cima do assento
   const len2 = SELA.l * f;
   // cilha: tiras descendo pelos lados, em volta da barriga
-  const drop = Math.max(0.4 * s, (back - bb.min.y) * 0.45);
+  const drop = Math.max(0.3 * s, (back - spot.belly) * 0.9);
   for (const side of [-1, 1]) g.add(box(0.06 * s, drop, 0.12 * s, side * pw * 0.5, back - drop / 2, 0, LEATHER_DARK));
   if (kind === 'sela_grande') {
     // plataforma de madeira com grade (como as selas de gigantes do ARK)
