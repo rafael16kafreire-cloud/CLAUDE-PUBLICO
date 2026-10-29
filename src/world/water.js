@@ -111,7 +111,7 @@ export class WaterSystem {
         body.seg = { ax: a.x, az: a.z, bx: b.x, bz: b.z, r: st.halfW };
         this.streamSegs.push(body);
         // grade de 20 m para achar o trecho rápido
-        for (const p of [a, b]) {
+        for (const p of [a, b, { x: (a.x + b.x) / 2, z: (a.z + b.z) / 2 }]) {
           const key = `${Math.floor(p.x / 20)},${Math.floor(p.z / 20)}`;
           if (!this.streamGrid.has(key)) this.streamGrid.set(key, []);
           this.streamGrid.get(key).push(body);
@@ -172,10 +172,14 @@ export class WaterSystem {
 
   bodyAt(x, z) {
     const ground = this.map.heightAt(x, z);
+    // o córrego vem antes do mar: perto da foz o leito desce abaixo do nível do
+    // mar e o riacho aparecia como "água salgada" (a água do córrego fica acima do mar)
+    const stream = this._streamAt(x, z, ground);
+    if (stream) return stream;
     for (const b of this.bodies) {
       if (b.contains(x, z) && ground < b.level) return b;
     }
-    return this._streamAt(x, z, ground);
+    return null;
   }
 
   // A malha de perto anda com a câmera (em passos da grade, sem tremer).
