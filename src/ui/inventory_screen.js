@@ -383,6 +383,10 @@ export class InventoryScreen {
         ? `${cur.toFixed(1)}/${st.skillValue(s.key).toFixed(1)}`
         : `${+st.skillValue(s.key).toFixed(1)}${s.unit ?? ''}`;
       this.refs[`sl-${s.key}`].textContent = st.skills[s.key] ? `+${st.skills[s.key]}` : '';
+      // a linha é uma barra: a parte clara mostra quanto está cheio (vida, estamina, comida...)
+      const max = st.skillValue(s.key);
+      const frac = cur !== undefined && max > 0 ? Math.max(0, Math.min(1, cur / max)) : 1;
+      this.refs[`sv-${s.key}`].parentElement.style.setProperty('--p', `${(frac * 100).toFixed(1)}%`);
     }
     this.el.querySelectorAll('.sk-plus').forEach((b) => { b.disabled = st.points <= 0; });
     // ficha "Você" (nível, dia, hora, temperatura, proteção...)

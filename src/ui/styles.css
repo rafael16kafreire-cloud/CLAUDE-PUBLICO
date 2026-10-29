@@ -2226,3 +2226,27 @@ body.inv-open #ui > .hud, body.inv-open #ui > .hotbar, body.inv-open #ui > .hud-
 .ark-inv .sk-plus { width: 3.7vh; height: 3.7vh; font-size: 2.8vh; }
 .ark-inv .ai-skills { gap: 0.4vh; }
 .ark-inv .sk-plus.sk-none { background: transparent !important; border-color: transparent !important; }
+
+/* ---- painel VOCÊ: copiando a tela do ARK (barras, fonte e botões +) ---- */
+.ark-inv .ai-info, .ark-inv .ai-xp, .ark-inv .skill-row { font-family: "Jost", "Josefin Sans", "Century Gothic", system-ui, sans-serif !important; }
+.ark-inv .ai-info { font-weight: 500; color: #cfe3ea; text-transform: uppercase; letter-spacing: 0.02em; font-size: clamp(8px, 1.5vh, 14px); line-height: 1.45; }
+.ark-inv .ai-info .you-name { color: #dbe9ef; font-weight: 500; text-transform: none; margin: 0 0 2px; }
+.ark-inv .ai-info b { color: #e6f1f5; font-weight: 500; }
+.ark-inv .ai-xp {
+  background: linear-gradient(90deg, #1b87a5, #1a7893) !important; border: 0 !important; padding: 0.5vh 2.5% !important; margin: 0.8% 0 0.5vh;
+  font-weight: 500; font-size: clamp(10px, 2.5vh, 22px); letter-spacing: 0.01em; text-transform: uppercase;
+}
+.ark-inv .ai-xp b { font-weight: 600; }
+.ark-inv .skill-row {
+  --p: 100%;
+  background: linear-gradient(90deg, #1b86a4 var(--p), #0b2431 var(--p)) !important;
+  padding: 0 0 0 1.2% !important; gap: 2.4%; min-height: 3.9vh;
+  box-shadow: inset 0 0 0 1px rgba(60, 182, 216, 0.18);
+}
+.ark-inv .skill-row .ico { color: #f1f9fc; width: 2.9vh; height: 2.9vh; }
+.ark-inv .sk-name { font-family: "Jost", "Josefin Sans", system-ui, sans-serif !important; font-weight: 500; font-size: clamp(8px, 2.05vh, 18px); letter-spacing: 0.01em; color: #f1f9fc; text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5); }
+.ark-inv .sk-val { font-family: "Jost", "Josefin Sans", system-ui, sans-serif !important; font-weight: 500; font-size: clamp(8px, 2vh, 17px); color: #f1f9fc; text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5); }
+.ark-inv .sk-plus { background: #0a1820 !important; border: 0 !important; color: #c6dbe4 !important; width: 3.9vh; height: 3.9vh; font-size: 3.4vh; font-weight: 700; text-shadow: 0 0 0 #c6dbe4; }
+.ark-inv .sk-plus:disabled { color: #4d6874 !important; }
+.ark-inv .sk-plus.sk-none { background: transparent !important; }
+.ark-inv .ai-title, .ark-inv .ai-tab { font-family: "Rajdhani", system-ui, sans-serif !important; }
