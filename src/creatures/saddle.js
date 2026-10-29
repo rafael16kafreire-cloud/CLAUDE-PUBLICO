@@ -11,12 +11,27 @@
 // =============================================================
 import * as THREE from 'three';
 import { BALANCE } from '../core/balance.js';
+import SELA from './imported/sela_modelo.js';
 
 const LEATHER = new THREE.MeshLambertMaterial({ color: '#6e4426' });
 const LEATHER_DARK = new THREE.MeshLambertMaterial({ color: '#4a2c18' });
 const CLOTH = new THREE.MeshLambertMaterial({ color: '#8a2e22' });
 const IRON = new THREE.MeshLambertMaterial({ color: '#6a6e74' });
 const WOOD = new THREE.MeshLambertMaterial({ color: '#7a5a3a' });
+
+// Sela de verdade (modelo enviado pelo jogador, sem textura: pintada de couro)
+const SELA_COURO = new THREE.MeshLambertMaterial({ color: '#7b4a28' });
+let selaGeo = null;
+function selaGeometry() {
+  if (selaGeo) return selaGeo;
+  const f32 = (b64) => { const b = Uint8Array.from(atob(b64), (ch) => ch.charCodeAt(0)); return new Float32Array(b.buffer); };
+  const u16 = (b64) => { const b = Uint8Array.from(atob(b64), (ch) => ch.charCodeAt(0)); return new Uint16Array(b.buffer); };
+  selaGeo = new THREE.BufferGeometry();
+  selaGeo.setAttribute('position', new THREE.BufferAttribute(f32(SELA.pos), 3));
+  selaGeo.setIndex(new THREE.BufferAttribute(u16(SELA.index), 1));
+  selaGeo.computeVertexNormals();
+  return selaGeo;
+}
 
 // Comprimento do corpo do bicho adulto (m).
 export function bodyLength(c) {
@@ -83,27 +98,23 @@ export function buildSaddle(c, kind) {
   const g = new THREE.Group();
   g.name = 'Sela';
   g.position.z = spot.z;
-  const pw = width * 0.75;
-  // manta
-  g.add(box(pw, 0.05 * s, len, 0, back, 0, CLOTH));
-  // assento, pito na frente e encosto atrás
-  g.add(box(pw * 0.6, 0.1 * s, len * 0.7, 0, back + 0.07 * s, 0, LEATHER));
-  g.add(box(pw * 0.45, 0.22 * s, 0.1 * s, 0, back + 0.17 * s, -len * 0.36, LEATHER_DARK));
-  g.add(box(pw * 0.55, 0.3 * s, 0.1 * s, 0, back + 0.2 * s, len * 0.36, LEATHER_DARK));
-  // cilhas descendo pelos lados e estribos
+  const pw = Math.min(width * 0.75, 1.7 * s * (kind === 'sela_grande' ? 1.6 : 1));
+  // a sela (modelo): escala pela largura; a frente (o "chifre") aponta para a cabeça
+  const f = pw / SELA.w;
+  const model = new THREE.Mesh(selaGeometry(), SELA_COURO);
+  model.scale.setScalar(f);
+  model.position.set(0, back - 0.02 * s, 0);
+  model.castShadow = true;
+  g.add(model);
+  c._seatLift = SELA.seat * f; // o jogador senta em cima do assento
+  const len2 = SELA.l * f;
+  // cilha: tiras descendo pelos lados, em volta da barriga
   const drop = Math.max(0.4 * s, (back - bb.min.y) * 0.45);
-  for (const side of [-1, 1]) {
-    const strap = box(0.06 * s, drop, 0.12 * s, side * pw * 0.5, back - drop / 2, 0, LEATHER_DARK);
-    g.add(strap);
-    const stir = new THREE.Mesh(new THREE.TorusGeometry(0.09 * s, 0.018 * s, 4, 8), IRON);
-    stir.position.set(side * (pw * 0.5 + 0.02 * s), back - drop * 0.75, len * 0.1);
-    stir.rotation.y = Math.PI / 2;
-    g.add(stir);
-  }
+  for (const side of [-1, 1]) g.add(box(0.06 * s, drop, 0.12 * s, side * pw * 0.5, back - drop / 2, 0, LEATHER_DARK));
   if (kind === 'sela_grande') {
     // plataforma de madeira com grade (como as selas de gigantes do ARK)
-    g.add(box(pw * 1.15, 0.06 * s, len * 1.4, 0, back + 0.02 * s, 0, WOOD));
-    for (const side of [-1, 1]) g.add(box(0.05 * s, 0.35 * s, len * 1.4, side * pw * 0.57, back + 0.2 * s, 0, WOOD));
+    g.add(box(pw * 1.15, 0.06 * s, len2 * 1.2, 0, back + SELA.seat * f * 0.7, 0, WOOD));
+    for (const side of [-1, 1]) g.add(box(0.05 * s, 0.35 * s, len2 * 1.2, side * pw * 0.57, back + SELA.seat * f * 0.7 + 0.17 * s, 0, WOOD));
   }
   // presa no quadril: a sela acompanha o balanço do corpo
   const hips = c.bones?.hips;

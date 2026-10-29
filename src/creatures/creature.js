@@ -243,7 +243,7 @@ export class Creature {
   // Onde o jogador senta (altura e quanto para a frente/trás, em metros).
   get seat() {
     const sp = backSpot(this);
-    return { y: (sp.y + (this.saddled ? 0.15 / this.adultScale : 0)) * this.scale, z: sp.z * this.scale };
+    return { y: (sp.y + (this.saddled ? (this._seatLift ?? 0.15 / this.adultScale) : 0)) * this.scale, z: sp.z * this.scale };
   }
 
   // Sela que serve neste bicho (pelo porte).
