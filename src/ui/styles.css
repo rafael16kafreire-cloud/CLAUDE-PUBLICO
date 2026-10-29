@@ -2053,7 +2053,7 @@ html, body, button, input, select, textarea, .title { font-family: var(--font-ui
 /* =============================================================
    TELA DE AJUDA (mesmo formato da ajuda do ARK Mobile)
    ============================================================= */
-.helpscr { background: #000; z-index: 40; }
+.helpscr { background: #000 !important; z-index: 40; backdrop-filter: none !important; }
 .hs-wrap { position: absolute; left: 10%; right: 10%; top: 2%; bottom: 1.2%; display: flex; flex-direction: column; gap: 1.2%; }
 .hs-top { display: flex; gap: 0.55%; height: 7.4%; min-height: 34px; flex: none; }
 .hs-tab {
@@ -2072,13 +2072,13 @@ html, body, button, input, select, textarea, .title { font-family: var(--font-ui
 .hs-left { width: 27.5%; flex: none; display: flex; flex-direction: column; align-items: center; padding: 2% 7% 1.5%; }
 .hs-right { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 1.6% 4.5% 1.5%; }
 .hs-ltitle, .hs-rtitle {
-  margin: 0; font: 700 clamp(18px, 4.3vh, 40px)/1.1 "Rajdhani", var(--font-ui); text-transform: uppercase; text-align: center;
+  margin: 0; font: 700 clamp(18px, 4.3vh, 40px)/1.1 "Rajdhani", var(--font-ui) !important; text-transform: uppercase; text-align: center;
   color: #e9f7ff; letter-spacing: 0.01em; transform: scaleX(0.86); transform-origin: center; white-space: nowrap;
 }
 .hs-list { margin-top: 6%; width: 100%; display: flex; flex-direction: column; gap: 1.3vh; }
 .hs-item {
   width: 100%; padding: 1.1vh 4px; background: rgba(18, 112, 146, 0.78); border: 1px solid #3cb6d8; color: #dff5ff;
-  font: 600 clamp(11px, 2.4vh, 20px)/1.15 "Rajdhani", var(--font-ui); letter-spacing: 0.03em; text-transform: uppercase; cursor: pointer;
+  font: 600 clamp(11px, 2.4vh, 20px)/1.15 "Rajdhani", var(--font-ui) !important; letter-spacing: 0.03em; text-transform: uppercase; cursor: pointer;
 }
 .hs-item:hover { background: rgba(30, 140, 176, 0.85); }
 .hs-item.on { background: rgba(30, 150, 186, 0.95); border-color: #e8f8ff; color: #fff; box-shadow: 0 0 0 1px rgba(232, 248, 255, 0.5) inset; }
@@ -2087,15 +2087,16 @@ html, body, button, input, select, textarea, .title { font-family: var(--font-ui
 .hs-brand span { font: 600 clamp(9px, 1.9vh, 16px)/1.15 var(--font-ui); text-align: left; }
 .hs-img {
   margin-top: 2.2%; width: 71%; aspect-ratio: 16 / 9; flex: none; border: 1px solid rgba(60, 182, 216, 0.5);
-  background: rgba(0, 12, 20, 0.6); overflow: hidden; max-height: 50%;
+  background: rgba(0, 12, 20, 0.6); overflow: hidden;
 }
 .hs-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .hs-img.vazio { background: linear-gradient(135deg, rgba(10, 60, 84, 0.6), rgba(2, 14, 22, 0.8)); }
 .hs-text {
-  margin: 1.4vh 0 0; width: 100%; font: 700 clamp(11px, 2.45vh, 21px)/1.14 "Rajdhani", var(--font-ui); color: #fff;
+  margin: 1.4vh 0 0; width: 100%; font: 700 clamp(11px, 2.45vh, 21px)/1.14 "Rajdhani", var(--font-ui) !important; color: #fff;
   text-shadow: 0 1px 2px #000, 0 0 3px #000; overflow: auto;
 }
 @media (max-aspect-ratio: 3/2) {
   .hs-wrap { left: 2%; right: 2%; }
   .hs-left { width: 32%; }
 }
+.helpscr .hs-ltitle, .helpscr .hs-rtitle { font-family: "Rajdhani", "Barlow Semi Condensed", system-ui, sans-serif !important; font-weight: 700; letter-spacing: 0.01em; }
