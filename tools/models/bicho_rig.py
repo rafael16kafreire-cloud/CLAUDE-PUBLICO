@@ -25,6 +25,8 @@ ROT = {
     # cabeça do modelo em +Z -> -Z
     'y180': np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]]),
     'nada': np.eye(3),
+    # peixe com a boca em -X (Z para cima no Blender) -> boca em -Z
+    'x_menos': np.array([[0, 0, -1], [0, 1, 0], [1, 0, 0]]),
     # modelo em pé (cabeça para +Y, barriga para -Z) -> deitado
     'cabeca_cima': np.array([[1, 0, 0], [0, 0, 1], [0, -1, 0]]),
     # em pé com a cabeça para +Y e as costas para -Z (vira e desvira)

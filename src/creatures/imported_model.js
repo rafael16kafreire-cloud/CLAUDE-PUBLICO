@@ -31,12 +31,13 @@ import triceratops from './imported/triceratops.js';
 import galimimo from './imported/galimimo.js';
 import dodo from './imported/dodo.js';
 import paquicefalossauro from './imported/paquicefalossauro.js';
+import piranha from './imported/piranha.js';
 
 export const IMPORTED = {
   espinossauro, trex, braquiossauro, titanoboa, deinosuchus, estegossauro,
   anquilossauro, parassauro, raptor, quetzalcoatlus, mamute, argentavis, reidodo,
   // com animação do próprio modelo
-  sauropelta, argentinossauro, mosassauro, pterodactilo, carnotauro, triceratops, galimimo, dodo, paquicefalossauro,
+  sauropelta, argentinossauro, mosassauro, pterodactilo, carnotauro, triceratops, galimimo, dodo, paquicefalossauro, piranha,
 };
 
 function bytes(b64) {
@@ -62,6 +63,8 @@ function texture(dataUri, srgb) {
 // costas/barriga/listra = cores; freq = listras por metro; forca = quanto escurece;
 // materiais = quais materiais do modelo recebem a tinta; brilho = clareia.
 const TINTAS = {
+  // Piranha (modelo sem textura): costas cinza-esverdeadas, barriga vermelha, escamas em listras escuras
+  piranha: { costas: '#59635c', barriga: '#c4442e', listra: '#2c332f', freq: 9, forca: 0.35, brilho: 1.05 },
   // Dodô (modelo sem textura): costas azul-acinzentadas, barriga clara, penas escuras nas pontas e pés roxos
   dodo: { costas: '#4a4858', barriga: '#756c64', listra: '#22212b', freq: 5, forca: 0.6, brilho: 1.05, pes: '#5a4c7a' },
   estegossauro: { costas: '#8f7f3d', barriga: '#d8cc9a', listra: '#3a301c', freq: 1.7, forca: 0.5, brilho: 1.9 },

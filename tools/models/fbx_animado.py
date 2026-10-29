@@ -26,7 +26,10 @@ FPS = 30
 def main(src, out, opc):
     os.makedirs(out, exist_ok=True)
     bpy.ops.wm.read_factory_settings(use_empty=True)
-    bpy.ops.wm.fbx_import(filepath=src)
+    if src.lower().endswith('.stl'):
+        bpy.ops.wm.stl_import(filepath=src)
+    else:
+        bpy.ops.wm.fbx_import(filepath=src)
     arm = next((o for o in bpy.data.objects if o.type == 'ARMATURE'), None)  # sem esqueleto: modelo estático (o jogo encaixa o dele)
     mesh = next(o for o in bpy.data.objects if o.type == 'MESH')
     bones = list(arm.data.bones) if arm else []
