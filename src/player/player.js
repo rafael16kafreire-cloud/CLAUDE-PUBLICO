@@ -221,7 +221,7 @@ export class Player {
     dx /= len;
     dz /= len;
     this.moving = mag > 0.05;
-    c.rideInput = { x: dx, z: dz, mag, run: input.isHeld('run') || input.runToggle };
+    c.rideInput = { x: dx, z: dz, mag, run: input.isHeld('run') || input.runToggle, up: input.isHeld('jump'), down: input.isHeld('crouch') };
     // sentado nas costas
     const seat = c.seat;
     // modelo olha para -z: z do assento vai para a frente/trás pelo yaw

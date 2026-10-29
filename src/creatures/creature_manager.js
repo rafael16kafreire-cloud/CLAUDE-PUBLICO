@@ -673,7 +673,7 @@ export class CreatureManager {
     let best = null;
     let bestD = maxD;
     for (const c of this.tamedBy(owner)) {
-      if (!c.species.pode_montar || c.flies || c.isBaby) continue;
+      if (!c.species.pode_montar || c.isBaby) continue;
       if (BALANCE.sela.precisa && !c.saddled) continue; // sem sela não monta
       const d = Math.hypot(c.pos.x - pos.x, c.pos.z - pos.z) - c.radius;
       if (d < bestD) {

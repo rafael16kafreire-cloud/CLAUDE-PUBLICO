@@ -128,7 +128,7 @@ export class CreatureMenu {
     R.wander.checked = !!c.wander;
     R.saddleRow.hidden = !c.saddled;
     R.saddleTxt.textContent = c.saddled ? `Sela: ${itemName(c.saddleKind ?? 'sela')}` : 'Sela:';
-    const rideable = c.species.pode_montar && !c.flies && !c.isBaby;
+    const rideable = c.species.pode_montar && !c.isBaby;
     R.mount.hidden = !(rideable && c.saddled);
     R.spay.hidden = !!c.neutered;
     R.confirm.hidden = !this._confirm;

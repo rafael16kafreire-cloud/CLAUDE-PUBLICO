@@ -768,7 +768,7 @@ function boot(hotData = {}) {
     const c = ctx.creatures.findMountable(p, p.position, 5);
     if (c) p.mount(c);
     else if (ctx.creatures.tamedBy(p).length) {
-      const near = ctx.creatures.tamedBy(p).find((o) => o.species.pode_montar && !o.flies && Math.hypot(o.pos.x - p.position.x, o.pos.z - p.position.z) - o.radius < 5);
+      const near = ctx.creatures.tamedBy(p).find((o) => o.species.pode_montar && Math.hypot(o.pos.x - p.position.x, o.pos.z - p.position.z) - o.radius < 5);
       events.emit(EV.MESSAGE, {
         text: near && !near.saddled ? `Precisa de ${itemName(near.saddleNeed)}: crie no Inventário, segure na mão e use Interagir no bicho.` : 'Chegue perto de um bicho domado que dá para montar.',
         kind: 'info',

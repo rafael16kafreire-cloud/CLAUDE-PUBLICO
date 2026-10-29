@@ -144,8 +144,9 @@ export class TouchControls {
     this.btn.run.classList.toggle('on', this.input.runToggle);
     this.btn.crouch.classList.toggle('on', player.crouching);
     // nadando: subir/descer (só troca o ícone quando muda)
-    const sw = !!player.swimming;
-    this._swimming = sw;
+    this._flyRide = !!player.riding?.flies; // montado num voador: segurar o dedo para cima sobe
+    const sw = !!player.swimming || this._flyRide;
+    this._swimming = !!player.swimming;
     this._mounted = !!player.riding;
     if (this._swimIcons !== sw) {
       this._swimIcons = sw;
@@ -292,7 +293,7 @@ export class TouchControls {
           this._tap('ammo');   // recarregar
         }
         // nadando: segurar o dedo para cima sobe
-        if (this._swimming) {
+        if (this._swimming || this._flyRide) {
           if (dy < -40) this.input.press('jump');
           else this.input.release('jump');
         }
@@ -314,7 +315,7 @@ export class TouchControls {
       if (st.left) {
         if (this._stickId === e.pointerId) this._resetStick();
         if (st.dbl) this.input.runToggle = false;
-        if (this._swimming) this.input.release('jump');
+        if (this._swimming || this._flyRide) this.input.release('jump');
         if (quick) lastTapL = now;
       } else {
         if (st.holdAttack) clearInterval(st.repeat);

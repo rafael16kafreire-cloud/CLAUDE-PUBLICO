@@ -175,7 +175,7 @@ export class PlayerInteraction {
       return { kind: 'tame-feed', c, food, text: `Dar ${itemName(food)} · domando ${pct}%${plate ? ` (no prato: ${plate})` : ''}` };
     }
     if (c.tamed && c.owner === this.player) {
-      const rideable = c.species.pode_montar && !c.flies && !c.isBaby;
+      const rideable = c.species.pode_montar && !c.isBaby;
       // filhote pedindo carinho (impressão)
       if (c.isBaby && c.wantsCare) {
         return { kind: 'care', c, text: `Cuidar do filhote de ${c.species.nome} (impressão ${Math.round((c.imprint ?? 0) * 100)}%)` };

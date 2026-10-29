@@ -480,7 +480,7 @@ export class Creature {
       this._think(ctx);
     }
 
-    if (this.landed) this._updateLanded(dt);
+    if (this.landed && !this.rider) this._updateLanded(dt);
     if (this.rider) this._updateRidden(dt);
     else if (this.flies && !this.landed) this._updateFlying(dt, ctx);
     else this._updateGround(dt, ctx);
@@ -646,6 +646,14 @@ export class Creature {
   // Montado: quem anda é o jogador (rideInput vem do Player).
   _updateRidden(dt) {
     const inp = this.rideInput ?? { x: 0, z: 0, mag: 0, run: false };
+    // voadores: no ar o jogador pilota (pular sobe, agachar desce); no chão anda como bicho de terra
+    if (this.flies) {
+      if (this.landed && inp.up) this._takeOff();
+      if (!this.landed) {
+        this._updateRiddenFlying(dt, inp);
+        return;
+      }
+    }
     if (inp.mag > 0.05) {
       const speed = (inp.run ? this.runSpeed : this.walkSpeed * 1.4) * inp.mag;
       this._steer(dt, this.pos.x + inp.x * 20, this.pos.z + inp.z * 20, speed);
@@ -654,6 +662,28 @@ export class Creature {
     }
     const g = this._groundY(this.pos.x, this.pos.z);
     this.pos.y += (g - this.pos.y) * Math.min(1, dt * 10);
+  }
+
+  // Voando com o jogador nas costas.
+  _updateRiddenFlying(dt, inp) {
+    const prevYaw = this.yaw;
+    const ground = Math.max(0, this.world.heightAt(this.pos.x, this.pos.z));
+    const speed = inp.run ? this.runSpeed : this.walkSpeed;
+    if (inp.mag > 0.05) this._steer(dt, this.pos.x + inp.x * 30, this.pos.z + inp.z * 30, speed * Math.max(0.45, inp.mag), true);
+    else this._brake(dt);
+    const vy = inp.up ? 9 : inp.down ? -9 : 0;
+    this.climb += (vy - this.climb) * Math.min(1, dt * 3);
+    this.pos.y = Math.min(ground + 160, this.pos.y + this.climb * dt);
+    const stand = ground + this.standHeight;
+    if (this.pos.y < ground + 1.2) this.pos.y = ground + 1.2;
+    // desceu até o chão: pousa (e anda no chão)
+    if (inp.down && this.pos.y - stand < 0.8 && this.species.pousa) {
+      this._land();
+      return;
+    }
+    const turning = angleDelta(prevYaw, this.yaw) / Math.max(dt, 1e-3);
+    this.roll += (clamp(-turning * 0.6, -0.7, 0.7) - this.roll) * Math.min(1, dt * 2);
+    this.pitch += (clamp(this.climb * 0.07, -0.45, 0.35) - this.pitch) * Math.min(1, dt * 2);
   }
 
   // Dá para alcançar? (bichos da água só pegam quem está na água/beira)
