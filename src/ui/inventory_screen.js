@@ -33,7 +33,7 @@ const AI = {
   stamina: sv('<path d="M14.2 1.6 5 13.4h5.4l-1.6 9L19 9.8h-5.8z"/>'),
   folego: sv('<path d="M16.4 2.3l5.3 5.3-1.8 1.8-1-1-9.2 9.2c-.5.5-1.2.8-1.9.8H5.2l-.9.9-2-2 .9-.9v-2.2c0-.7.3-1.4.8-1.9l9.2-9.2-1-1z"/><path d="M3.2 20.8 2 22" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>'),
   fome: sv('<circle cx="15" cy="9" r="6.3"/><path d="M10.8 13.2 5 19M3.6 17.2a2.1 2.1 0 1 0 3.2 3.2M4.7 20.7a2.1 2.1 0 1 0 2.9-2.9" stroke="currentColor" stroke-width="2.3" fill="none" stroke-linecap="round"/>'),
-  sede: sv('<path d="M12 2S5 9.8 5 15a7 7 0 0 0 14 0C19 9.8 12 2 12 2zM8.6 15.2c0 1.9 1.4 3.4 3.2 3.6" stroke="#0b2431" stroke-width="1.4" fill="none" stroke-linecap="round"/>'),
+  sede: sv('<path d="M12 2S5 9.8 5 15a7 7 0 0 0 14 0C19 9.8 12 2 12 2z"/><path d="M8.6 15.2c0 1.9 1.4 3.4 3.2 3.6" stroke="#0b2431" stroke-width="1.4" fill="none" stroke-linecap="round"/>'),
   velocidade: sv('<path d="M15.8 2.4a9.6 9.6 0 1 0 5.9 17A8.2 8.2 0 0 1 15.8 2.4z"/>'),
   criacao: sv('<path d="M2.8 20.6 11 12.4l2.2 2.2-8.2 8.2z"/><path d="M12.2 3 19.6 6l-1.6 3.7-1.5-.6-1.2 3-1.6-.7-3.6-3.6z"/><path d="M21.5 19.2l-8-8 1.6-1.6 8 8z"/>'),
   fortitude: sv('<path d="M12 3C8.6 3 6.6 5 6.6 7.5 4.6 8 3.5 9.7 3.5 11.5c0 1.3.6 2.3 1.5 3-.2 2.3 1.3 4 3.4 4.2.7 1.3 2 2.1 3.6 2.1s2.9-.8 3.6-2.1c2.1-.2 3.6-1.9 3.4-4.2.9-.7 1.5-1.7 1.5-3 0-1.8-1.1-3.5-3.1-4C17.4 5 15.4 3 12 3z"/><path d="M12 5v14.5" stroke="#0b2431" stroke-width="1.5" fill="none"/>'),
