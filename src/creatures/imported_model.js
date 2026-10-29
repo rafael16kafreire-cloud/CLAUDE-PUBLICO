@@ -28,12 +28,15 @@ import mosassauro from './imported/mosassauro.js';
 import pterodactilo from './imported/pterodactilo.js';
 import carnotauro from './imported/carnotauro.js';
 import triceratops from './imported/triceratops.js';
+import galimimo from './imported/galimimo.js';
+import dodo from './imported/dodo.js';
+import paquicefalossauro from './imported/paquicefalossauro.js';
 
 export const IMPORTED = {
   espinossauro, trex, braquiossauro, titanoboa, deinosuchus, estegossauro,
   anquilossauro, parassauro, raptor, quetzalcoatlus, mamute, argentavis, reidodo,
   // com animação do próprio modelo
-  sauropelta, argentinossauro, mosassauro, pterodactilo, carnotauro, triceratops,
+  sauropelta, argentinossauro, mosassauro, pterodactilo, carnotauro, triceratops, galimimo, dodo, paquicefalossauro,
 };
 
 function bytes(b64) {
@@ -59,6 +62,8 @@ function texture(dataUri, srgb) {
 // costas/barriga/listra = cores; freq = listras por metro; forca = quanto escurece;
 // materiais = quais materiais do modelo recebem a tinta; brilho = clareia.
 const TINTAS = {
+  // Dodô (modelo sem textura): costas azul-acinzentadas, barriga clara, penas escuras nas pontas e pés roxos
+  dodo: { costas: '#4a4858', barriga: '#756c64', listra: '#22212b', freq: 5, forca: 0.6, brilho: 1.05, pes: '#5a4c7a' },
   estegossauro: { costas: '#8f7f3d', barriga: '#d8cc9a', listra: '#3a301c', freq: 1.7, forca: 0.5, brilho: 1.9 },
   anquilossauro: { costas: '#75603c', barriga: '#bba67a', listra: '#2e2414', freq: 1.4, forca: 0.35, brilho: 1.9 },
   titanoboa: { costas: '#55612f', barriga: '#d3c48c', listra: '#1b2210', freq: 1.0, forca: 0.55, brilho: 1.8 },
@@ -92,6 +97,7 @@ function paintVertices(g, d, tinta) {
       const wob = Math.sin(pos.getX(v) * 7.1 + pos.getY(v) * 5.3 + pos.getZ(v) * 6.7) * 0.6;
       const st = Math.max(0, Math.sin(along * tinta.freq * 6.28 + wob)) ** 3;
       _c.lerp(listra, st * tinta.forca * dorsal);
+      if (tinta.pes) _c.lerp(new THREE.Color(tinta.pes), 1 - THREE.MathUtils.smoothstep(pos.getY(v), bmin[1] + 0.04 * (bmax[1] - bmin[1]), bmin[1] + 0.12 * (bmax[1] - bmin[1])));
       col[v * 3] = _c.r;
       col[v * 3 + 1] = _c.g;
       col[v * 3 + 2] = _c.b;

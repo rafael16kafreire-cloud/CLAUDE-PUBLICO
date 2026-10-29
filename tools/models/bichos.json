@@ -291,6 +291,134 @@
    "author": "autor não informado (modelo enviado pelo jogador)",
    "copyright": "uso pessoal",
    "url": "-"
+  },
+  "fbx_arquivo": "source/Triceratops.fbx",
+  "fbx_opcoes": {
+   "texturas": {
+    "TriceratopsMat": "textures/Texture4.png"
+   }
+  }
+ },
+ "galimimo": {
+  "arquivo": "Gallimimus",
+  "fbx": true,
+  "animado": true,
+  "especie": "galimimo",
+  "giro": "y180",
+  "repouso": "ligacao",
+  "triangulos": 14000,
+  "textura": 1024,
+  "fbx_arquivo": "source/Gallimimus ILM.fbx",
+  "fbx_opcoes": {
+   "texturas": {
+    "Gallimimus_JW_Diffuse": "textures/Gallimimus_BaseColor.png",
+    "Gallimimus_Eyes_Diffuse": "textures/Gallimimus_Eye.png"
+   },
+   "manter": [
+    "bip_pelvis",
+    "bip_spine_0",
+    "bip_spine_1",
+    "bip_spine_2",
+    "bip_spine_3",
+    "bip_neck",
+    "bip_neck_1",
+    "bip_neck_2",
+    "bip_neck_3",
+    "bip_head",
+    "bip_jaw",
+    "bip_upperarm_r",
+    "bip_lowerarm_r",
+    "bip_hand_r",
+    "bip_upperarm_l",
+    "bip_lowerarm_l",
+    "bip_hand_l",
+    "bip_tail",
+    "bip_tail_1",
+    "bip_tail_2",
+    "bip_tail_3",
+    "bip_tail_4",
+    "bip_hip_r",
+    "bip_knee_r",
+    "bip_foot_r",
+    "bip_toe_r",
+    "bip_hip_l",
+    "bip_knee_l",
+    "bip_foot_l",
+    "bip_toe_l"
+   ]
+  },
+  "ossos": {
+   "hips": 0,
+   "chest": 3,
+   "neck": 5,
+   "neck2": 7,
+   "head": 9,
+   "jaw": 10,
+   "tail1": 88,
+   "tail2": 90,
+   "tail3": 92,
+   "pernaD": 93,
+   "pernaD_joelho": 97,
+   "pernaD_pe": 100,
+   "pernaE": 113,
+   "pernaE_joelho": 117,
+   "pernaE_pe": 121,
+   "bracoD": 52,
+   "bracoD_joelho": 55,
+   "bracoD_pe": 58,
+   "bracoE": 69,
+   "bracoE_joelho": 72,
+   "bracoE_pe": 75
+  },
+  "credito": {
+   "title": "Gallimimus (ILM, Jurassic World)",
+   "author": "modelo enviado pelo jogador",
+   "copyright": "uso pessoal",
+   "url": "-"
+  },
+  "clipes": {}
+ },
+ "dodo": {
+  "arquivo": "ARK Dodo",
+  "fbx": true,
+  "giro": "y180",
+  "triangulos": 14000,
+  "fbx_arquivo": "source/ARK Dodo.fbx",
+  "fbx_opcoes": {
+   "dobrar_asas": {
+    "x0": 1.9,
+    "y": 5.8,
+    "graus": 85
+   },
+   "texturas": {
+    "*": "tools/models/branco.png"
+   }
+  },
+  "textura": 8,
+  "credito": {
+   "title": "ARK Dodo",
+   "author": "modelo enviado pelo jogador (sem textura: pintado por cor no jogo)",
+   "copyright": "uso pessoal",
+   "url": "-"
+  }
+ },
+ "paquicefalossauro": {
+  "arquivo": "Pachycephalosaurus",
+  "fbx": true,
+  "giro": "nada",
+  "triangulos": 2000,
+  "textura": 1024,
+  "fbx_arquivo": "source/pachycephalosaurus/Pachycephalosaurus.fbx",
+  "fbx_opcoes": {
+   "texturas": {
+    "07 - Default": "textures/Pachycephalosaurus.png"
+   }
+  },
+  "credito": {
+   "title": "Pachycephalosaurus (Dino Crisis)",
+   "author": "modelo enviado pelo jogador",
+   "copyright": "uso pessoal",
+   "url": "-"
   }
  }
 }
