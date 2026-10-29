@@ -27,6 +27,7 @@ const SKILLS = [
   { key: 'forca', nome: 'Dano de combate', icon: STAT_ICONS.forca, cls: 'melee', unit: '%' },
   { key: 'velocidade', nome: 'Velocidade de movimento', icon: STAT_ICONS.velocidade, cls: 'speed', unit: '%' },
   { key: 'fortitude', nome: 'Fortaleza', icon: STAT_ICONS.fortitude, cls: 'fort', unit: ' °C' },
+  { key: 'criacao', nome: 'Velocidade de criação', icon: STAT_ICONS.criacao, cls: 'craft', unit: '%' },
 ];
 
 // valor atual de cada barra do corpo (ficha "Você")
@@ -290,7 +291,7 @@ export class InventoryScreen {
       const cur = CUR[s.key]?.(st, this.inv);
       this.refs[`sv-${s.key}`].textContent = cur !== undefined
         ? `${cur.toFixed(1)}/${st.skillValue(s.key).toFixed(1)}`
-        : `${Math.round(st.skillValue(s.key))}${s.unit ?? ''}`;
+        : `${+st.skillValue(s.key).toFixed(1)}${s.unit ?? ''}`;
       this.refs[`sl-${s.key}`].textContent = st.skills[s.key] ? `+${st.skills[s.key]}` : '';
     }
     this.el.querySelectorAll('.sk-plus').forEach((b) => { b.disabled = st.points <= 0; });

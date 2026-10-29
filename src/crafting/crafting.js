@@ -94,7 +94,7 @@ export class Crafting {
   update(dt) {
     const q = this.queue[0];
     if (!q) return;
-    q.time -= dt;
+    q.time -= dt * (this.stats?.craftSpeed ?? 1);
     if (q.time > 0) return;
     this.queue.shift();
     const r = q.recipe;

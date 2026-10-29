@@ -134,7 +134,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   const st = await page.evaluate(() => window.__ilha.ctx.player.stats.stamina);
   await page.keyboard.up('ShiftLeft');
   await page.keyboard.up('KeyW');
-  check('PC: correr gasta stamina', st < 199, `stamina ${st.toFixed(1)}`);
+  check('PC: correr gasta stamina', st < 99, `stamina ${st.toFixed(1)}`);
 
   // Pular
   const yBefore = await page.evaluate(() => window.__ilha.ctx.player.position.y);
@@ -986,7 +986,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     // gravetos e pedrinhas no chão
     const n = {}; for (const r of c.world.vegetation.recs) n[r.type] = (n[r.type] ?? 0) + 1;
     out.ground = { gravetos: n.gravetos ?? 0, pedrinhas: n.pedrinhas ?? 0 };
-    // stamina dobrada + habilidades
+    // stamina e habilidades iguais ao ARK
     const st = c.player.stats;
     out.stamina = st.max.stamina;
     st.points += 2; const hp0 = st.max.health; st.spendPoint('vida'); st.spendPoint('peso');
@@ -997,7 +997,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   check('Tamanhos reais: espino 14–18 m, deinosuchus 10–12, titanoboa 12–14, T-rex < 13', v07.sizesOk, JSON.stringify(v07.sizes));
   check('Ciclo de vida: nasce filhote, cresce e o velho morre', v07.baby && v07.grew && v07.oldDies, JSON.stringify({ b: v07.baby, g: v07.grew, o: v07.oldDies }));
   check('Chão: gravetos e pedrinhas para pegar', v07.ground.gravetos > 500 && v07.ground.pedrinhas > 300, JSON.stringify(v07.ground));
-  check('Stamina dobrada e habilidades aumentam vida/peso', v07.stamina === 200 && v07.skills.vida === 20 && v07.skills.peso === 120, JSON.stringify(v07));
+  check('Stamina 100 e habilidades como no ARK (+10 vida, +10 peso)', v07.stamina === 100 && v07.skills.vida === 10 && v07.skills.peso === 110, JSON.stringify(v07));
 
   // Construção: piso encaixa do lado do outro, parede na beira, teto em cima,
   // rampa sobe 3 m, parede segura o jogador e a porta abre

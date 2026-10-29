@@ -270,7 +270,7 @@ export class Player {
           this._attackTimer = tool.tipo === 'arco' ? BALANCE.arco.intervalo_seg : tool.intervalo;
           this.onPunch?.(tool.tipo);
         } else this._attackTimer = 0.4;
-      } else if (this.stats.useStamina(C.soco_stamina)) {
+      } else if (this.stats.useStamina(actions?.tool && actions.tool.tipo !== 'mao' ? BALANCE.stamina.gasto_golpe_ferramenta : C.soco_stamina)) {
         const tool = actions?.tool ?? { tipo: 'mao', intervalo: C.soco_intervalo_seg };
         this._attackTimer = tool.intervalo;
         this._pendingHit = tool.tipo === 'mao' ? 0.06 : 0.11; // acerta logo no início da animação
@@ -322,7 +322,7 @@ export class Player {
 
     // Correr cancela o agachar.
     if (runRequest && this.moving && this.crouching) this.crouching = false;
-    this.running = runRequest && this.moving && !this.crouching && st.stamina > 0.5;
+    this.running = runRequest && this.moving && !this.crouching && st.stamina > 0.5 && !st.exhausted;
     this.swimFast = false;
 
     let speed = (this.crouching ? M.agachado : this.running ? M.correr : M.andar) * st.speedMul;
@@ -432,7 +432,7 @@ export class Player {
     const st = this.stats;
     const pos = this.position;
     const vel = this.velocity;
-    const tired = st.stamina <= 0.5;
+    const tired = st.stamina <= 0.5 || st.exhausted;
 
     this.running = false;
     this.onGround = false;

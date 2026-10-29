@@ -11,7 +11,7 @@ export default {
   // ---------------------------------------------------------
   jogador: {
     vida_max: 100,
-    stamina_max: 200,    // (dobrada na v0.7)
+    stamina_max: 100,    // igual ao ARK (nível 1)
     fome_max: 100,       // barra de comida (cheia = sem fome)
     sede_max: 100,       // barra de água (cheia = sem sede)
     folego_max: 100,     // ar embaixo d'água
@@ -40,13 +40,16 @@ export default {
   // Stamina (energia para correr, pular e nadar)
   // ---------------------------------------------------------
   stamina: {
-    gasto_correr_seg: 9,       // por segundo correndo
-    gasto_pulo: 8,             // por pulo
-    gasto_nado_seg: 2.5,       // por segundo nadando
+    gasto_correr_seg: 8,       // por segundo correndo (100 de stamina = 12,5 s)
+    gasto_pulo: 10,            // por pulo (10 pulos)
+    gasto_nado_seg: 5,         // por segundo nadando (20 s)
     gasto_nado_rapido_seg: 8,  // por segundo nadando rápido
-    regen_seg: 28,             // recuperação por segundo (parado ou andando)
+    gasto_golpe_ferramenta: 6, // por golpe de ferramenta (coleta); o soco gasta 4 (combate.soco_stamina)
+    regen_parado_seg: 10,      // recuperação por segundo parado (enche em 10 s)
+    regen_andando_seg: 5,      // recuperação por segundo andando
     regen_na_agua: 0.3,        // boiando parado recupera só 30% disso
-    espera_regen_seg: 1.0,     // espera antes de começar a recuperar
+    espera_regen_seg: 1.5,     // espera antes de começar a recuperar
+    exausto_volta_em: 20,      // ao zerar, fica exausto (sem correr nem pular) até voltar a este valor
   },
 
   // ---------------------------------------------------------
@@ -115,16 +118,17 @@ export default {
   // Habilidades). Quanto cada ponto aumenta:
   habilidades: {
     pontos_por_nivel: 1,
-    // cada ponto soma +20 (ex.: Vida 100 -> 120)
-    vida: 20,       // +20 de vida máxima
-    stamina: 20,    // +20 de stamina máxima
-    fome: 20,       // +20 na barra de comida (dura mais)
-    sede: 20,       // +20 na barra de água (dura mais)
-    folego: 20,     // +20 de fôlego embaixo d'água
-    peso: 20,       // +20 kg que carrega
+    // valores iguais aos do ARK
+    vida: 10,       // +10 de vida máxima
+    stamina: 10,    // +10 de stamina máxima
+    fome: 10,       // +10 na barra de comida (dura mais)
+    sede: 10,       // +10 na barra de água (dura mais)
+    folego: 20,     // +20 de fôlego (oxigênio) embaixo d'água
+    peso: 10,       // +10 kg que carrega
     forca: 5,       // +5% de dano corpo a corpo
-    velocidade: 2,  // +2% de velocidade de andar/correr
-    fortitude: 2,   // +2 °C de resistência ao frio
+    velocidade: 1.5,// +1,5% de velocidade de andar/correr
+    fortitude: 2,   // +2 °C de resistência ao frio e ao calor
+    criacao: 10,    // +10% de velocidade de criação (fila de fabricação)
   },
 
   // Engramas (como no ARK): ao subir de nível você ganha pontos para

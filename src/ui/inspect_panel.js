@@ -22,6 +22,7 @@ export const STAT_ICONS = {
   velocidade: svg('<path d="M10 22c-2.3 0-3.7-1.9-3.5-4.4.2-2.6 1.1-4.4 1.1-6.7 0-2.3 1.5-3.8 3.5-3.5 2 .3 3 2.1 2.7 4.4-.3 2.7-1.1 3.7-1 5.8.2 2.5-.6 4.4-2.8 4.4z"/><circle cx="8.8" cy="4.6" r="1.6"/><circle cx="12" cy="3.4" r="1.35"/><circle cx="14.7" cy="4.3" r="1.15"/><circle cx="16.6" cy="6.2" r="1"/><circle cx="17.6" cy="8.7" r="0.9"/>'),
   torpor: svg('<path d="M2.5 11.5h7.3v1.9l-4.6 5.4h4.6v1.9H2.5v-1.9l4.6-5.4H2.5z"/><path d="M11.5 5.5h5.6v1.5l-3.4 4.1h3.4v1.5h-5.6v-1.5l3.4-4.1h-3.4z"/><path d="M18.3 2h3.6v1.1l-2.1 2.6h2.1v1.1h-3.6V5.7l2.1-2.6h-2.1z"/>'),
   fortitude: svg('<path d="M12 2v20M3.3 7l17.4 10M3.3 17L20.7 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/><path d="M9.5 3.8 12 6.3l2.5-2.5M9.5 20.2 12 17.7l2.5 2.5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/>'),
+  criacao: svg('<path d="M3 20l8.2-8.2 2.6 2.6L5.6 22.6z"/><path d="M13.2 3.4l7.4 7.4-3 3-1.3-1.3-2.2 2.2-2.4-2.4 2.2-2.2-1.3-1.3z"/>'),
   lupa: svg('<circle cx="10" cy="10" r="6.2" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M14.6 14.6 21 21" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>'),
   fechar: svg('<path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>'),
 };
