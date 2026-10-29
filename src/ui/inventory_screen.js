@@ -126,7 +126,7 @@ export class InventoryScreen {
                 <b class="sk-val" data-ref="sv-${s.key}"></b>
                 <button type="button" class="sk-plus" id="skill-${s.key}" data-skill="${s.key}" aria-label="Melhorar ${s.nome}">+</button>
               </div>`).join('')}
-            <div class="skill-row skill-torpor"><span class="ico">${STAT_ICONS.torpor}</span><span class="sk-name">Torpor</span><b class="sk-val" data-ref="sv-torpor">0.0/200.0</b><span class="sk-plus sk-none"></span></div>
+            <div class="skill-row skill-torpor" style="--p:0%"><span class="ico">${STAT_ICONS.torpor}</span><span class="sk-name">Torpor</span><b class="sk-val" data-ref="sv-torpor">0.0/200.0</b><span class="sk-plus sk-none"></span></div>
           </div>
         </section>
 
