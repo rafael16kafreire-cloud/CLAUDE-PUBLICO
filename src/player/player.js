@@ -273,7 +273,7 @@ export class Player {
       } else if (this.stats.useStamina(actions?.tool && actions.tool.tipo !== 'mao' ? BALANCE.stamina.gasto_golpe_ferramenta : C.soco_stamina)) {
         const tool = actions?.tool ?? { tipo: 'mao', intervalo: C.soco_intervalo_seg };
         this._attackTimer = tool.intervalo;
-        this._pendingHit = tool.tipo === 'mao' ? 0.06 : 0.11; // acerta logo no início da animação
+        this._pendingHit = tool.tipo === 'mao' ? 0.12 : 0.14; // acerta logo no início da animação
         this.model.swing();
         this.onPunch?.(tool.tipo);
       }

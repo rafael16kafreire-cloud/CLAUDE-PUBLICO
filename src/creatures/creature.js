@@ -61,6 +61,23 @@ let nextId = 1;
 export const FOLLOW_DIST = { curto: 0.5, medio: 1, longo: 2.2 };   // x distância de seguir
 export const TARGET_RANGE = { curto: 12, medio: 25, longo: 45 }; // m (agressivo)
 
+// Curvas do bote (at = 0..1 do começo ao fim do ataque). Recuo para pegar impulso (0..0.2),
+// golpe rápido acelerando (0.2..0.38, é aqui que o dano acontece) e volta macia (0.38..1).
+const easeOut3 = (u) => 1 - (1 - u) ** 3;
+const easeIn3 = (u) => u * u * u;
+const easeInOut = (u) => (u < 0.5 ? 2 * u * u : 1 - 2 * (1 - u) * (1 - u));
+function atkLunge(at) { // positivo = recuo, negativo = para a frente
+  if (at < 0.2) return 0.3 * easeOut3(at / 0.2);
+  if (at < 0.38) return 0.3 - 1.2 * easeIn3((at - 0.2) / 0.18);
+  return -0.9 * (1 - easeInOut((at - 0.38) / 0.62));
+}
+function atkJaw(at) { // 0 fechada .. 1 aberta: abre no recuo e fecha de estalo no golpe
+  if (at < 0.2) return easeOut3(at / 0.2);
+  if (at < 0.3) return 1;
+  if (at < 0.4) return 1 - ((at - 0.3) / 0.1) ** 2;
+  return 0;
+}
+
 export class Creature {
   constructor({ species, spec, mesh, bones, level, x, z, world, manager, rand }) {
     this.id = nextId++;
@@ -112,6 +129,7 @@ export class Creature {
     this.goal = null;
     this.attackCooldown = 0;
     this.attackAnim = 0;
+    this._lunge = 0;
     this.hurtAnim = 0;
     this.blockedTime = 0;
     this.thinkTimer = rand() * 0.3;
@@ -410,7 +428,7 @@ export class Creature {
     this.time += dt;
     this.stateTime += dt;
     this.attackCooldown -= dt;
-    this.attackAnim = Math.max(0, this.attackAnim - dt * 2.2);
+    this.attackAnim = Math.max(0, this.attackAnim - dt * 1.7);
     this.hurtAnim = Math.max(0, this.hurtAnim - dt * 3);
     const prevYaw = this.yaw;
 
@@ -863,6 +881,16 @@ export class Creature {
         if (!t) break;
         this._brake(dt);
         this._face(dt, t.position.x, t.position.z);
+        // no golpe o corpo dá um passo à frente (e volta a ficar parado): o bote ganha peso
+        const atp = 1 - this.attackAnim;
+        if (this.attackAnim > 0 && atp > 0.2 && atp < 0.42) {
+          const gap = this._dist2D(t.position) - this.radius * 0.9;
+          if (gap > 0) {
+            const step = Math.min(gap, this.radius * 2.2 * dt);
+            this.pos.x -= Math.sin(this.yaw) * step;
+            this.pos.z -= Math.cos(this.yaw) * step;
+          }
+        }
         if (this._dist2D(t.position) > this._reach(t) * 1.35) {
           this._setState(CSTATE.CHASE);
           break;
@@ -1450,7 +1478,8 @@ export class Creature {
     A.neck += (neckDown - A.neck) * k(3);
     // bote: recua (0..0.3) e avança (0.3..0.7)
     const at = 1 - this.attackAnim;
-    const lunge = this.attackAnim > 0 ? (at < 0.3 ? at / 0.3 * 0.25 : -Math.sin(((at - 0.3) / 0.7) * Math.PI) * 0.6) : 0;
+    const lunge = this.attackAnim > 0 ? atkLunge(at) : 0;
+    this._lunge += (lunge - this._lunge) * Math.min(1, dt * 30); // (o corpo acompanha o bote sem tranco)
     if (b.neck) {
       // cabeça sobe e desce um pouco a cada passo
       const nod = Math.sin(this.phase * TAU * 2) * amp * 0.08;
@@ -1464,7 +1493,7 @@ export class Creature {
       b.head.rotation.y = A.headYaw * 0.5;
     }
     if (b.jaw && eating) b.jaw.rotation.x = -Math.max(0, Math.sin(t * 5.5)) * 0.3;
-    else if (b.jaw) b.jaw.rotation.x = this.attackAnim > 0 ? -Math.sin(at * Math.PI) * 0.65 : 0.02; // parado: boca fechada (só abre ao comer, rugir ou atacar)
+    else if (b.jaw) b.jaw.rotation.x = this.attackAnim > 0 ? -atkJaw(at) * 0.65 : 0.02; // parado: boca fechada (só abre ao comer, rugir ou atacar)
     if (b.hips) b.hips.position.z = (b.hips.userData.rest.z) - lunge * 0.15 * legLen / this.scale;
   }
 
@@ -1503,7 +1532,7 @@ export class Creature {
 
   _netUpdate(dt, ctx) {
     this.time += dt;
-    this.attackAnim = Math.max(0, this.attackAnim - dt * 2.2);
+    this.attackAnim = Math.max(0, this.attackAnim - dt * 1.7);
     this.hurtAnim = Math.max(0, this.hurtAnim - dt * 3);
     this.netSeen = (this.netSeen ?? 0) + dt;
     const prevYaw = this.yaw;
@@ -1550,6 +1579,6 @@ export class Creature {
       m.rotation.set(this.pitch, this.yaw, this.roll + side * ko * ko * (3 - 2 * ko), 'YXZ');
       return;
     }
-    m.rotation.set(this.pitch + this._standUp, this.yaw, this.roll, 'YXZ');
+    m.rotation.set(this.pitch + this._standUp + this._lunge * 0.1, this.yaw, this.roll, 'YXZ');
   }
 }

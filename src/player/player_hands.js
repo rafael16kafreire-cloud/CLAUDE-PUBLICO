@@ -177,6 +177,16 @@ function makeTool(kind) {
   return g;
 }
 
+// Curva do golpe: puxa o braço para trás (0..0.2), ataca acelerando (0.2..0.4) e volta macio.
+const eo3 = (u) => 1 - (1 - u) ** 3;
+const ei3 = (u) => u * u * u;
+const eio = (u) => (u < 0.5 ? 2 * u * u : 1 - 2 * (1 - u) * (1 - u));
+function swingCurve(t) {
+  if (t < 0.2) return -0.22 * eo3(t / 0.2);
+  if (t < 0.4) return -0.22 + 1.22 * ei3((t - 0.2) / 0.2);
+  return 1 - eio((t - 0.4) / 0.6);
+}
+
 export class PlayerHands {
   constructor(camera) {
     this.root = new THREE.Group();
@@ -305,11 +315,11 @@ export class PlayerHands {
       this.right.rotation.x = this.restRotR.x - reach * 0.7;
     }
     if (this._swing > 0) {
-      this._swing = Math.max(0, this._swing - dt * (this._kind === 'mao' ? 3.5 : 2.3));
+      this._swing = Math.max(0, this._swing - dt * (this._kind === 'mao' ? 3.1 : 2.2));
       const t = 1 - this._swing;
       if (this._kind === 'mao') {
-        // soco em arco, como no Minecraft: o braço gira para baixo e para frente e volta
-        const k = Math.sin(t * Math.PI);
+        // soco: prepara (puxa para trás), acerta rápido e volta macio
+        const k = swingCurve(t);
         const hand = this._side > 0 ? this.right : this.left;
         hand.position.z -= k * 0.14;
         hand.position.x -= k * 0.06 * this._side;
@@ -326,7 +336,7 @@ export class PlayerHands {
         this.right.position.z += k * 0.12;
         this.right.rotation.x = this.restRotR.x + k * 0.5;
       } else if (this._kind === 'lanca') {
-        const k = Math.sin(t * Math.PI);
+        const k = swingCurve(t);
         this.right.position.z -= k * 0.35;
         this.right.position.x -= k * 0.08;
       } else {
