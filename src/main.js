@@ -110,6 +110,7 @@ function boot(hotData = {}) {
   app.appendChild(ui);
 
   input.attach(canvas);
+  input.canLock = () => !game.isTouch && game.state === STATE.PLAYING && !input.blocked;
   game.isTouch = detectTouch();
   document.body.classList.toggle('is-touch', game.isTouch);
 

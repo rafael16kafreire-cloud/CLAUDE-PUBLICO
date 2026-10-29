@@ -53,6 +53,7 @@ class Input {
     this._canvas = null;
     this._mouseDragging = false;
     this.blocked = false; // true com o inventário aberto (personagem parado)
+    this.canLock = () => false; // o jogo diz quando um clique pode prender o mouse (PC, jogando)
   }
 
   attach(canvas) {
@@ -82,6 +83,9 @@ class Input {
         this.tap('attack');
       } else {
         this._mouseDragging = true;
+        // a ilha agora é gerada depois do clique em Jogar (a permissão do clique já passou):
+        // um clique no jogo prende o mouse, e a partir daí o clique ataca
+        if (this.canLock()) this.requestPointerLock();
       }
     });
     window.addEventListener('mouseup', () => {
