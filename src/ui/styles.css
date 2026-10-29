@@ -2218,3 +2218,10 @@ html, body, button, input, select, textarea, .title { font-family: var(--font-ui
 
 /* com o inventário aberto, o HUD de jogo sai da frente (como no ARK) */
 body.inv-open #ui > .hud, body.inv-open #ui > .hotbar, body.inv-open #ui > .hud-corner, body.inv-open .hud-left { visibility: hidden; }
+
+.ark-inv .ai-info { display: block !important; }
+.ark-inv .ai-armor { display: none; }
+.ark-inv .skill-row { min-height: 3.7vh; }
+.ark-inv .skill-row .ico { width: 3vh; height: 3vh; }
+.ark-inv .sk-plus { width: 3.7vh; height: 3.7vh; font-size: 2.8vh; }
+.ark-inv .ai-skills { gap: 0.4vh; }

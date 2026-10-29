@@ -433,6 +433,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   await frames(page, 4);
   const invOpen = await page.evaluate(() => ({ open: !document.querySelector('.inv').hidden, blocked: window.__ilha.ctx.touch.input.blocked }));
   check('Inventário: Tab abre a tela de inventário', invOpen.open && invOpen.blocked, JSON.stringify(invOpen));
+  await page.click('.ai-tab[data-tab="craft"]');
   await page.click('#receita-machado_pedra');
   await frames(page, 2);
   const reqs = await page.evaluate(() => [...document.querySelectorAll('.reqs li')].map((li) => li.textContent.replace(/\s+/g, ' ').trim()));
@@ -445,6 +446,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   // Largar um item: vira bolsa no chão
   const bags0 = await page.evaluate(() => window.__ilha.ctx.world.deathBags.length);
   const fiberSlot = await page.evaluate(() => window.__ilha.ctx.inventory.slots.findIndex((s) => s && s.id === 'fibra'));
+  await page.click('.ai-tab[data-tab="inv"]');
   await page.click(`.inv-slot[data-i="${fiberSlot}"]`);
   await page.click('#it-drop');
   const bags1 = await page.evaluate(() => window.__ilha.ctx.world.deathBags.length);
@@ -1357,6 +1359,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   const invM = await page.evaluate(() => ({ open: !document.querySelector('.inv').hidden, touch: !document.querySelector('.tc').hidden }));
   await page.screenshot({ path: `${SHOTS}/24-cel-inventario.png` });
   check('Celular: botão Inventário abre a tela (sem botões por cima)', invM.open && !invM.touch, JSON.stringify(invM));
+  await page.tap('.ai-tab[data-tab="craft"]');
   await page.tap('#receita-lanca');
   await frames(page, 2);
   await page.screenshot({ path: `${SHOTS}/25-cel-receita-lanca.png` });
