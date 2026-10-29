@@ -127,7 +127,8 @@
    "descricao": "Mata a fome, mas faz mal crua. Fique perto de uma fogueira acesa para assar.",
    "comida": {
     "fome": 10,
-    "vida": -3,
+    "vida": 19,
+    "enjoo": { "dano_seg": 1, "seg": 12 },
     "estraga_min": 10
    },
    "icone": {
@@ -145,7 +146,7 @@
    "descricao": "Assada na fogueira. Mata bem a fome e recupera um pouco de vida.",
    "comida": {
     "fome": 28,
-    "vida": 8,
+    "vida": 35,
     "estraga_min": 20
    },
    "icone": {
@@ -163,6 +164,7 @@
    "descricao": "Baga azulada e doce. Os herbívoros adoram (domesticação).",
    "comida": {
     "fome": 5,
+    "vida": 9,
     "sede": 1,
     "estraga_min": 12
    },
@@ -199,6 +201,7 @@
    "descricao": "Fruta vermelha que enche a barriga.",
    "comida": {
     "fome": 10,
+    "vida": 20,
     "estraga_min": 15
    },
    "icone": {
@@ -216,6 +219,7 @@
    "descricao": "Fruta suculenta: mata um pouco da sede.",
    "comida": {
     "fome": 4,
+    "vida": 9,
     "sede": 8,
     "estraga_min": 15
    },

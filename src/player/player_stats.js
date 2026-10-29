@@ -32,6 +32,7 @@ export class PlayerStats {
     this.skills = { vida: 0, stamina: 0, fome: 0, sede: 0, folego: 0, peso: 0, forca: 0, velocidade: 0, fortitude: 0 };
 
     this.dead = false;
+    this.sick = null; // enjoo: { dps, left }
     this.deathCause = null;
     this.onDeath = null; // função chamada ao morrer (o Player define)
     this._staminaDelay = 0;
@@ -77,6 +78,13 @@ export class PlayerStats {
     // ---- Vida: dano por fome/sede/afogamento ou regeneração
     let damage = 0;
     let cause = null;
+    // enjoo (carne crua): perde vida aos poucos por alguns segundos
+    if (this.sick) {
+      damage += this.sick.dps;
+      cause = 'comida';
+      this.sick.left -= dt;
+      if (this.sick.left <= 0) this.sick = null;
+    }
     if (this.oxygen <= 0 && ctx.headUnderwater) {
       damage += F.dano_afogando_seg;
       cause = 'afogamento';
@@ -265,6 +273,7 @@ export class PlayerStats {
     this.water = (this.max.water * M.renascer_sede) / 100;
     this.temperature = BALANCE.temperatura.base_c;
     this.dead = false;
+    this.sick = null;
     this.deathCause = null;
   }
 

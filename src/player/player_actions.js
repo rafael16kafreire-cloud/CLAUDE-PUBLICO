@@ -288,16 +288,18 @@ export class PlayerActions {
     st.water = Math.min(st.max.water, st.water + (c.sede ?? 0));
     st.stamina = Math.max(0, Math.min(st.max.stamina, st.stamina + (c.stamina ?? 0)));
     // comer sempre cura um pouco: o valor "vida" do alimento, ou uma parte da fome que ele mata
-    const heal = c.vida != null ? Math.max(0, c.vida) + (c.vida > 0 ? c.fome * S.cura_por_fome * 0.5 : 0) : (c.fome ?? 0) * S.cura_por_fome;
+    const heal = c.vida != null ? Math.max(0, c.vida) : (c.fome ?? 0) * S.cura_por_fome;
     const before = st.health;
     if (heal > 0) st.health = Math.min(st.max.health, st.health + heal);
     if (c.vida < 0) st.damage(-c.vida, 'comida');
+    if (c.enjoo) st.sick = { dps: c.enjoo.dano_seg, left: c.enjoo.seg };
     const healed = Math.round(st.health - before);
     this.inv.takeFrom(i, 1);
     events.emit(EV.ATE, { id: s.id });
     const verb = def.tipo === 'consumivel' ? 'Usou' : 'Comeu';
     events.emit(EV.MESSAGE, { text: `${verb}: ${itemName(s.id)}${healed > 0 ? ` (+${healed} Vida)` : ''}`, kind: 'info' });
     if (s.id === 'baga_escura') events.emit(EV.MESSAGE, { text: 'Você ficou sonolento…', kind: 'warn' });
+    if (c.enjoo) events.emit(EV.MESSAGE, { text: 'Você ficou enjoado: vai perdendo vida aos poucos…', kind: 'warn' });
     return true;
   }
 
