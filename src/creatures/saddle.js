@@ -139,28 +139,35 @@ export function buildSaddle(c, kind) {
     g.add(box(pw * 1.15, 0.06 * s, len2 * 1.2, 0, back + SELA.seat * f * 0.7, 0, WOOD));
     for (const side of [-1, 1]) g.add(box(0.05 * s, 0.35 * s, len2 * 1.2, side * pw * 0.57, back + SELA.seat * f * 0.7 + 0.17 * s, 0, WOOD));
   }
-  // Presa no corpo: a sela acompanha o quadril (giro e balanço) e, a cada quadro, é
-  // corrigida pelo que a pele do bicho fez de verdade naquele ponto das costas
-  // (as animações levantam e abaixam o corpo; só o osso do quadril não basta).
+  // Presa no corpo: a sela acompanha o quadril (giro e balanço) e, a cada quadro, a altura
+  // dela é refeita pela pele do bicho ali (as animações levantam e abaixam o dorso): ela
+  // fica sempre assentada em cima das costas, sem flutuar nem afundar.
   const hips = c.bones?.hips;
+  const chest = c.bones?.chest;
   const sk = c.mesh.skeleton;
   const bi = hips && sk ? sk.bones.indexOf(hips) : -1;
   if (bi >= 0) {
-    // vértices das costas ali perto (pose de ligação)
+    const bindPos = (bone) => {
+      const k = sk.bones.indexOf(bone);
+      return k < 0 ? null : new THREE.Vector3().setFromMatrixPosition(new THREE.Matrix4().copy(sk.boneInverses[k]).invert());
+    };
+    const ph = bindPos(hips);
+    const pc = chest ? bindPos(chest) : null;
+    // meio entre o quadril e o peito: é onde fica o tronco de verdade
+    const zs = ph && pc ? ph.z * 0.6 + pc.z * 0.4 : spot.z;
+    g.position.z = zs;
+    // vértices do tronco ali perto (pose de ligação), para medir a altura das costas
     const pos = geo.attributes.position;
+    const R = Math.max(0.35 * s, Math.min(spot.w * 0.25, 1.2 * s));
     const idx = [];
-    const yLow = back - Math.max(0.15 * s, (back - spot.belly) * 0.3);
-    for (let i = 0; i < pos.count && idx.length < 48; i++) {
-      if (Math.abs(pos.getX(i)) < spot.w * 0.25 && Math.abs(pos.getZ(i) - spot.z) < spot.trunk * 0.3 && pos.getY(i) > yLow) idx.push(i);
+    for (let i = 0; i < pos.count; i++) {
+      if (Math.hypot(pos.getX(i), pos.getZ(i) - zs) < R * 1.8 && pos.getY(i) > spot.belly) idx.push(i);
     }
-    const bind = new THREE.Vector3();
-    for (const i of idx) bind.add(new THREE.Vector3(pos.getX(i), pos.getY(i), pos.getZ(i)));
-    if (idx.length) bind.multiplyScalar(1 / idx.length);
     const holder = new THREE.Group();
     holder.matrixAutoUpdate = false;
     holder.add(g);
     c.mesh.add(holder);
-    c._sadAnchor = { idx, bind, bi, holder, tmp: new THREE.Vector3(), acc: new THREE.Vector3(), exp: new THREE.Vector3(), m: new THREE.Matrix4(), t: new THREE.Matrix4() };
+    c._sadAnchor = { idx, R, bi, zs, back, holder, dy: null, tmp: new THREE.Vector3(), exp: new THREE.Vector3(), m: new THREE.Matrix4(), t: new THREE.Matrix4(), ys: [] };
     ajustarSela(c);
     return holder;
   }
@@ -176,20 +183,24 @@ export function ajustarSela(c) {
   const sk = c.mesh.skeleton;
   c.mesh.updateMatrixWorld(true);
   sk.update();
-  // matriz do osso do quadril no espaço do modelo (movimento em relação à pose de ligação)
+  // movimento do quadril em relação à pose de ligação, no espaço do modelo
   A.m.copy(c.mesh.matrixWorld).invert().multiply(hips.matrixWorld).multiply(sk.boneInverses[A.bi]);
-  if (A.idx.length) {
-    A.acc.set(0, 0, 0);
-    for (const i of A.idx) {
-      c.mesh.getVertexPosition(i, A.tmp);
-      A.acc.add(A.tmp);
-    }
-    A.acc.multiplyScalar(1 / A.idx.length);
-    A.exp.copy(A.bind).applyMatrix4(A.m); // onde o quadril levaria o ponto
-    A.acc.sub(A.exp); // quanto a pele andou além disso
-    A.t.makeTranslation(A.acc.x, A.acc.y, A.acc.z);
-    A.m.premultiply(A.t);
+  // onde o quadril levaria o ponto da sela, e a altura real das costas ali (pele)
+  A.exp.set(0, A.back, A.zs).applyMatrix4(A.m);
+  A.ys.length = 0;
+  for (const i of A.idx) {
+    c.mesh.getVertexPosition(i, A.tmp);
+    if (Math.hypot(A.tmp.x - A.exp.x, A.tmp.z - A.exp.z) < A.R) A.ys.push(A.tmp.y);
   }
+  let dy = 0;
+  if (A.ys.length >= 4) {
+    A.ys.sort((a, b) => a - b);
+    const top = A.ys[Math.floor(A.ys.length * 0.85)];
+    dy = top - A.exp.y;
+  }
+  A.dy = A.dy === null ? dy : A.dy + (dy - A.dy) * 0.4;
+  A.t.makeTranslation(0, A.dy, 0);
+  A.m.premultiply(A.t);
   A.holder.matrix.copy(A.m);
   A.holder.matrixWorldNeedsUpdate = true;
 }
