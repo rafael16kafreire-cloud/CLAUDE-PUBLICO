@@ -30,7 +30,8 @@ import { DamageNumbers } from './ui/damage_numbers.js';
 import { CreatureMenu } from './ui/creature_menu.js';
 import { ActionWheel } from './ui/action_wheel.js';
 import { WhistleWheel } from './ui/whistle_wheel.js';
-import { loadGame, saveGame, clearSave, saveSlot, useSlot } from './core/save.js';
+import { loadGame, saveGame, clearSave, saveSlot, useSlot, hasSave } from './core/save.js';
+import { LoadingScreen } from './ui/loading_screen.js';
 import { Messages } from './ui/messages.js';
 import { TouchControls } from './ui/touch_controls.js';
 import { DeathScreen } from './ui/death_screen.js';
@@ -114,7 +115,7 @@ function boot(hotData = {}) {
   let ctx = null; // tudo do jogo, criado depois de gerar a ilha
 
   const start = new StartScreen(ui, {
-    onPlay: () => play(),
+    onPlay: () => entrar(),
     onLoadSlot: (n) => loadSlotAndRestart(n),
     onHost: (name) => hostCoop(name),
     onJoin: (code, name) => joinCoop(code, name),
@@ -124,7 +125,11 @@ function boot(hotData = {}) {
     },
     playerName: settings.get('playerName') || '',
   });
-  start.setLoading('Gerando a ilha…');
+  const loading = new LoadingScreen(ui);
+  // A tela inicial já abre pronta: a ilha só é gerada quando clicar em Entrar (tela de carregamento).
+  const temSalvo = hasSave();
+  start.setReady(temSalvo ? 'Continuar' : 'Jogar', temSalvo);
+  window.__ilhaReady = true;
 
   // Pós-processamento: SMAA (bordas lisas, opção "Suavizar bordas") e os efeitos
   // da qualidade gráfica: "grade" = cor de cinema + vinheta; "full" = também brilho (bloom).
@@ -407,18 +412,10 @@ function boot(hotData = {}) {
       console.warn('[Ilha] compile', err);
     }
     start.setReady(hotData.player ? 'Continuar' : 'Jogar', !!hotData.player);
-    window.__ilhaReady = true;
     try {
       if (localStorage.getItem('ilha-primordial:avisar-seguro')) {
         localStorage.removeItem('ilha-primordial:avisar-seguro');
         setTimeout(() => events.emit(EV.MESSAGE, { text: 'Abri em modo seguro (gráficos simples) porque da última vez o jogo não terminou de abrir. Dá para subir a qualidade nas Opções.', kind: 'warn' }), 2500);
-      }
-    } catch { /* ok */ }
-    // veio de "Carregar" um espaço: entra direto no jogo
-    try {
-      if (sessionStorage.getItem('ilha-primordial:auto-continuar')) {
-        sessionStorage.removeItem('ilha-primordial:auto-continuar');
-        setTimeout(() => play(), 50);
       }
     } catch { /* ok */ }
     game.setState(STATE.MENU);
@@ -439,7 +436,7 @@ function boot(hotData = {}) {
   }
 
   function hostCoop(name) {
-    if (!ctx) return;
+    if (!ctx) { carregarMundo(() => hostCoop(name)); return; }
     sound.unlock();
     settings.set('playerName', name);
     ctx.player.name = name;
@@ -453,7 +450,7 @@ function boot(hotData = {}) {
   }
 
   function joinCoop(code, name) {
-    if (!ctx) return;
+    if (!ctx) { carregarMundo(() => joinCoop(code, name)); return; }
     sound.unlock();
     code = (code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     if (code.length !== 6) {
@@ -480,6 +477,39 @@ function boot(hotData = {}) {
     const n = ctx.net;
     ctx.hud.setCoop(n.active ? n.code : null, n.playerCount);
   });
+
+  // Gera a ilha (só agora, ao clicar em Entrar) atrás de uma tela de carregamento e então chama 'depois'.
+  let gerando = false;
+  function carregarMundo(depois) {
+    if (ctx) { depois?.(); return; }
+    if (gerando) return;
+    gerando = true;
+    sound.unlock();
+    // marca "abrindo": se o aparelho morrer gerando a ilha, da próxima vez abre em modo seguro
+    try { localStorage.setItem('ilha-primordial:abrindo', '1'); } catch { /* ok */ }
+    loading.show();
+    // dá 2 quadros para a tela de carregamento aparecer antes do trabalho pesado
+    requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(() => {
+      try {
+        buildGame();
+        window.__ilhaReady = true; // ilha pronta: tira a marca "abrindo"
+      } catch (err) {
+        console.error(err);
+        gerando = false;
+        loading.hide();
+        start.setStatus('Erro ao gerar a ilha. Feche e abra o jogo de novo.', 'erro');
+        return;
+      }
+      gerando = false;
+      loading.hide();
+      depois?.();
+    }, 30)));
+  }
+
+  function entrar() {
+    if (ctx) { play(); return; }
+    carregarMundo(() => play());
+  }
 
   function play() {
     if (!ctx) return;
@@ -1171,16 +1201,15 @@ function boot(hotData = {}) {
     input.endFrame();
   }
 
-  // Dá tempo da tela "Gerando a ilha…" aparecer antes do trabalho pesado.
-  setTimeout(() => {
-    try {
-      buildGame();
-    } catch (err) {
-      console.error(err);
-      start.setLoading('Erro ao gerar a ilha');
+  // A tela inicial aparece na hora; a ilha só é gerada ao clicar em Entrar.
+  requestAnimationFrame(frame);
+  // veio de "Carregar" um espaço: entra direto no jogo
+  try {
+    if (sessionStorage.getItem('ilha-primordial:auto-continuar')) {
+      sessionStorage.removeItem('ilha-primordial:auto-continuar');
+      setTimeout(() => entrar(), 50);
     }
-    requestAnimationFrame(frame);
-  }, 50);
+  } catch { /* ok */ }
 
   // Acesso para testes automáticos e depuração.
   window.__ilha = {

@@ -83,11 +83,15 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   let context;
   let page;
   let errors;
+  let inicioSemIlha = null;
   for (let attempt = 0; attempt < 2; attempt++) {
     ({ context, page, errors } = await openGame({ viewport: { width: 1280, height: 720 } }, 'PC'));
     try {
       await frames(page, 20);
+      // na tela inicial a ilha ainda NÃO foi gerada (o botão já está pronto)
+      inicioSemIlha = await page.evaluate(() => ({ semMundo: !window.__ilha.ctx, texto: document.querySelector('#btn-play').textContent, ativo: !document.querySelector('#btn-play').disabled }));
       await page.click('#btn-play');
+      await page.waitForFunction(() => window.__ilha?.game?.state === 'playing' && !!window.__ilha.ctx, null, { timeout: 240000 }); // a ilha agora é gerada ao clicar em Entrar
       await page.mouse.move(640, 360); // cliques no meio da tela
       await frames(page, 30);
       break;
@@ -99,6 +103,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   }
   const state = await page.evaluate(() => window.__ilha.game.state);
   check('PC: botão Jogar inicia o jogo', state === 'playing', state);
+  check('Início: a ilha só é gerada ao clicar em Entrar (tela inicial já pronta)', !!inicioSemIlha?.semMundo && inicioSemIlha.ativo && !/Gerando/.test(inicioSemIlha.texto), JSON.stringify(inicioSemIlha));
 
   const p0 = await page.evaluate(() => {
     const p = window.__ilha.ctx.player.position;
@@ -1231,6 +1236,8 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   // abre de novo
   dev = await openProfile();
   const label = await dev.pg.evaluate(() => ({ play: document.querySelector('#btn-play').textContent, newShown: !document.querySelector('#btn-new').hidden }));
+  await dev.pg.click('#btn-play');
+  await dev.pg.waitForFunction(() => window.__ilha?.game?.state === 'playing' && !!window.__ilha.ctx, null, { timeout: 240000 });
   const saved1 = await dev.pg.evaluate(() => {
     const c = window.__ilha.ctx;
     return { lvl: c.player.stats.level, sticks: c.inventory.count('graveto'), builds: c.world.structures.filter((s) => s.isBuild).length, pets: c.creatures.tamedBy(c.player).length, day: c.world.day };
@@ -1257,6 +1264,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   await frames(page, 10);
   await page.screenshot({ path: `${SHOTS}/20-cel-tela-inicial.png` });
   await page.tap('#btn-play');
+  await page.waitForFunction(() => window.__ilha?.game?.state === 'playing' && !!window.__ilha.ctx, null, { timeout: 240000 }); // a ilha agora é gerada ao clicar em Entrar
   await frames(page, 30);
   const touchVisible = await page.evaluate(() => !document.querySelector('.tc').hidden);
   check('Celular: controles de toque aparecem', touchVisible);
@@ -1501,6 +1509,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   await page.goto(url);
   await page.waitForFunction(() => !document.querySelector('#btn-play').disabled, null, { timeout: 60000 });
   await page.tap('#btn-play');
+  await page.waitForFunction(() => window.__ilha?.game?.state === 'playing' && !!window.__ilha.ctx, null, { timeout: 240000 }); // a ilha agora é gerada ao clicar em Entrar
   await frames(page, 10);
   await page.tap('.corner-btn[data-action="inventory"]');
   await frames(page, 3);
@@ -1553,7 +1562,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   await A.click('#tab-coop');
   await A.fill('#coop-name', 'Rafa');
   await A.click('#btn-host');
-  await A.waitForFunction(() => window.__ilha.net?.active, null, { timeout: 20000 }).catch(() => {});
+  await A.waitForFunction(() => window.__ilha.net?.active, null, { timeout: 240000 }).catch(() => {});
   const code = await A.evaluate(() => window.__ilha.net?.code ?? '');
   check('Co-op: criar partida dá um código de 6 letras', /^[A-Z0-9]{6}$/.test(code), code);
   await B.click('#tab-coop');
@@ -1561,7 +1570,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   await B.click('#btn-join-open');
   await B.fill('#coop-code', code);
   await B.click('#btn-join');
-  await B.waitForFunction(() => window.__ilha.net?.active, null, { timeout: 30000 }).catch(() => {});
+  await B.waitForFunction(() => window.__ilha.net?.active, null, { timeout: 240000 }).catch(() => {});
   await gameWait(A, 2500);
   // convidado: espera o mundo do anfitrião chegar (navegador de teste é lento)
   await B.waitForFunction(() => window.__ilha.net?.playerNames?.includes('Rafa') && window.__ilha.ctx?.creatures.list.length > 0, null, { timeout: 90000 }).catch(() => {});
