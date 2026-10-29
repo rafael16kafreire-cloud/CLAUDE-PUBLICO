@@ -18,18 +18,40 @@ import { PlayerModel } from '../player/player_model.js';
 import { ICONS } from './icons.js';
 import { STAT_ICONS } from './inspect_panel.js';
 
+const sv = (d) => `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">${d}</svg>`;
+const SORT_ICON = sv('<path d="M3 4h14v2.6H3zM3 9.7h10v2.6H3zM3 15.4h6v2.6H3zM19 7v10m0 0-3-3m3 3 3-3" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>');
+const ITEM_ICON = sv('<path d="M12 2.5 20.5 7v10L12 21.5 3.5 17V7zM12 12 20 7.4M12 12v9.2M12 12 4 7.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>');
+const BOX_ICON = sv('<path d="M3 9h18v11H3zM2 5h20v4H2z M10 12.5h4v2h-4z"/>');
+const MAP_ICON = sv('<path d="M3.5 6.2l5.3-2 6.4 2.2 5.3-2v13.4l-5.3 2-6.4-2.2-5.3 2zM8.8 4.2v13.4M15.2 6.4v13.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>');
+const BOOK_ICON = sv('<path d="M4 4.5h6.8c.8 0 1.2.4 1.2 1.2V20c0-.8-.4-1.2-1.2-1.2H4zM20 4.5h-6.8c-.8 0-1.2.4-1.2 1.2V20c0-.8.4-1.2 1.2-1.2H20z"/>');
+const GEAR_ICON = sv('<path d="M10.6 2.5h2.8l.5 2.4 1.7.7 2-1.4 2 2-1.4 2 .7 1.7 2.4.5v2.8l-2.4.5-.7 1.7 1.4 2-2 2-2-1.4-1.7.7-.5 2.4h-2.8l-.5-2.4-1.7-.7-2 1.4-2-2 1.4-2-.7-1.7-2.4-.5v-2.8l2.4-.5.7-1.7-1.4-2 2-2 2 1.4 1.7-.7zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" fill-rule="evenodd"/>');
+const X_ICON = sv('<path d="M5 5l14 14M19 5L5 19" stroke="currentColor" stroke-width="3" stroke-linecap="round" fill="none"/>');
+
+// ícones brancos da lista de atributos (formas como na tela do ARK)
+const AI = {
+  vida: sv('<path d="M9 2.5h6V9h6.5v6H15v6.5H9V15H2.5V9H9z"/>'),
+  stamina: sv('<path d="M14.2 1.6 5 13.4h5.4l-1.6 9L19 9.8h-5.8z"/>'),
+  folego: sv('<path d="M16.4 2.3l5.3 5.3-1.8 1.8-1-1-9.2 9.2c-.5.5-1.2.8-1.9.8H5.2l-.9.9-2-2 .9-.9v-2.2c0-.7.3-1.4.8-1.9l9.2-9.2-1-1z"/><path d="M3.2 20.8 2 22" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>'),
+  fome: sv('<circle cx="15" cy="9" r="6.3"/><path d="M10.8 13.2 5 19M3.6 17.2a2.1 2.1 0 1 0 3.2 3.2M4.7 20.7a2.1 2.1 0 1 0 2.9-2.9" stroke="currentColor" stroke-width="2.3" fill="none" stroke-linecap="round"/>'),
+  sede: sv('<path d="M12 2S5 9.8 5 15a7 7 0 0 0 14 0C19 9.8 12 2 12 2zM8.6 15.2c0 1.9 1.4 3.4 3.2 3.6" stroke="#0b2431" stroke-width="1.4" fill="none" stroke-linecap="round"/>'),
+  velocidade: sv('<path d="M15.8 2.4a9.6 9.6 0 1 0 5.9 17A8.2 8.2 0 0 1 15.8 2.4z"/>'),
+  criacao: sv('<path d="M2.8 20.6 11 12.4l2.2 2.2-8.2 8.2z"/><path d="M12.2 3 19.6 6l-1.6 3.7-1.5-.6-1.2 3-1.6-.7-3.6-3.6z"/><path d="M21.5 19.2l-8-8 1.6-1.6 8 8z"/>'),
+  fortitude: sv('<path d="M12 3C8.6 3 6.6 5 6.6 7.5 4.6 8 3.5 9.7 3.5 11.5c0 1.3.6 2.3 1.5 3-.2 2.3 1.3 4 3.4 4.2.7 1.3 2 2.1 3.6 2.1s2.9-.8 3.6-2.1c2.1-.2 3.6-1.9 3.4-4.2.9-.7 1.5-1.7 1.5-3 0-1.8-1.1-3.5-3.1-4C17.4 5 15.4 3 12 3z"/><path d="M12 5v14.5" stroke="#0b2431" stroke-width="1.5" fill="none"/>'),
+  torpor: sv('<path d="M9 3l1.7 4.4L15 9l-4.3 1.6L9 15l-1.7-4.4L3 9l4.3-1.6zM18 10l1 2.8 2.8 1-2.8 1-1 2.8-1-2.8-2.8-1 2.8-1zM11 16l.9 2.4 2.4.9-2.4.9-.9 2.4-.9-2.4-2.4-.9 2.4-.9z"/>'),
+};
+
 // Habilidades (Inventário → Habilidades): gasta os pontos de nível.
 const SKILLS = [
-  { key: 'vida', nome: 'Saúde', icon: ICONS.health, cls: 'health' },
-  { key: 'stamina', nome: 'Estamina', icon: ICONS.stamina, cls: 'stamina' },
-  { key: 'folego', nome: 'Oxigênio', icon: ICONS.oxygen, cls: 'oxygen' },
-  { key: 'fome', nome: 'Comida', icon: ICONS.food, cls: 'food' },
-  { key: 'sede', nome: 'Água', icon: ICONS.water, cls: 'water' },
+  { key: 'vida', nome: 'Saúde', icon: AI.vida, cls: 'health' },
+  { key: 'stamina', nome: 'Estamina', icon: AI.stamina, cls: 'stamina' },
+  { key: 'folego', nome: 'Oxigênio', icon: AI.folego, cls: 'oxygen' },
+  { key: 'fome', nome: 'Comida', icon: AI.fome, cls: 'food' },
+  { key: 'sede', nome: 'Água', icon: AI.sede, cls: 'water' },
   { key: 'peso', nome: 'Peso', icon: STAT_ICONS.peso, cls: 'weight', unit: ' kg' },
   { key: 'forca', nome: 'Dano de combate', icon: STAT_ICONS.forca, cls: 'melee', unit: '%' },
-  { key: 'velocidade', nome: 'Velocidade de movimento', icon: STAT_ICONS.velocidade, cls: 'speed', unit: '%' },
-  { key: 'fortitude', nome: 'Fortaleza', icon: STAT_ICONS.fortitude, cls: 'fort', unit: ' °C' },
-  { key: 'criacao', nome: 'Velocidade de criação', icon: STAT_ICONS.criacao, cls: 'craft', unit: '%' },
+  { key: 'velocidade', nome: 'Velocidade de movimento', icon: AI.velocidade, cls: 'speed', unit: '%' },
+  { key: 'criacao', nome: 'Habilidade de fabricação', icon: AI.criacao, cls: 'craft', unit: '%' },
+  { key: 'fortitude', nome: 'Fortaleza', icon: AI.fortitude, cls: 'fort', unit: ' °C' },
 ];
 
 // valor atual de cada barra do corpo (ficha "Você")
@@ -45,15 +67,6 @@ const CUR = {
 const CATS = ['Tudo', 'Aprender', 'Ferramentas', 'Armas', 'Roupas', 'Estruturas', 'Construção', 'Cura'];
 const STATION_NAME = STATION_NAMES;
 const TYPE_LABEL = { recurso: 'Recurso', comida: 'Comida', ferramenta: 'Ferramenta', consumivel: 'Uso', estrutura: 'Estrutura', equipamento: 'Roupa', municao: 'Munição' };
-
-const sv = (d) => `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">${d}</svg>`;
-const SORT_ICON = sv('<path d="M3 4h14v2.6H3zM3 9.7h10v2.6H3zM3 15.4h6v2.6H3zM19 7v10m0 0-3-3m3 3 3-3" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>');
-const ITEM_ICON = sv('<path d="M12 2.5 20.5 7v10L12 21.5 3.5 17V7zM12 12 20 7.4M12 12v9.2M12 12 4 7.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>');
-const BOX_ICON = sv('<path d="M3 9h18v11H3zM2 5h20v4H2z M10 12.5h4v2h-4z"/>');
-const MAP_ICON = sv('<path d="M3.5 6.2l5.3-2 6.4 2.2 5.3-2v13.4l-5.3 2-6.4-2.2-5.3 2zM8.8 4.2v13.4M15.2 6.4v13.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>');
-const BOOK_ICON = sv('<path d="M4 4.5h6.8c.8 0 1.2.4 1.2 1.2V20c0-.8-.4-1.2-1.2-1.2H4zM20 4.5h-6.8c-.8 0-1.2.4-1.2 1.2V20c0-.8.4-1.2 1.2-1.2H20z"/>');
-const GEAR_ICON = sv('<path d="M10.6 2.5h2.8l.5 2.4 1.7.7 2-1.4 2 2-1.4 2 .7 1.7 2.4.5v2.8l-2.4.5-.7 1.7 1.4 2-2 2-2-1.4-1.7.7-.5 2.4h-2.8l-.5-2.4-1.7-.7-2 1.4-2-2 1.4-2-.7-1.7-2.4-.5v-2.8l2.4-.5.7-1.7-1.4-2 2-2 2 1.4 1.7-.7zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" fill-rule="evenodd"/>');
-const X_ICON = sv('<path d="M5 5l14 14M19 5L5 19" stroke="currentColor" stroke-width="3" stroke-linecap="round" fill="none"/>');
 
 export class InventoryScreen {
   constructor(root, { inventory, crafting, actions, stats, onDrop, onClose, onHelp, onPause, onMap, world, tamedCount }) {
@@ -126,7 +139,7 @@ export class InventoryScreen {
                 <b class="sk-val" data-ref="sv-${s.key}"></b>
                 <button type="button" class="sk-plus" id="skill-${s.key}" data-skill="${s.key}" aria-label="Melhorar ${s.nome}">+</button>
               </div>`).join('')}
-            <div class="skill-row skill-torpor" style="--p:0%"><span class="ico">${STAT_ICONS.torpor}</span><span class="sk-name">Torpor</span><b class="sk-val" data-ref="sv-torpor">0.0/200.0</b><span class="sk-plus sk-none"></span></div>
+            <div class="skill-row skill-torpor" style="--p:0%"><span class="ico">${AI.torpor}</span><span class="sk-name">Torpor</span><b class="sk-val" data-ref="sv-torpor">0.0/200.0</b><span class="sk-plus sk-none"></span></div>
           </div>
         </section>
 
