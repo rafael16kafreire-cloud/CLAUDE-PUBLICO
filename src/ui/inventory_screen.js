@@ -106,6 +106,7 @@ export class InventoryScreen {
             <div class="eg-grid" data-ref="egrid"></div>
             <div class="eg-foot">
               <span class="eg-pts">PONTOS DISPONÍVEIS: <b data-ref="egpts">0</b></span>
+              <span class="eg-next" data-ref="egnext"></span>
               <div class="eg-detail" data-ref="egdetail"></div>
             </div>
           </div>
@@ -316,6 +317,10 @@ export class InventoryScreen {
     const st = this.stats;
     if (!st) return;
     this.refs.egpts.textContent = String(st.engramPoints);
+    // quanto o próximo nível rende de pontos de engrama (tabela do ARK)
+    this.refs.egnext.textContent = st.level >= BALANCE.nivel.max
+      ? 'Nível máximo'
+      : `Ao chegar no nível ${st.level + 1}: +${st.engramsForLevel(st.level + 1)} pontos`;
     const g = this.refs.egrid;
     if (!g.children.length) {
       const byLevel = new Map();
@@ -335,7 +340,8 @@ export class InventoryScreen {
           b.type = 'button';
           b.className = 'eg-tile';
           b.dataset.id = r.id;
-          b.innerHTML = `<span class="eg-icon">${itemIcon(r.resultado)}</span><span class="eg-name">${itemName(r.resultado)}</span>`;
+          // nível mínimo ao lado de cada engrama (e o custo em pontos, como no ARK)
+          b.innerHTML = `<span class="eg-lv">Nv ${r.nivel ?? 1}</span><span class="eg-cost">${r.engrama ? `✦${r.engrama}` : 'grátis'}</span><span class="eg-icon">${itemIcon(r.resultado)}</span><span class="eg-name">${itemName(r.resultado)}</span>`;
           b.addEventListener('click', () => {
             this.selEngram = r;
             this._renderEngrams();

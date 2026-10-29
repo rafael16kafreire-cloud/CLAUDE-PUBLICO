@@ -15,6 +15,7 @@ import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { events, EV } from './core/event_bus.js';
 import { game, STATE } from './core/game_manager.js';
 import { settings, QUALITY_PRESETS, hdTextures } from './core/settings.js';
+import { BALANCE } from './core/balance.js';
 import { input } from './core/input.js';
 import { World } from './world/world.js';
 import { setPushers } from './world/materials.js';
@@ -995,8 +996,15 @@ function boot(hotData = {}) {
       void document.body.offsetWidth;
       document.body.classList.add('level-flash');
     }
+    // aviso de nível novo no topo da tela: pontos de habilidade e os pontos de engrama exatos do ARK
     const ep = ctx?.player.stats.engramsForLevel(level) ?? 0;
-    events.emit(EV.MESSAGE, { text: `Nível ${level}! +1 habilidade e +${ep} pontos de engrama (Inventário → Criar → Aprender)`, kind: 'gain' });
+    const sp = BALANCE.habilidades.pontos_por_nivel;
+    const toast = document.createElement('div');
+    toast.className = 'levelup-toast';
+    toast.innerHTML = `<b>NÍVEL ${level}</b><span>+${sp} ponto de habilidade</span><span>+${ep} pontos de engrama</span>`;
+    ui.appendChild(toast);
+    setTimeout(() => toast.classList.add('out'), 4200);
+    setTimeout(() => toast.remove(), 4800);
   });
   events.on(EV.PLACED, ({ structure }) => {
     sound.play('colocar', structure.position);
