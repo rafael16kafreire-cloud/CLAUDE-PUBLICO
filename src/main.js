@@ -352,15 +352,25 @@ function boot(hotData = {}) {
       stats: player.stats,
       onDrop: (stack) => dropStack(stack),
       onClose: () => closeInventory(),
+      // atalhos da barra de baixo do inventário (como no ARK Mobile)
+      onHelp: () => ctx.help.open(0, 0, () => {}),
+      onPause: () => {
+        closeInventory();
+        pauseGame();
+      },
+      onMap: () => {
+        closeInventory();
+        ctx.mapScreen.show(ctx.player, ctx.camCtl.yaw);
+      },
       world: () => world,
       tamedCount: () => creatures.tamedBy(player).length,
     });
-    const help = new HelpScreen(ui, { onClose: () => ctx.pause.show() });
+    const help = new HelpScreen(ui);
     const pause = new PauseMenu(ui, {
       onResume: () => resume(),
       onHelp: () => {
         ctx.pause.hide();
-        ctx.help.open();
+        ctx.help.open(0, 0, () => ctx.pause.show());
       },
       onQuitToMenu: () => toMenu(),
       onCloseApp: androidApp?.exit ? () => androidApp.exit() : null,

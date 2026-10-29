@@ -130,7 +130,9 @@ export class HelpScreen {
     return !this.el.hidden;
   }
 
-  open(tab = 0, item = 0) {
+  // onBack: o que fazer ao fechar (padrão: o que foi dado ao criar a tela)
+  open(tab = 0, item = 0, onBack = null) {
+    this._back = onBack;
     this.select(tab, item);
     this.el.hidden = false;
   }
@@ -138,7 +140,7 @@ export class HelpScreen {
   close() {
     if (this.el.hidden) return;
     this.el.hidden = true;
-    this.onClose?.();
+    (this._back ?? this.onClose)?.();
   }
 
   select(tab, item) {
