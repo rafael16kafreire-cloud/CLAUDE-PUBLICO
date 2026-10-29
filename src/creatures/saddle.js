@@ -18,6 +18,7 @@ const LEATHER_DARK = new THREE.MeshLambertMaterial({ color: '#4a2c18' });
 const CLOTH = new THREE.MeshLambertMaterial({ color: '#8a2e22' });
 const IRON = new THREE.MeshLambertMaterial({ color: '#6a6e74' });
 const WOOD = new THREE.MeshLambertMaterial({ color: '#7a5a3a' });
+const ROPE = new THREE.MeshLambertMaterial({ color: '#b39a68' }); // corda de fibra
 
 // Sela de verdade (modelo enviado pelo jogador, sem textura: pintada de couro)
 const SELA_COURO = new THREE.MeshLambertMaterial({ color: '#7b4a28' });
@@ -31,6 +32,49 @@ function selaGeometry() {
   selaGeo.setIndex(new THREE.BufferAttribute(u16(SELA.index), 1));
   selaGeo.computeVertexNormals();
   return selaGeo;
+}
+
+// Corda que se estica entre dois pontos que se mexem (sela -> cabresto): uma fita de seção
+// quadrada com poucos segmentos, refeita todo quadro (barata).
+function makeRopeMesh(segs, r) {
+  const n = (segs + 1) * 4;
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+  const idx = [];
+  for (let k = 0; k < segs; k++) {
+    for (let q = 0; q < 4; q++) {
+      const a = k * 4 + q;
+      const b = k * 4 + ((q + 1) % 4);
+      idx.push(a, b, a + 4, b, b + 4, a + 4);
+    }
+  }
+  geo.setIndex(idx);
+  const m = new THREE.Mesh(geo, ROPE);
+  m.frustumCulled = false;
+  m.userData = { segs, r, curve: new THREE.CatmullRomCurve3([new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()], false, 'catmullrom', 0.5), p: new THREE.Vector3(), t: new THREE.Vector3(), sd: new THREE.Vector3(), up: new THREE.Vector3() };
+  return m;
+}
+
+function updateRope(m, pts) {
+  const U = m.userData;
+  U.curve.points = pts;
+  const pos = m.geometry.attributes.position;
+  const Y = new THREE.Vector3(0, 1, 0);
+  for (let k = 0; k <= U.segs; k++) {
+    const u = k / U.segs;
+    U.curve.getPoint(u, U.p);
+    U.curve.getTangent(u, U.t);
+    U.sd.crossVectors(U.t, Y);
+    if (U.sd.lengthSq() < 1e-6) U.sd.set(1, 0, 0);
+    U.sd.normalize();
+    U.up.crossVectors(U.sd, U.t).normalize();
+    const c4 = [[1, 1], [-1, 1], [-1, -1], [1, -1]];
+    for (let q = 0; q < 4; q++) {
+      pos.setXYZ(k * 4 + q, U.p.x + (U.sd.x * c4[q][0] + U.up.x * c4[q][1]) * U.r, U.p.y + (U.sd.y * c4[q][0] + U.up.y * c4[q][1]) * U.r, U.p.z + (U.sd.z * c4[q][0] + U.up.z * c4[q][1]) * U.r);
+    }
+  }
+  pos.needsUpdate = true;
+  m.geometry.computeVertexNormals();
 }
 
 // Comprimento do corpo do bicho adulto (m).
@@ -131,9 +175,8 @@ export function buildSaddle(c, kind) {
   g.add(model);
   c._seatLift = SELA.seat * f; // o jogador senta em cima do assento
   const len2 = SELA.l * f;
-  // cilha: tiras descendo pelos lados, em volta da barriga
-  const drop = Math.max(0.3 * s, (back - spot.belly) * 0.9);
-  for (const side of [-1, 1]) g.add(box(0.06 * s, drop, 0.12 * s, side * pw * 0.5, back - drop / 2, 0, LEATHER_DARK));
+  // manta de pano por baixo da sela (uma caixa fina: não pesa)
+  g.add(box(pw * 1.22, 0.025 * s, len2 * 1.1, 0, back - 0.004 * s, 0, CLOTH));
   if (kind === 'sela_grande') {
     // plataforma de madeira com grade (como as selas de gigantes do ARK)
     g.add(box(pw * 1.15, 0.06 * s, len2 * 1.2, 0, back + SELA.seat * f * 0.7, 0, WOOD));
@@ -167,7 +210,63 @@ export function buildSaddle(c, kind) {
     holder.matrixAutoUpdate = false;
     holder.add(g);
     c.mesh.add(holder);
-    c._sadAnchor = { idx, R, bi, zs, back, holder, dy: null, tmp: new THREE.Vector3(), exp: new THREE.Vector3(), m: new THREE.Matrix4(), t: new THREE.Matrix4(), ys: [] };
+    c._sadExtras = [];
+    const ropeR = Math.max(0.02 * s, Math.min(0.045 * s, spot.w * 0.012));
+    // corda da cilha: um laço em volta do tronco, por baixo da barriga, passando pelos lados da sela
+    let halfW = 0;
+    let bottom = Infinity;
+    for (let i = 0; i < pos.count; i++) {
+      if (Math.abs(pos.getZ(i) - zs) < spot.trunk * 0.08 && pos.getY(i) > spot.belly * 0.98) {
+        halfW = Math.max(halfW, Math.abs(pos.getX(i)));
+        bottom = Math.min(bottom, pos.getY(i));
+      }
+    }
+    halfW = Math.min(halfW || spot.w / 2, spot.w / 2);
+    bottom = Number.isFinite(bottom) ? bottom : spot.belly;
+    const cy = (back + bottom) / 2;
+    const rx = halfW * 0.98 + ropeR;
+    const ry = (back - bottom) / 2 + ropeR;
+    const ringPts = [];
+    for (let k = 0; k < 20; k++) {
+      const a = (k / 20) * Math.PI * 2;
+      ringPts.push(new THREE.Vector3(Math.cos(a) * rx, cy + Math.sin(a) * ry, 0));
+    }
+    const girth = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(ringPts, true), 28, ropeR, 5, true), ROPE);
+    g.add(girth);
+    // cabresto: argola em volta da cabeça (presa ao osso da cabeça) e corda até a sela
+    const headBone = c.bones?.head;
+    const hk = headBone ? sk.bones.indexOf(headBone) : -1;
+    let rope = null;
+    if (hk >= 0) {
+      const hb = bindPos(headBone);
+      let rh = 0;
+      for (let i = 0; i < pos.count; i++) {
+        if (Math.abs(pos.getZ(i) - hb.z) < 0.5 * s && Math.abs(pos.getY(i) - hb.y) < 0.5 * s) rh = Math.max(rh, Math.abs(pos.getX(i)));
+      }
+      rh = Math.max(0.08 * s, Math.min(rh * 0.95 || 0.2 * s, 0.6 * s));
+      const headHolder = new THREE.Group();
+      headHolder.matrixAutoUpdate = false;
+      headHolder.matrix.copy(sk.boneInverses[hk]);
+      const hp = [];
+      for (let k = 0; k < 14; k++) {
+        const a = (k / 14) * Math.PI * 2;
+        hp.push(new THREE.Vector3(hb.x + Math.cos(a) * rh, hb.y + Math.sin(a) * rh * 0.85, hb.z));
+      }
+      headHolder.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(hp, true), 20, ropeR * 0.9, 4, true), ROPE));
+      headBone.add(headHolder);
+      c._sadExtras.push(headHolder);
+      const nb = c.bones?.neck2 ?? c.bones?.neck;
+      const nk = nb ? sk.bones.indexOf(nb) : -1;
+      rope = {
+        hk, nk, hb, nb: nk >= 0 ? bindPos(nb) : null, rh, radius: ropeR * 0.8,
+        mesh: makeRopeMesh(14, ropeR * 0.8), mh: new THREE.Matrix4(), mn: new THREE.Matrix4(),
+        pts: [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()],
+        front: new THREE.Vector3(0, back + 0.05 * s, zs - len2 * 0.42),
+      };
+      c.mesh.add(rope.mesh);
+      c._sadExtras.push(rope.mesh);
+    }
+    c._sadAnchor = { rope, idx, R, bi, zs, back, holder, dy: null, tmp: new THREE.Vector3(), exp: new THREE.Vector3(), m: new THREE.Matrix4(), t: new THREE.Matrix4(), ys: [] };
     ajustarSela(c);
     return holder;
   }
@@ -204,4 +303,25 @@ export function ajustarSela(c) {
   A.m.premultiply(A.t);
   A.holder.matrix.copy(A.m);
   A.holder.matrixWorldNeedsUpdate = true;
+  const R = A.rope;
+  if (R) {
+    // corda: da frente da sela, passando pelo pescoço, até o cabresto na cabeça
+    const head = c.bones.head;
+    R.mh.copy(c.mesh.matrixWorld).invert().multiply(head.matrixWorld).multiply(sk.boneInverses[R.hk]);
+    R.pts[0].copy(R.front).applyMatrix4(A.m);
+    R.pts[3].set(R.hb.x, R.hb.y + R.rh * 0.85, R.hb.z).applyMatrix4(R.mh);
+    if (R.nb) {
+      R.mn.copy(c.mesh.matrixWorld).invert().multiply(c.bones.neck2 ? c.bones.neck2.matrixWorld : c.bones.neck.matrixWorld).multiply(sk.boneInverses[R.nk]);
+      R.pts[1].copy(R.nb).applyMatrix4(R.mn);
+      R.pts[1].y += R.rh * 0.9;
+      R.pts[2].copy(R.pts[1]).lerp(R.pts[3], 0.5);
+      R.pts[2].y += R.rh * 0.3;
+    } else {
+      R.pts[1].copy(R.pts[0]).lerp(R.pts[3], 0.35);
+      R.pts[1].y += R.rh * 0.6;
+      R.pts[2].copy(R.pts[0]).lerp(R.pts[3], 0.7);
+      R.pts[2].y += R.rh * 0.5;
+    }
+    updateRope(R.mesh, R.pts);
+  }
 }

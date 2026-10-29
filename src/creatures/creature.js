@@ -255,6 +255,9 @@ export class Creature {
   setSaddle(kind) {
     if (this._saddleMesh) this._saddleMesh.parent?.remove(this._saddleMesh);
     this._saddleMesh = null;
+    for (const o of this._sadExtras ?? []) o.parent?.remove(o); // cordas e cabresto
+    this._sadExtras = [];
+    this._sadAnchor = null;
     this.saddled = !!kind;
     this.saddleKind = kind || null;
     if (kind) {
