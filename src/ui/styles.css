@@ -1643,7 +1643,8 @@ body.is-touch.touch-botoes .hotbar {
 .tc-esquema-gestos .tc-look, .tc-esquema-gestos .tc-stick-zone { pointer-events: none; }
 .tc:not(.tc-esquema-gestos) .tc-gestos { display: none; }
 /* só sobra o botão de agachar (o bonequinho agachado, embaixo à esquerda) */
-.tc-esquema-gestos .tc-btn:not(.b-crouch) { display: none; }
+.tc-esquema-gestos .tc-btn:not(.b-crouch):not(.b-camera) { display: none; }
+.tc-btn[hidden] { display: none !important; }
 .tc-esquema-gestos .tc-buttons { right: auto; left: var(--safe-l, 0px); bottom: var(--safe-b, 0px); }
 .tc-esquema-gestos .tc-btn.b-crouch {
   left: 12px; bottom: 12px;
@@ -2263,3 +2264,11 @@ body.inv-open #ui > .hud, body.inv-open #ui > .hotbar, body.inv-open #ui > .hud-
 .ark-inv .skill-row .ico { width: 2.6vh; height: 2.6vh; }
 .ark-inv .skill-row .ico { width: 3.5vh; height: 3.5vh; margin-left: -0.3vh; }
 .inv.ark-inv[hidden] { display: none !important; }
+
+/* botão de câmera (1ª / 3ª pessoa): aparece ao lado do agachar quando está montado */
+.tc-esquema-gestos .tc-btn.b-camera {
+  left: 72px; bottom: 12px; right: auto; top: auto; position: absolute;
+  width: 48px; height: 48px; opacity: 0.9; background: rgba(4, 30, 46, 0.55); border: 1px solid rgba(60, 182, 216, 0.6); border-radius: 6px; box-shadow: none; color: #35c3e8;
+}
+.tc-esquema-gestos .tc-btn.b-camera svg { width: 62%; height: 62%; }
+.tc-esquema-gestos .tc-btn.b-camera.down { color: #bff1ff; }

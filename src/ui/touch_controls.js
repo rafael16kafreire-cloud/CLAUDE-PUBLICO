@@ -28,6 +28,7 @@ const BUTTONS = [
   { id: 'interact', label: 'Interagir', cls: 'b-interact' },
   { id: 'crouch', label: 'Agachar', cls: 'b-crouch' },
   { id: 'run', label: 'Correr', cls: 'b-run' },
+  { id: 'camera', label: 'Câmera (1ª / 3ª pessoa)', cls: 'b-camera', hidden: true }, // só aparece montado
 ];
 
 const STICK_RADIUS = 58; // px (multiplicado pelo tamanho dos botões)
@@ -46,7 +47,7 @@ export class TouchControls {
         <div class="tc-stick-base"><div class="tc-stick-knob"></div></div>
       </div>
       <div class="tc-buttons">
-        ${BUTTONS.map((b) => `<button type="button" class="tc-btn ${b.cls}" data-id="${b.id}" aria-label="${b.label}" title="${b.label}">${BUTTON_ICONS[b.id]}</button>`).join('')}
+        ${BUTTONS.map((b) => `<button type="button" class="tc-btn ${b.cls}"${b.hidden ? ' hidden' : ''} data-id="${b.id}" aria-label="${b.label}" title="${b.label}">${BUTTON_ICONS[b.id]}</button>`).join('')}
       </div>
       <div class="tc-edit-bar" hidden>
         <span>Arraste os botões para onde quiser</span>
@@ -142,6 +143,7 @@ export class TouchControls {
   // Destaca os botões que estão "ligados" (correr, agachar).
   updateStates(player) {
     this.btn.run.classList.toggle('on', this.input.runToggle);
+    this.btn.camera.hidden = !player.riding; // montado: botão para trocar 1ª / 3ª pessoa
     this.btn.crouch.classList.toggle('on', player.crouching);
     // nadando: subir/descer (só troca o ícone quando muda)
     this._flyRide = !!player.riding?.flies; // montado num voador: segurar o dedo para cima sobe

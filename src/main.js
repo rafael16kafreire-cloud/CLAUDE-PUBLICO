@@ -902,6 +902,18 @@ function boot(hotData = {}) {
     }
     if (ctx.mapScreen.visible) ctx.mapScreen.update(ctx.player, ctx.camCtl.yaw);
     if (input.wasPressed('camera')) settings.set('cameraMode', ctx.camCtl.mode === 'primeira' ? 'terceira' : 'primeira');
+    // montou: vai para a 3ª pessoa (para ver o bicho); desceu: volta para a que estava. O botão de câmera troca quando quiser.
+    const riding = !!ctx.player.riding;
+    if (riding !== !!ctx._riding) {
+      ctx._riding = riding;
+      if (riding) {
+        ctx._camBefore = ctx.camCtl.mode;
+        if (ctx.camCtl.mode !== 'terceira') settings.set('cameraMode', 'terceira');
+      } else if (ctx._camBefore) {
+        settings.set('cameraMode', ctx._camBefore);
+        ctx._camBefore = null;
+      }
+    }
     for (let i = 0; i < 8; i++) if (input.wasPressed(`slot${i + 1}`)) ctx.actions.pressHotbar(i);
     if (input.wasPressed('build')) events.emit(EV.MESSAGE, { text: COMING_SOON.build, kind: 'info' });
     if (input.wasPressed('mount')) toggleMount();
