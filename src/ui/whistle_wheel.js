@@ -99,7 +99,7 @@ export class WhistleWheel {
     const near = this._near();
     const aimed = this._aimed();
     const mine = aimed && aimed.tamed && aimed.owner === this.player ? aimed : null;
-    sound.play('clique');
+    sound.play('assovio', null, { tipo: id });
     const setFollow = (list, on) => {
       for (const c of list) {
         c.follow = on;

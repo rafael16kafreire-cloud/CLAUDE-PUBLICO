@@ -394,6 +394,37 @@ class Sound {
     src.stop(t + attack + dur + 0.05);
   }
 
+  // Assovio de boca: seno puro com vibrato leve, "sopro" filtrado na mesma
+  // altura e queda de tom no fim de cada nota. notas = [[inicio_s, dur_s, f0, f1], ...]
+  _assobio(t, out, notas, peak = 0.5) {
+    const c = this.ctx;
+    for (const [at, dur, f0, f1] of notas) {
+      const t0 = t + at;
+      const o = c.createOscillator();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(f0, t0);
+      o.frequency.linearRampToValueAtTime(f1, t0 + dur * 0.85);
+      o.frequency.linearRampToValueAtTime(f1 * 0.97, t0 + dur);
+      const lfo = c.createOscillator();
+      const lg = c.createGain();
+      lfo.frequency.value = 5.5 + Math.random();
+      lg.gain.setValueAtTime(0, t0);
+      lg.gain.linearRampToValueAtTime(f1 * 0.012, t0 + dur * 0.5); // vibrato entra depois do ataque
+      lfo.connect(lg).connect(o.frequency);
+      const g = c.createGain();
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(peak, t0 + 0.03);
+      g.gain.setValueAtTime(peak, t0 + Math.max(0.03, dur - 0.07));
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      o.connect(g).connect(out);
+      lfo.start(t0);
+      lfo.stop(t0 + dur + 0.05);
+      o.start(t0);
+      o.stop(t0 + dur + 0.05);
+      this._noise(t0, dur, out, { f: (f0 + f1) / 2, fTo: f1, q: 14, peak: peak * 0.35, attack: 0.03 });
+    }
+  }
+
   // ---------------------------------------------------------
   // Efeitos
   // ---------------------------------------------------------
@@ -521,6 +552,22 @@ class Sound {
         if (!this._voice(0.9)) return;
         const out = this._dest(null, 0.22 * v);
         [523, 659, 784, 1047].forEach((f, i) => this._osc('triangle', f, t + i * 0.1, 0.35, out, 0.35));
+        break;
+      }
+      case 'assovio': { // comandos da roda de assovios (opts.tipo), cada um com seu "desenho" de notas
+        const N = {
+          follow_all: [[0, 0.22, 1900, 2300], [0.28, 0.45, 2300, 2900]], // fiu-fiiiu (sobe)
+          follow_one: [[0, 0.2, 2000, 2500]],
+          stop_all: [[0, 0.6, 2800, 1500]], // fiiiu (cai)
+          stop_one: [[0, 0.35, 2600, 1800]],
+          agressivo: [[0, 0.1, 2200, 2900], [0.14, 0.1, 2200, 2900], [0.28, 0.2, 2400, 3200]], // fi-fi-fiu agudo
+          attack: [[0, 0.12, 1800, 3000], [0.2, 0.12, 1800, 3000], [0.4, 0.25, 2000, 3300]],
+          neutro: [[0, 0.3, 2200, 2250], [0.4, 0.3, 2000, 2050]],
+          passivo: [[0, 0.7, 2400, 1700]],
+        }[opts.tipo] ?? [[0, 0.3, 2200, 2600]];
+        const total = N[N.length - 1][0] + N[N.length - 1][1];
+        if (!this._voice(total + 0.1)) return;
+        this._assobio(t, this._dest(null, 0.9 * v), N, 0.45);
         break;
       }
       case 'clique': {
