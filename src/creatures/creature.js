@@ -66,15 +66,16 @@ export const TARGET_RANGE = { curto: 12, medio: 25, longo: 45 }; // m (agressivo
 const easeOut3 = (u) => 1 - (1 - u) ** 3;
 const easeIn3 = (u) => u * u * u;
 const easeInOut = (u) => (u < 0.5 ? 2 * u * u : 1 - 2 * (1 - u) * (1 - u));
+const smooth = (u) => u * u * (3 - 2 * u);
 function atkLunge(at) { // positivo = recuo, negativo = para a frente
-  if (at < 0.2) return 0.3 * easeOut3(at / 0.2);
-  if (at < 0.38) return 0.3 - 1.2 * easeIn3((at - 0.2) / 0.18);
-  return -0.9 * (1 - easeInOut((at - 0.38) / 0.62));
+  if (at < 0.2) return 0.25 * easeOut3(at / 0.2);
+  if (at < 0.45) return 0.25 - 0.95 * smooth((at - 0.2) / 0.25);
+  return -0.7 * (1 - easeInOut((at - 0.45) / 0.55));
 }
 function atkJaw(at) { // 0 fechada .. 1 aberta: abre no recuo e fecha de estalo no golpe
   if (at < 0.2) return easeOut3(at / 0.2);
-  if (at < 0.3) return 1;
-  if (at < 0.4) return 1 - ((at - 0.3) / 0.1) ** 2;
+  if (at < 0.33) return 1;
+  if (at < 0.46) return 1 - smooth((at - 0.33) / 0.13);
   return 0;
 }
 
@@ -883,7 +884,7 @@ export class Creature {
         this._face(dt, t.position.x, t.position.z);
         // no golpe o corpo dá um passo à frente (e volta a ficar parado): o bote ganha peso
         const atp = 1 - this.attackAnim;
-        if (this.attackAnim > 0 && atp > 0.2 && atp < 0.42) {
+        if (this.attackAnim > 0 && atp > 0.2 && atp < 0.45) {
           const gap = this._dist2D(t.position) - this.radius * 0.9;
           if (gap > 0) {
             const step = Math.min(gap, this.radius * 2.2 * dt);
@@ -1478,8 +1479,9 @@ export class Creature {
     A.neck += (neckDown - A.neck) * k(3);
     // bote: recua (0..0.3) e avança (0.3..0.7)
     const at = 1 - this.attackAnim;
-    const lunge = this.attackAnim > 0 ? atkLunge(at) : 0;
-    this._lunge += (lunge - this._lunge) * Math.min(1, dt * 30); // (o corpo acompanha o bote sem tranco)
+    // (o corpo acompanha o bote sem tranco, mesmo com poucos quadros por segundo)
+    this._lunge += ((this.attackAnim > 0 ? atkLunge(at) : 0) - this._lunge) * Math.min(1, adt * 26);
+    const lunge = this._lunge;
     if (b.neck) {
       // cabeça sobe e desce um pouco a cada passo
       const nod = Math.sin(this.phase * TAU * 2) * amp * 0.08;
