@@ -58,6 +58,11 @@ const VOICES = {
   mamute: { kind: 'buzina', f: 120, d: 1.4 },
   argentavis: { kind: 'grito', f: 520, d: 0.7 },
   reidodo: { kind: 'rugido', f: 140, d: 1.2 },
+  dilofossauro: { kind: 'chiado', f: 420, d: 0.8 },
+  iguanodonte: { kind: 'mugido', f: 90, d: 1.2 },
+  dimetrodonte: { kind: 'rosnado', f: 110, d: 0.9 },
+  kentrossauro: { kind: 'mugido', f: 150, d: 0.7 },
+  paquirrinossauro: { kind: 'mugido', f: 75, d: 1.3 },
 };
 
 class Sound {

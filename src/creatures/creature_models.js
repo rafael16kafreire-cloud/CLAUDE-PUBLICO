@@ -640,6 +640,76 @@ export const MODELS = {
   },
 };
 
+// -------------------------------------------------------------
+// ESPÉCIES NOVAS (feitas a partir das formas já existentes, com outras cores e enfeites).
+// Mudar o comprimento_m no criaturas.json muda o tamanho do bicho; aqui só a forma e a cor.
+// -------------------------------------------------------------
+const semCor = (extras, ...cores) => extras.filter((e) => !cores.includes(e.color));
+
+// Dilofossauro: raptor esverdeado com duas cristas vermelhas e um leque preto no pescoço
+MODELS.dilofossauro = {
+  ...MODELS.raptor,
+  colors: { top: '#7d8c3a', belly: '#e4dba8', pattern: '#25301a' },
+  pattern: { type: 'listras', count: 12, strength: 0.6 },
+  extras: [
+    ...semCor(MODELS.raptor.extras, '#7a2c18'),
+    { type: 'ellipsoid', bone: 'head', p: [0.07, 1.7, -0.97], r: [0.022, 0.2, 0.3], color: '#c23a1e' },
+    { type: 'ellipsoid', bone: 'head', p: [-0.07, 1.7, -0.97], r: [0.022, 0.2, 0.3], color: '#c23a1e' },
+    { type: 'ellipsoid', bone: 'neck', p: [0.13, 1.34, -0.84], r: [0.035, 0.15, 0.16], color: '#242424' },
+    { type: 'ellipsoid', bone: 'neck', p: [-0.13, 1.34, -0.84], r: [0.035, 0.15, 0.16], color: '#242424' },
+  ],
+};
+
+// Iguanodonte: andador de dorso reto, verde-oliva, com bico de pato e esporões nos polegares
+MODELS.iguanodonte = {
+  ...MODELS.galimimo,
+  colors: { top: '#6b6a3a', belly: '#d6cba0', pattern: '#33301a' },
+  skin: 'escamas',
+  pattern: { type: 'listras', count: 9, strength: 0.5 },
+  extras: [
+    ...MODELS.galimimo.extras,
+    { type: 'ellipsoid', bone: 'head', p: [0, 2.36, -1.34], r: [0.085, 0.035, 0.12], color: '#c9b06a' },
+    { type: 'ellipsoid', bone: 'chest', p: [0, 1.74, -0.55], r: [0.05, 0.1, 0.55], color: '#4f4e2a' },
+  ],
+};
+
+// Dimetrodonte: réptil baixo e comprido com a grande vela nas costas
+MODELS.dimetrodonte = {
+  ...MODELS.deinosuchus,
+  colors: { top: '#a8612f', belly: '#e0c690', pattern: '#4a2a12' },
+  pattern: { type: 'listras', count: 10, strength: 0.6 },
+  teeth: { n: 8, size: 0.05 },
+  extras: [
+    ...semCor(MODELS.deinosuchus.extras, '#2e3424'),
+    // vela: lâminas altas e finas, mais altas no meio
+    ...[[-1.15, 0.75, 'chest'], [-0.75, 1.0, 'chest'], [-0.35, 1.2, 'chest'], [0.05, 1.25, 'hips'], [0.45, 1.15, 'hips'], [0.85, 0.9, 'hips'], [1.2, 0.6, 'tail1']].map(([z, h, bone]) => ({
+      type: 'ellipsoid', bone, p: [0, 1.15 + h * 0.55, z], r: [0.04, h * 0.6, 0.22], color: h > 1 ? '#d0482a' : '#c25f2c', pele: { type: 'listras', freq: 10, color: '#6a2a14', strength: 0.5 },
+    })),
+  ],
+};
+
+// Kentrossauro: estegossauro pequeno e ágil, cor de terra
+MODELS.kentrossauro = {
+  ...MODELS.estegossauro,
+  colors: { top: '#8a6a3c', belly: '#d8c490', pattern: '#3a2a14' },
+  pattern: { type: 'manchas', freq: 7, strength: 0.55 },
+};
+
+// Paquirrinossauro: parente do triceratops sem chifres, com uma grande protuberância no nariz e gola curta
+MODELS.paquirrinossauro = {
+  ...MODELS.triceratops,
+  colors: { top: '#5c6a4a', belly: '#c9bf94', pattern: '#2c3320' },
+  pattern: { type: 'listras', count: 8, strength: 0.5 },
+  extras: [
+    ...MODELS.triceratops.extras.slice(0, 6), // olhos
+    { type: 'ellipsoid', bone: 'head', p: [0, 2.2, -2.3], r: [0.8, 0.6, 0.16], color: '#6a7a52' },
+    { type: 'cone', bone: 'head', base: [0.5, 2.55, -2.3], tip: [0.55, 3.15, -2.0], r: 0.08, color: '#e2d6b8' },
+    { type: 'cone', bone: 'head', base: [-0.5, 2.55, -2.3], tip: [-0.55, 3.15, -2.0], r: 0.08, color: '#e2d6b8' },
+    { type: 'ellipsoid', bone: 'head', p: [0, 1.95, -3.3], r: [0.3, 0.32, 0.45], color: '#8a7a5a' },
+    { type: 'cone', bone: 'head', base: [0, 1.38, -3.75], tip: [0, 1.15, -4.15], r: 0.14, color: '#2e2a22' },
+  ],
+};
+
 // Bichos com modelo animado (o formato aqui só dá o tamanho do molde e
 // os nomes dos ossos; a forma vem do modelo importado).
 MODELS.sauropelta = { ...MODELS.anquilossauro };

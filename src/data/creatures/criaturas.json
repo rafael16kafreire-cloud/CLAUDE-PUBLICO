@@ -3,7 +3,10 @@
  "especies": [
   {
    "id": "dodo",
-   "comprimento_m": [0.9, 1],
+   "comprimento_m": [
+    0.9,
+    1
+   ],
    "nome": "Dodô",
    "dieta": "herbivoro",
    "temperamento": "passivo",
@@ -14,24 +17,56 @@
    "tamanho": 1,
    "raio": 0.35,
    "altura": 0.8,
-   "biomas": ["praia", "selva", "igapo", "campos"],
+   "biomas": [
+    "praia",
+    "selva",
+    "igapo",
+    "campos"
+   ],
    "peso_spawn": 7,
-   "grupo": [1, 3],
+   "grupo": [
+    1,
+    3
+   ],
    "xp": 6,
    "loot": {
-    "carne_crua": [1, 2],
-    "couro": [0, 1]
+    "carne_crua": [
+     1,
+     2
+    ],
+    "couro": [
+     0,
+     1
+    ]
    },
    "pode_domar": true,
    "comida_preferida": "baga_mejo",
    "carga": 50,
    "atributos": {
-    "vida": [40, 40],
-    "forca": [100, 100],
-    "peso": [50, 50],
-    "stamina": [100, 100],
-    "velocidade": [100, 100],
-    "torpor": [30, 30]
+    "vida": [
+     40,
+     40
+    ],
+    "forca": [
+     100,
+     100
+    ],
+    "peso": [
+     50,
+     50
+    ],
+    "stamina": [
+     100,
+     100
+    ],
+    "velocidade": [
+     100,
+     100
+    ],
+    "torpor": [
+     30,
+     30
+    ]
    },
    "ark_por_nivel": {
     "vida": 0.2,
@@ -43,7 +78,10 @@
   },
   {
    "id": "parassauro",
-   "comprimento_m": [9, 10],
+   "comprimento_m": [
+    9,
+    10
+   ],
    "nome": "Parassauro",
    "dieta": "herbivoro",
    "temperamento": "medroso",
@@ -54,25 +92,57 @@
    "tamanho": 1,
    "raio": 1.0,
    "altura": 2.8,
-   "biomas": ["selva", "igapo", "neve", "campos"],
+   "biomas": [
+    "selva",
+    "igapo",
+    "neve",
+    "campos"
+   ],
    "peso_spawn": 5,
-   "grupo": [2, 4],
+   "grupo": [
+    2,
+    4
+   ],
    "xp": 20,
    "loot": {
-    "carne_crua": [3, 6],
-    "couro": [2, 4]
+    "carne_crua": [
+     3,
+     6
+    ],
+    "couro": [
+     2,
+     4
+    ]
    },
    "pode_domar": true,
    "comida_preferida": "baga_mejo",
    "pode_montar": true,
    "carga": 480,
    "atributos": {
-    "vida": [200, 200],
-    "forca": [100, 100],
-    "peso": [480, 480],
-    "stamina": [450, 450],
-    "velocidade": [100, 100],
-    "torpor": [150, 150]
+    "vida": [
+     200,
+     200
+    ],
+    "forca": [
+     100,
+     100
+    ],
+    "peso": [
+     480,
+     480
+    ],
+    "stamina": [
+     450,
+     450
+    ],
+    "velocidade": [
+     100,
+     100
+    ],
+    "torpor": [
+     150,
+     150
+    ]
    },
    "ark_por_nivel": {
     "vida": 0.2,
@@ -84,7 +154,10 @@
   },
   {
    "id": "galimimo",
-   "comprimento_m": [5.5, 6.5],
+   "comprimento_m": [
+    5.5,
+    6.5
+   ],
    "nome": "Galimimo",
    "dieta": "herbivoro",
    "temperamento": "medroso",
@@ -95,25 +168,57 @@
    "tamanho": 1,
    "raio": 0.6,
    "altura": 2.2,
-   "biomas": ["selva", "praia", "neve", "campos"],
+   "biomas": [
+    "selva",
+    "praia",
+    "neve",
+    "campos"
+   ],
    "peso_spawn": 4,
-   "grupo": [3, 5],
+   "grupo": [
+    3,
+    5
+   ],
    "xp": 15,
    "loot": {
-    "carne_crua": [2, 3],
-    "couro": [1, 2]
+    "carne_crua": [
+     2,
+     3
+    ],
+    "couro": [
+     1,
+     2
+    ]
    },
    "pode_domar": true,
    "comida_preferida": "baga_mejo",
    "pode_montar": true,
    "carga": 270,
    "atributos": {
-    "vida": [150, 150],
-    "forca": [100, 100],
-    "peso": [270, 270],
-    "stamina": [300, 300],
-    "velocidade": [100, 100],
-    "torpor": [420, 420]
+    "vida": [
+     150,
+     150
+    ],
+    "forca": [
+     100,
+     100
+    ],
+    "peso": [
+     270,
+     270
+    ],
+    "stamina": [
+     300,
+     300
+    ],
+    "velocidade": [
+     100,
+     100
+    ],
+    "torpor": [
+     420,
+     420
+    ]
    },
    "ark_por_nivel": {
     "vida": 0.2,
@@ -125,7 +230,10 @@
   },
   {
    "id": "paquicefalossauro",
-   "comprimento_m": [4, 4.6],
+   "comprimento_m": [
+    4,
+    4.6
+   ],
    "nome": "Paquicefalossauro",
    "pode_montar": true,
    "dieta": "herbivoro",
@@ -137,15 +245,34 @@
    "tamanho": 1,
    "raio": 0.7,
    "altura": 1.8,
-   "biomas": ["selva", "neve", "serra"],
+   "biomas": [
+    "selva",
+    "neve",
+    "serra"
+   ],
    "peso_spawn": 3.5,
-   "grupo": [1, 2],
+   "grupo": [
+    1,
+    2
+   ],
    "xp": 22,
    "loot": {
-    "carne_crua": [2, 4],
-    "couro": [1, 3],
-    "ossos": [1, 2],
-    "queratina": [1, 3]
+    "carne_crua": [
+     2,
+     4
+    ],
+    "couro": [
+     1,
+     3
+    ],
+    "ossos": [
+     1,
+     2
+    ],
+    "queratina": [
+     1,
+     3
+    ]
    },
    "pode_domar": true,
    "comida_preferida": "baga_mejo",
@@ -154,12 +281,30 @@
    "intervalo_ataque": 1.1,
    "carga": 150,
    "atributos": {
-    "vida": [175, 175],
-    "forca": [100, 100],
-    "peso": [150, 150],
-    "stamina": [150, 150],
-    "velocidade": [100, 100],
-    "torpor": [160, 160]
+    "vida": [
+     175,
+     175
+    ],
+    "forca": [
+     100,
+     100
+    ],
+    "peso": [
+     150,
+     150
+    ],
+    "stamina": [
+     150,
+     150
+    ],
+    "velocidade": [
+     100,
+     100
+    ],
+    "torpor": [
+     160,
+     160
+    ]
    },
    "ark_por_nivel": {
     "vida": 0.2,
@@ -171,7 +316,10 @@
   },
   {
    "id": "triceratops",
-   "comprimento_m": [8, 9],
+   "comprimento_m": [
+    8,
+    9
+   ],
    "nome": "Triceratops",
    "dieta": "herbivoro",
    "temperamento": "passivo",
@@ -182,15 +330,35 @@
    "tamanho": 1,
    "raio": 1.6,
    "altura": 3.0,
-   "biomas": ["selva", "igapo", "neve", "campos"],
+   "biomas": [
+    "selva",
+    "igapo",
+    "neve",
+    "campos"
+   ],
    "peso_spawn": 3,
-   "grupo": [1, 3],
+   "grupo": [
+    1,
+    3
+   ],
    "xp": 70,
    "loot": {
-    "carne_crua": [8, 14],
-    "couro": [6, 10],
-    "ossos": [2, 4],
-    "queratina": [3, 6]
+    "carne_crua": [
+     8,
+     14
+    ],
+    "couro": [
+     6,
+     10
+    ],
+    "ossos": [
+     2,
+     4
+    ],
+    "queratina": [
+     3,
+     6
+    ]
    },
    "pode_domar": true,
    "comida_preferida": "baga_mejo",
@@ -200,12 +368,30 @@
    "pode_montar": true,
    "carga": 365,
    "atributos": {
-    "vida": [375, 375],
-    "forca": [100, 100],
-    "peso": [365, 365],
-    "stamina": [150, 150],
-    "velocidade": [100, 100],
-    "torpor": [250, 250]
+    "vida": [
+     375,
+     375
+    ],
+    "forca": [
+     100,
+     100
+    ],
+    "peso": [
+     365,
+     365
+    ],
+    "stamina": [
+     150,
+     150
+    ],
+    "velocidade": [
+     100,
+     100
+    ],
+    "torpor": [
+     250,
+     250
+    ]
    },
    "ark_por_nivel": {
     "vida": 0.2,
@@ -217,7 +403,10 @@
   },
   {
    "id": "estegossauro",
-   "comprimento_m": [8.5, 9.2],
+   "comprimento_m": [
+    8.5,
+    9.2
+   ],
    "nome": "Estegossauro",
    "dieta": "herbivoro",
    "temperamento": "passivo",
@@ -228,15 +417,34 @@
    "tamanho": 1,
    "raio": 1.7,
    "altura": 4.2,
-   "biomas": ["selva", "neve", "campos"],
+   "biomas": [
+    "selva",
+    "neve",
+    "campos"
+   ],
    "peso_spawn": 2.5,
-   "grupo": [1, 2],
+   "grupo": [
+    1,
+    2
+   ],
    "xp": 70,
    "loot": {
-    "carne_crua": [8, 14],
-    "couro": [6, 10],
-    "ossos": [2, 4],
-    "queratina": [3, 6]
+    "carne_crua": [
+     8,
+     14
+    ],
+    "couro": [
+     6,
+     10
+    ],
+    "ossos": [
+     2,
+     4
+    ],
+    "queratina": [
+     3,
+     6
+    ]
    },
    "pode_domar": true,
    "comida_preferida": "baga_mejo",
@@ -246,12 +454,30 @@
    "pode_montar": true,
    "carga": 500,
    "atributos": {
-    "vida": [650, 650],
-    "forca": [100, 100],
-    "peso": [500, 500],
-    "stamina": [300, 300],
-    "velocidade": [100, 100],
-    "torpor": [500, 500]
+    "vida": [
+     650,
+     650
+    ],
+    "forca": [
+     100,
+     100
+    ],
+    "peso": [
+     500,
+     500
+    ],
+    "stamina": [
+     300,
+     300
+    ],
+    "velocidade": [
+     100,
+     100
+    ],
+    "torpor": [
+     500,
+     500
+    ]
    },
    "ark_por_nivel": {
     "vida": 0.2,
@@ -263,7 +489,10 @@
   },
   {
    "id": "anquilossauro",
-   "comprimento_m": [6.5, 8],
+   "comprimento_m": [
+    6.5,
+    8
+   ],
    "nome": "Anquilossauro",
    "dieta": "herbivoro",
    "temperamento": "passivo",
@@ -274,15 +503,35 @@
    "tamanho": 1,
    "raio": 1.4,
    "altura": 1.8,
-   "biomas": ["selva", "praia", "neve", "serra"],
+   "biomas": [
+    "selva",
+    "praia",
+    "neve",
+    "serra"
+   ],
    "peso_spawn": 2.5,
-   "grupo": [1, 2],
+   "grupo": [
+    1,
+    2
+   ],
    "xp": 60,
    "loot": {
-    "carne_crua": [6, 10],
-    "couro": [4, 8],
-    "ossos": [2, 4],
-    "queratina": [5, 9]
+    "carne_crua": [
+     6,
+     10
+    ],
+    "couro": [
+     4,
+     8
+    ],
+    "ossos": [
+     2,
+     4
+    ],
+    "queratina": [
+     5,
+     9
+    ]
    },
    "pode_domar": true,
    "comida_preferida": "baga_mejo",
@@ -292,12 +541,30 @@
    "pode_montar": true,
    "carga": 250,
    "atributos": {
-    "vida": [700, 700],
-    "forca": [100, 100],
-    "peso": [250, 250],
-    "stamina": [175, 175],
-    "velocidade": [100, 100],
-    "torpor": [420, 420]
+    "vida": [
+     700,
+     700
+    ],
+    "forca": [
+     100,
+     100
+    ],
+    "peso": [
+     250,
+     250
+    ],
+    "stamina": [
+     175,
+     175
+    ],
+    "velocidade": [
+     100,
+     100
+    ],
+    "torpor": [
+     420,
+     420
+    ]
    },
    "ark_por_nivel": {
     "vida": 0.2,
@@ -309,7 +576,10 @@
   },
   {
    "id": "sauropelta",
-   "comprimento_m": [5, 6],
+   "comprimento_m": [
+    5,
+    6
+   ],
    "nome": "Sauropelta",
    "dieta": "herbivoro",
    "temperamento": "passivo",
@@ -320,15 +590,33 @@
    "tamanho": 1,
    "raio": 1.2,
    "altura": 1.6,
-   "biomas": ["selva", "igapo"],
+   "biomas": [
+    "selva",
+    "igapo"
+   ],
    "peso_spawn": 2.5,
-   "grupo": [1, 2],
+   "grupo": [
+    1,
+    2
+   ],
    "xp": 50,
    "loot": {
-    "carne_crua": [5, 8],
-    "couro": [3, 6],
-    "ossos": [1, 3],
-    "queratina": [4, 8]
+    "carne_crua": [
+     5,
+     8
+    ],
+    "couro": [
+     3,
+     6
+    ],
+    "ossos": [
+     1,
+     3
+    ],
+    "queratina": [
+     4,
+     8
+    ]
    },
    "pode_domar": true,
    "comida_preferida": "baga_mejo",
@@ -338,17 +626,38 @@
    "pode_montar": true,
    "carga": 380,
    "atributos": {
-    "vida": [680, 920],
-    "forca": [85, 125],
-    "peso": [323, 437],
-    "stamina": [260, 360],
-    "velocidade": [90, 112],
-    "torpor": [450, 640]
+    "vida": [
+     680,
+     920
+    ],
+    "forca": [
+     85,
+     125
+    ],
+    "peso": [
+     323,
+     437
+    ],
+    "stamina": [
+     260,
+     360
+    ],
+    "velocidade": [
+     90,
+     112
+    ],
+    "torpor": [
+     450,
+     640
+    ]
    }
   },
   {
    "id": "braquiossauro",
-   "comprimento_m": [20, 22],
+   "comprimento_m": [
+    20,
+    22
+   ],
    "nome": "Braquiossauro",
    "dieta": "herbivoro",
    "temperamento": "passivo",
@@ -359,14 +668,30 @@
    "tamanho": 1,
    "raio": 3.2,
    "altura": 13,
-   "biomas": ["selva", "igapo", "campos"],
+   "biomas": [
+    "selva",
+    "igapo",
+    "campos"
+   ],
    "peso_spawn": 1.0,
-   "grupo": [1, 2],
+   "grupo": [
+    1,
+    2
+   ],
    "xp": 120,
    "loot": {
-    "carne_crua": [20, 35],
-    "couro": [15, 25],
-    "ossos": [6, 10]
+    "carne_crua": [
+     20,
+     35
+    ],
+    "couro": [
+     15,
+     25
+    ],
+    "ossos": [
+     6,
+     10
+    ]
    },
    "pode_domar": true,
    "comida_preferida": "baga_mejo",
@@ -376,12 +701,30 @@
    "pode_montar": true,
    "carga": 1600,
    "atributos": {
-    "vida": [2277, 2277],
-    "forca": [100, 100],
-    "peso": [1600, 1600],
-    "stamina": [240, 240],
-    "velocidade": [100, 100],
-    "torpor": [2000, 2000]
+    "vida": [
+     2277,
+     2277
+    ],
+    "forca": [
+     100,
+     100
+    ],
+    "peso": [
+     1600,
+     1600
+    ],
+    "stamina": [
+     240,
+     240
+    ],
+    "velocidade": [
+     100,
+     100
+    ],
+    "torpor": [
+     2000,
+     2000
+    ]
    },
    "ark_por_nivel": {
     "vida": 0.2,
@@ -393,7 +736,10 @@
   },
   {
    "id": "argentinossauro",
-   "comprimento_m": [30, 35],
+   "comprimento_m": [
+    30,
+    35
+   ],
    "nome": "Argentinossauro",
    "dieta": "herbivoro",
    "temperamento": "passivo",
@@ -404,14 +750,29 @@
    "tamanho": 1,
    "raio": 4.2,
    "altura": 12,
-   "biomas": ["selva", "campos"],
+   "biomas": [
+    "selva",
+    "campos"
+   ],
    "peso_spawn": 0.5,
-   "grupo": [1, 2],
+   "grupo": [
+    1,
+    2
+   ],
    "xp": 200,
    "loot": {
-    "carne_crua": [35, 55],
-    "couro": [25, 40],
-    "ossos": [10, 16]
+    "carne_crua": [
+     35,
+     55
+    ],
+    "couro": [
+     25,
+     40
+    ],
+    "ossos": [
+     10,
+     16
+    ]
    },
    "pode_domar": true,
    "comida_preferida": "baga_mejo",
@@ -421,12 +782,30 @@
    "pode_montar": true,
    "carga": 50000,
    "atributos": {
-    "vida": [230000, 230000],
-    "forca": [100, 100],
-    "peso": [50000, 50000],
-    "stamina": [2000, 2000],
-    "velocidade": [100, 100],
-    "torpor": [25000, 25000]
+    "vida": [
+     230000,
+     230000
+    ],
+    "forca": [
+     100,
+     100
+    ],
+    "peso": [
+     50000,
+     50000
+    ],
+    "stamina": [
+     2000,
+     2000
+    ],
+    "velocidade": [
+     100,
+     100
+    ],
+    "torpor": [
+     25000,
+     25000
+    ]
    },
    "ark_por_nivel": {
     "vida": 0.0,
@@ -438,7 +817,10 @@
   },
   {
    "id": "compsognato",
-   "comprimento_m": [0.9, 1.2],
+   "comprimento_m": [
+    0.9,
+    1.2
+   ],
    "nome": "Compsognato",
    "dieta": "carnivoro",
    "temperamento": "agressivo",
@@ -449,13 +831,27 @@
    "tamanho": 1,
    "raio": 0.25,
    "altura": 0.5,
-   "biomas": ["selva", "praia", "neve", "serra"],
+   "biomas": [
+    "selva",
+    "praia",
+    "neve",
+    "serra"
+   ],
    "peso_spawn": 4,
-   "grupo": [3, 6],
+   "grupo": [
+    3,
+    6
+   ],
    "xp": 5,
    "loot": {
-    "carne_crua": [1, 1],
-    "couro": [0, 1]
+    "carne_crua": [
+     1,
+     1
+    ],
+    "couro": [
+     0,
+     1
+    ]
    },
    "pode_domar": true,
    "comida_preferida": "carne_crua",
@@ -464,12 +860,30 @@
    "intervalo_ataque": 0.7,
    "carga": 25,
    "atributos": {
-    "vida": [50, 50],
-    "forca": [100, 100],
-    "peso": [25, 25],
-    "stamina": [100, 100],
-    "velocidade": [100, 100],
-    "torpor": [25, 25]
+    "vida": [
+     50,
+     50
+    ],
+    "forca": [
+     100,
+     100
+    ],
+    "peso": [
+     25,
+     25
+    ],
+    "stamina": [
+     100,
+     100
+    ],
+    "velocidade": [
+     100,
+     100
+    ],
+    "torpor": [
+     25,
+     25
+    ]
    },
    "ark_por_nivel": {
     "vida": 0.2,
@@ -481,7 +895,10 @@
   },
   {
    "id": "raptor",
-   "comprimento_m": [3, 3.4],
+   "comprimento_m": [
+    3,
+    3.4
+   ],
    "nome": "Raptor",
    "dieta": "carnivoro",
    "temperamento": "agressivo",
@@ -492,13 +909,28 @@
    "tamanho": 1,
    "raio": 0.55,
    "altura": 1.6,
-   "biomas": ["selva", "igapo", "neve", "campos", "serra"],
+   "biomas": [
+    "selva",
+    "igapo",
+    "neve",
+    "campos",
+    "serra"
+   ],
    "peso_spawn": 5,
-   "grupo": [2, 4],
+   "grupo": [
+    2,
+    4
+   ],
    "xp": 30,
    "loot": {
-    "carne_crua": [2, 4],
-    "couro": [2, 3]
+    "carne_crua": [
+     2,
+     4
+    ],
+    "couro": [
+     2,
+     3
+    ]
    },
    "pode_domar": true,
    "comida_preferida": "carne_crua",
@@ -508,12 +940,30 @@
    "pode_montar": true,
    "carga": 140,
    "atributos": {
-    "vida": [200, 200],
-    "forca": [100, 100],
-    "peso": [140, 140],
-    "stamina": [150, 150],
-    "velocidade": [100, 100],
-    "torpor": [180, 180]
+    "vida": [
+     200,
+     200
+    ],
+    "forca": [
+     100,
+     100
+    ],
+    "peso": [
+     140,
+     140
+    ],
+    "stamina": [
+     150,
+     150
+    ],
+    "velocidade": [
+     100,
+     100
+    ],
+    "torpor": [
+     180,
+     180
+    ]
    },
    "ark_por_nivel": {
     "vida": 0.2,
@@ -525,7 +975,10 @@
   },
   {
    "id": "carnotauro",
-   "comprimento_m": [7.5, 8],
+   "comprimento_m": [
+    7.5,
+    8
+   ],
    "nome": "Carnotauro",
    "dieta": "carnivoro",
    "temperamento": "agressivo",
@@ -536,14 +989,30 @@
    "tamanho": 1,
    "raio": 1.0,
    "altura": 3.0,
-   "biomas": ["selva", "neve", "campos"],
+   "biomas": [
+    "selva",
+    "neve",
+    "campos"
+   ],
    "peso_spawn": 1.8,
-   "grupo": [1, 2],
+   "grupo": [
+    1,
+    2
+   ],
    "xp": 70,
    "loot": {
-    "carne_crua": [6, 10],
-    "couro": [4, 7],
-    "ossos": [1, 3]
+    "carne_crua": [
+     6,
+     10
+    ],
+    "couro": [
+     4,
+     7
+    ],
+    "ossos": [
+     1,
+     3
+    ]
    },
    "pode_domar": true,
    "comida_preferida": "carne_crua",
@@ -553,12 +1022,30 @@
    "pode_montar": true,
    "carga": 300,
    "atributos": {
-    "vida": [420, 420],
-    "forca": [100, 100],
-    "peso": [300, 300],
-    "stamina": [300, 300],
-    "velocidade": [100, 100],
-    "torpor": [350, 350]
+    "vida": [
+     420,
+     420
+    ],
+    "forca": [
+     100,
+     100
+    ],
+    "peso": [
+     300,
+     300
+    ],
+    "stamina": [
+     300,
+     300
+    ],
+    "velocidade": [
+     100,
+     100
+    ],
+    "torpor": [
+     350,
+     350
+    ]
    },
    "ark_por_nivel": {
     "vida": 0.2,
@@ -570,7 +1057,10 @@
   },
   {
    "id": "trex",
-   "comprimento_m": [11.5, 12.4],
+   "comprimento_m": [
+    11.5,
+    12.4
+   ],
    "nome": "T-Rex",
    "dieta": "carnivoro",
    "temperamento": "agressivo",
@@ -581,14 +1071,30 @@
    "tamanho": 1,
    "raio": 1.8,
    "altura": 5.5,
-   "biomas": ["selva", "neve", "campos"],
+   "biomas": [
+    "selva",
+    "neve",
+    "campos"
+   ],
    "peso_spawn": 0.9,
-   "grupo": [1, 1],
+   "grupo": [
+    1,
+    1
+   ],
    "xp": 150,
    "loot": {
-    "carne_crua": [15, 25],
-    "couro": [10, 16],
-    "ossos": [5, 8]
+    "carne_crua": [
+     15,
+     25
+    ],
+    "couro": [
+     10,
+     16
+    ],
+    "ossos": [
+     5,
+     8
+    ]
    },
    "pode_domar": true,
    "comida_preferida": "carne_crua",
@@ -598,12 +1104,30 @@
    "pode_montar": true,
    "carga": 500,
    "atributos": {
-    "vida": [1100, 1100],
-    "forca": [100, 100],
-    "peso": [500, 500],
-    "stamina": [420, 420],
-    "velocidade": [100, 100],
-    "torpor": [1550, 1550]
+    "vida": [
+     1100,
+     1100
+    ],
+    "forca": [
+     100,
+     100
+    ],
+    "peso": [
+     500,
+     500
+    ],
+    "stamina": [
+     420,
+     420
+    ],
+    "velocidade": [
+     100,
+     100
+    ],
+    "torpor": [
+     1550,
+     1550
+    ]
    },
    "ark_por_nivel": {
     "vida": 0.2,
@@ -615,7 +1139,10 @@
   },
   {
    "id": "titanoboa",
-   "comprimento_m": [12, 14],
+   "comprimento_m": [
+    12,
+    14
+   ],
    "nome": "Titanoboa",
    "pode_montar": true,
    "dieta": "carnivoro",
@@ -627,13 +1154,25 @@
    "tamanho": 1,
    "raio": 0.9,
    "altura": 0.9,
-   "biomas": ["pantano", "igapo"],
+   "biomas": [
+    "pantano",
+    "igapo"
+   ],
    "peso_spawn": 2.2,
-   "grupo": [1, 1],
+   "grupo": [
+    1,
+    1
+   ],
    "xp": 80,
    "loot": {
-    "carne_crua": [6, 10],
-    "couro": [6, 10]
+    "carne_crua": [
+     6,
+     10
+    ],
+    "couro": [
+     6,
+     10
+    ]
    },
    "nada": true,
    "alcance_agro": 18,
@@ -641,12 +1180,30 @@
    "intervalo_ataque": 1.4,
    "carga": 150,
    "atributos": {
-    "vida": [170, 170],
-    "forca": [100, 100],
-    "peso": [150, 150],
-    "stamina": [150, 150],
-    "velocidade": [100, 100],
-    "torpor": [175, 175]
+    "vida": [
+     170,
+     170
+    ],
+    "forca": [
+     100,
+     100
+    ],
+    "peso": [
+     150,
+     150
+    ],
+    "stamina": [
+     150,
+     150
+    ],
+    "velocidade": [
+     100,
+     100
+    ],
+    "torpor": [
+     175,
+     175
+    ]
    },
    "ark_por_nivel": {
     "vida": 0.2,
@@ -658,7 +1215,10 @@
   },
   {
    "id": "deinosuchus",
-   "comprimento_m": [10, 12],
+   "comprimento_m": [
+    10,
+    12
+   ],
    "nome": "Deinosuchus",
    "dieta": "carnivoro",
    "temperamento": "agressivo",
@@ -669,15 +1229,33 @@
    "tamanho": 1,
    "raio": 1.2,
    "altura": 1.0,
-   "biomas": ["pantano", "igapo"],
+   "biomas": [
+    "pantano",
+    "igapo"
+   ],
    "peso_spawn": 3,
-   "grupo": [1, 1],
+   "grupo": [
+    1,
+    1
+   ],
    "xp": 90,
    "loot": {
-    "carne_crua": [8, 14],
-    "couro": [6, 10],
-    "ossos": [2, 4],
-    "queratina": [4, 7]
+    "carne_crua": [
+     8,
+     14
+    ],
+    "couro": [
+     6,
+     10
+    ],
+    "ossos": [
+     2,
+     4
+    ],
+    "queratina": [
+     4,
+     7
+    ]
    },
    "pode_domar": true,
    "comida_preferida": "carne_crua",
@@ -689,12 +1267,30 @@
    "pode_montar": true,
    "carga": 600,
    "atributos": {
-    "vida": [1000, 1000],
-    "forca": [100, 100],
-    "peso": [600, 600],
-    "stamina": [300, 300],
-    "velocidade": [100, 100],
-    "torpor": [1350, 1350]
+    "vida": [
+     1000,
+     1000
+    ],
+    "forca": [
+     100,
+     100
+    ],
+    "peso": [
+     600,
+     600
+    ],
+    "stamina": [
+     300,
+     300
+    ],
+    "velocidade": [
+     100,
+     100
+    ],
+    "torpor": [
+     1350,
+     1350
+    ]
    },
    "ark_por_nivel": {
     "vida": 0.2,
@@ -706,7 +1302,10 @@
   },
   {
    "id": "espinossauro",
-   "comprimento_m": [14, 18],
+   "comprimento_m": [
+    14,
+    18
+   ],
    "nome": "Espinossauro",
    "dieta": "carnivoro",
    "temperamento": "agressivo",
@@ -717,14 +1316,29 @@
    "tamanho": 1,
    "raio": 1.6,
    "altura": 5.0,
-   "biomas": ["pantano", "igapo"],
+   "biomas": [
+    "pantano",
+    "igapo"
+   ],
    "peso_spawn": 1.1,
-   "grupo": [1, 1],
+   "grupo": [
+    1,
+    1
+   ],
    "xp": 160,
    "loot": {
-    "carne_crua": [15, 25],
-    "couro": [10, 16],
-    "ossos": [5, 8]
+    "carne_crua": [
+     15,
+     25
+    ],
+    "couro": [
+     10,
+     16
+    ],
+    "ossos": [
+     5,
+     8
+    ]
    },
    "pode_domar": true,
    "comida_preferida": "carne_crua",
@@ -735,12 +1349,30 @@
    "pode_montar": true,
    "carga": 350,
    "atributos": {
-    "vida": [805, 805],
-    "forca": [100, 100],
-    "peso": [350, 350],
-    "stamina": [350, 350],
-    "velocidade": [100, 100],
-    "torpor": [850, 850]
+    "vida": [
+     805,
+     805
+    ],
+    "forca": [
+     100,
+     100
+    ],
+    "peso": [
+     350,
+     350
+    ],
+    "stamina": [
+     350,
+     350
+    ],
+    "velocidade": [
+     100,
+     100
+    ],
+    "torpor": [
+     850,
+     850
+    ]
    },
    "ark_por_nivel": {
     "vida": 0.2,
@@ -762,12 +1394,20 @@
    "tamanho": 1,
    "raio": 0.35,
    "altura": 0.5,
-   "biomas": ["pantano"],
+   "biomas": [
+    "pantano"
+   ],
    "peso_spawn": 5,
-   "grupo": [3, 5],
+   "grupo": [
+    3,
+    5
+   ],
    "xp": 6,
    "loot": {
-    "carne_crua": [1, 1]
+    "carne_crua": [
+     1,
+     1
+    ]
    },
    "aquatico": true,
    "nada": true,
@@ -776,12 +1416,30 @@
    "intervalo_ataque": 0.7,
    "carga": 15,
    "atributos": {
-    "vida": [150, 150],
-    "forca": [100, 100],
-    "peso": [15, 15],
-    "stamina": [120, 120],
-    "velocidade": [100, 100],
-    "torpor": [250, 250]
+    "vida": [
+     150,
+     150
+    ],
+    "forca": [
+     100,
+     100
+    ],
+    "peso": [
+     15,
+     15
+    ],
+    "stamina": [
+     120,
+     120
+    ],
+    "velocidade": [
+     100,
+     100
+    ],
+    "torpor": [
+     250,
+     250
+    ]
    },
    "ark_por_nivel": {
     "vida": 0.2,
@@ -803,14 +1461,28 @@
    "tamanho": 1,
    "raio": 1.6,
    "altura": 2.0,
-   "biomas": ["mar"],
+   "biomas": [
+    "mar"
+   ],
    "peso_spawn": 2,
-   "grupo": [1, 1],
+   "grupo": [
+    1,
+    1
+   ],
    "xp": 160,
    "loot": {
-    "carne_crua": [20, 30],
-    "couro": [10, 16],
-    "ossos": [4, 8]
+    "carne_crua": [
+     20,
+     30
+    ],
+    "couro": [
+     10,
+     16
+    ],
+    "ossos": [
+     4,
+     8
+    ]
    },
    "aquatico": true,
    "nada": true,
@@ -819,14 +1491,35 @@
    "intervalo_ataque": 1.6,
    "carga": 1300,
    "atributos": {
-    "vida": [3600, 3600],
-    "forca": [100, 100],
-    "peso": [1300, 1300],
-    "stamina": [400, 400],
-    "velocidade": [100, 100],
-    "torpor": [3000, 3000]
+    "vida": [
+     3600,
+     3600
+    ],
+    "forca": [
+     100,
+     100
+    ],
+    "peso": [
+     1300,
+     1300
+    ],
+    "stamina": [
+     400,
+     400
+    ],
+    "velocidade": [
+     100,
+     100
+    ],
+    "torpor": [
+     3000,
+     3000
+    ]
    },
-   "comprimento_m": [12, 15],
+   "comprimento_m": [
+    12,
+    15
+   ],
    "ark_por_nivel": {
     "vida": 0.12,
     "stamina": 0.1,
@@ -847,30 +1540,66 @@
    "tamanho": 1.7,
    "raio": 1.0,
    "altura": 0.8,
-   "biomas": ["praia", "selva", "pantano", "neve", "serra"],
+   "biomas": [
+    "praia",
+    "selva",
+    "pantano",
+    "neve",
+    "serra"
+   ],
    "peso_spawn": 3.5,
-   "grupo": [1, 3],
+   "grupo": [
+    1,
+    3
+   ],
    "xp": 15,
    "loot": {
-    "carne_crua": [1, 2],
-    "couro": [1, 2]
+    "carne_crua": [
+     1,
+     2
+    ],
+    "couro": [
+     1,
+     2
+    ]
    },
    "pode_domar": true,
    "comida_preferida": "carne_crua",
    "voa": true,
-   "altura_voo": [8, 20],
+   "altura_voo": [
+    8,
+    20
+   ],
    "alcance_agro": 22,
    "alcance_ataque": 1.8,
    "intervalo_ataque": 1.4,
    "pode_montar": true,
    "carga": 120,
    "atributos": {
-    "vida": [210, 210],
-    "forca": [100, 100],
-    "peso": [120, 120],
-    "stamina": [150, 150],
-    "velocidade": [100, 100],
-    "torpor": [120, 120]
+    "vida": [
+     210,
+     210
+    ],
+    "forca": [
+     100,
+     100
+    ],
+    "peso": [
+     120,
+     120
+    ],
+    "stamina": [
+     150,
+     150
+    ],
+    "velocidade": [
+     100,
+     100
+    ],
+    "torpor": [
+     120,
+     120
+    ]
    },
    "ark_por_nivel": {
     "vida": 0.2,
@@ -883,9 +1612,15 @@
   {
    "id": "quetzalcoatlus",
    "nome": "Quetzalcoatlus",
-   "envergadura_m": [10, 11],
+   "envergadura_m": [
+    10,
+    11
+   ],
    "pousa": true,
-   "vel_chao": [3.6, 5.4],
+   "vel_chao": [
+    3.6,
+    5.4
+   ],
    "dieta": "carnivoro",
    "temperamento": "agressivo",
    "vida": 1200,
@@ -895,30 +1630,64 @@
    "tamanho": 1.15,
    "raio": 2.0,
    "altura": 3.0,
-   "biomas": ["selva", "praia", "neve"],
+   "biomas": [
+    "selva",
+    "praia",
+    "neve"
+   ],
    "peso_spawn": 0.7,
-   "grupo": [1, 1],
+   "grupo": [
+    1,
+    1
+   ],
    "xp": 100,
    "loot": {
-    "carne_crua": [10, 16],
-    "couro": [8, 12]
+    "carne_crua": [
+     10,
+     16
+    ],
+    "couro": [
+     8,
+     12
+    ]
    },
    "pode_domar": true,
    "comida_preferida": "carne_crua",
    "voa": true,
-   "altura_voo": [12, 28],
+   "altura_voo": [
+    12,
+    28
+   ],
    "alcance_agro": 16,
    "alcance_ataque": 3.0,
    "intervalo_ataque": 2.0,
    "pode_montar": true,
    "carga": 800,
    "atributos": {
-    "vida": [1200, 1200],
-    "forca": [100, 100],
-    "peso": [800, 800],
-    "stamina": [800, 800],
-    "velocidade": [100, 100],
-    "torpor": [1850, 1850]
+    "vida": [
+     1200,
+     1200
+    ],
+    "forca": [
+     100,
+     100
+    ],
+    "peso": [
+     800,
+     800
+    ],
+    "stamina": [
+     800,
+     800
+    ],
+    "velocidade": [
+     100,
+     100
+    ],
+    "torpor": [
+     1850,
+     1850
+    ]
    },
    "ark_por_nivel": {
     "vida": 0.2,
@@ -931,7 +1700,10 @@
   {
    "id": "mamute",
    "nome": "Mamute-lanoso",
-   "comprimento_m": [9, 10.5],
+   "comprimento_m": [
+    9,
+    10.5
+   ],
    "dieta": "herbivoro",
    "temperamento": "passivo",
    "revida": true,
@@ -942,15 +1714,32 @@
    "tamanho": 1,
    "raio": 2.6,
    "altura": 5.8,
-   "biomas": ["neve"],
+   "biomas": [
+    "neve"
+   ],
    "peso_spawn": 2.2,
-   "grupo": [2, 4],
+   "grupo": [
+    2,
+    4
+   ],
    "xp": 90,
    "loot": {
-    "carne_crua": [12, 18],
-    "couro": [12, 18],
-    "ossos": [3, 6],
-    "pelo": [10, 18]
+    "carne_crua": [
+     12,
+     18
+    ],
+    "couro": [
+     12,
+     18
+    ],
+    "ossos": [
+     3,
+     6
+    ],
+    "pelo": [
+     10,
+     18
+    ]
    },
    "pode_domar": true,
    "comida_preferida": "baga_mejo",
@@ -959,12 +1748,30 @@
    "pode_montar": true,
    "carga": 500,
    "atributos": {
-    "vida": [1020, 1020],
-    "forca": [100, 100],
-    "peso": [500, 500],
-    "stamina": [330, 330],
-    "velocidade": [100, 100],
-    "torpor": [550, 550]
+    "vida": [
+     1020,
+     1020
+    ],
+    "forca": [
+     100,
+     100
+    ],
+    "peso": [
+     500,
+     500
+    ],
+    "stamina": [
+     330,
+     330
+    ],
+    "velocidade": [
+     100,
+     100
+    ],
+    "torpor": [
+     550,
+     550
+    ]
    },
    "ark_por_nivel": {
     "vida": 0.2,
@@ -977,9 +1784,15 @@
   {
    "id": "argentavis",
    "nome": "Argentavis",
-   "envergadura_m": [6.5, 7.5],
+   "envergadura_m": [
+    6.5,
+    7.5
+   ],
    "pousa": true,
-   "vel_chao": [2.6, 3.9],
+   "vel_chao": [
+    2.6,
+    3.9
+   ],
    "dieta": "carnivoro",
    "temperamento": "agressivo",
    "vida": 365,
@@ -989,30 +1802,65 @@
    "tamanho": 1,
    "raio": 1.2,
    "altura": 1.8,
-   "biomas": ["selva", "praia", "neve", "serra"],
+   "biomas": [
+    "selva",
+    "praia",
+    "neve",
+    "serra"
+   ],
    "peso_spawn": 0.8,
-   "grupo": [1, 1],
+   "grupo": [
+    1,
+    1
+   ],
    "xp": 70,
    "loot": {
-    "carne_crua": [5, 9],
-    "couro": [3, 6]
+    "carne_crua": [
+     5,
+     9
+    ],
+    "couro": [
+     3,
+     6
+    ]
    },
    "pode_domar": true,
    "comida_preferida": "carne_crua",
    "voa": true,
-   "altura_voo": [10, 24],
+   "altura_voo": [
+    10,
+    24
+   ],
    "alcance_agro": 14,
    "alcance_ataque": 2.4,
    "intervalo_ataque": 1.6,
    "pode_montar": true,
    "carga": 400,
    "atributos": {
-    "vida": [365, 365],
-    "forca": [100, 100],
-    "peso": [400, 400],
-    "stamina": [400, 400],
-    "velocidade": [100, 100],
-    "torpor": [600, 600]
+    "vida": [
+     365,
+     365
+    ],
+    "forca": [
+     100,
+     100
+    ],
+    "peso": [
+     400,
+     400
+    ],
+    "stamina": [
+     400,
+     400
+    ],
+    "velocidade": [
+     100,
+     100
+    ],
+    "torpor": [
+     600,
+     600
+    ]
    },
    "ark_por_nivel": {
     "vida": 0.2,
@@ -1025,7 +1873,10 @@
   {
    "id": "reidodo",
    "nome": "Rei-dodô",
-   "comprimento_m": [9, 10.5],
+   "comprimento_m": [
+    9,
+    10.5
+   ],
    "dieta": "carnivoro",
    "temperamento": "agressivo",
    "vida": 1300,
@@ -1035,14 +1886,28 @@
    "tamanho": 1,
    "raio": 1.5,
    "altura": 4.4,
-   "biomas": ["selva"],
+   "biomas": [
+    "selva"
+   ],
    "peso_spawn": 0.5,
-   "grupo": [1, 1],
+   "grupo": [
+    1,
+    1
+   ],
    "xp": 130,
    "loot": {
-    "carne_crua": [12, 20],
-    "couro": [8, 12],
-    "ossos": [4, 7]
+    "carne_crua": [
+     12,
+     20
+    ],
+    "couro": [
+     8,
+     12
+    ],
+    "ossos": [
+     4,
+     7
+    ]
    },
    "pode_domar": true,
    "comida_preferida": "carne_crua",
@@ -1052,12 +1917,448 @@
    "pode_montar": true,
    "carga": 500,
    "atributos": {
-    "vida": [1100, 1500],
-    "forca": [85, 125],
-    "peso": [425, 600],
-    "stamina": [380, 520],
-    "velocidade": [90, 112],
-    "torpor": [750, 1050]
+    "vida": [
+     1100,
+     1500
+    ],
+    "forca": [
+     85,
+     125
+    ],
+    "peso": [
+     425,
+     600
+    ],
+    "stamina": [
+     380,
+     520
+    ],
+    "velocidade": [
+     90,
+     112
+    ],
+    "torpor": [
+     750,
+     1050
+    ]
+   }
+  },
+  {
+   "id": "dilofossauro",
+   "comprimento_m": [
+    3.0,
+    3.5
+   ],
+   "nome": "Dilofossauro",
+   "dieta": "carnivoro",
+   "temperamento": "agressivo",
+   "vida": 240,
+   "dano": 30,
+   "vel_andar": 2.8,
+   "vel_correr": 8.4,
+   "tamanho": 1,
+   "raio": 0.6,
+   "altura": 1.8,
+   "biomas": [
+    "selva",
+    "igapo",
+    "campos",
+    "pantano"
+   ],
+   "peso_spawn": 3.5,
+   "grupo": [
+    1,
+    3
+   ],
+   "xp": 45,
+   "loot": {
+    "carne_crua": [
+     2,
+     4
+    ],
+    "couro": [
+     2,
+     3
+    ]
+   },
+   "pode_domar": true,
+   "comida_preferida": "carne_crua",
+   "alcance_agro": 26,
+   "alcance_ataque": 1.6,
+   "intervalo_ataque": 0.9,
+   "pode_montar": false,
+   "carga": 120,
+   "atributos": {
+    "vida": [
+     240,
+     240
+    ],
+    "forca": [
+     100,
+     100
+    ],
+    "peso": [
+     120,
+     120
+    ],
+    "stamina": [
+     150,
+     150
+    ],
+    "velocidade": [
+     100,
+     100
+    ],
+    "torpor": [
+     200,
+     200
+    ]
+   },
+   "ark_por_nivel": {
+    "vida": 0.2,
+    "stamina": 0.1,
+    "peso": 0.02,
+    "forca": 0.05,
+    "torpor": 0.06
+   }
+  },
+  {
+   "id": "iguanodonte",
+   "comprimento_m": [
+    8,
+    9
+   ],
+   "nome": "Iguanodonte",
+   "dieta": "herbivoro",
+   "temperamento": "medroso",
+   "vida": 525,
+   "dano": 55,
+   "vel_andar": 1.8,
+   "vel_correr": 6.4,
+   "tamanho": 1,
+   "raio": 1.3,
+   "altura": 3.4,
+   "biomas": [
+    "selva",
+    "campos",
+    "serra"
+   ],
+   "peso_spawn": 3,
+   "grupo": [
+    1,
+    3
+   ],
+   "xp": 60,
+   "loot": {
+    "carne_crua": [
+     2,
+     3
+    ],
+    "couro": [
+     1,
+     2
+    ]
+   },
+   "pode_domar": true,
+   "comida_preferida": "baga_mejo",
+   "pode_montar": true,
+   "carga": 450,
+   "atributos": {
+    "vida": [
+     525,
+     525
+    ],
+    "forca": [
+     100,
+     100
+    ],
+    "peso": [
+     450,
+     450
+    ],
+    "stamina": [
+     250,
+     250
+    ],
+    "velocidade": [
+     100,
+     100
+    ],
+    "torpor": [
+     380,
+     380
+    ]
+   },
+   "ark_por_nivel": {
+    "vida": 0.2,
+    "stamina": 0.1,
+    "peso": 0.02,
+    "forca": 0.05,
+    "torpor": 0.06
+   },
+   "revida": true,
+   "alcance_ataque": 2.6,
+   "intervalo_ataque": 1.5
+  },
+  {
+   "id": "dimetrodonte",
+   "comprimento_m": [
+    3.2,
+    3.8
+   ],
+   "nome": "Dimetrodonte",
+   "dieta": "carnivoro",
+   "temperamento": "agressivo",
+   "vida": 340,
+   "dano": 38,
+   "vel_andar": 1.8,
+   "vel_correr": 6.2,
+   "tamanho": 1,
+   "raio": 1.0,
+   "altura": 1.4,
+   "biomas": [
+    "pantano",
+    "igapo",
+    "campos",
+    "praia"
+   ],
+   "peso_spawn": 3,
+   "grupo": [
+    1,
+    2
+   ],
+   "xp": 50,
+   "loot": {
+    "carne_crua": [
+     8,
+     14
+    ],
+    "couro": [
+     6,
+     10
+    ],
+    "ossos": [
+     2,
+     4
+    ],
+    "queratina": [
+     4,
+     7
+    ]
+   },
+   "pode_domar": true,
+   "comida_preferida": "carne_crua",
+   "nada": true,
+   "perto_agua": true,
+   "alcance_agro": 22,
+   "alcance_ataque": 2.0,
+   "intervalo_ataque": 1.5,
+   "pode_montar": false,
+   "carga": 180,
+   "atributos": {
+    "vida": [
+     340,
+     340
+    ],
+    "forca": [
+     100,
+     100
+    ],
+    "peso": [
+     180,
+     180
+    ],
+    "stamina": [
+     200,
+     200
+    ],
+    "velocidade": [
+     100,
+     100
+    ],
+    "torpor": [
+     260,
+     260
+    ]
+   },
+   "ark_por_nivel": {
+    "vida": 0.2,
+    "stamina": 0.1,
+    "peso": 0.02,
+    "forca": 0.05,
+    "torpor": 0.06
+   }
+  },
+  {
+   "id": "kentrossauro",
+   "comprimento_m": [
+    3.6,
+    4.2
+   ],
+   "nome": "Kentrossauro",
+   "dieta": "herbivoro",
+   "temperamento": "passivo",
+   "vida": 260,
+   "dano": 24,
+   "vel_andar": 1.9,
+   "vel_correr": 6.8,
+   "tamanho": 1,
+   "raio": 0.9,
+   "altura": 1.6,
+   "biomas": [
+    "selva",
+    "campos",
+    "serra"
+   ],
+   "peso_spawn": 3.5,
+   "grupo": [
+    1,
+    3
+   ],
+   "xp": 35,
+   "loot": {
+    "carne_crua": [
+     8,
+     14
+    ],
+    "couro": [
+     6,
+     10
+    ],
+    "ossos": [
+     2,
+     4
+    ],
+    "queratina": [
+     3,
+     6
+    ]
+   },
+   "pode_domar": true,
+   "comida_preferida": "baga_mejo",
+   "revida": true,
+   "alcance_ataque": 1.8,
+   "intervalo_ataque": 1.2,
+   "pode_montar": false,
+   "carga": 160,
+   "atributos": {
+    "vida": [
+     260,
+     260
+    ],
+    "forca": [
+     100,
+     100
+    ],
+    "peso": [
+     160,
+     160
+    ],
+    "stamina": [
+     160,
+     160
+    ],
+    "velocidade": [
+     100,
+     100
+    ],
+    "torpor": [
+     200,
+     200
+    ]
+   },
+   "ark_por_nivel": {
+    "vida": 0.2,
+    "stamina": 0.1,
+    "peso": 0.02,
+    "forca": 0.05,
+    "torpor": 0.06
+   }
+  },
+  {
+   "id": "paquirrinossauro",
+   "comprimento_m": [
+    6,
+    6.8
+   ],
+   "nome": "Paquirrinossauro",
+   "dieta": "herbivoro",
+   "temperamento": "passivo",
+   "vida": 560,
+   "dano": 60,
+   "vel_andar": 1.5,
+   "vel_correr": 5.8,
+   "tamanho": 1,
+   "raio": 1.3,
+   "altura": 2.6,
+   "biomas": [
+    "campos",
+    "serra",
+    "selva"
+   ],
+   "peso_spawn": 2.5,
+   "grupo": [
+    1,
+    3
+   ],
+   "xp": 70,
+   "loot": {
+    "carne_crua": [
+     8,
+     14
+    ],
+    "couro": [
+     6,
+     10
+    ],
+    "ossos": [
+     2,
+     4
+    ],
+    "queratina": [
+     3,
+     6
+    ]
+   },
+   "pode_domar": true,
+   "comida_preferida": "baga_mejo",
+   "revida": true,
+   "alcance_ataque": 2.2,
+   "intervalo_ataque": 1.4,
+   "pode_montar": false,
+   "carga": 380,
+   "atributos": {
+    "vida": [
+     560,
+     560
+    ],
+    "forca": [
+     100,
+     100
+    ],
+    "peso": [
+     380,
+     380
+    ],
+    "stamina": [
+     200,
+     200
+    ],
+    "velocidade": [
+     100,
+     100
+    ],
+    "torpor": [
+     420,
+     420
+    ]
+   },
+   "ark_por_nivel": {
+    "vida": 0.2,
+    "stamina": 0.1,
+    "peso": 0.02,
+    "forca": 0.05,
+    "torpor": 0.06
    }
   }
  ]
