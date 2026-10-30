@@ -96,6 +96,33 @@ function bendMaterial(base, jointY, sign, uni) {
   return m;
 }
 
+const SPINE_Y = 1.0; // cintura: dali para cima o tronco gira e inclina
+
+// Tronco articulado: acima da cintura os vértices giram junto com os braços e a cabeça (a "coluna"),
+// com transição suave na cintura. uSpine = (giro, inclinar para a frente, inclinar de lado).
+function spineMaterial(base, uni) {
+  const m = base.clone();
+  m.onBeforeCompile = (shader) => {
+    shader.uniforms.uSpine = uni;
+    shader.vertexShader = shader.vertexShader
+      .replace('void main() {', `uniform vec3 uSpine;
+        vec3 spineRot(vec3 v, float w) {
+          float a = uSpine.x * w, b = uSpine.y * w, c = uSpine.z * w;
+          v = vec3(cos(c) * v.x - sin(c) * v.y, sin(c) * v.x + cos(c) * v.y, v.z);          // lado (Rz)
+          v = vec3(v.x, cos(b) * v.y - sin(b) * v.z, sin(b) * v.y + cos(b) * v.z);          // frente (Rx)
+          return vec3(cos(a) * v.x + sin(a) * v.z, v.y, -sin(a) * v.x + cos(a) * v.z);      // giro (Ry)
+        }
+        void main() {`)
+      .replace('#include <beginnormal_vertex>', `#include <beginnormal_vertex>
+        float sw8 = smoothstep(${(SPINE_Y - 0.1).toFixed(2)}, ${(SPINE_Y + 0.15).toFixed(2)}, position.y);
+        objectNormal = spineRot(objectNormal, sw8);`)
+      .replace('#include <begin_vertex>', `#include <begin_vertex>
+        transformed = spineRot(transformed - vec3(0.0, ${SPINE_Y.toFixed(2)}, 0.0), sw8) + vec3(0.0, ${SPINE_Y.toFixed(2)}, 0.0);`);
+  };
+  m.customProgramCacheKey = () => 'coluna1';
+  return m;
+}
+
 export class PlayerModel {
   constructor() {
     this.root = new THREE.Group();
@@ -149,7 +176,9 @@ export class PlayerModel {
     const mat = skinMaterial();
     // dobras: cotovelos e joelhos (um número por membro)
     this.bend = { armL: { value: 0 }, armR: { value: 0 }, legL: { value: 0 }, legR: { value: 0 } };
+    this.spineUni = { value: new THREE.Vector3() };
     const mats = {
+      torso: spineMaterial(mat, this.spineUni),
       armL: bendMaterial(mat, -0.3, -1, this.bend.armL),
       armR: bendMaterial(mat, -0.3, -1, this.bend.armR),
       legL: bendMaterial(mat, -0.52, 1, this.bend.legL),
@@ -162,6 +191,14 @@ export class PlayerModel {
       const m = new THREE.Mesh(skinGeometry(part), mats[name] ?? mat);
       m.castShadow = true;
       holder.add(m);
+    }
+    // coluna: braços e cabeça giram juntos com o tronco a partir da cintura
+    this.spine = new THREE.Group();
+    this.spine.position.y = SPINE_Y;
+    this.body.add(this.spine);
+    for (const o of [this.head, this.armL, this.armR]) {
+      this.spine.add(o);
+      o.position.y -= SPINE_Y;
     }
   }
 
@@ -202,6 +239,7 @@ export class PlayerModel {
     if (this._swing > 0 && this._swing > 0.5) return;
     this._swing = 1;
     this._swingKind = kind ?? 'mao';
+    if (this._swingKind === 'mao') this._pSide = -(this._pSide ?? -1); // soco: alterna direita e esquerda
   }
 
   // Coletar: abaixa e pega com a mão.
@@ -209,7 +247,7 @@ export class PlayerModel {
     this._gather = 1;
   }
 
-  // state: { position, facing, speed, onGround, crouching, swimming, dead, visible, running }
+  // state: { position, facing, speed, onGround, crouching, swimming, dead, visible, pitch }
   update(dt, s) {
     this.root.position.copy(s.position);
     this.root.rotation.y = s.facing;
@@ -224,12 +262,17 @@ export class PlayerModel {
       b.rotation.set(0, 0, (Math.PI / 2) * e);
       b.position.set(0.9 * e, 0.15 * e, 0);
       this._resetLimbs();
+      this.spine.rotation.set(0, 0, 0);
+      this.spineUni.value.set(0, 0, 0);
+      for (const u of Object.values(this.bend)) u.value = 0;
       this.armL.rotation.z = -0.6 * e;
       this.armR.rotation.z = 0.6 * e;
       return;
     }
 
     const k = (rate) => Math.min(1, dt * rate); // suavização: nada pula de uma pose para outra
+    const ease = (x) => x * x * (3 - 2 * x);
+    const clamp01 = (x) => Math.max(0, Math.min(1, x));
     // Ritmo da caminhada proporcional à velocidade.
     const moving = s.speed > 0.3;
     this._phase += dt * (moving ? 2.2 + s.speed * 1.1 : 0);
@@ -238,9 +281,9 @@ export class PlayerModel {
     this._amp = (this._amp ?? 0) + (ampT - (this._amp ?? 0)) * k(10);
     const amp = this._amp;
     const sw = Math.sin(this._phase);
+    const cph = Math.cos(this._phase);
     const run = s.speed > 4.2 && s.onGround && !s.swimming ? 1 : 0;
     this._run = (this._run ?? 0) + (run - (this._run ?? 0)) * k(6);
-    // pulo e aterrissagem
     this._air = (this._air ?? 0) + ((s.onGround ? 0 : 1) - (this._air ?? 0)) * k(10);
     if (s.onGround && this._wasAir) this._land = 1;
     this._wasAir = !s.onGround;
@@ -249,9 +292,6 @@ export class PlayerModel {
     const kind = this.toolKind ?? 'mao';
     const breathe = Math.sin(this._t * 1.7);
 
-    let lx = 0, rx = 0, lz = -0.06, rz = 0.06, ry = 0, ly = 0;
-    let elbL = 0.12, elbR = 0.12; // dobra dos cotovelos (radianos)
-    let legL = 0, legR = 0, lean = 0, twist = 0, headX = 0, dip = 0;
     if (s.swimming) {
       // Corpo deitado, braçadas e pernadas.
       b.rotation.set(-1.15, 0, 0);
@@ -263,126 +303,161 @@ export class PlayerModel {
       this.bend.legL.value = 0.35 + 0.25 * Math.max(0, sw);
       this.bend.legR.value = 0.35 + 0.25 * Math.max(0, -sw);
       this.bend.armL.value = this.bend.armR.value = 0.25;
-    } else {
-      legL = sw * amp;
-      legR = -sw * amp;
-      // braços contra as pernas; segurando ferramenta o braço direito fica à frente
-      lx = -sw * amp * (0.8 + this._run * 0.3);
-      rx = sw * amp * (0.8 + this._run * 0.3);
-      // correndo: braços dobram para a frente (simulado: sobem um pouco) e o corpo inclina
-      lean = this._run * 0.16 + (s.crouching ? 0.25 : 0);
-      // balanço do corpo: sobe e desce a cada passo; respiração parado
-      dip = Math.abs(sw) * 0.035 * (amp / 0.9) * (1 + this._run) - this._land * 0.08 + (moving ? 0 : breathe * 0.004);
-      twist = sw * amp * 0.12; // ombros giram contra o quadril
-      if (!moving) {
-        lx = breathe * 0.025;
-        rx = -breathe * 0.025;
-        lz = -0.06 - breathe * 0.01;
-        rz = 0.06 + breathe * 0.01;
-      }
-      // segurando ferramenta: braço direito dobrado na frente, mais parado
-      if (holding) {
-        const base = kind === 'arco' ? -1.35 : kind === 'pistola' || kind === 'luneta' ? -1.25 : -0.55;
-        rx = base + rx * 0.25;
-        elbR = kind === 'arco' ? 0.95 : kind === 'pistola' || kind === 'luneta' ? 0.35 : 0.6;
-        if (kind === 'arco') { lx = -1.5 + lx * 0.2; elbL = 0.05; }
-        if (kind === 'arco' || kind === 'pistola') twist = 0;
-      }
-      // no ar: pernas dobradas, braços abertos
-      if (this._air > 0.01) {
-        const a = this._air;
-        legL = legL * (1 - a) - 0.4 * a;
-        legR = legR * (1 - a) + 0.25 * a;
-        lx = lx * (1 - a) - 0.7 * a;
-        rx = (holding ? rx : rx * (1 - a)) - (holding ? 0.2 : 0.7) * a;
-        lz -= 0.45 * a;
-        rz += holding ? 0 : 0.45 * a;
-      }
-      // olha para onde a câmera olha (só um pouco)
-      headX = Math.max(-0.5, Math.min(0.5, -(s.pitch ?? 0) * 0.6));
+      this.spine.rotation.set(0, 0, 0);
+      this.spineUni.value.set(0, 0, 0);
+      this.head.rotation.set(0.9, 0, 0);
+      b.scale.y = 1;
+      return;
     }
 
-    // golpe: curva por ferramenta
-    if (this._swing > 0 && !s.swimming) {
+    // ---- alvos da pose (tudo em radianos) ----
+    const P = {
+      legL: sw * amp, legR: -sw * amp,
+      axL: -sw * amp * (0.8 + this._run * 0.3), axR: sw * amp * (0.8 + this._run * 0.3),
+      azL: -0.06, azR: 0.06, elbL: 0.12, elbR: 0.12,
+      twist: sw * amp * (0.2 + this._run * 0.15), // ombros giram contra o quadril
+      lean: this._run * 0.16 + (s.crouching ? 0.25 : 0), side: 0, pelvis: -sw * amp * 0.1,
+      squat: s.crouching ? 0.35 : 0, dip: 0, kneeExtra: 0, headX: Math.max(-0.5, Math.min(0.5, -(s.pitch ?? 0) * 0.6)),
+    };
+    P.dip = Math.abs(sw) * 0.035 * (amp / 0.9) * (1 + this._run) - this._land * 0.08 + (moving ? 0 : breathe * 0.004);
+    if (moving) {
+      // braços dobrados no ritmo da corrida
+      P.elbL = 0.15 + this._run * 0.95 + Math.max(0, -P.axL) * 0.25;
+      P.elbR = 0.15 + this._run * 0.95 + Math.max(0, -P.axR) * 0.25;
+    } else {
+      P.axL = breathe * 0.025; P.axR = -breathe * 0.025;
+      P.azL = -0.06 - breathe * 0.01; P.azR = 0.06 + breathe * 0.01;
+      P.side = breathe * 0.01;
+    }
+    // joelhos: dobram quando a perna passa para a frente
+    const kn = (amp > 0.02 ? amp * (1.15 + this._run * 0.5) : 0) + 0.04;
+    P.kneeL = kn * Math.max(0, -cph) + 0.04;
+    P.kneeR = kn * Math.max(0, cph) + 0.04;
+    // segurando ferramenta: braço direito dobrado à frente, mais parado
+    if (holding) {
+      const base = kind === 'arco' ? -1.35 : kind === 'pistola' || kind === 'luneta' ? -1.25 : -0.55;
+      P.axR = base + P.axR * 0.25;
+      P.elbR = kind === 'arco' ? 0.95 : kind === 'pistola' || kind === 'luneta' ? 0.35 : 0.6;
+      if (kind === 'arco') { P.axL = -1.5 + P.axL * 0.2; P.elbL = 0.05; P.twist = 0; P.lean = 0; }
+      if (kind === 'pistola') P.twist = 0;
+      if (kind === 'machado' || kind === 'picareta' || kind === 'lanca') { // segura com as duas mãos
+        P.axL = P.axR + 0.15; P.azL = 0.22; P.azR = -0.12; P.elbL = P.elbR;
+      }
+    }
+    // agachar: joelhos dobram e a bacia desce
+    if (P.squat > 0) { P.kneeL += P.squat * 1.3; P.kneeR += P.squat * 1.3; P.legL -= P.squat * 0.7; P.legR -= P.squat * 0.7; P.dip -= P.squat * 0.2; }
+    // no ar: pernas dobradas, braços abertos
+    if (this._air > 0.01) {
+      const a = this._air;
+      P.legL = P.legL * (1 - a) - 0.45 * a;
+      P.legR = P.legR * (1 - a) + 0.25 * a;
+      P.kneeL += 0.9 * a; P.kneeR += 0.4 * a;
+      P.axL = P.axL * (1 - a) - 0.7 * a;
+      P.axR = (holding ? P.axR : P.axR * (1 - a)) - (holding ? 0.2 : 0.7) * a;
+      P.azL -= 0.45 * a;
+      P.azR += holding ? 0 : 0.45 * a;
+      P.twist *= 1 - a;
+    }
+    // aterrissagem: amortece com os joelhos
+    if (this._land > 0) {
+      const l = ease(this._land);
+      P.kneeL += 0.7 * l; P.kneeR += 0.7 * l; P.legL -= 0.35 * l; P.legR -= 0.35 * l; P.dip -= 0.12 * l; P.lean += 0.15 * l;
+    }
+    // coletar: abaixa, inclina e estica o braço
+    if (this._gather > 0) {
+      this._gather = Math.max(0, this._gather - dt * 1.8);
+      const g = Math.sin((1 - this._gather) * Math.PI);
+      P.squat = Math.max(P.squat, 0.6 * g);
+      P.kneeL += 0.7 * g; P.kneeR += 0.7 * g; P.legL -= 0.35 * g; P.legR -= 0.35 * g; P.dip -= 0.14 * g;
+      P.lean += 0.55 * g;
+      P.axR = -1.3 * g + P.axR * (1 - g); P.elbR = 0.25;
+    }
+
+    // ---- golpes: corpo inteiro ----
+    let hard = false; // golpe: sem suavização (acompanha a curva)
+    if (this._swing > 0) {
+      hard = true;
       this._swing = Math.max(0, this._swing - dt * (this._swingKind === 'mao' ? 3.4 : this._swingKind === 'lanca' ? 2.4 : 2.7));
       const t = 1 - this._swing;
-      const ease = (x) => x * x * (3 - 2 * x);
       const kk = this._swingKind;
       if (kk === 'machado' || kk === 'picareta' || kk === 'clava' || kk === 'tocha') {
         // levanta para trás (0..0.35), desce com força (0.35..0.55), volta (0.55..1)
         const up = t < 0.35 ? ease(t / 0.35) : t < 0.55 ? 1 - ease((t - 0.35) / 0.2) * 1.35 : -0.35 * (1 - ease((t - 0.55) / 0.45));
-        rx = -1.25 - up * 1.55;
-        elbR = 0.55 + Math.max(0, up) * 0.9 - Math.max(0, -up) * 0.4;
-        rz = 0.06 + Math.max(0, up) * 0.2;
-        lean += up < 0 ? -up * 0.4 : -up * 0.12;
-        twist += up * 0.35;
-        legL += 0.15 * Math.max(0, -up);
+        const hit = Math.max(0, -up); // 0..0.35 no impacto
+        const heavy = kk === 'picareta' ? 1.15 : 1;
+        P.axR = -1.25 - up * 1.65 * heavy;
+        P.elbR = 0.5 + Math.max(0, up) * 1.0 - hit * 0.9;
+        const two = kk === 'machado' || kk === 'picareta';
+        if (two) { P.axL = P.axR + 0.1; P.elbL = P.elbR; P.azL = 0.22; P.azR = -0.12; }
+        P.twist = -0.4 * Math.max(0, up) + 1.0 * hit; // ombro direito vai para trás e depois acompanha o golpe
+        P.lean = -0.14 * Math.max(0, up) + 1.3 * hit;
+        P.pelvis = 0.12 * Math.max(0, up) - 0.4 * hit;
+        // pernas firmes no chão; joelhos dobram no impacto
+        P.squat = 0.9 * hit;
+        P.kneeL = 0.12 + 1.2 * hit; P.kneeR = 0.12 + 1.2 * hit;
+        P.legL = -0.45 * hit; P.legR = 0.15 * Math.max(0, up) - 0.45 * hit;
+        P.dip = -0.2 * hit * 1.0;
+        P.headX = 0.25 * hit;
       } else if (kk === 'lanca') {
-        // recua o braço (0..0.4) e estoca para a frente (0.4..0.6)
-        const back = t < 0.4 ? ease(t / 0.4) : 0;
+        const back = t < 0.4 ? ease(t / 0.4) : 1 - ease(clamp01((t - 0.4) / 0.2));
         const thrust = t < 0.4 ? 0 : t < 0.6 ? ease((t - 0.4) / 0.2) : 1 - ease((t - 0.6) / 0.4);
-        rx = -1.2 + back * 0.5 - thrust * 0.4;
-        elbR = 0.4 + back * 0.9 - thrust * 0.35;
-        twist += back * 0.25 - thrust * 0.45;
-        lean += thrust * 0.22;
-        legL -= thrust * 0.3;
-        legR += thrust * 0.3;
+        P.axR = -1.2 + back * 0.5 - thrust * 0.45;
+        P.axL = P.axR + 0.1; P.azL = 0.2; P.azR = -0.1;
+        P.elbR = 0.4 + back * 1.0 - thrust * 0.4; P.elbL = P.elbR;
+        P.twist = -0.55 * back + 0.75 * thrust;
+        P.lean = -0.1 * back + 0.45 * thrust;
+        P.pelvis = 0.2 * back - 0.3 * thrust;
+        P.legL = 0.35 * back - 0.55 * thrust; P.legR = -0.3 * back + 0.35 * thrust; // passo à frente
+        P.kneeL = 0.2 + 0.7 * thrust; P.kneeR = 0.2 + 0.2 * back;
+        P.dip = -0.12 * thrust;
       } else if (kk === 'arco') {
         const r = Math.sin(t * Math.PI);
-        rx += r * 0.2; // solta a corda: coice curto
+        P.axR += r * 0.25; P.elbR += r * 0.5;
+        P.twist = 0.25 * r; // coice da corda
       } else if (kk === 'pistola') {
         const r = Math.sin(Math.min(1, t * 2) * Math.PI) * (1 - t);
-        rx += r * 0.45;
+        P.axR += r * 0.5; P.lean -= r * 0.1;
       } else {
-        // soco: puxa o ombro para trás e solta o braço reto
-        const k2 = t < 0.25 ? -0.35 * ease(t / 0.25) : t < 0.45 ? -0.35 + 1.35 * ease((t - 0.25) / 0.2) : 1 - ease((t - 0.45) / 0.55);
-        rx = -1.55 * Math.max(0, k2) + 0.45 * Math.max(0, -k2);
-        elbR = 0.15 + Math.max(0, -k2) * 1.3;
-        twist += -0.35 * Math.max(0, k2) + 0.2 * Math.max(0, -k2);
-        lean += 0.1 * Math.max(0, k2);
+        // soco: alterna os braços; o outro fica de guarda; o corpo gira e dá um passo
+        const k2 = t < 0.25 ? -0.3 * ease(t / 0.25) : t < 0.45 ? -0.3 + 1.3 * ease((t - 0.25) / 0.2) : 1 - ease((t - 0.45) / 0.55);
+        const ext = Math.max(0, k2);
+        const wind = Math.max(0, -k2);
+        const sd = this._pSide ?? 1; // 1 = direita, -1 = esquerda
+        const pa = -1.6 * ext + 0.5 * wind;
+        const pe = 0.12 + wind * 1.3 + (1 - ext) * 0.2;
+        const guardAx = -1.1, guardElb = 1.5;
+        if (sd > 0) { P.axR = pa; P.elbR = pe; P.axL = guardAx; P.elbL = guardElb; P.azL = 0.3; }
+        else { P.axL = pa; P.elbL = pe; P.axR = guardAx; P.elbR = guardElb; P.azR = -0.3; }
+        P.twist = sd * (-0.45 * wind + 0.7 * ext);
+        P.lean = 0.28 * ext - 0.06 * wind;
+        P.pelvis = -sd * 0.4 * ext;
+        // passo: a perna oposta ao braço vai à frente
+        if (sd > 0) { P.legL = -0.4 * ext; P.legR = 0.2 * ext; P.kneeL = 0.15 + 0.5 * ext; }
+        else { P.legR = -0.4 * ext; P.legL = 0.2 * ext; P.kneeR = 0.15 + 0.5 * ext; }
+        P.dip = -0.06 * ext;
       }
     }
 
-    if (!s.swimming) {
-      const m = (a, v) => a.rotation.x += (v - a.rotation.x) * (this._swing > 0 ? 1 : k(18)); // golpe sem atraso, o resto macio
-      this.legL.rotation.set(this.legL.rotation.x, 0, 0);
-      this.legR.rotation.set(this.legR.rotation.x, 0, 0);
-      m(this.legL, legL);
-      m(this.legR, legR);
-      this.armL.rotation.set(this.armL.rotation.x, 0, lz);
-      this.armR.rotation.set(this.armR.rotation.x, ry, rz);
-      m(this.armL, lx);
-      m(this.armR, rx);
-      // joelhos dobram quando a perna passa para a frente; cotovelos acompanham o balanço
-      const cph = Math.cos(this._phase);
-      const kn = (this._amp > 0.02 ? this._amp * (1.15 + this._run * 0.5) : 0) + 0.04;
-      let kL = kn * Math.max(0, -cph) + 0.04;
-      let kR = kn * Math.max(0, cph) + 0.04;
-      if (s.crouching) { kL += 0.5; kR += 0.5; }
-      if (this._air > 0.01) { kL += 0.6 * this._air; kR += 0.3 * this._air; }
-      kL += this._land * 0.5; kR += this._land * 0.5;
-      const swingL = Math.max(0, -lx) * 0.3 + this._run * 0.75 + (this._air > 0.01 ? 0.3 * this._air : 0);
-      const swingR = holding || this._swing > 0 ? 0 : Math.max(0, -rx) * 0.3 + this._run * 0.75;
-      const sm = (u, v) => (u.value += (v - u.value) * (this._swing > 0 ? 1 : k(16)));
-      sm(this.bend.legL, kL);
-      sm(this.bend.legR, kR);
-      sm(this.bend.armL, elbL + swingL);
-      sm(this.bend.armR, elbR + swingR);
-      b.position.set(0, dip, 0);
-      b.rotation.set(0, twist * 0.5, 0);
-      b.rotation.x = -lean;
-      b.rotation.order = 'YXZ';
-      this.head.rotation.set(headX, -twist * 0.6, 0);
-    }
-    b.scale.y = !s.swimming && s.crouching ? 0.68 : 1;
-
-    // Coletar: inclina o corpo e estica o braço para baixo.
-    if (this._gather > 0) {
-      this._gather = Math.max(0, this._gather - dt * 1.8);
-      const g = Math.sin((1 - this._gather) * Math.PI);
-      b.rotation.x -= 0.45 * g;
-      this.armR.rotation.x = -1.1 * g;
-    }
+    // ---- aplica (suave, menos no golpe) ----
+    const rate = hard ? 60 : 14;
+    const sm = (cur, v) => cur + (v - cur) * k(rate);
+    const L = this._pose ?? (this._pose = { legL: 0, legR: 0, axL: 0, axR: 0, azL: -0.06, azR: 0.06, twist: 0, lean: 0, side: 0, pelvis: 0, dip: 0, headX: 0, kneeL: 0, kneeR: 0, elbL: 0, elbR: 0 });
+    for (const key of Object.keys(L)) L[key] = sm(L[key], P[key]);
+    this.legL.rotation.set(L.legL, 0, 0);
+    this.legR.rotation.set(L.legR, 0, 0);
+    this.armL.rotation.set(L.axL, 0, L.azL);
+    this.armR.rotation.set(L.axR, 0, L.azR);
+    this.bend.legL.value = L.kneeL;
+    this.bend.legR.value = L.kneeR;
+    this.bend.armL.value = L.elbL;
+    this.bend.armR.value = L.elbR;
+    b.position.set(0, L.dip, 0);
+    b.rotation.set(0, L.pelvis, 0, 'YXZ');
+    // coluna: gira, inclina e balança de lado (braços e cabeça seguem; o tronco entorta na cintura)
+    this.spine.rotation.set(-L.lean, L.twist, L.side, 'YXZ');
+    this.spineUni.value.set(L.twist, -L.lean, L.side);
+    this.head.rotation.set(L.headX, -L.twist * 0.5, 0);
+    b.scale.y = 1;
   }
 
   _resetLimbs() {
