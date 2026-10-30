@@ -21,11 +21,11 @@ const BY_BIOME = {
   [BIOME.BEACH]: { capim: 0.08, folha: 0.0, broto: 0.0, flor: 0.01, tint: [1.15, 1.1, 0.8] },
   [BIOME.HIGHLAND]: { capim: 0.2, folha: 0.0, broto: 0.03, flor: 0.02, tint: [0.95, 0.95, 0.8] },
   // pastagem: o chão é coberto pela relva baixinha (abaixo); capim alto só de vez em quando, e mais baixo
-  [BIOME.PLAINS]: { capim: 0.22, folha: 0.02, broto: 0.01, flor: 0.06, tint: [0.78, 0.94, 0.66], hscale: 1.1, relva: true },
+  [BIOME.PLAINS]: { capim: 0.22, folha: 0.02, broto: 0.01, flor: 0.11, tint: [0.78, 0.94, 0.66], hscale: 1.1, relva: true },
 };
 
 // cores das flores (laranja do ARK, amarelo e branco-creme)
-const FLOWER_COLORS = [[1.0, 0.52, 0.12], [1.0, 0.8, 0.2], [0.98, 0.92, 0.8], [0.9, 0.3, 0.2]];
+const FLOWER_COLORS = [[1.0, 0.52, 0.12], [1.0, 0.8, 0.2], [0.98, 0.92, 0.8], [0.9, 0.3, 0.2], [1.0, 0.86, 0.1], [0.55, 0.5, 0.95], [0.95, 0.95, 1.0]];
 
 function cellHash(ix, iz, s = 0) {
   const h = Math.sin(ix * 127.1 + iz * 311.7 + s * 74.7) * 43758.5453;

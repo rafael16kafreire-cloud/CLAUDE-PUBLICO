@@ -107,8 +107,8 @@ const TYPES = {
   pedra_musgo: { foot: 0.85, hi: P.makeMossRock, lo: P.makeMossRockLow, collider: 1.0, shadow: false, scale: [0.6, 2.2], res: 'pedra', maxDist: 160 },
   mangue: { foot: 1.2, hi: P.makeMangrove, lo: P.makeMangroveLow, imp: true, collider: 0.6, shadow: true, scale: [0.8, 1.2], res: 'arvore', water: true },
   arvore_morta: { foot: 0.3, hi: P.makeDeadTree, collider: 0.3, shadow: true, scale: [0.8, 1.3], res: 'arvore_mole', water: true, maxDist: 200 },
-  junco: { hi: P.makeReeds, collider: 0, shadow: false, scale: [0.8, 1.3], res: 'junco', water: true, maxDist: 70 },
-  taboa: { hi: P.makeCattail, collider: 0, shadow: false, scale: [0.8, 1.3], res: 'junco', water: true, maxDist: 70 },
+  junco: { shore: true, hi: P.makeReeds, collider: 0, shadow: false, scale: [0.8, 1.3], res: 'junco', water: true, maxDist: 70 },
+  taboa: { shore: true, hi: P.makeCattail, collider: 0, shadow: false, scale: [0.8, 1.3], res: 'junco', water: true, maxDist: 70 },
   vitoria_regia: { hi: P.makeWaterLily, collider: 0, shadow: false, scale: [0.6, 1.7], res: null, surface: true, maxDist: 120 },
 };
 
@@ -243,6 +243,7 @@ export class Vegetation {
         const def = TYPES[type];
         const wb = this.water.bodyAt(x, z);
         const depth = wb ? wb.level - h : 0;
+        if (def.shore && !wb && key !== 'pantano' && key !== 'igapo') continue; // junco/taboa fora do brejo: só na beira da água
         if (def.surface) {
           if (!wb || depth < 0.4) continue;
         } else if (key !== 'mar' && wb && (!def.water || depth > 0.9)) {
