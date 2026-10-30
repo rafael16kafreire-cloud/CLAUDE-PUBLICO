@@ -75,6 +75,27 @@ export function skinMaterial(textura = SKIN_TEXTURA, vertexColors = false) {
   return new THREE.MeshLambertMaterial({ map: tex, vertexColors });
 }
 
+// Material com articulação: os vértices abaixo do cotovelo/joelho giram em torno dele (suave, sem emenda).
+// uBend em radianos (positivo = dobra), jointY = altura da junta no pedaço, largura = zona de transição.
+function bendMaterial(base, jointY, sign, uni) {
+  const m = base.clone();
+  m.onBeforeCompile = (shader) => {
+    shader.uniforms.uBend = uni;
+    shader.vertexShader = shader.vertexShader
+      .replace('void main() {', 'uniform float uBend;\nvoid main() {')
+      .replace('#include <beginnormal_vertex>', `#include <beginnormal_vertex>
+        float bw = smoothstep(${jointY.toFixed(3)} + 0.07, ${jointY.toFixed(3)} - 0.07, position.y);
+        float ba = ${sign.toFixed(1)} * uBend * bw;
+        float bc = cos(ba); float bs = sin(ba);
+        objectNormal = vec3(objectNormal.x, bc * objectNormal.y - bs * objectNormal.z, bs * objectNormal.y + bc * objectNormal.z);`)
+      .replace('#include <begin_vertex>', `#include <begin_vertex>
+        { vec3 q = transformed - vec3(0.0, ${jointY.toFixed(3)}, 0.0);
+          transformed = vec3(q.x, bc * q.y - bs * q.z, bs * q.y + bc * q.z) + vec3(0.0, ${jointY.toFixed(3)}, 0.0); }`);
+  };
+  m.customProgramCacheKey = () => `junta${jointY.toFixed(3)}_${sign}`;
+  return m;
+}
+
 export class PlayerModel {
   constructor() {
     this.root = new THREE.Group();
@@ -126,11 +147,19 @@ export class PlayerModel {
       if (o.isMesh) o.visible = false;
     });
     const mat = skinMaterial();
+    // dobras: cotovelos e joelhos (um número por membro)
+    this.bend = { armL: { value: 0 }, armR: { value: 0 }, legL: { value: 0 }, legR: { value: 0 } };
+    const mats = {
+      armL: bendMaterial(mat, -0.3, -1, this.bend.armL),
+      armR: bendMaterial(mat, -0.3, -1, this.bend.armR),
+      legL: bendMaterial(mat, -0.52, 1, this.bend.legL),
+      legR: bendMaterial(mat, -0.52, 1, this.bend.legR),
+    };
     const holders = { head: this.head, torso: this.body, armL: this.armL, armR: this.armR, legL: this.legL, legR: this.legR };
     for (const [name, part] of Object.entries(SKIN_PARTES)) {
       const holder = holders[name];
       if (name !== 'torso') holder.position.set(...part.pivot);
-      const m = new THREE.Mesh(skinGeometry(part), mat);
+      const m = new THREE.Mesh(skinGeometry(part), mats[name] ?? mat);
       m.castShadow = true;
       holder.add(m);
     }
@@ -221,6 +250,7 @@ export class PlayerModel {
     const breathe = Math.sin(this._t * 1.7);
 
     let lx = 0, rx = 0, lz = -0.06, rz = 0.06, ry = 0, ly = 0;
+    let elbL = 0.12, elbR = 0.12; // dobra dos cotovelos (radianos)
     let legL = 0, legR = 0, lean = 0, twist = 0, headX = 0, dip = 0;
     if (s.swimming) {
       // Corpo deitado, braçadas e pernadas.
@@ -230,6 +260,9 @@ export class PlayerModel {
       this.armR.rotation.set(-2.6 - sw * 0.8, 0, 0.3);
       this.legL.rotation.set(sw * 0.4, 0, 0);
       this.legR.rotation.set(-sw * 0.4, 0, 0);
+      this.bend.legL.value = 0.35 + 0.25 * Math.max(0, sw);
+      this.bend.legR.value = 0.35 + 0.25 * Math.max(0, -sw);
+      this.bend.armL.value = this.bend.armR.value = 0.25;
     } else {
       legL = sw * amp;
       legR = -sw * amp;
@@ -251,7 +284,8 @@ export class PlayerModel {
       if (holding) {
         const base = kind === 'arco' ? -1.35 : kind === 'pistola' || kind === 'luneta' ? -1.25 : -0.55;
         rx = base + rx * 0.25;
-        if (kind === 'arco') lx = -1.5 + lx * 0.2;
+        elbR = kind === 'arco' ? 0.95 : kind === 'pistola' || kind === 'luneta' ? 0.35 : 0.6;
+        if (kind === 'arco') { lx = -1.5 + lx * 0.2; elbL = 0.05; }
         if (kind === 'arco' || kind === 'pistola') twist = 0;
       }
       // no ar: pernas dobradas, braços abertos
@@ -278,6 +312,7 @@ export class PlayerModel {
         // levanta para trás (0..0.35), desce com força (0.35..0.55), volta (0.55..1)
         const up = t < 0.35 ? ease(t / 0.35) : t < 0.55 ? 1 - ease((t - 0.35) / 0.2) * 1.35 : -0.35 * (1 - ease((t - 0.55) / 0.45));
         rx = -1.25 - up * 1.55;
+        elbR = 0.55 + Math.max(0, up) * 0.9 - Math.max(0, -up) * 0.4;
         rz = 0.06 + Math.max(0, up) * 0.2;
         lean += up < 0 ? -up * 0.4 : -up * 0.12;
         twist += up * 0.35;
@@ -287,6 +322,7 @@ export class PlayerModel {
         const back = t < 0.4 ? ease(t / 0.4) : 0;
         const thrust = t < 0.4 ? 0 : t < 0.6 ? ease((t - 0.4) / 0.2) : 1 - ease((t - 0.6) / 0.4);
         rx = -1.2 + back * 0.5 - thrust * 0.4;
+        elbR = 0.4 + back * 0.9 - thrust * 0.35;
         twist += back * 0.25 - thrust * 0.45;
         lean += thrust * 0.22;
         legL -= thrust * 0.3;
@@ -301,6 +337,7 @@ export class PlayerModel {
         // soco: puxa o ombro para trás e solta o braço reto
         const k2 = t < 0.25 ? -0.35 * ease(t / 0.25) : t < 0.45 ? -0.35 + 1.35 * ease((t - 0.25) / 0.2) : 1 - ease((t - 0.45) / 0.55);
         rx = -1.55 * Math.max(0, k2) + 0.45 * Math.max(0, -k2);
+        elbR = 0.15 + Math.max(0, -k2) * 1.3;
         twist += -0.35 * Math.max(0, k2) + 0.2 * Math.max(0, -k2);
         lean += 0.1 * Math.max(0, k2);
       }
@@ -316,6 +353,21 @@ export class PlayerModel {
       this.armR.rotation.set(this.armR.rotation.x, ry, rz);
       m(this.armL, lx);
       m(this.armR, rx);
+      // joelhos dobram quando a perna passa para a frente; cotovelos acompanham o balanço
+      const cph = Math.cos(this._phase);
+      const kn = (this._amp > 0.02 ? this._amp * (1.15 + this._run * 0.5) : 0) + 0.04;
+      let kL = kn * Math.max(0, -cph) + 0.04;
+      let kR = kn * Math.max(0, cph) + 0.04;
+      if (s.crouching) { kL += 0.5; kR += 0.5; }
+      if (this._air > 0.01) { kL += 0.6 * this._air; kR += 0.3 * this._air; }
+      kL += this._land * 0.5; kR += this._land * 0.5;
+      const swingL = Math.max(0, -lx) * 0.3 + this._run * 0.75 + (this._air > 0.01 ? 0.3 * this._air : 0);
+      const swingR = holding || this._swing > 0 ? 0 : Math.max(0, -rx) * 0.3 + this._run * 0.75;
+      const sm = (u, v) => (u.value += (v - u.value) * (this._swing > 0 ? 1 : k(16)));
+      sm(this.bend.legL, kL);
+      sm(this.bend.legR, kR);
+      sm(this.bend.armL, elbL + swingL);
+      sm(this.bend.armR, elbR + swingR);
       b.position.set(0, dip, 0);
       b.rotation.set(0, twist * 0.5, 0);
       b.rotation.x = -lean;
