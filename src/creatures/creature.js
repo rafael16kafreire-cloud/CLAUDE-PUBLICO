@@ -17,6 +17,7 @@ import { BALANCE } from '../core/balance.js';
 import { sound } from '../audio/audio.js';
 import { mulberry32 } from '../core/math.js';
 import { shakeAt } from '../world/materials.js';
+import { aplicarFeridas } from './wounds.js';
 import { ajustarSela, backSpot, buildSaddle, saddleFor } from './saddle.js';
 import { events, EV } from '../core/event_bus.js';
 
@@ -1181,6 +1182,7 @@ export class Creature {
     }
     this.health -= amount;
     this.hurtAnim = 1;
+    if (this.maxHealth > 0) aplicarFeridas(this, 1 - Math.max(0, this.health) / this.maxHealth);
     // apanhar desmaiado estraga a doma (efetividade cai)
     if (this.state === CSTATE.KO && !this.tamed) this.tameEff = Math.max(0, (this.tameEff ?? 1) - (amount / this.maxHealth) * BALANCE.domar.efetividade_por_dano);
     // número do dano flutuando (só o que o jogador daqui fez)
