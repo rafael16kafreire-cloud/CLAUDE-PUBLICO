@@ -5,6 +5,8 @@
 // de lança. A ferramenta em uso aparece na mão direita.
 // =============================================================
 import * as THREE from 'three';
+import { pixelTexture } from './pixel_tex.js';
+import { settings } from '../core/settings.js';
 
 const WOOD = new THREE.MeshLambertMaterial({ color: '#7a5a3a' });
 const STONE = new THREE.MeshLambertMaterial({ color: '#8a8a90' });
@@ -83,6 +85,30 @@ function skinArm() {
   const fingers = new THREE.Mesh(fgeo, BRACO_FP);
   fingers.position.set(0, -0.045, -0.2);
   hand.add(fingers);
+  g.add(hand);
+  g.userData.fist = hand;
+  g.scale.setScalar(1.25);
+  g.position.set(0.24, -0.25, -0.3);
+  g.rotation.set(0.32, 0.2, 0.05);
+  return g;
+}
+
+// Braço quadradinho (blocos com "pixels"): manga azul, antebraço e punho de pele
+function blockyArm() {
+  const tex = pixelTexture();
+  const m = (hex) => new THREE.MeshLambertMaterial({ color: hex, map: tex, emissive: '#2a1d16' });
+  const g = new THREE.Group();
+  const hand = new THREE.Group();
+  hand.position.z = -0.26;
+  const part = (w, h, d, mat, z) => {
+    const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    b.position.z = z;
+    hand.add(b);
+  };
+  const skin = m('#d4a174');
+  part(0.085, 0.085, 0.34, skin, 0.1); // antebraço
+  part(0.1, 0.1, 0.3, m('#3a83b5'), 0.4); // manga
+  part(0.095, 0.095, 0.1, skin, -0.1); // punho
   g.add(hand);
   g.userData.fist = hand;
   g.scale.setScalar(1.25);
@@ -191,7 +217,7 @@ export class PlayerHands {
   constructor(camera) {
     this.root = new THREE.Group();
     // Só o braço direito aparece (o esquerdo fica fora da tela).
-    this.right = skinArm();
+    this.right = settings.get('personagem') === 'realista' ? skinArm() : blockyArm();
     this.left = new THREE.Group();
     this.root.add(this.right);
     this.tools = {};
