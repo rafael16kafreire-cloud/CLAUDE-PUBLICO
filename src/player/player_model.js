@@ -270,6 +270,46 @@ export class PlayerModel {
       return;
     }
 
+    const L = this._computePose(dt, s);
+    if (!L) {
+      const sw = Math.sin(this._phase);
+      // Corpo deitado, braçadas e pernadas.
+      b.rotation.set(-1.15, 0, 0);
+      b.position.set(0, 1.25, 0.35);
+      this.armL.rotation.set(-2.6 + sw * 0.8, 0, -0.3);
+      this.armR.rotation.set(-2.6 - sw * 0.8, 0, 0.3);
+      this.legL.rotation.set(sw * 0.4, 0, 0);
+      this.legR.rotation.set(-sw * 0.4, 0, 0);
+      this.bend.legL.value = 0.35 + 0.25 * Math.max(0, sw);
+      this.bend.legR.value = 0.35 + 0.25 * Math.max(0, -sw);
+      this.bend.armL.value = this.bend.armR.value = 0.25;
+      this.spine.rotation.set(0, 0, 0);
+      this.spineUni.value.set(0, 0, 0);
+      this.head.rotation.set(0.9, 0, 0);
+      b.scale.y = 1;
+      return;
+      return;
+    }
+    this.legL.rotation.set(L.legL, 0, 0);
+    this.legR.rotation.set(L.legR, 0, 0);
+    this.armL.rotation.set(L.axL, 0, L.azL);
+    this.armR.rotation.set(L.axR, 0, L.azR);
+    this.bend.legL.value = L.kneeL;
+    this.bend.legR.value = L.kneeR;
+    this.bend.armL.value = L.elbL;
+    this.bend.armR.value = L.elbR;
+    b.position.set(0, L.dip, 0);
+    b.rotation.set(0, L.pelvis, 0, 'YXZ');
+    // coluna: gira, inclina e balança de lado (braços e cabeça seguem; o tronco entorta na cintura)
+    this.spine.rotation.set(-L.lean, L.twist, L.side, 'YXZ');
+    this.spineUni.value.set(L.twist, -L.lean, L.side);
+    this.head.rotation.set(L.headX, -L.twist * 0.5, 0);
+    b.scale.y = 1;
+  }
+
+
+  // Calcula a pose (alvos suavizados) do corpo inteiro. Devolve null nadando. Usado pelos dois modelos.
+  _computePose(dt, s) {
     const k = (rate) => Math.min(1, dt * rate); // suavização: nada pula de uma pose para outra
     const ease = (x) => x * x * (3 - 2 * x);
     const clamp01 = (x) => Math.max(0, Math.min(1, x));
@@ -292,23 +332,7 @@ export class PlayerModel {
     const kind = this.toolKind ?? 'mao';
     const breathe = Math.sin(this._t * 1.7);
 
-    if (s.swimming) {
-      // Corpo deitado, braçadas e pernadas.
-      b.rotation.set(-1.15, 0, 0);
-      b.position.set(0, 1.25, 0.35);
-      this.armL.rotation.set(-2.6 + sw * 0.8, 0, -0.3);
-      this.armR.rotation.set(-2.6 - sw * 0.8, 0, 0.3);
-      this.legL.rotation.set(sw * 0.4, 0, 0);
-      this.legR.rotation.set(-sw * 0.4, 0, 0);
-      this.bend.legL.value = 0.35 + 0.25 * Math.max(0, sw);
-      this.bend.legR.value = 0.35 + 0.25 * Math.max(0, -sw);
-      this.bend.armL.value = this.bend.armR.value = 0.25;
-      this.spine.rotation.set(0, 0, 0);
-      this.spineUni.value.set(0, 0, 0);
-      this.head.rotation.set(0.9, 0, 0);
-      b.scale.y = 1;
-      return;
-    }
+    if (s.swimming) return null;
 
     // ---- alvos da pose (tudo em radianos) ----
     const P = {
@@ -443,23 +467,8 @@ export class PlayerModel {
     const sm = (cur, v) => cur + (v - cur) * k(rate);
     const L = this._pose ?? (this._pose = { legL: 0, legR: 0, axL: 0, axR: 0, azL: -0.06, azR: 0.06, twist: 0, lean: 0, side: 0, pelvis: 0, dip: 0, headX: 0, kneeL: 0, kneeR: 0, elbL: 0, elbR: 0 });
     for (const key of Object.keys(L)) L[key] = sm(L[key], P[key]);
-    this.legL.rotation.set(L.legL, 0, 0);
-    this.legR.rotation.set(L.legR, 0, 0);
-    this.armL.rotation.set(L.axL, 0, L.azL);
-    this.armR.rotation.set(L.axR, 0, L.azR);
-    this.bend.legL.value = L.kneeL;
-    this.bend.legR.value = L.kneeR;
-    this.bend.armL.value = L.elbL;
-    this.bend.armR.value = L.elbR;
-    b.position.set(0, L.dip, 0);
-    b.rotation.set(0, L.pelvis, 0, 'YXZ');
-    // coluna: gira, inclina e balança de lado (braços e cabeça seguem; o tronco entorta na cintura)
-    this.spine.rotation.set(-L.lean, L.twist, L.side, 'YXZ');
-    this.spineUni.value.set(L.twist, -L.lean, L.side);
-    this.head.rotation.set(L.headX, -L.twist * 0.5, 0);
-    b.scale.y = 1;
+    return L;
   }
-
   _resetLimbs() {
     for (const limb of [this.armL, this.armR, this.legL, this.legR]) limb.rotation.set(0, 0, 0);
   }

@@ -4,7 +4,7 @@
 // Também serve de alvo para os predadores no anfitrião.
 // =============================================================
 import * as THREE from 'three';
-import { PlayerModel } from '../player/player_model.js';
+import { makePlayerModel } from '../player/make_model.js';
 import { angleDelta } from '../core/math.js';
 
 const TAG_COLORS = ['#ffd27a', '#8fd0ff', '#b9e27a', '#ff9fb0'];
@@ -48,7 +48,7 @@ export class RemotePlayer {
     this.speed = 0;
     this._goal = null;
     this._goalYaw = 0;
-    this.model = new PlayerModel();
+    this.model = makePlayerModel();
     this.model.root.name = `Jogador-${this.name}`;
     scene.add(this.model.root);
     this.tag = nameTag(this.name, TAG_COLORS[colorIndex % TAG_COLORS.length]);

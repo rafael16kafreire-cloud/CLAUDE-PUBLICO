@@ -86,6 +86,11 @@ export class PauseMenu {
               <input type="range" id="opt-view" min="100" max="320" step="10">
               <label for="opt-smaa">Suavizar bordas (SMAA)</label>
               <input type="checkbox" id="opt-smaa">
+              <label for="opt-char">Personagem (ao reabrir o jogo)</label>
+              <select id="opt-char">
+                <option value="quadradinho">Quadradinho</option>
+                <option value="realista">Realista</option>
+              </select>
               <label for="opt-lowpoly">Grama e árvores low poly</label>
               <select id="opt-lowpoly">
                 <option value="auto">Automático (se ficar lento)</option>
@@ -175,6 +180,7 @@ export class PauseMenu {
       smaa: $('opt-smaa'),
       auto: $('opt-auto'),
       lowpoly: $('opt-lowpoly'),
+      char: $('opt-char'),
     };
     this.outs = {
       view: $('opt-view-out'),
@@ -248,6 +254,7 @@ export class PauseMenu {
     f.camdist.addEventListener('input', () => settings.set('cameraDist', Number(f.camdist.value)));
     f.debug.addEventListener('change', () => settings.set('showDebug', f.debug.checked));
     f.smaa.addEventListener('change', () => settings.set('smaa', f.smaa.checked));
+    f.char.addEventListener('change', () => settings.set('personagem', f.char.value));
     f.lowpoly.addEventListener('change', () => settings.set('lowPoly', f.lowpoly.value));
     f.auto.addEventListener('change', () => settings.set('autoQuality', f.auto.checked));
   }
@@ -277,6 +284,7 @@ export class PauseMenu {
     f.smaa.checked = v.smaa !== false;
     f.auto.checked = !!v.autoQuality;
     f.lowpoly.value = v.lowPoly ?? 'auto';
+    f.char.value = v.personagem ?? 'quadradinho';
     this.outs.view.textContent = `${v.viewDistance} m`;
     this.outs.sens.textContent = Number(v.sensitivity).toFixed(1);
     this.outs.opacity.textContent = `${Math.round(v.buttonOpacity * 100)}%`;

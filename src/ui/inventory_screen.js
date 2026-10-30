@@ -14,7 +14,7 @@ import { HOTBAR, EQUIP_SLOTS } from '../inventory/inventory.js';
 const EQUIP_NAME = { cabeca: 'Cabeça', peito: 'Peito', maos: 'Mãos', pernas: 'Pernas', pes: 'Pés' };
 import { RECIPES, STATION_NAMES } from '../crafting/crafting.js';
 import * as THREE from 'three';
-import { PlayerModel } from '../player/player_model.js';
+import { makePlayerModel } from '../player/make_model.js';
 import { ICONS } from './icons.js';
 import { STAT_ICONS } from './inspect_panel.js';
 
@@ -374,7 +374,7 @@ export class InventoryScreen {
         const sun = new THREE.DirectionalLight(0xffffff, 1.6);
         sun.position.set(-2, 3, -3);
         scene.add(sun);
-        const model = new PlayerModel();
+        const model = makePlayerModel();
         scene.add(model.root);
         model.update(0, { position: new THREE.Vector3(), facing: 0, visible: true, dead: false, speed: 0, swimming: false, crouching: false, onGround: true });
         this._pv = { renderer, scene, cam };

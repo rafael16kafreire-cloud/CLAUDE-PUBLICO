@@ -9,7 +9,7 @@ import { BALANCE } from '../core/balance.js';
 import { events, EV } from '../core/event_bus.js';
 import { angleDelta } from '../core/math.js';
 import { PlayerStats } from './player_stats.js';
-import { PlayerModel } from './player_model.js';
+import { makePlayerModel } from './make_model.js';
 
 const RADIUS = 0.38;            // "largura" do jogador para colisão
 const EYE_STAND = 1.62;         // altura dos olhos em pé
@@ -38,7 +38,7 @@ export class Player {
 
     this.stats = new PlayerStats();
     this.stats.onDeath = (cause) => this._die(cause);
-    this.model = new PlayerModel();
+    this.model = makePlayerModel();
     scene.add(this.model.root);
 
     const M = BALANCE.movimento;

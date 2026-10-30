@@ -67,7 +67,7 @@ export class Grass {
       flor: this._mesh(makeFlowerTuft(), material, 1500, 'Flores'),
       relva: this._mesh(makeGramaCartao(2, 1.12), matGrama, 5200, 'Relva'),
       relva2: this._mesh(makeGramaCartao(3, 0.98), matGrama, 4200, 'Relva 2'),
-      longe: this._mesh(makeLowTuft(), material, 14000, 'Grama longe'),
+      longe: this._mesh(makeLowTuft(), material, 16000, 'Grama longe'),
       mini: this._mesh(makeMiniPlant(0), material, 7000, 'Plantinhas'),
       mini2: this._mesh(makeMiniPlant(1), material, 6000, 'Plantinhas 2'),
     };
@@ -255,42 +255,48 @@ export class Grass {
         n[mk]++;
       }
     }
-    // Grama de longe (low poly): tufos de 3 triângulos numa grade larga, do fim da grama detalhada
-    // até bem longe. Com o jogo lento (lowPoly) ela é a única grama, desde perto do jogador.
+    // Grama low poly (7 triângulos por tufo). Normal: grade larga do fim da grama detalhada até longe.
+    // Modo lento (lowPoly): é a única grama; perto do jogador os tufos ficam JUNTINHOS (grade fina, quase
+    // encostando), e mais longe a grade abre.
     const lmesh = this.kinds.longe;
-    const FC = 1.25 / Math.sqrt(Math.max(0.3, this.density));
     const FR = Math.min(Math.max(this.radius * 2.6, 40), 75);
-    const NEAR = this.lowPoly ? 0 : this.radius * 0.55;
-    const fx0 = Math.floor((focus.x - FR) / FC);
-    const fx1 = Math.floor((focus.x + FR) / FC);
-    const fz0 = Math.floor((focus.z - FR) / FC);
-    const fz1 = Math.floor((focus.z + FR) / FC);
-    for (let iz = fz0; iz <= fz1 && n.longe < lmesh.userData.max; iz++) {
-      for (let ix = fx0; ix <= fx1; ix++) {
-        const x = (ix + cellHash(iz, ix, 41)) * FC;
-        const z = (iz + cellHash(ix, iz, 42)) * FC;
-        const dx = x - focus.x;
-        const dz = z - focus.z;
-        const dd = Math.sqrt(dx * dx + dz * dz);
-        if (dd > FR || dd < NEAR) continue;
-        const fcfg = BY_BIOME[this.map.biomeAt(x, z)];
-        if (!fcfg) continue;
-        const pr = Math.min(1, fcfg.capim * 1.6 + (fcfg.relva ? 0.4 : 0) + fcfg.folha);
-        if (cellHash(ix, iz, 43) > pr || n.longe >= lmesh.userData.max) continue;
-        const h = this.map.heightAt(x, z);
-        if (h < 0.5 || this.water.bodyAt(x, z)) continue;
-        const ffade = 1 - Math.min(1, Math.max(0, (dd - FR * 0.8) / (FR * 0.2)));
-        const nin = Math.min(1, (dd - NEAR) / 4); // some suave perto da borda da grama detalhada
-        const sc = (0.9 + cellHash(ix, iz, 44) * 0.6) * (0.2 + 0.8 * ffade) * (0.3 + 0.7 * nin) * (1 + dd / FR * 0.35);
-        this._q.setFromAxisAngle(this._up, cellHash(ix, iz, 45) * 6.283);
-        this._s.set(sc, sc * (0.8 + cellHash(ix, iz, 46) * 0.5) * (fcfg.hscale ?? 1), sc);
-        this._p.set(x, h - 0.03, z);
-        this._m.compose(this._p, this._q, this._s);
-        lmesh.setMatrixAt(n.longe, this._m);
-        const v = 0.75 + cellHash(ix, iz, 47) * 0.4;
-        this._c.setRGB(fcfg.tint[0] * v, fcfg.tint[1] * v, fcfg.tint[2] * v);
-        lmesh.setColorAt(n.longe, this._c);
-        n.longe++;
+    const dens = Math.sqrt(Math.max(0.3, this.density));
+    const rings = this.lowPoly
+      ? [{ step: 0.5 / dens, r0: 0, r1: Math.min(15, FR), sc: 1.05 }, { step: 1.1 / dens, r0: Math.min(15, FR), r1: FR, sc: 1.2 }]
+      : [{ step: 1.25 / dens, r0: this.radius * 0.55, r1: FR, sc: 1 }];
+    for (const ring of rings) {
+      const FC = ring.step;
+      const fx0 = Math.floor((focus.x - ring.r1) / FC);
+      const fx1 = Math.floor((focus.x + ring.r1) / FC);
+      const fz0 = Math.floor((focus.z - ring.r1) / FC);
+      const fz1 = Math.floor((focus.z + ring.r1) / FC);
+      for (let iz = fz0; iz <= fz1 && n.longe < lmesh.userData.max; iz++) {
+        for (let ix = fx0; ix <= fx1; ix++) {
+          const x = (ix + cellHash(iz, ix, 41)) * FC;
+          const z = (iz + cellHash(ix, iz, 42)) * FC;
+          const dx = x - focus.x;
+          const dz = z - focus.z;
+          const dd = Math.sqrt(dx * dx + dz * dz);
+          if (dd > ring.r1 || dd < ring.r0) continue;
+          const fcfg = BY_BIOME[this.map.biomeAt(x, z)];
+          if (!fcfg) continue;
+          const pr = Math.min(1, fcfg.capim * 1.6 + (fcfg.relva ? 0.4 : 0) + fcfg.folha + (this.lowPoly ? 0.35 : 0));
+          if (cellHash(ix, iz, 43) > pr || n.longe >= lmesh.userData.max) continue;
+          const h = this.map.heightAt(x, z);
+          if (h < 0.5 || this.water.bodyAt(x, z)) continue;
+          const ffade = 1 - Math.min(1, Math.max(0, (dd - FR * 0.8) / (FR * 0.2)));
+          const nin = this.lowPoly ? 1 : Math.min(1, (dd - ring.r0) / 4); // some suave perto da borda da grama detalhada
+          const sc = (0.9 + cellHash(ix, iz, 44) * 0.6) * ring.sc * (0.2 + 0.8 * ffade) * (0.3 + 0.7 * nin) * (1 + dd / FR * 0.35);
+          this._q.setFromAxisAngle(this._up, cellHash(ix, iz, 45) * 6.283);
+          this._s.set(sc, sc * (0.8 + cellHash(ix, iz, 46) * 0.5) * (fcfg.hscale ?? 1), sc);
+          this._p.set(x, h - 0.03, z);
+          this._m.compose(this._p, this._q, this._s);
+          lmesh.setMatrixAt(n.longe, this._m);
+          const v = 0.75 + cellHash(ix, iz, 47) * 0.4;
+          this._c.setRGB(fcfg.tint[0] * v, fcfg.tint[1] * v, fcfg.tint[2] * v);
+          lmesh.setColorAt(n.longe, this._c);
+          n.longe++;
+        }
       }
     }
     for (const [k, mesh] of Object.entries(this.kinds)) {
