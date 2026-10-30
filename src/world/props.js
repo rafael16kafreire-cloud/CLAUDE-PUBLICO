@@ -1083,10 +1083,14 @@ export function makeGramaTufo(variante = 0, k = 1) {
   for (const b of tufo) {
     const dx = b.d[0];
     const dz = b.d[1];
-    const at = (p, w) => [
+    const LARG = 2.0; // lâminas mais largas: o chão fica coberto com poucos tufos
+    const at = (p, w0) => {
+      const w = w0 * LARG;
+      return [
       [(p[0] - dx * w * 0.5) * k, p[1] * k, (p[2] - dz * w * 0.5) * k],
       [(p[0] + dx * w * 0.5) * k, p[1] * k, (p[2] + dz * w * 0.5) * k],
-    ];
+      ];
+    };
     const [bl, br] = at(b.b, b.w[0]);
     const [ml, mr] = at(b.m, b.w[1]);
     const t = [b.t[0] * k, b.t[1] * k, b.t[2] * k];
