@@ -6,7 +6,7 @@
 // =============================================================
 import layout from '../data/world/ilha.json';
 import { BALANCE } from '../core/balance.js';
-import { IslandMap, BIOME_KEYS } from './island_generator.js';
+import { IslandMap, BIOME_KEYS, BIOME } from './island_generator.js';
 import { buildTerrain } from './terrain.js';
 import { WaterSystem } from './water.js';
 import { Vegetation } from './vegetation.js';
@@ -220,7 +220,9 @@ export class World {
     // neblina leve nos morros da mata (chão alto, fora da neve)
     const ground = Math.max(this.heightAt(camera.position.x, camera.position.z), 0);
     const hill = Math.min(1, Math.max(0, (ground - 14) / 26));
-    const mist = hill * hill * (3 - 2 * hill) * (1 - cold);
+    const inForest = this.map.biomeAt(camera.position.x, camera.position.z);
+    const forest = inForest === BIOME.JUNGLE || inForest === BIOME.IGAPO ? 0.28 : 0; // neblina azulada fixa dentro da mata
+    const mist = Math.max(hill * hill * (3 - 2 * hill), forest) * (1 - cold);
     this.sky.mist = (this.sky.mist ?? 0) + (mist - (this.sky.mist ?? 0)) * Math.min(1, dt * 0.5);
     if (!this.sky.underwater) this.sky.scene.fog.density = (2.0 / this.viewDistance) * (1 + this.sky.mist * 1.6);
   }

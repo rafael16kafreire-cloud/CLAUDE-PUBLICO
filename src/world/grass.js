@@ -15,7 +15,7 @@ const CELL = 1.25;
 
 // Quanto de cada planta por bioma (0 a 1).
 const BY_BIOME = {
-  [BIOME.JUNGLE]: { capim: 0.5, folha: 0.22, broto: 0.16, flor: 0.03, tint: [0.9, 1.0, 0.82] },
+  [BIOME.JUNGLE]: { capim: 0.5, folha: 0.22, broto: 0.16, flor: 0.03, tint: [0.9, 1.0, 0.82], relva: 0.5, relvaK: 0.7 }, // chão da mata forrado de mato verde (como a Floresta Negra)
   [BIOME.IGAPO]: { capim: 0.55, folha: 0.15, broto: 0.12, flor: 0.02, tint: [0.92, 0.98, 0.78] },
   [BIOME.SWAMP]: { capim: 0.55, folha: 0.05, broto: 0.04, flor: 0.0, tint: [1.0, 0.95, 0.7] },
   [BIOME.BEACH]: { capim: 0.08, folha: 0.0, broto: 0.0, flor: 0.01, tint: [1.15, 1.1, 0.8] },
@@ -177,7 +177,9 @@ export class Grass {
         // quanto mais longe, menos tufos (e maiores): perto fica cheio, longe fica leve para a placa de vídeo
         const far = Math.min(1, Math.max(0, (Math.sqrt(dx * dx + dz * dz) / RR - 0.3) / 0.7));
         if (cellHash(ix, iz, 21) > 1 - 0.62 * far) continue;
-        if (!BY_BIOME[this.map.biomeAt(x, z)]?.relva) continue;
+        const rcfg = BY_BIOME[this.map.biomeAt(x, z)];
+        if (!rcfg?.relva) continue;
+        if (rcfg.relva < 1 && cellHash(ix, iz, 22) > rcfg.relva) continue;
         const rk = cellHash(ix, iz, 19) < 0.5 ? 'relva' : 'relva2';
         const rm = rk === 'relva' ? rmesh : rmesh2;
         if (n[rk] >= rm.userData.max) continue;
@@ -186,7 +188,7 @@ export class Grass {
         const rfade = 1 - Math.min(1, Math.max(0, (Math.sqrt(dx * dx + dz * dz) - RR * 0.75) / (RR * 0.25)));
         const sc = (0.95 + cellHash(ix, iz, 14) * 0.45) * (0.12 + 0.88 * rfade) * (1 + 0.4 * far);
         this._q.setFromAxisAngle(this._up, cellHash(ix, iz, 15) * 6.283);
-        this._s.set(sc, sc * (0.85 + cellHash(ix, iz, 16) * 0.35), sc);
+        this._s.set(sc, sc * (0.85 + cellHash(ix, iz, 16) * 0.35) * (rcfg.relvaK ?? 1), sc);
         this._p.set(x, h - 0.02, z);
         this._m.compose(this._p, this._q, this._s);
         rm.setMatrixAt(n[rk], this._m);
