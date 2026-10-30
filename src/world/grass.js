@@ -21,7 +21,7 @@ const BY_BIOME = {
   [BIOME.BEACH]: { capim: 0.08, folha: 0.0, broto: 0.0, flor: 0.01, tint: [1.15, 1.1, 0.8] },
   [BIOME.HIGHLAND]: { capim: 0.2, folha: 0.0, broto: 0.03, flor: 0.02, tint: [0.95, 0.95, 0.8] },
   // pastagem: o chão é coberto pela relva baixinha (abaixo); capim alto só de vez em quando, e mais baixo
-  [BIOME.PLAINS]: { capim: 0.22, folha: 0.02, broto: 0.01, flor: 0.06, tint: [1.0, 1.06, 0.78], hscale: 1.1, relva: true },
+  [BIOME.PLAINS]: { capim: 0.22, folha: 0.02, broto: 0.01, flor: 0.06, tint: [0.78, 0.94, 0.66], hscale: 1.1, relva: true },
 };
 
 // cores das flores (laranja do ARK, amarelo e branco-creme)
@@ -193,8 +193,9 @@ export class Grass {
         const v = 0.78 + cellHash(ix, iz, 17) * 0.4;
         const gold = cellHash(ix, iz, 18);
         // manchas: a maioria verde viva, alguns tufos dourados (como nos campos de Valheim)
-        const dry = gold > 0.78 ? 1.3 : gold > 0.6 ? 1.12 : 1;
-        this._c.setRGB(1.0 * v * dry, 1.04 * v, 0.8 * v / dry);
+        const dry = gold > 0.78 ? 1.38 : gold > 0.6 ? 1.15 : 1;
+        // verde mais fundo (como no Valheim), com manchas douradas
+        this._c.setRGB(0.74 * v * dry, 0.9 * v, 0.62 * v / dry);
         rm.setColorAt(n[rk], this._c);
         n[rk]++;
       }
