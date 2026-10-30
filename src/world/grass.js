@@ -21,7 +21,7 @@ const BY_BIOME = {
   [BIOME.BEACH]: { capim: 0.08, folha: 0.0, broto: 0.0, flor: 0.01, tint: [1.15, 1.1, 0.8] },
   [BIOME.HIGHLAND]: { capim: 0.2, folha: 0.0, broto: 0.03, flor: 0.02, tint: [0.95, 0.95, 0.8] },
   // pastagem: o chão é coberto pela relva baixinha (abaixo); capim alto só de vez em quando, e mais baixo
-  [BIOME.PLAINS]: { capim: 0.22, folha: 0.02, broto: 0.01, flor: 0.06, tint: [1.0, 1.06, 0.78], hscale: 0.85, relva: true },
+  [BIOME.PLAINS]: { capim: 0.22, folha: 0.02, broto: 0.01, flor: 0.06, tint: [1.0, 1.06, 0.78], hscale: 1.1, relva: true },
 };
 
 // cores das flores (laranja do ARK, amarelo e branco-creme)
@@ -65,8 +65,8 @@ export class Grass {
       folha: this._mesh(makeBroadPlant(), material, 2600, 'Folhagem'),
       broto: this._mesh(makeSprout(), material, 1800, 'Brotos'),
       flor: this._mesh(makeFlowerTuft(), material, 1500, 'Flores'),
-      relva: this._mesh(makeGramaCartao(2, 0.7), matGrama, 5200, 'Relva'),
-      relva2: this._mesh(makeGramaCartao(3, 0.6), matGrama, 4200, 'Relva 2'),
+      relva: this._mesh(makeGramaCartao(2, 1.12), matGrama, 5200, 'Relva'),
+      relva2: this._mesh(makeGramaCartao(3, 0.98), matGrama, 4200, 'Relva 2'),
     };
     this.enabled = true;
     this._last = new THREE.Vector2(1e9, 1e9);
@@ -159,7 +159,7 @@ export class Grass {
     // Relva baixinha cobrindo o chão das pastagens: grade fina (cada ponto vira um tufo), só perto do jogador
     const rmesh = this.kinds.relva;
     const rmesh2 = this.kinds.relva2;
-    const RC = 0.27 / Math.sqrt(Math.max(0.3, this.density)); // um tufo a cada ~27 cm: um encostando no outro
+    const RC = 0.23 / Math.sqrt(Math.max(0.3, this.density)); // tufos quase encostados: sem falhas no chão // um tufo a cada ~27 cm: um encostando no outro
     // o raio nunca passa do que cabe no limite de tufos (senão a borda ficava falhada)
     const RR = Math.min(this.radius * 0.6, 12, Math.sqrt(((rmesh.userData.max + rmesh2.userData.max) * RC * RC) / Math.PI) * 0.95);
     const rx0 = Math.floor((focus.x - RR) / RC);
@@ -181,9 +181,9 @@ export class Grass {
         const h = this.map.heightAt(x, z);
         if (h < 0.5 || this.water.bodyAt(x, z)) continue;
         const rfade = 1 - Math.min(1, Math.max(0, (Math.sqrt(dx * dx + dz * dz) - RR * 0.75) / (RR * 0.25)));
-        const sc = (0.85 + cellHash(ix, iz, 14) * 0.5) * (0.12 + 0.88 * rfade);
+        const sc = (0.95 + cellHash(ix, iz, 14) * 0.45) * (0.12 + 0.88 * rfade);
         this._q.setFromAxisAngle(this._up, cellHash(ix, iz, 15) * 6.283);
-        this._s.set(sc, sc * (0.8 + cellHash(ix, iz, 16) * 0.5), sc);
+        this._s.set(sc, sc * (0.85 + cellHash(ix, iz, 16) * 0.35), sc);
         this._p.set(x, h - 0.02, z);
         this._m.compose(this._p, this._q, this._s);
         rm.setMatrixAt(n[rk], this._m);
