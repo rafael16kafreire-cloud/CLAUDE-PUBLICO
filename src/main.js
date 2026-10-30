@@ -112,6 +112,12 @@ function boot(hotData = {}) {
 
   input.attach(canvas);
   input.canLock = () => !game.isTouch && game.state === STATE.PLAYING && !input.blocked;
+  // roda do mouse: distância da câmera na 3ª pessoa (como no Valheim)
+  input.onWheel = (dy) => {
+    if (!ctx || ctx.camCtl.mode !== 'terceira') return;
+    const z = Math.min(2, Math.max(0.55, (settings.get('cameraDist') ?? 1) + Math.sign(dy) * 0.12));
+    settings.set('cameraDist', Math.round(z * 100) / 100);
+  };
   game.isTouch = detectTouch();
   document.body.classList.toggle('is-touch', game.isTouch);
 
@@ -271,6 +277,7 @@ function boot(hotData = {}) {
     if (!ctx.touch.editing) ctx.touch.applyLayout(settings.get('buttonLayout'));
     ctx.debug.setVisible(settings.get('showDebug'));
     ctx.camCtl.setMode(settings.get('cameraMode'));
+    ctx.camCtl.zoom = settings.get('cameraDist') ?? 1;
   }
   events.on(EV.SETTINGS_CHANGED, applySettings);
   // texturas HD (qualidade alta) só trocam ao abrir o jogo de novo

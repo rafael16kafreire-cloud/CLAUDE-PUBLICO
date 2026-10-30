@@ -12,6 +12,7 @@ const GESTURES = [
   ['Arrastar a partir da borda esquerda', 'Roda de assovios / bichos'],
   ['Deslizar para cima (lado esquerdo)', 'Pular'],
   ['Deslizar para baixo (lado esquerdo)', 'Trocar munição / recarregar'],
+  ['Botão da câmera (canto de baixo, ao lado de agachar)', 'Troca entre primeira e terceira pessoa (como no Valheim)'],
   ['Tocar e segurar (lado esquerdo)', 'Andar (arrastar para a direção) · toque duplo e segurar: correr'],
   ['Tocar (lado direito)', 'Usar / coletar · atacar / atirar · ativar'],
   ['Tocar e segurar (lado direito)', 'Olhar ao redor (arrastando) · segurar parado: montar / descer (se estiver mirando um bicho)'],
@@ -25,6 +26,7 @@ const KEYS = [
   ['Barra rápida', 'teclas 1 a 8'],
   ['Montar / assovios / munição', 'F · T · Q'],
   ['Inspecionar / câmera / pausa', 'R · V · Esc'],
+  ['Visão: 1ª / 3ª pessoa · distância', 'V troca · roda do mouse aproxima e afasta (3ª pessoa)'],
 ];
 
 export class PauseMenu {
@@ -119,6 +121,14 @@ export class PauseMenu {
               <input type="range" id="opt-sens" min="0.3" max="2.5" step="0.1">
             </div>
             <div class="po-page po-controls" data-page="controles">
+              <h3>VISÃO (CÂMERA)</h3>
+              <label for="opt-camera2">Visão</label>
+              <select id="opt-camera2">
+                <option value="terceira">Terceira pessoa (estilo Valheim)</option>
+                <option value="primeira">Primeira pessoa</option>
+              </select>
+              <label for="opt-camdist">Distância da câmera (3ª pessoa) <output id="opt-camdist-out"></output></label>
+              <input type="range" id="opt-camdist" min="0.55" max="2" step="0.05">
               <h3>CONTROLES BÁSICOS (GESTOS)</h3>
               ${GESTURES.map(([k, d]) => `<div class="po-ctrl"><b>${k}</b><span>${d}</span></div>`).join('')}
               <h3>TECLADO (PC)</h3>
@@ -153,12 +163,15 @@ export class PauseMenu {
       touch: $('opt-touch'),
       scheme: $('opt-scheme'),
       camera: $('opt-camera'),
+      camera2: $('opt-camera2'),
+      camdist: $('opt-camdist'),
       debug: $('opt-debug'),
       smaa: $('opt-smaa'),
       auto: $('opt-auto'),
     };
     this.outs = {
       view: $('opt-view-out'),
+      camdist: $('opt-camdist-out'),
       bright: $('opt-bright-out'),
       vol: $('opt-vol-out'),
       music: $('opt-music-out'),
@@ -224,6 +237,8 @@ export class PauseMenu {
     f.touch.addEventListener('change', () => settings.set('touchControls', f.touch.value));
     f.scheme.addEventListener('change', () => settings.set('touchScheme', f.scheme.value));
     f.camera.addEventListener('change', () => settings.set('cameraMode', f.camera.value));
+    f.camera2.addEventListener('change', () => settings.set('cameraMode', f.camera2.value));
+    f.camdist.addEventListener('input', () => settings.set('cameraDist', Number(f.camdist.value)));
     f.debug.addEventListener('change', () => settings.set('showDebug', f.debug.checked));
     f.smaa.addEventListener('change', () => settings.set('smaa', f.smaa.checked));
     f.auto.addEventListener('change', () => settings.set('autoQuality', f.auto.checked));
@@ -247,6 +262,9 @@ export class PauseMenu {
     f.touch.value = v.touchControls;
     f.scheme.value = v.touchScheme;
     f.camera.value = v.cameraMode;
+    f.camera2.value = v.cameraMode;
+    f.camdist.value = String(v.cameraDist ?? 1);
+    this.outs.camdist.textContent = `${Math.round((v.cameraDist ?? 1) * 100)}%`;
     f.debug.checked = !!v.showDebug;
     f.smaa.checked = v.smaa !== false;
     f.auto.checked = !!v.autoQuality;

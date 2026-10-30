@@ -19,6 +19,7 @@ export class PlayerCamera {
     this.pitch = -0.12;
     this.mode = 'terceira';
     this._dist = THIRD_DISTANCE;
+    this.zoom = 1; // 3ª pessoa: multiplica a distância (roda do mouse / opção Distância da câmera)
     this._target = new THREE.Vector3();
     this._forward = new THREE.Vector3();
     this._right = new THREE.Vector3();
@@ -113,7 +114,7 @@ export class PlayerCamera {
     // Terceira pessoa: um pouco acima e ao lado do ombro.
     t.addScaledVector(this._right, SHOULDER);
     // montado num bicho grande: câmera mais longe para ver o bicho todo
-    const wanted = player.riding ? THIRD_DISTANCE + player.riding.radius * 3.5 : player.crouching ? CROUCH_DISTANCE : THIRD_DISTANCE;
+    const wanted = (player.riding ? THIRD_DISTANCE + player.riding.radius * 3.5 : player.crouching ? CROUCH_DISTANCE : THIRD_DISTANCE) * this.zoom;
 
     // Procura o chão entre o jogador e a câmera.
     let allowed = wanted;

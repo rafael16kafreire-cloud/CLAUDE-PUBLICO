@@ -143,7 +143,7 @@ export class TouchControls {
   // Destaca os botões que estão "ligados" (correr, agachar).
   updateStates(player) {
     this.btn.run.classList.toggle('on', this.input.runToggle);
-    this.btn.camera.hidden = !player.riding; // montado: botão para trocar 1ª / 3ª pessoa
+    this.btn.camera.hidden = false; // botão para trocar 1ª / 3ª pessoa (sempre à mão, como no Valheim)
     this.btn.crouch.classList.toggle('on', player.crouching);
     // nadando: subir/descer (só troca o ícone quando muda)
     this._flyRide = !!player.riding?.flies; // montado num voador: segurar o dedo para cima sobe
