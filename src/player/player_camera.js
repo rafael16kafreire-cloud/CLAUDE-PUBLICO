@@ -6,9 +6,10 @@
 import * as THREE from 'three';
 import { clamp } from '../core/math.js';
 
-const THIRD_DISTANCE = 2.9;
-const CROUCH_DISTANCE = 2.4;
-const SHOULDER = 0; // personagem no centro, a mira fica em cima dele (como no Valheim)
+const THIRD_DISTANCE = 3.4;
+const CROUCH_DISTANCE = 2.8;
+const SHOULDER = 0.22; // personagem um pouco à esquerda da mira, como no Valheim
+const LIFT = 0.55; // câmera acima do ombro: o personagem fica na parte de baixo da tela e a mira, à frente dele
 
 export class PlayerCamera {
   constructor(camera, world) {
@@ -129,6 +130,7 @@ export class PlayerCamera {
     this._dist = allowed < this._dist ? allowed : this._dist + (allowed - this._dist) * Math.min(1, dt * 4);
 
     this.camera.position.copy(t).addScaledVector(this._forward, -this._dist);
+    this.camera.position.y += LIFT * Math.min(1, this._dist / 2);
     const floor = this.world.heightAt(this.camera.position.x, this.camera.position.z) + 0.25;
     if (this.camera.position.y < floor) this.camera.position.y = floor;
   }
