@@ -1229,7 +1229,7 @@ export function makeFlowerTuft() {
 
 
 // Plantinhas miúdas do chão da mata (só enfeite, não dá para pegar): 0 = trevo/folhinhas redondas,
-// 1 = mudinha de folhas finas em roseta. Pequenas (~20 cm) e baratas (≈40 triângulos).
+// 1 = mudinha de folhas finas em roseta. Pequenas (~20 cm) e baratas (≈20 a 36 triângulos).
 export function makeMiniPlant(kind = 0) {
   const verts = [];
   const winds = [];
@@ -1244,8 +1244,8 @@ export function makeMiniPlant(kind = 0) {
   };
   if (kind === 0) {
     // 4 hastes, cada uma com 3 folhinhas redondas (trevo)
-    for (let i = 0; i < 4; i++) {
-      const a = i * 1.7 + 0.4;
+    for (let i = 0; i < 3; i++) {
+      const a = i * 2.1 + 0.4;
       const r = 0.05 + (i % 2) * 0.05;
       const bx = Math.sin(a) * r;
       const bz = Math.cos(a) * r;
@@ -1256,11 +1256,11 @@ export function makeMiniPlant(kind = 0) {
         const cz = bz + Math.cos(t) * 0.05;
         const b = verts.length / 3;
         push(cx, hh, cz, 1, light);
-        for (let m = 0; m < 6; m++) {
-          const q = (m / 6) * Math.PI * 2;
-          push(cx + Math.cos(q) * 0.045, hh + 0.012 + (m % 2) * 0.008, cz + Math.sin(q) * 0.045, 1, m % 2 ? light : dark);
+        for (let m = 0; m < 4; m++) {
+          const q = (m / 4) * Math.PI * 2;
+          push(cx + Math.cos(q) * 0.05, hh + 0.012 + (m % 2) * 0.008, cz + Math.sin(q) * 0.05, 1, m % 2 ? light : dark);
         }
-        for (let m = 0; m < 6; m++) idx.push(b, b + 1 + m, b + 1 + ((m + 1) % 6), b, b + 1 + ((m + 1) % 6), b + 1 + m);
+        for (let m = 0; m < 4; m++) idx.push(b, b + 1 + m, b + 1 + ((m + 1) % 4)); // o material já é de dois lados
       }
     }
   } else {
@@ -1279,7 +1279,6 @@ export function makeMiniPlant(kind = 0) {
       push(sx * L * 0.5 + px * 1.4, L * 0.55, sz * L * 0.5 + pz * 1.4, 0.5, dark.clone().lerp(light, 0.5));
       push(sx * L, L * 0.62, sz * L, 1, light);
       idx.push(b, b + 1, b + 2, b + 1, b + 3, b + 2, b + 2, b + 3, b + 4);
-      idx.push(b + 2, b + 1, b, b + 2, b + 3, b + 1, b + 4, b + 3, b + 2);
     }
   }
   const g = sheet(verts, idx, winds);
