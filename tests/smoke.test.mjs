@@ -843,7 +843,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   });
   const land = (biomes.selva ?? 0) + (biomes.igapo ?? 0) + (biomes.pantano ?? 0) + (biomes.praia ?? 0);
   check('Mapa: floresta, igapó, pântano, praia, neve da Lapônia, Serra Rochosa e Campos', Object.keys(biomes).every((k) => ['mar', 'praia', 'selva', 'igapo', 'pantano', 'neve', 'serra', 'campos'].includes(k)) && biomes.neve > 0 && biomes.serra > 0 && biomes.campos > 0, JSON.stringify(biomes));
-  check('Mapa: a maior parte da terra é Floresta Amazônica', biomes.selva / land > 0.5 && biomes.pantano > 0, `${Math.round((biomes.selva / land) * 100)}% floresta`);
+  check('Mapa: a Floresta Amazônica é o maior bioma (depois vêm a pastagem e a cordilheira)', biomes.selva / land > 0.4 && biomes.selva > biomes.campos && biomes.pantano > 0, `${Math.round((biomes.selva / land) * 100)}% floresta`);
   const plants = await page.evaluate(() => window.__ilha.ctx.world.vegetation.countByType());
   check('Floresta: samambaias gigantes, bananeiras, bagas e troncos caídos', ['samambaia_gigante', 'bananeira', 'arbusto_mejo', 'arbusto_escura', 'tronco_caido'].every((k) => plants[k] > 20) && (plants.sumauma ?? 0) + (plants.copa_g_a ?? 0) + (plants.copa_g_b ?? 0) > 20, JSON.stringify(plants));
 

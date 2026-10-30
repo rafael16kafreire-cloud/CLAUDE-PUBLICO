@@ -1,6 +1,6 @@
 {
   "_explicacao": "Formato do mapa (como o The Island do ARK). Distâncias em metros. Centro = x 0, z 0. Norte = z negativo, Sul = z positivo, Leste = x positivo, Oeste = x negativo. Neve no noroeste, vulcão a oeste do centro, pântano no sudoeste, praias de nascer no sul, serras (Pico de Far, Pico Vermelho, Presa e Dente Congelados) e campos.",
-  "tamanho_terreno_m": 4000,
+  "tamanho_terreno_m": 5600,
   "tamanho_celula_m": 5,
   "tamanho_pedaco_celulas": 32,
   "_contorno": "Contorno da ilha em [longitude, latitude] na escala 0 a 100 do mapa do ARK (0,0 = noroeste, 100,100 = sudeste). projecao: o centro do mapa (50, 50) e quantos metros do jogo vale cada unidade. ilhotas = pequenas ilhas em volta (centro em lon/lat e raio em unidades).",
@@ -64,6 +64,14 @@
     [8, 36],
     [12, 30],
     [10, 26]
+  ],
+  "_terras_extra": "Terra nova unida à ilha (x, z, raio_m): círculos que se somam ao contorno. Leste = cordilheira e floresta nova; Sul = a Pastagem Imensa.",
+  "terras_extra": [
+    { "x": 1750, "z": -600, "raio_m": 380 }, { "x": 1800, "z": -100, "raio_m": 420 }, { "x": 1750, "z": 500, "raio_m": 400 }, { "x": 1700, "z": 950, "raio_m": 350 },
+    { "x": 2150, "z": -750, "raio_m": 380 }, { "x": 2250, "z": -250, "raio_m": 450 }, { "x": 2250, "z": 300, "raio_m": 450 }, { "x": 2150, "z": 800, "raio_m": 400 },
+    { "x": 2450, "z": -500, "raio_m": 300 }, { "x": 2480, "z": 100, "raio_m": 330 }, { "x": 2450, "z": 650, "raio_m": 300 }, { "x": 2000, "z": 1350, "raio_m": 420 },
+    { "x": -600, "z": 1900, "raio_m": 420 }, { "x": -100, "z": 2100, "raio_m": 480 }, { "x": 450, "z": 2200, "raio_m": 520 }, { "x": 1000, "z": 2100, "raio_m": 500 },
+    { "x": 1500, "z": 2000, "raio_m": 450 }, { "x": 1850, "z": 1750, "raio_m": 350 }, { "x": 300, "z": 1750, "raio_m": 380 }, { "x": 200, "z": 2300, "raio_m": 330 }, { "x": -1000, "z": 1750, "raio_m": 300 }
   ],
   "ilhotas": [
     { "nome": "Ilha do Cragg", "lon": 24.8, "lat": 83.1, "raio": 3.6 },
@@ -131,7 +139,10 @@
     { "nome": "Pastagem Central", "x": 600, "z": 300 },
     { "nome": "Pastagem Sudeste", "x": 700, "z": 800 },
     { "nome": "Pastagem Norte", "x": -150, "z": -850 },
-    { "nome": "Pastagem Nordeste", "x": 1450, "z": -550 }
+    { "nome": "Pastagem Nordeste", "x": 1450, "z": -550 },
+    { "nome": "Cordilheira Leste", "x": 2100, "z": 0 },
+    { "nome": "Floresta do Leste", "x": 2450, "z": 250 },
+    { "nome": "Pastagem Imensa", "x": 450, "z": 2150 }
   ],
 
   "_zonas": "Cada ponto de renascer vira 3 zonas na tela de morte (a posição varia um pouco). zona = nome, dificuldade = Fácil, Médio ou Difícil.",
@@ -197,7 +208,16 @@
     { "x": 1148, "z": -656, "raio_m": 170, "altura_m": 60 },
     { "x": -84, "z": 264, "raio_m": 140, "altura_m": 50 },
     { "x": 136, "z": -1124, "raio_m": 150, "altura_m": 58 },
-    { "x": 364, "z": -576, "raio_m": 130, "altura_m": 52 }
+    { "x": 364, "z": -576, "raio_m": 130, "altura_m": 52 },
+    { "x": 1900, "z": -650, "raio_m": 170, "altura_m": 75 },
+    { "x": 2050, "z": -330, "raio_m": 190, "altura_m": 100 },
+    { "x": 1950, "z": -20, "raio_m": 180, "altura_m": 90 },
+    { "x": 2150, "z": 230, "raio_m": 200, "altura_m": 110 },
+    { "x": 2000, "z": 480, "raio_m": 170, "altura_m": 85 },
+    { "x": 2300, "z": -620, "raio_m": 160, "altura_m": 80 },
+    { "x": 2320, "z": -90, "raio_m": 170, "altura_m": 95 },
+    { "x": 2300, "z": 520, "raio_m": 170, "altura_m": 85 },
+    { "x": 2120, "z": 780, "raio_m": 160, "altura_m": 75 }
   ],
   "campos": [
     { "x": 250, "z": 1150, "raio_m": 380 },
@@ -208,6 +228,11 @@
     { "x": -150, "z": -850, "raio_m": 330 },
     { "x": 1450, "z": -550, "raio_m": 230 },
     { "x": 1200, "z": 1000, "raio_m": 300 },
-    { "x": -1000, "z": 1000, "raio_m": 300 }
+    { "x": -1000, "z": 1000, "raio_m": 300 },
+    { "x": -100, "z": 2100, "raio_m": 620 },
+    { "x": 700, "z": 2150, "raio_m": 650 },
+    { "x": 1400, "z": 2050, "raio_m": 560 },
+    { "x": 300, "z": 1800, "raio_m": 460 },
+    { "x": 2000, "z": 1350, "raio_m": 340 }
   ]
 }

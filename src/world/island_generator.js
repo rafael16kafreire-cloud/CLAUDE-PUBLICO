@@ -132,6 +132,7 @@ export class IslandMap {
       const [x, z] = this.project(o.lon, o.lat);
       return { x, z, r: o.raio * layout.projecao.m_por_unidade };
     });
+    this.extra = layout.terras_extra ?? []; // terra nova (leste e sul), unida ao contorno
     this.lap = layout.laponia;
     this.volc = layout.vulcao;
     this.alpsH = decodeU16(ALPES_ALTURAS, ALPES_N);
@@ -178,6 +179,7 @@ export class IslandMap {
     const wobble = fbm(this.nCoast, x * 0.0045, z * 0.0045, 4) * this.L.variacao_costa_m;
     let d = inside ? Math.sqrt(best) : -Math.sqrt(best);
     for (const o of this.islets) d = Math.max(d, o.r - Math.hypot(x - o.x, z - o.z));
+    for (const o of this.extra) d = Math.max(d, o.raio_m - Math.hypot(x - o.x, z - o.z));
     return d + wobble;
   }
 
@@ -395,11 +397,30 @@ export class IslandMap {
   // ----------------------------------------------------------
   _generate() {
     const v = this.verts;
+    // Mar aberto longe da costa: a conta da costa (a mais cara) é feita numa grade grossa (a cada 100 m);
+    // onde os 4 cantos estão bem dentro do mar, o fundo é o mesmo em todo lugar (a altura é a fórmula do mar
+    // fundo, igual à de rawHeight para d < -175), então pula a conta fina.
+    const GS = 100;
+    const gn = Math.ceil(this.size / GS) + 2;
+    const coarse = new Float32Array(gn * gn);
+    for (let gj = 0; gj < gn; gj++) for (let gi = 0; gi < gn; gi++) coarse[gj * gn + gi] = this.coastDistance(gi * GS - this.half, gj * GS - this.half);
     for (let j = 0; j < v; j++) {
       const z = j * this.cell - this.half;
+      const gj = Math.floor((z + this.half) / GS);
       for (let i = 0; i < v; i++) {
         const x = i * this.cell - this.half;
         const idx = j * v + i;
+        const gi = Math.floor((x + this.half) / GS);
+        const c0 = coarse[gj * gn + gi];
+        const c1 = coarse[gj * gn + gi + 1];
+        const c2 = coarse[(gj + 1) * gn + gi];
+        const c3 = coarse[(gj + 1) * gn + gi + 1];
+        if (Math.max(c0, c1, c2, c3) < -420) {
+          const dd = (c0 + c1 + c2 + c3) / 4;
+          this.coast[idx] = dd;
+          this.heights[idx] = -this.L.profundidade_mar_m + this.nDetail(x * 0.02, z * 0.02) * 0.6;
+          continue;
+        }
         const d = this.coastDistance(x, z);
         this.coast[idx] = d;
         this.heights[idx] = this.rawHeight(x, z, d);
