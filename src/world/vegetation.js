@@ -87,6 +87,7 @@ const TYPES = {
   tronco_caido: { hi: () => vegGeometry('musgo', 5, 0), lo: P.makeFallenLogLow, mat: () => vegMaterial('musgo'), textured: true, collider: 'log', log: [2.3, 0.7, 1.5], shadow: true, scale: [0.8, 1.3], res: 'tronco', maxDist: 140 },
   tronco_pinho: { hi: () => vegGeometry('pinho', 9, 0), lo: P.makeFallenLogLow, mat: () => vegMaterial('pinho'), textured: true, collider: 'log', log: [4.3, 0.45, 0.9], shadow: true, scale: [0.8, 1.2], res: 'tronco', maxDist: 140 },
   pedrinhas: { foot: 0.05, hi: P.makePebbles, collider: 0, shadow: false, scale: [0.8, 1.3], res: 'pedrinhas', maxDist: 45 },
+  cogumelos: { foot: 0.05, hi: P.makeMushrooms, collider: 0, shadow: false, scale: [0.8, 1.5], res: null, maxDist: 40 },
   gravetos: { foot: 0.05, hi: P.makeSticks, collider: 0, shadow: false, scale: [0.8, 1.3], res: 'gravetos', maxDist: 45 },
   pinheiro: { foot: 0.4, hi: P.makeSpruce, lo: P.makeSpruceLow, imp: true, collider: 0.3, shadow: true, scale: [0.7, 1.3], res: 'arvore_mole', cold: true },
   // modelos da neve enviados pelo jogador (mat = material próprio, com textura)
@@ -269,7 +270,7 @@ export class Vegetation {
 
         const scale = def.scale[0] + r2 * (def.scale[1] - def.scale[0]);
         const rot = r3 * Math.PI * 2;
-        const sink = type === 'pedra_musgo' || def.rock ? 0.2 * scale : def.collider === 'log' ? 0.12 : (type === 'gravetos' || type === 'pedrinhas') ? 0.02 : 0.15;
+        const sink = type === 'pedra_musgo' || def.rock ? 0.2 * scale : def.collider === 'log' ? 0.12 : (type === 'gravetos' || type === 'pedrinhas' || type === 'cogumelos') ? 0.02 : 0.15;
         // Em morro: apoia no ponto MAIS BAIXO do chão embaixo da planta
         // (senão um lado fica "flutuando").
         let ground = h;

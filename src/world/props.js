@@ -942,6 +942,25 @@ export function makePebbles() {
 }
 
 // Gravetos secos caídos (pega com Interagir)
+// Cogumelos do chão da mata (só enfeite): 5 cogumelos de tamanhos e cores diferentes
+export function makeMushrooms() {
+  const parts = [];
+  const caps = ['#8a4a2e', '#c9b48a', '#b0432f', '#a89070', '#7a5a3c'];
+  [[0, 0, 0.1, 0.16], [0.17, 0.08, 0.07, 0.11], [-0.14, 0.12, 0.06, 0.09], [0.05, -0.16, 0.08, 0.13], [-0.1, -0.1, 0.05, 0.08]].forEach(([x, z, r, h], i) => {
+    parts.push(paint(cyl(r * 0.28, r * 0.36, h, [x, h / 2, z], 6), '#e4dcc4', 0.1));
+    const cap = blob(r, [x, h, z], [1.25, 0.6, 1.25], [7, 4], 0.08, 90 + i);
+    cap.computeVertexNormals();
+    parts.push(paintFn(cap, (c, px, py, pz) => {
+      c.set(caps[i % caps.length]);
+      c.multiplyScalar(0.88 + hash3(px, py, pz, 5) * 0.24);
+    }));
+  });
+  const m = merge(parts);
+  const uv = m.attributes.uv;
+  for (let k = 0; k < uv.count; k++) uv.setXY(k, WHITE_UV[0], 0.55);
+  return m;
+}
+
 export function makeSticks() {
   return merge([
     paint(limb([-0.45, 0.04, -0.1], [0.5, 0.05, 0.12], 0.03, 0.018, 4), '#6e5236', 0.2),
