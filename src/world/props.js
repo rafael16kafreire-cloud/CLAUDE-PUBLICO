@@ -1208,6 +1208,67 @@ export function makeFlowerTuft() {
   return g;
 }
 
+
+// Plantinhas miúdas do chão da mata (só enfeite, não dá para pegar): 0 = trevo/folhinhas redondas,
+// 1 = mudinha de folhas finas em roseta. Pequenas (~20 cm) e baratas (≈40 triângulos).
+export function makeMiniPlant(kind = 0) {
+  const verts = [];
+  const winds = [];
+  const cols = [];
+  const idx = [];
+  const dark = new THREE.Color('#2f5a22');
+  const light = new THREE.Color('#68a040');
+  const push = (x, y, z, w, c) => {
+    verts.push(x, y, z);
+    winds.push(w);
+    cols.push(c.r, c.g, c.b);
+  };
+  if (kind === 0) {
+    // 4 hastes, cada uma com 3 folhinhas redondas (trevo)
+    for (let i = 0; i < 4; i++) {
+      const a = i * 1.7 + 0.4;
+      const r = 0.05 + (i % 2) * 0.05;
+      const bx = Math.sin(a) * r;
+      const bz = Math.cos(a) * r;
+      const hh = 0.07 + (i % 3) * 0.03;
+      for (let k = 0; k < 3; k++) {
+        const t = a + (k - 1) * 1.2;
+        const cx = bx + Math.sin(t) * 0.05;
+        const cz = bz + Math.cos(t) * 0.05;
+        const b = verts.length / 3;
+        push(cx, hh, cz, 1, light);
+        for (let m = 0; m < 6; m++) {
+          const q = (m / 6) * Math.PI * 2;
+          push(cx + Math.cos(q) * 0.045, hh + 0.012 + (m % 2) * 0.008, cz + Math.sin(q) * 0.045, 1, m % 2 ? light : dark);
+        }
+        for (let m = 0; m < 6; m++) idx.push(b, b + 1 + m, b + 1 + ((m + 1) % 6), b, b + 1 + ((m + 1) % 6), b + 1 + m);
+      }
+    }
+  } else {
+    // roseta de 7 folhas finas e arqueadas
+    for (let i = 0; i < 7; i++) {
+      const a = (i / 7) * Math.PI * 2 + 0.3;
+      const L = 0.16 + (i % 3) * 0.04;
+      const sx = Math.sin(a);
+      const sz = Math.cos(a);
+      const px = -sz * 0.022;
+      const pz = sx * 0.022;
+      const b = verts.length / 3;
+      push(sx * 0.01 - px, 0, sz * 0.01 - pz, 0, dark);
+      push(sx * 0.01 + px, 0, sz * 0.01 + pz, 0, dark);
+      push(sx * L * 0.5 - px * 1.4, L * 0.55, sz * L * 0.5 - pz * 1.4, 0.5, dark.clone().lerp(light, 0.5));
+      push(sx * L * 0.5 + px * 1.4, L * 0.55, sz * L * 0.5 + pz * 1.4, 0.5, dark.clone().lerp(light, 0.5));
+      push(sx * L, L * 0.62, sz * L, 1, light);
+      idx.push(b, b + 1, b + 2, b + 1, b + 3, b + 2, b + 2, b + 3, b + 4);
+      idx.push(b + 2, b + 1, b, b + 2, b + 3, b + 1, b + 4, b + 3, b + 2);
+    }
+  }
+  const g = sheet(verts, idx, winds);
+  g.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
+  g.computeBoundingSphere();
+  return g;
+}
+
 // Plantinha de folhas largas (tipo "orelha-de-elefante")
 export function makeBroadPlant() {
   const parts = [];

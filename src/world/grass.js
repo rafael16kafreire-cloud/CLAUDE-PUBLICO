@@ -8,20 +8,20 @@
 import * as THREE from 'three';
 import { BIOME } from './island_generator.js';
 import { addWind } from './materials.js';
-import { makeBroadPlant, makeSprout, makeFlowerTuft, makeGramaCartao } from './props.js';
+import { makeBroadPlant, makeSprout, makeFlowerTuft, makeMiniPlant, makeGramaCartao } from './props.js';
 import ATLAS from './imported/grama_atlas.js';
 
 const CELL = 1.25;
 
 // Quanto de cada planta por bioma (0 a 1).
 const BY_BIOME = {
-  [BIOME.JUNGLE]: { capim: 0.5, folha: 0.22, broto: 0.16, flor: 0.03, tint: [0.9, 1.0, 0.82], relva: 0.5, relvaK: 0.7 }, // chão da mata forrado de mato verde (como a Floresta Negra)
-  [BIOME.IGAPO]: { capim: 0.55, folha: 0.15, broto: 0.12, flor: 0.02, tint: [0.92, 0.98, 0.78] },
+  [BIOME.JUNGLE]: { capim: 0.5, folha: 0.22, broto: 0.16, flor: 0.03, tint: [0.9, 1.0, 0.82], relva: 0.5, relvaK: 0.7, mini: 1 }, // chão da mata forrado de mato verde (como a Floresta Negra)
+  [BIOME.IGAPO]: { capim: 0.55, folha: 0.15, broto: 0.12, flor: 0.02, tint: [0.92, 0.98, 0.78], mini: 0.8 },
   [BIOME.SWAMP]: { capim: 0.55, folha: 0.05, broto: 0.04, flor: 0.0, tint: [1.0, 0.95, 0.7] },
   [BIOME.BEACH]: { capim: 0.08, folha: 0.0, broto: 0.0, flor: 0.01, tint: [1.15, 1.1, 0.8] },
   [BIOME.HIGHLAND]: { capim: 0.2, folha: 0.0, broto: 0.03, flor: 0.02, tint: [0.95, 0.95, 0.8] },
   // pastagem: o chão é coberto pela relva baixinha (abaixo); capim alto só de vez em quando, e mais baixo
-  [BIOME.PLAINS]: { capim: 0.22, folha: 0.02, broto: 0.01, flor: 0.11, tint: [0.78, 0.94, 0.66], hscale: 1.1, relva: true },
+  [BIOME.PLAINS]: { capim: 0.22, folha: 0.02, broto: 0.01, flor: 0.11, tint: [0.78, 0.94, 0.66], hscale: 1.1, relva: true, mini: 0.3 },
 };
 
 // cores das flores (laranja do ARK, amarelo e branco-creme)
@@ -67,6 +67,8 @@ export class Grass {
       flor: this._mesh(makeFlowerTuft(), material, 1500, 'Flores'),
       relva: this._mesh(makeGramaCartao(2, 1.12), matGrama, 5200, 'Relva'),
       relva2: this._mesh(makeGramaCartao(3, 0.98), matGrama, 4200, 'Relva 2'),
+      mini: this._mesh(makeMiniPlant(0), material, 7000, 'Plantinhas'),
+      mini2: this._mesh(makeMiniPlant(1), material, 6000, 'Plantinhas 2'),
     };
     this.enabled = true;
     this._last = new THREE.Vector2(1e9, 1e9);
@@ -113,7 +115,7 @@ export class Grass {
     const z0 = Math.floor((focus.z - R) / CELL);
     const z1 = Math.floor((focus.z + R) / CELL);
     const r2 = R * R;
-    const n = { capim: 0, capim2: 0, folha: 0, broto: 0, flor: 0, relva: 0, relva2: 0 };
+    const n = { capim: 0, capim2: 0, folha: 0, broto: 0, flor: 0, relva: 0, relva2: 0, mini: 0, mini2: 0 };
     for (let iz = z0; iz <= z1; iz++) {
       for (let ix = x0; ix <= x1; ix++) {
         const x = (ix + cellHash(iz, ix, 1)) * CELL;
@@ -200,6 +202,48 @@ export class Grass {
         this._c.setRGB(0.74 * v * dry, 0.9 * v, 0.62 * v / dry);
         rm.setColorAt(n[rk], this._c);
         n[rk]++;
+      }
+    }
+    // Plantinhas miúdas cobrindo o chão (só enfeite, sem coleta): grade fina, só perto do jogador
+    const MC = 0.3 / Math.sqrt(Math.max(0.3, this.density));
+    const mmax = this.kinds.mini.userData.max + this.kinds.mini2.userData.max;
+    const MR = Math.min(this.radius * 0.6, 10, Math.sqrt((mmax * MC * MC) / Math.PI) * 0.95);
+    const mx0 = Math.floor((focus.x - MR) / MC);
+    const mx1 = Math.floor((focus.x + MR) / MC);
+    const mz0 = Math.floor((focus.z - MR) / MC);
+    const mz1 = Math.floor((focus.z + MR) / MC);
+    for (let iz = mz0; iz <= mz1 && n.mini + n.mini2 < mmax; iz++) {
+      for (let ix = mx0; ix <= mx1; ix++) {
+        const x = (ix + cellHash(iz, ix, 31)) * MC;
+        const z = (iz + cellHash(ix, iz, 32)) * MC;
+        const dx = x - focus.x;
+        const dz = z - focus.z;
+        const dd = Math.sqrt(dx * dx + dz * dz);
+        if (dd > MR) continue;
+        const far = Math.min(1, Math.max(0, (dd / MR - 0.3) / 0.7));
+        if (cellHash(ix, iz, 33) > 1 - 0.35 * far) continue;
+        const mcfg = BY_BIOME[this.map.biomeAt(x, z)];
+        if (!mcfg?.mini || cellHash(ix, iz, 34) > mcfg.mini) continue;
+        const mk = cellHash(ix, iz, 35) < 0.55 ? 'mini' : 'mini2';
+        const mm = this.kinds[mk];
+        if (n[mk] >= mm.userData.max) continue;
+        const h = this.map.heightAt(x, z);
+        if (h < 0.5 || this.water.bodyAt(x, z)) continue;
+        const mfade = 1 - Math.min(1, Math.max(0, (dd - MR * 0.75) / (MR * 0.25)));
+        const sc = (0.7 + cellHash(ix, iz, 36) * 0.9) * (0.15 + 0.85 * mfade) * (1 + 0.5 * far);
+        this._q.setFromAxisAngle(this._up, cellHash(ix, iz, 37) * 6.283);
+        this._s.set(sc, sc, sc);
+        this._p.set(x, h - 0.01, z);
+        this._m.compose(this._p, this._q, this._s);
+        mm.setMatrixAt(n[mk], this._m);
+        // verdes variados: musgo, verde vivo, amarelado e alguns avermelhados
+        const t = cellHash(ix, iz, 38);
+        const v = 0.75 + cellHash(ix, iz, 39) * 0.4;
+        if (t < 0.18) this._c.setRGB(1.25 * v, 0.85 * v, 0.6 * v);
+        else if (t < 0.4) this._c.setRGB(1.05 * v, 1.12 * v, 0.55 * v);
+        else this._c.setRGB(0.8 * v, 1.0 * v, 0.7 * v);
+        mm.setColorAt(n[mk], this._c);
+        n[mk]++;
       }
     }
     for (const [k, mesh] of Object.entries(this.kinds)) {
