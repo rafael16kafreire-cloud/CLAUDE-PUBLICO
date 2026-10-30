@@ -266,6 +266,8 @@ function boot(hotData = {}) {
     document.body.classList.toggle('is-touch', game.isTouch);
     if (!ctx) return;
     ctx.world.setQuality(q);
+    const lp = settings.get('lowPoly');
+    ctx.world.setLowPoly(lp === 'ligado' ? true : lp === 'desligado' ? false : !!ctx.world._autoLow);
     const vd = settings.get('viewDistance');
     ctx.world.setViewDistance(vd);
     camera.far = vd + 40;
@@ -989,7 +991,8 @@ function boot(hotData = {}) {
     perf.frames = 0;
     if (fps >= 22) return;
     // 1º passo: grama e árvores low poly (mantém a qualidade do resto); 2º passo: desce a qualidade
-    if (!ctx.world.lowPoly) {
+    if (!ctx.world.lowPoly && settings.get('lowPoly') === 'auto') {
+      ctx.world._autoLow = true;
       ctx.world.setLowPoly(true);
       perf.warmup = 4;
       events.emit(EV.MESSAGE, { text: `Jogo lento (${Math.round(fps)} FPS): grama e árvores em low poly.`, kind: 'warn' });
