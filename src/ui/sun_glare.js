@@ -19,6 +19,12 @@ export class SunGlare {
     el.className = 'sun-glare';
     el.hidden = true;
     el.innerHTML = '<i class="sg-core"></i><i class="sg-streak"></i><i class="sg-g sg-g1"></i><i class="sg-g sg-g2"></i><i class="sg-g sg-g3"></i>';
+    // névoa dourada do sol baixo (cobre boa parte da tela, mesmo com o sol fora de vista)
+    const haze = document.createElement('div');
+    haze.className = 'sun-haze';
+    haze.hidden = true;
+    parent.appendChild(haze);
+    this.haze = haze;
     parent.appendChild(el);
     // lavagem branca em volta do sol (tela clareia), some devagar quando desvia o olhar
     const wash = document.createElement('div');
@@ -50,11 +56,33 @@ export class SunGlare {
     const sunUp = 1 - smooth(0.25, 0.75, night);
     if (!active || sunUp < 0.02) {
       this.el.hidden = true;
+      this.haze.hidden = true;
       return;
     }
     camera.getWorldDirection(_f);
     const dir = sky.sunDir;
     const dot = _f.dot(dir);
+    // névoa dourada: forte com o sol baixo (manhã e fim de tarde), mais forte de frente para ele
+    {
+      const lowSun = 1 - smooth(0.12, 0.7, dir.y);
+      const front = 0.3 + 0.7 * smooth(-0.35, 0.6, dot);
+      const hz = sunUp * lowSun * front * 0.75 + sunUp * 0.05;
+      if (hz < 0.02) {
+        this.haze.hidden = true;
+      } else {
+        _v.copy(camera.position).addScaledVector(dir, 1000).project(camera);
+        const W0 = window.innerWidth;
+        const H0 = window.innerHeight;
+        const cx0 = dot > 0 ? Math.max(-0.4 * W0, Math.min(1.4 * W0, (_v.x * 0.5 + 0.5) * W0)) : W0 * 0.5;
+        const cy0 = dot > 0 ? Math.max(-0.4 * H0, Math.min(1.4 * H0, (-_v.y * 0.5 + 0.5) * H0)) : H0 * 0.3;
+        const sc0 = sky.sun.color;
+        this.haze.hidden = false;
+        this.haze.style.setProperty('--hx', `${cx0.toFixed(0)}px`);
+        this.haze.style.setProperty('--hy', `${cy0.toFixed(0)}px`);
+        this.haze.style.setProperty('--hc', `${Math.round(255 * Math.min(1, sc0.r + 0.05))},${Math.round(255 * Math.min(1, sc0.g * 0.88))},${Math.round(255 * Math.min(1, sc0.b * 0.62))}`);
+        this.haze.style.opacity = Math.min(0.85, hz).toFixed(3);
+      }
+    }
     if (dot < 0.1) {
       this.el.hidden = true;
       return;

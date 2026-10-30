@@ -2272,3 +2272,8 @@ body.inv-open #ui > .hud, body.inv-open #ui > .hotbar, body.inv-open #ui > .hud-
 }
 .tc-esquema-gestos .tc-btn.b-camera svg { width: 62%; height: 62%; }
 .tc-esquema-gestos .tc-btn.b-camera.down { color: #bff1ff; }
+
+/* névoa dourada do sol baixo (estilo Valheim): gradiente grande em volta do sol, soma à imagem */
+.sun-haze { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen; --hx: 50%; --hy: 30%; --hc: 255, 190, 110;
+  background: radial-gradient(circle at var(--hx) var(--hy), rgba(var(--hc), 0.62) 0, rgba(var(--hc), 0.34) 22%, rgba(var(--hc), 0.14) 50%, rgba(var(--hc), 0.05) 80%, transparent 120%); }
+.sun-haze[hidden] { display: none; }

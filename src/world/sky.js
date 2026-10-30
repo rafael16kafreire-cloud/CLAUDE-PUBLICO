@@ -30,10 +30,10 @@ const KEYS = [
   [0.19, '#1a263f', '#070b16', '#8aaaea', 0.5, '#44609f', 0.42, 0.16],
   // nascer do sol: laranja e rosa no horizonte
   [0.26, '#f0a272', '#4c6a9c', '#ffae6a', 1.5, '#c9b2a0', 0.8, 0.9],
-  [0.33, '#c6d4cc', '#3f86c8', '#fff1d0', 3.0, '#dcecf0', 1.1, 1.0],
+  [0.33, '#bdd3cf', '#3f86c8', '#fff1d0', 3.0, '#dcecf0', 1.1, 1.0],
   // meio-dia: céu azul forte e sol bem luminoso
-  [0.5, '#bccbc8', '#3a82cc', '#fff3d6', 3.5, '#dcecf2', 1.15, 1.0],
-  [0.67, '#c7cfc0', '#3f7fc0', '#ffe8c4', 3.0, '#e0e8de', 1.1, 1.0],
+  [0.5, '#b0cac9', '#3a82cc', '#fff3d6', 3.5, '#dcecf2', 1.15, 1.0],
+  [0.67, '#bfd0c6', '#3f7fc0', '#ffe8c4', 3.0, '#e0e8de', 1.1, 1.0],
   // pôr do sol: dourado e vermelho
   [0.75, '#ee8450', '#46598a', '#ff8f4a', 1.4, '#ca9f86', 0.8, 0.9],
   [0.8, '#1a263f', '#070b16', '#8aaaea', 0.5, '#44609f', 0.42, 0.16],

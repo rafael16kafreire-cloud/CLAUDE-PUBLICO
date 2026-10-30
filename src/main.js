@@ -146,10 +146,10 @@ function boot(hotData = {}) {
       void main() {
         vec4 c = texture2D(tDiffuse, vUv);
         float l = dot(c.rgb, vec3(0.299, 0.587, 0.114));
-        c.rgb = mix(vec3(l), c.rgb, 1.14);                           // cores mais vivas
-        c.rgb = mix(c.rgb, c.rgb * c.rgb * (3.0 - 2.0 * c.rgb), 0.3); // contraste suave
-        c.rgb += vec3(0.016, 0.005, -0.014) * l;                      // luz quente
-        c.rgb += vec3(-0.006, 0.002, 0.012) * (1.0 - l);              // sombra fria
+        c.rgb = mix(vec3(l), c.rgb, 1.2);                            // cores mais vivas
+        c.rgb = mix(c.rgb, c.rgb * c.rgb * (3.0 - 2.0 * c.rgb), 0.36); // contraste
+        c.rgb += vec3(0.026, 0.01, -0.02) * l * l;                    // luz quente nas partes claras
+        c.rgb += vec3(-0.012, 0.006, 0.02) * (1.0 - l);               // sombra azul-esverdeada
         vec2 d = vUv - 0.5;
         c.rgb *= 1.0 - dot(d, d) * 0.5;                               // vinheta
         gl_FragColor = vec4(clamp(c.rgb, 0.0, 1.0), c.a);
