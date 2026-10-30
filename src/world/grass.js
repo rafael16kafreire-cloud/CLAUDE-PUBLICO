@@ -8,7 +8,8 @@
 import * as THREE from 'three';
 import { BIOME } from './island_generator.js';
 import { addWind } from './materials.js';
-import { makeBroadPlant, makeSprout, makeFlowerTuft, makeGramaTufo } from './props.js';
+import { makeBroadPlant, makeSprout, makeFlowerTuft, makeGramaCartao } from './props.js';
+import ATLAS from './imported/grama_atlas.js';
 
 const CELL = 1.25;
 
@@ -46,14 +47,26 @@ export class Grass {
     };
     const prevKey = material.customProgramCacheKey;
     material.customProgramCacheKey = () => `${prevKey ? prevKey() : ''}-mato1`;
+    // grama cheia: figura de tufo recortada pela transparência (dois retângulos em X por tufo)
+    const atlasTex = new THREE.TextureLoader().load(ATLAS.png);
+    atlasTex.colorSpace = THREE.SRGBColorSpace;
+    atlasTex.anisotropy = 2;
+    const matGrama = addWind(new THREE.MeshLambertMaterial({ map: atlasTex, alphaTest: 0.45, side: THREE.DoubleSide }), 0.25, 0.05, 1);
+    const prevG = matGrama.onBeforeCompile;
+    matGrama.onBeforeCompile = (shader, renderer) => {
+      prevG?.(shader, renderer);
+      shader.fragmentShader = shader.fragmentShader.replace('#include <normal_fragment_begin>', THREE.ShaderChunk.normal_fragment_begin.replace('gl_FrontFacing ? 1.0 : - 1.0', '1.0'));
+    };
+    const prevGKey = matGrama.customProgramCacheKey;
+    matGrama.customProgramCacheKey = () => `${prevGKey ? prevGKey() : ''}-grama2`;
     this.kinds = {
-      capim: this._mesh(makeGramaTufo(0, 1), material, 5200, 'Capim'),
-      capim2: this._mesh(makeGramaTufo(1, 1), material, 4200, 'Capim 2'),
+      capim: this._mesh(makeGramaCartao(0, 1), matGrama, 5200, 'Capim'),
+      capim2: this._mesh(makeGramaCartao(1, 1), matGrama, 4200, 'Capim 2'),
       folha: this._mesh(makeBroadPlant(), material, 2600, 'Folhagem'),
       broto: this._mesh(makeSprout(), material, 1800, 'Brotos'),
       flor: this._mesh(makeFlowerTuft(), material, 1500, 'Flores'),
-      relva: this._mesh(makeGramaTufo(2, 0.9), material, 5200, 'Relva'),
-      relva2: this._mesh(makeGramaTufo(3, 0.78), material, 4200, 'Relva 2'),
+      relva: this._mesh(makeGramaCartao(2, 0.7), matGrama, 5200, 'Relva'),
+      relva2: this._mesh(makeGramaCartao(3, 0.6), matGrama, 4200, 'Relva 2'),
     };
     this.enabled = true;
     this._last = new THREE.Vector2(1e9, 1e9);
@@ -168,7 +181,7 @@ export class Grass {
         const h = this.map.heightAt(x, z);
         if (h < 0.5 || this.water.bodyAt(x, z)) continue;
         const rfade = 1 - Math.min(1, Math.max(0, (Math.sqrt(dx * dx + dz * dz) - RR * 0.75) / (RR * 0.25)));
-        const sc = (1.0 + cellHash(ix, iz, 14) * 0.7) * (0.12 + 0.88 * rfade);
+        const sc = (0.85 + cellHash(ix, iz, 14) * 0.5) * (0.12 + 0.88 * rfade);
         this._q.setFromAxisAngle(this._up, cellHash(ix, iz, 15) * 6.283);
         this._s.set(sc, sc * (0.8 + cellHash(ix, iz, 16) * 0.5), sc);
         this._p.set(x, h - 0.02, z);
@@ -178,7 +191,7 @@ export class Grass {
         const gold = cellHash(ix, iz, 18);
         // manchas: a maioria verde viva, alguns tufos dourados (como nos campos de Valheim)
         const dry = gold > 0.78 ? 1.3 : gold > 0.6 ? 1.12 : 1;
-        this._c.setRGB(0.78 * v * dry, 1.0 * v, 0.62 * v / dry);
+        this._c.setRGB(1.0 * v * dry, 1.04 * v, 0.8 * v / dry);
         rm.setColorAt(n[rk], this._c);
         n[rk]++;
       }

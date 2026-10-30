@@ -4,7 +4,7 @@
 // o vento. Cada modelo pode ter versão de perto (detalhada) e de
 // longe (simples); bem longe a árvore vira uma "foto" (impostor).
 // =============================================================
-import GRAMA from './imported/grama_tufos.js';
+import ATLAS from './imported/grama_atlas.js';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { WHITE_UV, LEAF_UV, TILE_UV } from './foliage_texture.js';
@@ -1102,6 +1102,27 @@ export function makeGramaTufo(variante = 0, k = 1) {
   }
   const g = sheet(verts, idx, winds);
   g.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
+  g.computeBoundingSphere();
+  return g;
+}
+
+// Tufo CHEIO de grama: dois retângulos cruzados em X (4 triângulos) com a figura de um tufo de
+// dezenas de lâminas (atlas feito do modelo "AnimatedGrass", tools/models/grama_atlas.py).
+// variante = qual tufo do atlas (0..3); k = tamanho (1 = ~46 cm de altura, 64 cm de largura).
+export function makeGramaCartao(variante = 0, k = 1) {
+  const W = (ATLAS.largura * k) / 2;
+  const H = ATLAS.altura * k;
+  const col = variante % ATLAS.cols;
+  const u0 = col / ATLAS.cols;
+  const u1 = (col + 1) / ATLAS.cols;
+  // a linha de cima da imagem (de frente) fica na metade de cima da textura; a de baixo (de lado), embaixo
+  const vF = [0.5, 1];
+  const vS = [0, 0.5];
+  const verts = [-W, 0, 0, W, 0, 0, W, H, 0, -W, H, 0, 0, 0, -W, 0, 0, W, 0, H, W, 0, H, -W];
+  const uvs = [u0, vF[0], u1, vF[0], u1, vF[1], u0, vF[1], u0, vS[0], u1, vS[0], u1, vS[1], u0, vS[1]];
+  const winds = [0, 0, 1, 1, 0, 0, 1, 1];
+  const g = sheet(verts, [0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7], winds);
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
   g.computeBoundingSphere();
   return g;
 }
