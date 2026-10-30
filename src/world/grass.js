@@ -8,7 +8,7 @@
 import * as THREE from 'three';
 import { BIOME } from './island_generator.js';
 import { addWind } from './materials.js';
-import { makeGrassTuft, makeBroadPlant, makeSprout, makeFlowerTuft, makeShortTurf } from './props.js';
+import { makeBroadPlant, makeSprout, makeFlowerTuft, makeGramaTufo } from './props.js';
 
 const CELL = 1.25;
 
@@ -47,11 +47,13 @@ export class Grass {
     const prevKey = material.customProgramCacheKey;
     material.customProgramCacheKey = () => `${prevKey ? prevKey() : ''}-mato1`;
     this.kinds = {
-      capim: this._mesh(makeGrassTuft(), material, 9000, 'Capim'),
+      capim: this._mesh(makeGramaTufo(0, 1), material, 5200, 'Capim'),
+      capim2: this._mesh(makeGramaTufo(1, 1), material, 4200, 'Capim 2'),
       folha: this._mesh(makeBroadPlant(), material, 2600, 'Folhagem'),
       broto: this._mesh(makeSprout(), material, 1800, 'Brotos'),
       flor: this._mesh(makeFlowerTuft(), material, 1500, 'Flores'),
-      relva: this._mesh(makeShortTurf(), material, 8000, 'Relva'),
+      relva: this._mesh(makeGramaTufo(2, 0.62), material, 5200, 'Relva'),
+      relva2: this._mesh(makeGramaTufo(3, 0.55), material, 4200, 'Relva 2'),
     };
     this.enabled = true;
     this._last = new THREE.Vector2(1e9, 1e9);
@@ -98,7 +100,7 @@ export class Grass {
     const z0 = Math.floor((focus.z - R) / CELL);
     const z1 = Math.floor((focus.z + R) / CELL);
     const r2 = R * R;
-    const n = { capim: 0, folha: 0, broto: 0, flor: 0, relva: 0 };
+    const n = { capim: 0, capim2: 0, folha: 0, broto: 0, flor: 0, relva: 0, relva2: 0 };
     for (let iz = z0; iz <= z1; iz++) {
       for (let ix = x0; ix <= x1; ix++) {
         const x = (ix + cellHash(iz, ix, 1)) * CELL;
@@ -116,15 +118,16 @@ export class Grass {
         else if (roll < cfg.folha + cfg.broto + cfg.capim) kind = 'capim';
         else if (roll < cfg.folha + cfg.broto + cfg.capim + cfg.flor) kind = 'flor';
         if (!kind) continue;
+        if (kind === 'capim' && cellHash(ix, iz, 9) < 0.45) kind = 'capim2'; // duas formas de tufo
         const mesh = this.kinds[kind];
         if (n[kind] >= mesh.userData.max) continue;
         const h = this.map.heightAt(x, z);
         if (h < 0.5) continue;
         const wb = this.water.bodyAt(x, z);
-        if (wb && ((kind !== 'capim' && kind !== 'flor') || wb.level - h > 0.25)) continue;
+        if (wb && ((kind !== 'capim' && kind !== 'capim2' && kind !== 'flor') || wb.level - h > 0.25)) continue;
         const sc = 0.7 + cellHash(ix, iz, 4) * 0.7;
         this._q.setFromAxisAngle(this._up, cellHash(ix, iz, 5) * 6.283);
-        this._s.set(sc, sc * (0.8 + cellHash(ix, iz, 6) * 0.5) * (kind === 'capim' ? (cfg.hscale ?? 1) : 1), sc);
+        this._s.set(sc, sc * (0.8 + cellHash(ix, iz, 6) * 0.5) * (kind === 'capim' || kind === 'capim2' ? (cfg.hscale ?? 1) : 1), sc);
         this._p.set(x, h - 0.03, z);
         this._m.compose(this._p, this._q, this._s);
         mesh.setMatrixAt(n[kind], this._m);
@@ -141,15 +144,16 @@ export class Grass {
     }
     // Relva baixinha cobrindo o chão das pastagens: grade fina (cada ponto vira um tufo), só perto do jogador
     const rmesh = this.kinds.relva;
+    const rmesh2 = this.kinds.relva2;
     const RC = 0.27 / Math.sqrt(Math.max(0.3, this.density)); // um tufo a cada ~27 cm: um encostando no outro
     // o raio nunca passa do que cabe no limite de tufos (senão a borda ficava falhada)
-    const RR = Math.min(this.radius * 0.6, 12, Math.sqrt((rmesh.userData.max * RC * RC) / Math.PI) * 0.95);
+    const RR = Math.min(this.radius * 0.6, 12, Math.sqrt(((rmesh.userData.max + rmesh2.userData.max) * RC * RC) / Math.PI) * 0.95);
     const rx0 = Math.floor((focus.x - RR) / RC);
     const rx1 = Math.floor((focus.x + RR) / RC);
     const rz0 = Math.floor((focus.z - RR) / RC);
     const rz1 = Math.floor((focus.z + RR) / RC);
     const rr2 = RR * RR;
-    for (let iz = rz0; iz <= rz1 && n.relva < rmesh.userData.max; iz++) {
+    for (let iz = rz0; iz <= rz1 && n.relva + n.relva2 < rmesh.userData.max + rmesh2.userData.max; iz++) {
       for (let ix = rx0; ix <= rx1; ix++) {
         const x = (ix + cellHash(iz, ix, 11)) * RC;
         const z = (iz + cellHash(ix, iz, 12)) * RC;
@@ -157,7 +161,9 @@ export class Grass {
         const dz = z - focus.z;
         if (dx * dx + dz * dz > rr2) continue;
         if (!BY_BIOME[this.map.biomeAt(x, z)]?.relva) continue;
-        if (n.relva >= rmesh.userData.max) break;
+        const rk = cellHash(ix, iz, 19) < 0.5 ? 'relva' : 'relva2';
+        const rm = rk === 'relva' ? rmesh : rmesh2;
+        if (n[rk] >= rm.userData.max) continue;
         const h = this.map.heightAt(x, z);
         if (h < 0.5 || this.water.bodyAt(x, z)) continue;
         const sc = 0.9 + cellHash(ix, iz, 14) * 0.6;
@@ -165,12 +171,12 @@ export class Grass {
         this._s.set(sc, sc * (0.8 + cellHash(ix, iz, 16) * 0.5), sc);
         this._p.set(x, h - 0.02, z);
         this._m.compose(this._p, this._q, this._s);
-        rmesh.setMatrixAt(n.relva, this._m);
+        rm.setMatrixAt(n[rk], this._m);
         const v = 0.78 + cellHash(ix, iz, 17) * 0.4;
         const dry = cellHash(ix, iz, 18) > 0.8 ? 1.12 : 1; // alguns tufos mais amarelados
         this._c.setRGB(1.1 * v * dry, 1.05 * v, 0.72 * v / dry);
-        rmesh.setColorAt(n.relva, this._c);
-        n.relva++;
+        rm.setColorAt(n[rk], this._c);
+        n[rk]++;
       }
     }
     for (const [k, mesh] of Object.entries(this.kinds)) {

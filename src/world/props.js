@@ -4,6 +4,7 @@
 // o vento. Cada modelo pode ter versão de perto (detalhada) e de
 // longe (simples); bem longe a árvore vira uma "foto" (impostor).
 // =============================================================
+import GRAMA from './imported/grama_tufos.js';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { WHITE_UV, LEAF_UV, TILE_UV } from './foliage_texture.js';
@@ -1061,6 +1062,39 @@ export function makeGrassTuft() {
     winds.push(0, 0, 0.5, 0.5, 1);
     cols.push(base.r, base.g, base.b, base.r, base.g, base.b, mid.r, mid.g, mid.b, mid.r, mid.g, mid.b, tip.r, tip.g, tip.b);
     idx.push(b, b + 1, b + 3, b, b + 3, b + 2, b + 2, b + 3, b + 4);
+  }
+  const g = sheet(verts, idx, winds);
+  g.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
+  g.computeBoundingSphere();
+  return g;
+}
+
+// Tufo de grama de verdade: 5 lâminas tiradas do modelo "AnimatedGrass" (tools/models/grama_fbx.py).
+// Cada lâmina é uma tira curva de 3 triângulos (pé, meio e ponta); k = tamanho (1 = ~28 cm de altura).
+export function makeGramaTufo(variante = 0, k = 1) {
+  const tufo = GRAMA[variante % GRAMA.length];
+  const verts = [];
+  const winds = [];
+  const cols = [];
+  const idx = [];
+  const base = new THREE.Color('#34501e');
+  const mid = new THREE.Color('#6a9034');
+  const tip = new THREE.Color('#b4cc66');
+  for (const b of tufo) {
+    const dx = b.d[0];
+    const dz = b.d[1];
+    const at = (p, w) => [
+      [(p[0] - dx * w * 0.5) * k, p[1] * k, (p[2] - dz * w * 0.5) * k],
+      [(p[0] + dx * w * 0.5) * k, p[1] * k, (p[2] + dz * w * 0.5) * k],
+    ];
+    const [bl, br] = at(b.b, b.w[0]);
+    const [ml, mr] = at(b.m, b.w[1]);
+    const t = [b.t[0] * k, b.t[1] * k, b.t[2] * k];
+    const n = verts.length / 3;
+    verts.push(...bl, ...br, ...ml, ...mr, ...t);
+    winds.push(0, 0, 0.5, 0.5, 1);
+    cols.push(base.r, base.g, base.b, base.r, base.g, base.b, mid.r, mid.g, mid.b, mid.r, mid.g, mid.b, tip.r, tip.g, tip.b);
+    idx.push(n, n + 1, n + 3, n, n + 3, n + 2, n + 2, n + 3, n + 4);
   }
   const g = sheet(verts, idx, winds);
   g.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
