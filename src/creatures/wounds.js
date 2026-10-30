@@ -32,11 +32,11 @@ function patch(mat, uni, freq) {
         if (uWound > 0.01) {
           vec3 q = vWPos * uWFreq;
           float n = wn(q) * 0.65 + wn(q * 2.3 + 7.0) * 0.35;
-          float thr = 1.0 - uWound * 0.5;                    // mais dano = manchas maiores
+          float thr = 0.8 - uWound * 0.3;                     // mais dano = manchas maiores
           float blot = smoothstep(thr, thr + 0.05, n);
           float core = smoothstep(thr + 0.1, thr + 0.16, n); // miolo da ferida: mais escuro
-          vec3 blood = mix(vec3(0.42, 0.04, 0.03), vec3(0.17, 0.01, 0.01), core);
-          diffuseColor.rgb = mix(diffuseColor.rgb, blood, blot * 0.88);
+          vec3 blood = mix(vec3(0.17, 0.014, 0.012), vec3(0.07, 0.003, 0.003), core);
+          diffuseColor.rgb = mix(diffuseColor.rgb, blood, blot * 0.9);
           diffuseColor.rgb *= 1.0 - 0.18 * uWound;           // couro um pouco mais sujo
         }`);
   };
@@ -53,7 +53,7 @@ export function aplicarFeridas(c, frac) {
     const bb = mesh.geometry.boundingBox;
     const maxDim = bb ? Math.max(bb.max.x - bb.min.x, bb.max.y - bb.min.y, bb.max.z - bb.min.z) : 2;
     const uni = { value: 0 };
-    const freq = { value: 7 / Math.max(0.5, maxDim) }; // ~7 manchas ao longo do corpo
+    const freq = { value: 11 / Math.max(0.5, maxDim) }; // ~11 manchas ao longo do corpo
     const clone = (m) => {
       const n = m.clone();
       patch(n, uni, freq);
