@@ -161,7 +161,7 @@ export class Grass {
     const rmesh2 = this.kinds.relva2;
     const RC = 0.23 / Math.sqrt(Math.max(0.3, this.density)); // tufos quase encostados: sem falhas no chão // um tufo a cada ~27 cm: um encostando no outro
     // o raio nunca passa do que cabe no limite de tufos (senão a borda ficava falhada)
-    const RR = Math.min(this.radius * 0.6, 12, Math.sqrt(((rmesh.userData.max + rmesh2.userData.max) * RC * RC) / Math.PI) * 0.95);
+    const RR = Math.min(this.radius * 0.6, 11, Math.sqrt(((rmesh.userData.max + rmesh2.userData.max) * RC * RC) / Math.PI) * 0.95);
     const rx0 = Math.floor((focus.x - RR) / RC);
     const rx1 = Math.floor((focus.x + RR) / RC);
     const rz0 = Math.floor((focus.z - RR) / RC);
@@ -174,6 +174,9 @@ export class Grass {
         const dx = x - focus.x;
         const dz = z - focus.z;
         if (dx * dx + dz * dz > rr2) continue;
+        // quanto mais longe, menos tufos (e maiores): perto fica cheio, longe fica leve para a placa de vídeo
+        const far = Math.min(1, Math.max(0, (Math.sqrt(dx * dx + dz * dz) / RR - 0.3) / 0.7));
+        if (cellHash(ix, iz, 21) > 1 - 0.62 * far) continue;
         if (!BY_BIOME[this.map.biomeAt(x, z)]?.relva) continue;
         const rk = cellHash(ix, iz, 19) < 0.5 ? 'relva' : 'relva2';
         const rm = rk === 'relva' ? rmesh : rmesh2;
@@ -181,7 +184,7 @@ export class Grass {
         const h = this.map.heightAt(x, z);
         if (h < 0.5 || this.water.bodyAt(x, z)) continue;
         const rfade = 1 - Math.min(1, Math.max(0, (Math.sqrt(dx * dx + dz * dz) - RR * 0.75) / (RR * 0.25)));
-        const sc = (0.95 + cellHash(ix, iz, 14) * 0.45) * (0.12 + 0.88 * rfade);
+        const sc = (0.95 + cellHash(ix, iz, 14) * 0.45) * (0.12 + 0.88 * rfade) * (1 + 0.4 * far);
         this._q.setFromAxisAngle(this._up, cellHash(ix, iz, 15) * 6.283);
         this._s.set(sc, sc * (0.85 + cellHash(ix, iz, 16) * 0.35), sc);
         this._p.set(x, h - 0.02, z);
