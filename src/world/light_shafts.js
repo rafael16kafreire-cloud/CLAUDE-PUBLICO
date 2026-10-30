@@ -93,7 +93,7 @@ export class LightShafts {
     const elev = sky.sunDir.y;
     // dia, com o sol nem rente ao chão nem a pino
     const k = show ? (1 - smooth(0.2, 0.55, night)) * smooth(0.07, 0.25, elev) * (1 - smooth(0.78, 0.97, elev)) : 0;
-    this.mat.uniforms.uAlpha.value = k * 0.95;
+    this.mat.uniforms.uAlpha.value = k * 0.8;
     this.mat.uniforms.uTime.value = performance.now() / 1000;
     if (k < 0.02) {
       this.mesh.visible = false;
@@ -131,7 +131,7 @@ export class LightShafts {
     let near = 1e9;
     for (const s of this.slots) near = Math.min(near, Math.hypot(camera.position.x - s.x, camera.position.z - s.z));
     // se algum raio está a menos de 7 m, diminui o brilho geral (só pesa 1 conta por quadro)
-    const f = smooth(3, 9, near);
+    const f = smooth(6, 16, near);
     this.mat.uniforms.uAlpha.value *= 0.35 + 0.65 * f;
   }
 }
