@@ -1287,6 +1287,38 @@ export function makeMiniPlant(kind = 0) {
   return g;
 }
 
+
+// Tufo de longe (low poly): 7 lâminas finas = 7 triângulos. Cobre o terreno distante
+// e vira a única grama quando o aparelho está lento.
+export function makeLowTuft() {
+  const verts = [];
+  const winds = [];
+  const cols = [];
+  const idx = [];
+  const base = new THREE.Color('#33501e');
+  const tip = new THREE.Color('#7fa646');
+  // 7 lâminas finas saindo do centro, inclinadas para fora (7 triângulos)
+  for (let i = 0; i < 7; i++) {
+    const a = i * 2.39;
+    const r = 0.04 + (i % 3) * 0.05;
+    const h = 0.38 + (i % 4) * 0.12;
+    const sx = Math.sin(a);
+    const sz = Math.cos(a);
+    const w = 0.045;
+    const bx = sx * r;
+    const bz = sz * r;
+    const b = verts.length / 3;
+    verts.push(bx - sz * w, 0, bz + sx * w, bx + sz * w, 0, bz - sx * w, bx + sx * 0.14, h, bz + sz * 0.14);
+    winds.push(0, 0, 1);
+    cols.push(base.r, base.g, base.b, base.r, base.g, base.b, tip.r, tip.g, tip.b);
+    idx.push(b, b + 1, b + 2);
+  }
+  const g = sheet(verts, idx, winds);
+  g.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
+  g.computeBoundingSphere();
+  return g;
+}
+
 // Plantinha de folhas largas (tipo "orelha-de-elefante")
 export function makeBroadPlant() {
   const parts = [];

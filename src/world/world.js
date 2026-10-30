@@ -236,6 +236,18 @@ export class World {
     this.grass.setQuality(q.grassRadius, q.grassDensity);
     this.grass.setEnabled(q.grassRadius > 0);
     this.fallingTrees.setDetail(q.post === 'cinema' ? 2 : 1);
+    this._quality = q;
+    this.setLowPoly(this.lowPoly ?? false, true);
+  }
+
+  // Jogo lento: grama e árvores viram low poly bem mais perto (árvores viram "cartões" e a grama,
+  // tufos de 3 triângulos). Voltar ao normal: setLowPoly(false).
+  setLowPoly(on, force = false) {
+    if (!force && this.lowPoly === on) return;
+    this.lowPoly = on;
+    this.grass.setLowPoly(on);
+    const q = this._quality;
+    if (q) this.vegetation.setLod(on ? Math.min(q.lodHi, 12) : q.lodHi, on ? Math.min(q.lodLo, 34) : q.lodLo);
   }
 
   // ---------- atualização por quadro ----------

@@ -8,7 +8,7 @@
 import * as THREE from 'three';
 import { BIOME } from './island_generator.js';
 import { addWind } from './materials.js';
-import { makeBroadPlant, makeSprout, makeFlowerTuft, makeMiniPlant, makeGramaCartao } from './props.js';
+import { makeBroadPlant, makeSprout, makeFlowerTuft, makeMiniPlant, makeLowTuft, makeGramaCartao } from './props.js';
 import ATLAS from './imported/grama_atlas.js';
 
 const CELL = 1.25;
@@ -67,10 +67,12 @@ export class Grass {
       flor: this._mesh(makeFlowerTuft(), material, 1500, 'Flores'),
       relva: this._mesh(makeGramaCartao(2, 1.12), matGrama, 5200, 'Relva'),
       relva2: this._mesh(makeGramaCartao(3, 0.98), matGrama, 4200, 'Relva 2'),
+      longe: this._mesh(makeLowTuft(), material, 14000, 'Grama longe'),
       mini: this._mesh(makeMiniPlant(0), material, 7000, 'Plantinhas'),
       mini2: this._mesh(makeMiniPlant(1), material, 6000, 'Plantinhas 2'),
     };
     this.enabled = true;
+    this.lowPoly = false;
     this._last = new THREE.Vector2(1e9, 1e9);
     this._m = new THREE.Matrix4();
     this._q = new THREE.Quaternion();
@@ -98,6 +100,13 @@ export class Grass {
     this._last.set(1e9, 1e9);
   }
 
+  // Jogo lento: só a grama low poly (7 triângulos por tufo), sem cartões, relva nem plantinhas.
+  setLowPoly(on) {
+    if (this.lowPoly === on) return;
+    this.lowPoly = on;
+    this._last.set(1e9, 1e9);
+  }
+
   setQuality(radius, density) {
     this.radius = radius;
     this.density = density;
@@ -113,9 +122,9 @@ export class Grass {
     const x0 = Math.floor((focus.x - R) / CELL);
     const x1 = Math.floor((focus.x + R) / CELL);
     const z0 = Math.floor((focus.z - R) / CELL);
-    const z1 = Math.floor((focus.z + R) / CELL);
+    const z1 = this.lowPoly ? z0 - 1 : Math.floor((focus.z + R) / CELL);
     const r2 = R * R;
-    const n = { capim: 0, capim2: 0, folha: 0, broto: 0, flor: 0, relva: 0, relva2: 0, mini: 0, mini2: 0 };
+    const n = { capim: 0, capim2: 0, folha: 0, broto: 0, flor: 0, relva: 0, relva2: 0, mini: 0, mini2: 0, longe: 0 };
     for (let iz = z0; iz <= z1; iz++) {
       for (let ix = x0; ix <= x1; ix++) {
         const x = (ix + cellHash(iz, ix, 1)) * CELL;
@@ -167,7 +176,7 @@ export class Grass {
     const rx0 = Math.floor((focus.x - RR) / RC);
     const rx1 = Math.floor((focus.x + RR) / RC);
     const rz0 = Math.floor((focus.z - RR) / RC);
-    const rz1 = Math.floor((focus.z + RR) / RC);
+    const rz1 = this.lowPoly ? rz0 - 1 : Math.floor((focus.z + RR) / RC);
     const rr2 = RR * RR;
     for (let iz = rz0; iz <= rz1 && n.relva + n.relva2 < rmesh.userData.max + rmesh2.userData.max; iz++) {
       for (let ix = rx0; ix <= rx1; ix++) {
@@ -211,7 +220,7 @@ export class Grass {
     const mx0 = Math.floor((focus.x - MR) / MC);
     const mx1 = Math.floor((focus.x + MR) / MC);
     const mz0 = Math.floor((focus.z - MR) / MC);
-    const mz1 = Math.floor((focus.z + MR) / MC);
+    const mz1 = this.lowPoly ? mz0 - 1 : Math.floor((focus.z + MR) / MC);
     for (let iz = mz0; iz <= mz1 && n.mini + n.mini2 < mmax; iz++) {
       for (let ix = mx0; ix <= mx1; ix++) {
         const x = (ix + cellHash(iz, ix, 31)) * MC;
@@ -244,6 +253,44 @@ export class Grass {
         else this._c.setRGB(0.8 * v, 1.0 * v, 0.7 * v);
         mm.setColorAt(n[mk], this._c);
         n[mk]++;
+      }
+    }
+    // Grama de longe (low poly): tufos de 3 triângulos numa grade larga, do fim da grama detalhada
+    // até bem longe. Com o jogo lento (lowPoly) ela é a única grama, desde perto do jogador.
+    const lmesh = this.kinds.longe;
+    const FC = 1.25 / Math.sqrt(Math.max(0.3, this.density));
+    const FR = Math.min(Math.max(this.radius * 2.6, 40), 75);
+    const NEAR = this.lowPoly ? 0 : this.radius * 0.55;
+    const fx0 = Math.floor((focus.x - FR) / FC);
+    const fx1 = Math.floor((focus.x + FR) / FC);
+    const fz0 = Math.floor((focus.z - FR) / FC);
+    const fz1 = Math.floor((focus.z + FR) / FC);
+    for (let iz = fz0; iz <= fz1 && n.longe < lmesh.userData.max; iz++) {
+      for (let ix = fx0; ix <= fx1; ix++) {
+        const x = (ix + cellHash(iz, ix, 41)) * FC;
+        const z = (iz + cellHash(ix, iz, 42)) * FC;
+        const dx = x - focus.x;
+        const dz = z - focus.z;
+        const dd = Math.sqrt(dx * dx + dz * dz);
+        if (dd > FR || dd < NEAR) continue;
+        const fcfg = BY_BIOME[this.map.biomeAt(x, z)];
+        if (!fcfg) continue;
+        const pr = Math.min(1, fcfg.capim * 1.6 + (fcfg.relva ? 0.4 : 0) + fcfg.folha);
+        if (cellHash(ix, iz, 43) > pr || n.longe >= lmesh.userData.max) continue;
+        const h = this.map.heightAt(x, z);
+        if (h < 0.5 || this.water.bodyAt(x, z)) continue;
+        const ffade = 1 - Math.min(1, Math.max(0, (dd - FR * 0.8) / (FR * 0.2)));
+        const nin = Math.min(1, (dd - NEAR) / 4); // some suave perto da borda da grama detalhada
+        const sc = (0.9 + cellHash(ix, iz, 44) * 0.6) * (0.2 + 0.8 * ffade) * (0.3 + 0.7 * nin) * (1 + dd / FR * 0.35);
+        this._q.setFromAxisAngle(this._up, cellHash(ix, iz, 45) * 6.283);
+        this._s.set(sc, sc * (0.8 + cellHash(ix, iz, 46) * 0.5) * (fcfg.hscale ?? 1), sc);
+        this._p.set(x, h - 0.03, z);
+        this._m.compose(this._p, this._q, this._s);
+        lmesh.setMatrixAt(n.longe, this._m);
+        const v = 0.75 + cellHash(ix, iz, 47) * 0.4;
+        this._c.setRGB(fcfg.tint[0] * v, fcfg.tint[1] * v, fcfg.tint[2] * v);
+        lmesh.setColorAt(n.longe, this._c);
+        n.longe++;
       }
     }
     for (const [k, mesh] of Object.entries(this.kinds)) {

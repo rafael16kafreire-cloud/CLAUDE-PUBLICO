@@ -988,6 +988,13 @@ function boot(hotData = {}) {
     perf.time = 0;
     perf.frames = 0;
     if (fps >= 22) return;
+    // 1º passo: grama e árvores low poly (mantém a qualidade do resto); 2º passo: desce a qualidade
+    if (!ctx.world.lowPoly) {
+      ctx.world.setLowPoly(true);
+      perf.warmup = 4;
+      events.emit(EV.MESSAGE, { text: `Jogo lento (${Math.round(fps)} FPS): grama e árvores em low poly.`, kind: 'warn' });
+      return;
+    }
     const order = ['alta', 'media', 'baixa'];
     const i = order.indexOf(settings.get('quality'));
     if (i < 0 || i >= order.length - 1) return;
