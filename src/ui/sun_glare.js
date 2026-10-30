@@ -79,8 +79,8 @@ export class SunGlare {
         this.haze.hidden = false;
         this.haze.style.setProperty('--hx', `${cx0.toFixed(0)}px`);
         this.haze.style.setProperty('--hy', `${cy0.toFixed(0)}px`);
-        this.haze.style.setProperty('--hc', `${Math.round(255 * Math.min(1, sc0.r + 0.05))},${Math.round(255 * Math.min(1, sc0.g * 0.88))},${Math.round(255 * Math.min(1, sc0.b * 0.62))}`);
-        this.haze.style.opacity = Math.min(0.85, hz).toFixed(3);
+        this.haze.style.setProperty('--hc', `${Math.round(255 * Math.min(1, sc0.r + 0.05))},${Math.round(255 * Math.min(1, sc0.g * 0.72))},${Math.round(255 * Math.min(1, sc0.b * 0.42))}`);
+        this.haze.style.opacity = Math.min(0.7, hz).toFixed(3);
       }
     }
     if (dot < 0.1) {

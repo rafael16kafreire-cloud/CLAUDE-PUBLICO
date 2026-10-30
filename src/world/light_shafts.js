@@ -80,7 +80,7 @@ export class LightShafts {
         if (h < 0.5 || this.water.bodyAt(x, z)) continue;
         const d = Math.hypot(x - focus.x, z - focus.z);
         if (d > R) continue;
-        found.push({ x, y: h, z, d, w: 3 + hash(ix, iz, 4) * 4.5, ph: hash(ix, iz, 5) });
+        found.push({ x, y: h, z, d, w: 4 + hash(ix, iz, 4) * 6, ph: hash(ix, iz, 5) });
       }
     }
     found.sort((a, b) => a.d - b.d);
@@ -93,7 +93,7 @@ export class LightShafts {
     const elev = sky.sunDir.y;
     // dia, com o sol nem rente ao chão nem a pino
     const k = show ? (1 - smooth(0.2, 0.55, night)) * smooth(0.07, 0.25, elev) * (1 - smooth(0.78, 0.97, elev)) : 0;
-    this.mat.uniforms.uAlpha.value = k * 0.55;
+    this.mat.uniforms.uAlpha.value = k * 0.95;
     this.mat.uniforms.uTime.value = performance.now() / 1000;
     if (k < 0.02) {
       this.mesh.visible = false;
