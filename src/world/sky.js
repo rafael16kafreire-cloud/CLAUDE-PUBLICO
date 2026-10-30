@@ -29,13 +29,13 @@ const KEYS = [
   [0.0, '#18243c', '#060a14', '#8aaaea', 0.5, '#44609f', 0.42, 0.16],
   [0.19, '#1a263f', '#070b16', '#8aaaea', 0.5, '#44609f', 0.42, 0.16],
   // nascer do sol: laranja e rosa no horizonte
-  [0.26, '#f0a272', '#4c6a9c', '#ffae6a', 1.5, '#c9b2a0', 0.8, 0.9],
+  [0.26, '#f08a52', '#4c6a9c', '#ffa04a', 1.5, '#c9b2a0', 0.8, 0.9],
   [0.33, '#bdd3cf', '#3f86c8', '#fff1d0', 3.0, '#dcecf0', 1.1, 1.0],
   // meio-dia: céu azul forte e sol bem luminoso
   [0.5, '#b0cac9', '#3a82cc', '#fff3d6', 3.5, '#dcecf2', 1.15, 1.0],
   [0.67, '#bfd0c6', '#3f7fc0', '#ffe8c4', 3.0, '#e0e8de', 1.1, 1.0],
   // pôr do sol: dourado e vermelho
-  [0.75, '#ee8450', '#46598a', '#ff8f4a', 1.4, '#ca9f86', 0.8, 0.9],
+  [0.75, '#ee7440', '#46598a', '#ff8238', 1.4, '#ca9f86', 0.8, 0.9],
   [0.8, '#1a263f', '#070b16', '#8aaaea', 0.5, '#44609f', 0.42, 0.16],
   [1.0, '#18243c', '#060a14', '#8aaaea', 0.5, '#44609f', 0.42, 0.16],
 ].map(([t, h, z, sc, si, hs, hi, cl]) => ({ t, h: new THREE.Color(h), z: new THREE.Color(z), sc: new THREE.Color(sc), si, hs: new THREE.Color(hs), hi, cl }));
@@ -123,7 +123,7 @@ export class Sky {
       // morros da mata: neblina clara e úmida (mist = 0..1, vem do mundo)
       if (this.mist > 0.01) {
         this._mistTint = this._mistTint ?? new THREE.Color();
-        this._mistTint.setRGB(0.8, 0.84, 0.82).multiplyScalar(0.2 + this.daylight * 0.85);
+        this._mistTint.setRGB(0.66, 0.8, 0.86).multiplyScalar(0.2 + this.daylight * 0.85); // neblina azul-esverdeada da mata
         this.scene.fog.color.lerp(this._mistTint, this.mist * 0.5);
       }
       this.scene.background.copy(this.scene.fog.color);
