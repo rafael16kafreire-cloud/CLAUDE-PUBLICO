@@ -75,6 +75,7 @@ export class Player {
 
   // cam = { yaw, pitch } da câmera
   update(dt, input, cam) {
+    this._camPitch = cam?.pitch ?? 0;
     if (this.dead) {
       this._updateModel(dt);
       return;
@@ -268,13 +269,14 @@ export class Player {
         const tool = actions.tool;
         if (actions.shootArrow(cam)) {
           this._attackTimer = tool.tipo === 'arco' ? BALANCE.arco.intervalo_seg : tool.intervalo;
+          this.model.swing(tool.tipo);
           this.onPunch?.(tool.tipo);
         } else this._attackTimer = 0.4;
       } else if (this.stats.useStamina(actions?.tool && actions.tool.tipo !== 'mao' ? BALANCE.stamina.gasto_golpe_ferramenta : C.soco_stamina)) {
         const tool = actions?.tool ?? { tipo: 'mao', intervalo: C.soco_intervalo_seg };
         this._attackTimer = tool.intervalo;
         this._pendingHit = tool.tipo === 'mao' ? 0.12 : 0.14; // acerta logo no início da animação
-        this.model.swing();
+        this.model.swing(tool.tipo);
         this.onPunch?.(tool.tipo);
       }
     }
@@ -547,6 +549,7 @@ export class Player {
       crouching: this.crouching,
       swimming: this.swimming,
       dead: this.dead,
+      pitch: this._camPitch ?? 0,
       visible: !this.firstPerson || this.dead,
     });
   }

@@ -92,7 +92,7 @@ function skinArm() {
 }
 
 // Ferramentas (cabo para cima saindo do punho)
-function makeTool(kind) {
+export function makeTool(kind) {
   const g = new THREE.Group();
   const handle = (len, r = 0.02) => {
     const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 1.1, len, 6), WOOD);
@@ -226,6 +226,7 @@ export class PlayerHands {
   }
 
   setTool(kind) {
+    if ((kind ?? 'mao') !== this.toolKind) this._equip = 1; // a ferramenta sobe de baixo ao trocar
     this.toolKind = kind ?? 'mao';
     for (const [k, t] of Object.entries(this.tools)) t.visible = k === this.toolKind;
   }
@@ -259,6 +260,9 @@ export class PlayerHands {
     if (onGround && !this._wasGround) this._land = 1;
     this._wasGround = onGround;
     this._land = Math.max(0, this._land - dt * 4);
+    this._air = (this._air ?? 0) + ((onGround ? 0 : 1) - (this._air ?? 0)) * Math.min(1, dt * 8); // no ar: braço sobe
+    this._equip = Math.max(0, (this._equip ?? 0) - dt * 3.2);
+    this._run = (this._run ?? 0) + ((running && speed > 3 && onGround ? 1 : 0) - (this._run ?? 0)) * Math.min(1, dt * 6);
 
     const moving = speed > 0.3;
     this._bob += dt * (moving ? 2 + speed * 1.2 : 0);
@@ -282,6 +286,12 @@ export class PlayerHands {
       this.right.position.z += r;
       this.left.position.z -= r;
     }
+    // correndo: braço mais baixo e inclinado para dentro; no ar: sobe e abre; troca de item: sobe de baixo
+    this.right.position.y += -0.03 * this._run + this._air * 0.07 - Math.sin(this._equip * Math.PI * 0.5) * 0.35;
+    this.right.position.z += -0.04 * this._run;
+    this.right.rotation.x += this._run * 0.18 - this._air * 0.25 + this._equip * 0.9;
+    this.right.rotation.z -= this._run * 0.1;
+    this.left.position.y -= this._air * 0.0;
     if (swimming) {
       const s = Math.sin(this._bob * 1.5) * 0.1;
       this.right.position.x += s;

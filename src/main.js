@@ -1228,6 +1228,7 @@ function boot(hotData = {}) {
       world.torchLight.intensity = 0;
     }
     if (hands.toolKind !== toolKind) hands.setTool(toolKind);
+    player.model.setTool(toolKind);
     damageNumbers.update(dt, camera);
     hands.update(dt, {
       visible: !photo && game.state === STATE.PLAYING && camCtl.mode === 'primeira' && !player.dead,
