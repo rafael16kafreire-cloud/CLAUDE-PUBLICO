@@ -92,15 +92,16 @@ export class LightShafts {
     const night = sky.night ?? 0;
     const elev = sky.sunDir.y;
     // dia, com o sol nem rente ao chão nem a pino
-    const k = show ? (1 - smooth(0.2, 0.55, night)) * smooth(0.07, 0.25, elev) * (1 - smooth(0.78, 0.97, elev)) : 0;
-    this.mat.uniforms.uAlpha.value = k * 0.8;
+    const k = show ? (1 - smooth(0.2, 0.55, night)) * smooth(0.03, 0.18, elev) * (1 - smooth(0.78, 0.97, elev)) : 0;
+    const low = 1 - smooth(0.1, 0.5, elev); // sol baixo: raios mais fortes e alaranjados (Valheim)
+    this.mat.uniforms.uAlpha.value = k * (0.8 + 0.55 * low);
     this.mat.uniforms.uTime.value = performance.now() / 1000;
     if (k < 0.02) {
       this.mesh.visible = false;
       return;
     }
     this.mesh.visible = true;
-    this.mat.uniforms.uColor.value.copy(sky.sun.color).lerp(new THREE.Color('#ffe2a0'), 0.45);
+    this.mat.uniforms.uColor.value.copy(sky.sun.color).lerp(this._warm ?? (this._warm = new THREE.Color()).set('#ffe2a0'), 0.45).lerp(this._low ?? (this._low = new THREE.Color()).set('#ffa850'), low * 0.55);
     if (this._last.distanceTo(new THREE.Vector2(focus.x, focus.z)) > 6 || !this.slots.length) {
       this._last.set(focus.x, focus.z);
       this._pick(focus);
