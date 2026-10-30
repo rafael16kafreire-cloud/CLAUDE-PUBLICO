@@ -89,8 +89,8 @@ const COLORS = {
   serraRock: C('#7a7064'),
   serraDark: C('#4f4840'),
   serraGrass: C('#5e6a3a'),
-  plainsGrass: C('#7a8a3e'),
-  plainsDry: C('#9a8e52'),
+  plainsGrass: C('#4a7428'),
+  plainsDry: C('#76843a'),
   ash: C('#35302d'),
   ember: C('#6a2e1c'),
 };
