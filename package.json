@@ -1,6 +1,6 @@
 {
   "name": "ilha-primordial",
-  "version": "0.77.0",
+  "version": "0.77.1",
   "private": true,
   "description": "Ilha Primordial - jogo 3D de sobrevivência para navegador (celular e PC)",
   "type": "module",
@@ -24,5 +24,5 @@
     "meshoptimizer": "0.22.0",
     "peer": "1.0.2"
   },
-  "androidVersionCode": 112
+  "androidVersionCode": 113
 }
