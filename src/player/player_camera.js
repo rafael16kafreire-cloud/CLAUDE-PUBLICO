@@ -6,10 +6,10 @@
 import * as THREE from 'three';
 import { clamp } from '../core/math.js';
 
-const THIRD_DISTANCE = 3.4;
-const CROUCH_DISTANCE = 2.8;
+const THIRD_DISTANCE = 2.3;
+const CROUCH_DISTANCE = 1.9;
 const SHOULDER = 0.22; // personagem um pouco à esquerda da mira, como no Valheim
-const LIFT = 0.55; // câmera acima do ombro: o personagem fica na parte de baixo da tela e a mira, à frente dele
+const LIFT = 0.4; // câmera acima do ombro: o personagem fica na parte de baixo da tela e a mira, à frente dele
 
 export class PlayerCamera {
   constructor(camera, world) {
