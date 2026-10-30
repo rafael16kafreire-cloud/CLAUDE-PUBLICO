@@ -6,9 +6,9 @@
 import * as THREE from 'three';
 import { clamp } from '../core/math.js';
 
-const THIRD_DISTANCE = 4.6;
-const CROUCH_DISTANCE = 3.6;
-const SHOULDER = 0.45;
+const THIRD_DISTANCE = 2.9;
+const CROUCH_DISTANCE = 2.4;
+const SHOULDER = 0; // personagem no centro, a mira fica em cima dele (como no Valheim)
 
 export class PlayerCamera {
   constructor(camera, world) {
