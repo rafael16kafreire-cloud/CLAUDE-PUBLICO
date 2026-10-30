@@ -159,7 +159,7 @@ export class Grass {
     // Relva baixinha cobrindo o chão das pastagens: grade fina (cada ponto vira um tufo), só perto do jogador
     const rmesh = this.kinds.relva;
     const rmesh2 = this.kinds.relva2;
-    const RC = 0.23 / Math.sqrt(Math.max(0.3, this.density)); // tufos quase encostados: sem falhas no chão // um tufo a cada ~27 cm: um encostando no outro
+    const RC = 0.30 / Math.sqrt(Math.max(0.3, this.density)); // tufos quase encostados: sem falhas no chão // um tufo a cada ~27 cm: um encostando no outro
     // o raio nunca passa do que cabe no limite de tufos (senão a borda ficava falhada)
     const RR = Math.min(this.radius * 0.6, 11, Math.sqrt(((rmesh.userData.max + rmesh2.userData.max) * RC * RC) / Math.PI) * 0.95);
     const rx0 = Math.floor((focus.x - RR) / RC);
