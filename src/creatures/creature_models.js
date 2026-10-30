@@ -653,23 +653,39 @@ MODELS.dilofossauro = {
   pattern: { type: 'listras', count: 12, strength: 0.6 },
   extras: [
     ...semCor(MODELS.raptor.extras, '#7a2c18'),
-    { type: 'ellipsoid', bone: 'head', p: [0.07, 1.7, -0.97], r: [0.022, 0.2, 0.3], color: '#c23a1e' },
-    { type: 'ellipsoid', bone: 'head', p: [-0.07, 1.7, -0.97], r: [0.022, 0.2, 0.3], color: '#c23a1e' },
+    { type: 'ellipsoid', bone: 'head', p: [0.07, 1.64, -0.98], r: [0.02, 0.1, 0.34], color: '#c23a1e' },
+    { type: 'ellipsoid', bone: 'head', p: [-0.07, 1.64, -0.98], r: [0.02, 0.1, 0.34], color: '#c23a1e' },
     { type: 'ellipsoid', bone: 'neck', p: [0.13, 1.34, -0.84], r: [0.035, 0.15, 0.16], color: '#242424' },
     { type: 'ellipsoid', bone: 'neck', p: [-0.13, 1.34, -0.84], r: [0.035, 0.15, 0.16], color: '#242424' },
   ],
 };
 
-// Iguanodonte: andador de dorso reto, verde-oliva, com bico de pato e esporões nos polegares
+// Iguanodonte: andador pesado de corpo horizontal, pescoço curto, bico de pato e braços fortes com esporão no polegar
 MODELS.iguanodonte = {
-  ...MODELS.galimimo,
+  body: 'biped',
   colors: { top: '#6b6a3a', belly: '#d6cba0', pattern: '#33301a' },
-  skin: 'escamas',
-  pattern: { type: 'listras', count: 9, strength: 0.5 },
+  skin: 'escamas', pattern: { type: 'listras', count: 9, strength: 0.5 },
+  spine: [
+    [0, 1.9, 3.5, 0.06, 1, 'tail3'],
+    [0, 1.95, 2.6, 0.2, 1, 'tail2'],
+    [0, 2.0, 1.5, 0.42, 1, 'tail1'],
+    [0, 2.1, 0.4, 0.72, 1.1, 'hips'],
+    [0, 2.1, -0.75, 0.7, 1.05, 'chest'],
+    [0, 2.35, -1.55, 0.32, 1, 'neck'],
+    [0, 2.7, -2.0, 0.26, 1.05, 'head'],
+    [0, 2.62, -2.5, 0.2, 0.9, 'head'],
+    [0, 2.52, -2.95, 0.1, 0.8, 'head'],
+  ],
+  legs: [
+    ...pair('perna', 'hips', [0.5, 1.95, 0.1], [0.58, 1.2, 0.35], [0.58, 0.45, 0.0], [0.58, 0.0, -0.28], [0.34, 0.2, 0.14], 0),
+    ...pair('braco', 'chest', [0.5, 1.75, -0.9], [0.55, 1.3, -1.15], [0.55, 0.95, -1.35], [0.55, 0.85, -1.5], [0.14, 0.1, 0.06], 0),
+  ],
   extras: [
-    ...MODELS.galimimo.extras,
-    { type: 'ellipsoid', bone: 'head', p: [0, 2.36, -1.34], r: [0.085, 0.035, 0.12], color: '#c9b06a' },
-    { type: 'ellipsoid', bone: 'chest', p: [0, 1.74, -0.55], r: [0.05, 0.1, 0.55], color: '#4f4e2a' },
+    ...eyes(0.2, 2.78, -2.2, 0.045),
+    { type: 'ellipsoid', bone: 'head', p: [0, 2.5, -2.9], r: [0.2, 0.05, 0.22], color: '#c9b06a' },
+    { type: 'ellipsoid', bone: 'chest', p: [0, 2.85, -0.4], r: [0.07, 0.12, 0.9], color: '#4f4e2a' },
+    { type: 'cone', bone: 'bracoE_pe', base: [0.55, 0.86, -1.5], tip: [0.7, 0.95, -1.75], r: 0.04, color: '#2a2420' },
+    { type: 'cone', bone: 'bracoD_pe', base: [-0.55, 0.86, -1.5], tip: [-0.7, 0.95, -1.75], r: 0.04, color: '#2a2420' },
   ],
 };
 
