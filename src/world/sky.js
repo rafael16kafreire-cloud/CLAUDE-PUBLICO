@@ -119,6 +119,10 @@ export class Sky {
         this._coldTint = this._coldTint ?? new THREE.Color();
         this._coldTint.setRGB(0.72, 0.8, 0.88).multiplyScalar(0.25 + this.daylight * 0.85);
         this.scene.fog.color.lerp(this._coldTint, this.cold * 0.7);
+        // céu dourado sobre a neve (Valheim): de dia o horizonte puxa para o ouro
+        this._goldTint = this._goldTint ?? new THREE.Color();
+        this._goldTint.setRGB(1.0, 0.8, 0.52).multiplyScalar(0.3 + this.daylight * 0.8);
+        this.scene.fog.color.lerp(this._goldTint, this.cold * 0.5 * (1 - this.night));
       }
       // morros da mata: neblina clara e úmida (mist = 0..1, vem do mundo)
       if (this.mist > 0.01) {

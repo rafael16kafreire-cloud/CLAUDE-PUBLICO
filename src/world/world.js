@@ -12,6 +12,7 @@ import { WaterSystem } from './water.js';
 import { Vegetation } from './vegetation.js';
 import { Grass } from './grass.js';
 import { LightShafts } from './light_shafts.js';
+import { Snowfall } from './snowfall.js';
 import { Sky, NIGHT_START, NIGHT_END } from './sky.js';
 import { Effects } from './effects.js';
 import { Underwater } from './underwater.js';
@@ -52,6 +53,7 @@ export class World {
     this.grass = new Grass(this.map, this.water, scene);
     this.sky = new Sky(scene);
     this.shafts = new LightShafts(scene, this.map, this.water);
+    this.snowfall = new Snowfall(scene);
     this.effects = new Effects(scene);
     this._focus = null;
     this.fallingTrees = new FallingTrees(scene, this.vegetation, this.effects, this.map);
@@ -282,6 +284,7 @@ export class World {
     this.sky.update(camera, focus);
     this.grass.update(focus);
     this.shafts.update(camera, this.sky, focus, !this.cameraUnderwater);
+    this.snowfall.update(camera, dt, this.sky.cold ?? 0, this.sky.daylight ?? 1, this.cameraUnderwater);
     this.vegetation.update(dt, camera, this.viewDistance);
     this.effects.update(dt);
     this._focus = focus;
