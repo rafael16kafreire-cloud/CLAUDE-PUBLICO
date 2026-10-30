@@ -178,7 +178,7 @@ export class Grass {
         const gold = cellHash(ix, iz, 18);
         // manchas: a maioria verde viva, alguns tufos dourados (como nos campos de Valheim)
         const dry = gold > 0.78 ? 1.3 : gold > 0.6 ? 1.12 : 1;
-        this._c.setRGB(1.0 * v * dry, 1.08 * v, 0.62 * v / dry);
+        this._c.setRGB(0.78 * v * dry, 1.0 * v, 0.62 * v / dry);
         rm.setColorAt(n[rk], this._c);
         n[rk]++;
       }

@@ -1077,9 +1077,9 @@ export function makeGramaTufo(variante = 0, k = 1) {
   const winds = [];
   const cols = [];
   const idx = [];
-  const base = new THREE.Color('#34501e');
-  const mid = new THREE.Color('#6a9034');
-  const tip = new THREE.Color('#b4cc66');
+  const base = new THREE.Color('#2d4a1c');
+  const mid = new THREE.Color('#5d8a30');
+  const tip = new THREE.Color('#9dbb55');
   for (const b of tufo) {
     const dx = b.d[0];
     const dz = b.d[1];
