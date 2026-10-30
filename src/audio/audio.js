@@ -63,6 +63,7 @@ const VOICES = {
   dimetrodonte: { kind: 'rosnado', f: 110, d: 0.9 },
   kentrossauro: { kind: 'mugido', f: 150, d: 0.7 },
   paquirrinossauro: { kind: 'mugido', f: 75, d: 1.3 },
+  moschops: { kind: 'mugido', f: 170, d: 0.7 },
 };
 
 class Sound {

@@ -2360,6 +2360,89 @@
     "forca": 0.05,
     "torpor": 0.06
    }
+  },
+  {
+   "id": "moschops",
+   "comprimento_m": [
+    2.6,
+    3.0
+   ],
+   "nome": "Moschops",
+   "dieta": "herbivoro",
+   "temperamento": "passivo",
+   "vida": 200,
+   "dano": 18,
+   "vel_andar": 1.4,
+   "vel_correr": 4.8,
+   "tamanho": 1,
+   "raio": 0.8,
+   "altura": 1.1,
+   "biomas": [
+    "campos",
+    "selva",
+    "praia",
+    "pantano"
+   ],
+   "peso_spawn": 4,
+   "grupo": [
+    2,
+    4
+   ],
+   "xp": 25,
+   "loot": {
+    "carne_crua": [
+     3,
+     6
+    ],
+    "couro": [
+     2,
+     4
+    ],
+    "ossos": [
+     1,
+     2
+    ]
+   },
+   "pode_domar": true,
+   "comida_preferida": "baga_mejo",
+   "revida": true,
+   "alcance_ataque": 1.5,
+   "intervalo_ataque": 1.2,
+   "pode_montar": false,
+   "carga": 120,
+   "atributos": {
+    "vida": [
+     200,
+     200
+    ],
+    "forca": [
+     100,
+     100
+    ],
+    "peso": [
+     120,
+     120
+    ],
+    "stamina": [
+     180,
+     180
+    ],
+    "velocidade": [
+     100,
+     100
+    ],
+    "torpor": [
+     150,
+     150
+    ]
+   },
+   "ark_por_nivel": {
+    "vida": 0.2,
+    "stamina": 0.1,
+    "peso": 0.02,
+    "forca": 0.05,
+    "torpor": 0.06
+   }
   }
  ]
 }

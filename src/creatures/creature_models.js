@@ -695,6 +695,33 @@ MODELS.kentrossauro = {
   pattern: { type: 'manchas', freq: 7, strength: 0.55 },
 };
 
+// Moschops: réptil-mamífero baixo e atarracado, corpo de barril, cabeça grossa com testa saliente e cauda curta
+MODELS.moschops = {
+  body: 'quad',
+  colors: { top: '#8a7a52', belly: '#d8cca0', pattern: '#4a3d24' },
+  skin: 'escamas', pattern: { type: 'listras', count: 9, strength: 0.5 },
+  spine: [
+    [0, 0.55, 1.5, 0.04, 1, 'tail3'],
+    [0, 0.62, 1.0, 0.14, 1, 'tail2'],
+    [0, 0.7, 0.55, 0.26, 1, 'tail1'],
+    [0, 0.78, 0.1, 0.42, 1.05, 'hips'],
+    [0, 0.78, -0.5, 0.44, 1.05, 'chest'],
+    [0, 0.74, -1.0, 0.28, 1, 'neck'],
+    [0, 0.7, -1.3, 0.3, 1, 'head'],
+    [0, 0.62, -1.65, 0.2, 0.9, 'head'],
+    [0, 0.55, -1.9, 0.09, 0.85, 'head'],
+  ],
+  legs: [
+    ...pair('trás', 'hips', [0.36, 0.68, 0.3], [0.6, 0.42, 0.4], [0.62, 0.12, 0.3], [0.62, 0.0, 0.08], [0.16, 0.12, 0.08], 0),
+    ...pair('frente', 'chest', [0.36, 0.68, -0.6], [0.58, 0.42, -0.72], [0.6, 0.12, -0.62], [0.6, 0.0, -0.84], [0.14, 0.1, 0.07], 0.25),
+  ],
+  extras: [
+    ...eyes(0.2, 0.82, -1.45, 0.04),
+    { type: 'ellipsoid', bone: 'head', p: [0, 0.93, -1.3], r: [0.24, 0.13, 0.22], color: '#6e5e3e' },
+    { type: 'ellipsoid', bone: 'chest', p: [0, 1.1, -0.2], r: [0.12, 0.1, 0.7], color: '#5e4e30' },
+  ],
+};
+
 // Paquirrinossauro: parente do triceratops sem chifres, com uma grande protuberância no nariz e gola curta
 MODELS.paquirrinossauro = {
   ...MODELS.triceratops,
