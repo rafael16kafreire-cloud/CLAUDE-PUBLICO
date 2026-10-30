@@ -257,13 +257,13 @@ export default {
     efetividade_por_dano: 1.5, // bater no bicho desmaiado: perde efetividade (dano/vida x 1,5)
     torpor_por_dano: { mao: 1.6, clava: 3.0, outro: 0.2 }, // torpor = dano × isto
     torpor_cai_seg: 0.03,      // acordado: torpor cai X do máximo por segundo
-    desmaio_cai_seg: 0.005,    // desmaiado: cai X do máximo por segundo (~3 min)
-    comer_a_cada_seg: 3,       // come uma comida a cada X s
-    comidas_base: 4,           // comidas preferidas para domar no nível 1
-    comidas_por_nivel: 0.2,    // + X por nível
-    comida_qualquer: 0.35,     // comida que não é a preferida vale isso
+    desmaio_cai_seg: 0.0065,   // desmaiado: cai X do máximo por segundo (~2,5 min)
+    comer_a_cada_seg: 7,       // come uma comida a cada X s (devagar, como no ARK)
+    comidas_base: 10,          // comidas preferidas para domar no nível 1
+    comidas_por_nivel: 0.5,    // + X por nível (nível 30 pede ~25 comidas = 3 min: precisa de narcótico)
+    comida_qualquer: 0.25,     // comida que não é a preferida vale isso
     baga_escura_torpor: 0.15,  // cada baga-escura dada põe +15% de torpor
-    narcotico_torpor: 0.4,     // cada Narcótico dado põe +40% de torpor
+    narcotico_torpor: 0.3,     // cada Narcótico dado põe +40% de torpor
     seguir_m: 4,               // distância que o bicho domado fica de você
   },
 
