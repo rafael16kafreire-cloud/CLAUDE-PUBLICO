@@ -102,7 +102,10 @@ export class CreatureManager {
     for (const c of this.list) {
       c.update(dt, ctx);
       // Sombra só para as que estão perto.
-      c.mesh.castShadow = c.pos.distanceTo(camera.position) < 32;
+      const dCam = c.pos.distanceTo(camera.position);
+      c.mesh.castShadow = dCam < 32;
+      // longe da câmera o bicho nem é desenhado (a névoa já esconde): poupa os modelos pesados
+      c.mesh.visible = dCam < (settings.quality?.drawCreatures ?? 110) || c === player.riding || c.rider === player;
     }
     this._separate();
 

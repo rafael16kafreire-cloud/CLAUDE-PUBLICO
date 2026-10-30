@@ -267,7 +267,7 @@ function boot(hotData = {}) {
     if (!ctx) return;
     ctx.world.setQuality(q);
     const lp = settings.get('lowPoly');
-    ctx.world.setLowPoly(lp === 'ligado' ? true : lp === 'desligado' ? false : !!ctx.world._autoLow);
+    ctx.world.setLowPoly(lp === 'ligado' ? true : lp === 'desligado' ? false : !!ctx.world._autoLow || settings.get('quality') === 'baixa'); // qualidade Baixa já usa grama e árvores low poly
     const vd = settings.get('viewDistance');
     ctx.world.setViewDistance(vd);
     camera.far = vd + 40;

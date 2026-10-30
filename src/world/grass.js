@@ -73,6 +73,7 @@ export class Grass {
     };
     this.enabled = true;
     this.lowPoly = false;
+    this._step = -1;
     this._last = new THREE.Vector2(1e9, 1e9);
     this._m = new THREE.Matrix4();
     this._q = new THREE.Quaternion();
@@ -113,18 +114,32 @@ export class Grass {
     this._last.set(1e9, 1e9);
   }
 
+  // Reconstrói o mato em fatias: uma camada por quadro (a conta toda de uma vez dava um engasgo a cada poucos passos).
   update(focus) {
     if (!this.enabled) return;
-    if (this._last.distanceTo(new THREE.Vector2(focus.x, focus.z)) < 5) return;
+    if (this._step >= 0 && this._step < 4) {
+      const f = this._focus;
+      const names = ['main', 'relva', 'mini', 'far'];
+      this[`_layer_${names[this._step]}`](f);
+      this._step++;
+      return;
+    }
+    const moved = this._last.distanceTo(new THREE.Vector2(focus.x, focus.z));
+    if (moved < (this.lowPoly ? 6 : 7)) return;
     this._last.set(focus.x, focus.z);
+    this._focus = { x: focus.x, z: focus.z };
+    this._step = 0;
+  }
 
+  // camada: main
+  _layer_main(focus) {
+    const n = { capim: 0, capim2: 0, folha: 0, broto: 0, flor: 0 };
     const R = this.radius;
     const x0 = Math.floor((focus.x - R) / CELL);
     const x1 = Math.floor((focus.x + R) / CELL);
     const z0 = Math.floor((focus.z - R) / CELL);
     const z1 = this.lowPoly ? z0 - 1 : Math.floor((focus.z + R) / CELL);
     const r2 = R * R;
-    const n = { capim: 0, capim2: 0, folha: 0, broto: 0, flor: 0, relva: 0, relva2: 0, mini: 0, mini2: 0, longe: 0 };
     for (let iz = z0; iz <= z1; iz++) {
       for (let ix = x0; ix <= x1; ix++) {
         const x = (ix + cellHash(iz, ix, 1)) * CELL;
@@ -167,6 +182,17 @@ export class Grass {
         n[kind]++;
       }
     }
+    for (const k of ['capim', 'capim2', 'folha', 'broto', 'flor']) {
+      const mesh = this.kinds[k];
+      mesh.count = n[k];
+      mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    }
+  }
+
+  // camada: relva
+  _layer_relva(focus) {
+    const n = { relva: 0, relva2: 0 };
     // Relva baixinha cobrindo o chão das pastagens: grade fina (cada ponto vira um tufo), só perto do jogador
     const rmesh = this.kinds.relva;
     const rmesh2 = this.kinds.relva2;
@@ -213,6 +239,17 @@ export class Grass {
         n[rk]++;
       }
     }
+    for (const k of ['relva', 'relva2']) {
+      const mesh = this.kinds[k];
+      mesh.count = n[k];
+      mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    }
+  }
+
+  // camada: mini
+  _layer_mini(focus) {
+    const n = { mini: 0, mini2: 0 };
     // Plantinhas miúdas cobrindo o chão (só enfeite, sem coleta): grade fina, só perto do jogador
     const MC = 0.38 / Math.sqrt(Math.max(0.3, this.density));
     const mmax = this.kinds.mini.userData.max + this.kinds.mini2.userData.max;
@@ -232,7 +269,7 @@ export class Grass {
         const far = Math.min(1, Math.max(0, (dd / MR - 0.3) / 0.7));
         if (cellHash(ix, iz, 33) > 1 - 0.5 * far) continue;
         const mcfg = BY_BIOME[this.map.biomeAt(x, z)];
-        if (!mcfg?.mini || cellHash(ix, iz, 34) > mcfg.mini) continue;
+        if (!mcfg?.mini || cellHash(ix, iz, 34) > mcfg.mini * Math.min(1, this.density / 0.9)) continue; // aparelho fraco: menos plantinhas
         const mk = cellHash(ix, iz, 35) < 0.55 ? 'mini' : 'mini2';
         const mm = this.kinds[mk];
         if (n[mk] >= mm.userData.max) continue;
@@ -255,6 +292,17 @@ export class Grass {
         n[mk]++;
       }
     }
+    for (const k of ['mini', 'mini2']) {
+      const mesh = this.kinds[k];
+      mesh.count = n[k];
+      mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    }
+  }
+
+  // camada: far
+  _layer_far(focus) {
+    const n = { longe: 0 };
     // Grama low poly (7 triângulos por tufo). Normal: grade larga do fim da grama detalhada até longe.
     // Modo lento (lowPoly): é a única grama; perto do jogador os tufos ficam JUNTINHOS (grade fina, quase
     // encostando), e mais longe a grade abre.
@@ -299,10 +347,12 @@ export class Grass {
         }
       }
     }
-    for (const [k, mesh] of Object.entries(this.kinds)) {
+    for (const k of ['longe']) {
+      const mesh = this.kinds[k];
       mesh.count = n[k];
       mesh.instanceMatrix.needsUpdate = true;
       if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     }
   }
+
 }

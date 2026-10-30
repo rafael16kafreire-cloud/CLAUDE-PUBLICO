@@ -15,16 +15,16 @@ const SETTINGS_VERSION = 3;
 // (depois disso viram "cartões" leves). grassRadius: raio do mato.
 export const QUALITY_PRESETS = {
   baixa: {
-    pixelRatio: 0.75, shadows: false, shadowMap: 512, shadowRange: 40, viewDistance: 130,
-    lodHi: 22, lodLo: 55, grassRadius: 16, grassDensity: 0.55, creatures: 45, post: 'none',
+    pixelRatio: 0.75, shadows: false, shadowMap: 512, shadowRange: 40, viewDistance: 115,
+    lodHi: 14, lodLo: 40, grassRadius: 16, grassDensity: 0.55, creatures: 18, drawCreatures: 70, post: 'none',
   },
   media: {
     pixelRatio: 1.0, shadows: true, shadowMap: 2048, shadowRange: 48, viewDistance: 180,
-    lodHi: 28, lodLo: 80, grassRadius: 26, grassDensity: 0.9, creatures: 45, post: 'grade',
+    lodHi: 28, lodLo: 80, grassRadius: 26, grassDensity: 0.9, creatures: 32, drawCreatures: 110, post: 'grade',
   },
   alta: {
     pixelRatio: 2, shadows: true, shadowMap: 4096, shadowRange: 80, viewDistance: 320,
-    lodHi: 120, lodLo: 240, grassRadius: 55, grassDensity: 1.6, creatures: 45, post: 'cinema',
+    lodHi: 120, lodLo: 240, grassRadius: 55, grassDensity: 1.6, creatures: 45, drawCreatures: 190, post: 'cinema',
   },
 };
 
