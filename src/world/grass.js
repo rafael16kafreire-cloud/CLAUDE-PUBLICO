@@ -205,7 +205,7 @@ export class Grass {
       }
     }
     // Plantinhas miúdas cobrindo o chão (só enfeite, sem coleta): grade fina, só perto do jogador
-    const MC = 0.3 / Math.sqrt(Math.max(0.3, this.density));
+    const MC = 0.38 / Math.sqrt(Math.max(0.3, this.density));
     const mmax = this.kinds.mini.userData.max + this.kinds.mini2.userData.max;
     const MR = Math.min(this.radius * 0.6, 10, Math.sqrt((mmax * MC * MC) / Math.PI) * 0.95);
     const mx0 = Math.floor((focus.x - MR) / MC);
@@ -221,7 +221,7 @@ export class Grass {
         const dd = Math.sqrt(dx * dx + dz * dz);
         if (dd > MR) continue;
         const far = Math.min(1, Math.max(0, (dd / MR - 0.3) / 0.7));
-        if (cellHash(ix, iz, 33) > 1 - 0.35 * far) continue;
+        if (cellHash(ix, iz, 33) > 1 - 0.5 * far) continue;
         const mcfg = BY_BIOME[this.map.biomeAt(x, z)];
         if (!mcfg?.mini || cellHash(ix, iz, 34) > mcfg.mini) continue;
         const mk = cellHash(ix, iz, 35) < 0.55 ? 'mini' : 'mini2';
