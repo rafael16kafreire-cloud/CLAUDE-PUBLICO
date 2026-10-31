@@ -11,6 +11,7 @@
 import * as THREE from 'three';
 import { ClipPlayer } from './clip_player.js';
 import { PASSOS } from './gait_profiles.js';
+import { PASSO_CAL } from './passo_cal.js';
 import { aplicarTraco } from './tracos.js';
 import { angleDelta, clamp } from '../core/math.js';
 import { BALANCE } from '../core/balance.js';
@@ -31,6 +32,8 @@ const FOOD_LOW = new Set(['arbusto', 'arbusto_mejo', 'arbusto_escura', 'arbusto_
 const GAIT_OF = {
   anquilossauro: 'baixo', estegossauro: 'baixo', triceratops: 'baixo', parassauro: 'baixo',
   sauropelta: 'baixo', braquiossauro: 'alto', mamute: 'alto', argentinossauro: 'alto',
+  // modelos novos (quadrúpedes)
+  moschops: 'baixo', paquirrinossauro: 'baixo', kentrossauro: 'baixo', diplodoco: 'alto',
 };
 // valor da curva (n pontos por passo) na fase p (0..1), com interpolação
 function gaitAt(c, p) {
@@ -1248,6 +1251,9 @@ export class Creature {
         const c = cp.clips.andar;
         want = 'andar';
         rate = c.stride ? Math.min(3, (this.speed / (c.stride * this.scale)) * (c.duration / c.cycles)) : 1;
+        // calibragem medida do pé no chão (1 = parado): corrige o ritmo do clipe
+        const pc = PASSO_CAL[this.species.id];
+        if (pc) rate = Math.min(8, rate * Math.pow(clamp(1 / Math.max(0.1, pc.walk + (pc.run - pc.walk) * this.anim.run), 0.4, 6), 0.75));
       } else if (this.speed <= 0.15) want = 'parado';
     }
     const active = cp.update(dt, want, rate);
@@ -1291,10 +1297,24 @@ export class Creature {
     const legLen = Math.max(0.25, this.height * 0.45);
     // passo de verdade: andando a perna abre ~0,35 rad, correndo até ~0,7;
     // o ritmo segue o tamanho do passo (o pé não escorrega no chão)
-    const moving = clamp(this.speed / Math.max(0.15, this.walkSpeed * 0.4), 0, 1);
-    const amp = moving * (0.34 + 0.36 * A.run);
-    const stride = spec.body === 'spider' ? legLen * 1.4 : Math.max(0.3, 4 * legLen * Math.sin(Math.max(0.2, amp)) * 0.85);
-    this.phase += (adt * this.speed) / stride;
+    // virando parado: o bicho dá passinhos no lugar em vez de girar com as patas congeladas
+    const turnStep = this.speed < 0.3 && !dead ? Math.abs(A.turn) * Math.max(0.5, this.radius) * 0.9 : 0;
+    const spd = Math.max(this.speed, turnStep);
+    const moving = clamp(spd / Math.max(0.15, this.walkSpeed * 0.4), 0, 1);
+    // calibragem medida: o pé varre o chão X vezes mais rápido que o corpo (X = r). Corrige o tamanho do passo
+    // (ampK) e o ritmo (freqK) em partes iguais para o pé ficar parado no chão (r = 1).
+    const cal = PASSO_CAL[this.species.id];
+    let ampK = 1;
+    let freqK = 1;
+    if (cal && !this.flies && !this.aquatic) {
+      const r = Math.max(0.1, cal.walk + (cal.run - cal.walk) * A.run);
+      const want = 1 / r;
+      ampK = clamp(Math.sqrt(want), 0.6, 2);
+      freqK = clamp(want / ampK, 0.45, 2.5);
+    }
+    const amp = moving * (0.34 + 0.36 * A.run) * ampK;
+    const stride = (spec.body === 'spider' ? legLen * 1.4 : Math.max(0.3, 4 * legLen * Math.sin(Math.max(0.2, amp / ampK)) * 0.85)) / freqK;
+    this.phase += (adt * spd) / stride;
     // pisada dos gigantes: poeira, barulho surdo e o chão treme
     const step = Math.floor(this.phase * 2);
     if (step !== this._lastStep) {
@@ -1414,7 +1434,7 @@ export class Creature {
       const gait = PASSOS[GAIT_OF[this.species.id]]?.pernas[leg.name.slice(0, -1)];
       if (gait && spec.body === 'quad') {
         const p = this.phase + gait.atraso + (leg.name.endsWith('D') ? gait.atraso_D : 0);
-        const g = moving * (1 + A.run * 0.8);
+        const g = moving * (1 + A.run * 0.8) * ampK;
         thigh.rotation.x = gaitAt(gait.coxa, p) * g;
         if (knee && gait.joelho) knee.rotation.x = gaitAt(gait.joelho, p) * g;
         if (foot && gait.pe) foot.rotation.x = gaitAt(gait.pe, p) * g;
@@ -1441,10 +1461,10 @@ export class Creature {
       const breathe = Math.sin(t * 1.6) * 0.012 * legLen * (1 - A.run);
       b.hips.position.y = rest.y + (bob + breathe) / this.scale;
       // balanço lateral de quem anda em 2 pernas + inclinação nas curvas
-      const sway = spec.body === 'biped' ? Math.sin(this.phase * TAU) * amp * 0.06 : 0;
+      const sway = Math.sin(this.phase * TAU) * amp * (spec.body === 'biped' ? 0.06 : spec.body === 'quad' ? 0.035 : 0.02);
       b.hips.rotation.z = sway - A.turn * 0.08 + this.hurtAnim * 0.15;
       // correndo, o corpo inclina para frente
-      b.hips.rotation.x = -A.run * 0.06 * (spec.body === 'biped' ? 1 : 0.4) + (dead ? 0 : 0);
+      b.hips.rotation.x = -A.run * 0.06 * (spec.body === 'biped' ? 1 : 0.4) + (dead ? 0 : Math.sin(this.phase * TAU * 2) * amp * 0.02); // cabeceio do passo
     }
     if (b.chest) b.chest.rotation.y = A.turn * 0.12;
 
