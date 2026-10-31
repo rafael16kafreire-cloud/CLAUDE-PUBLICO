@@ -84,9 +84,9 @@ O custo de cada peça usa os recursos do jogo e sai do volume real de cada parte
 | pedras aparentes | Pedra | 0,15 m³ |
 | argamassa (miolo das peças de pedra) | Pasta de Cimento | 1 m³ |
 | ferragens (faixas, argolas, pinos) | Lingote de Metal | 0,0025 m³ |
-| chapas de metal | Lingote de Metal | 0,02 m³ |
+| chapas e estrutura de metal | Lingote de Metal | 0,03 m³ |
 | blocos de obsidiana | Obsidiana | 0,12 m³ |
-| cristais brilhantes | Cristal | 0,002 m³ |
+| cristais brilhantes | Cristal | 0,008 m³ |
 
 Para balancear, mude os números de `fontes` em `RECURSOS` no `index.html` e rode `node exportar.mjs` de novo.
 Tabela completa em [`CUSTOS.md`](CUSTOS.md).

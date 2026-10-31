@@ -2,54 +2,60 @@
   "recursos": {
     "madeira": {
       "nome": "Madeira",
-      "vem_de": [
-        "madeira",
-        "madeira_escura",
-        "tronco"
-      ],
-      "m3": 0.04
+      "m3_por_unidade": {
+        "madeira": 0.04,
+        "madeira_escura": 0.04,
+        "tronco": 0.04
+      }
     },
     "palha": {
       "nome": "Palha",
-      "vem_de": [
-        "palha"
-      ],
-      "m3": 0.25
+      "m3_por_unidade": {
+        "palha": 0.25
+      }
     },
     "graveto": {
       "nome": "Graveto",
-      "vem_de": [
-        "palha"
-      ],
-      "m3": 0.5
+      "m3_por_unidade": {
+        "palha": 0.5
+      }
     },
     "fibra": {
       "nome": "Fibra",
-      "vem_de": [
-        "palha"
-      ],
-      "m3": 0.5
+      "m3_por_unidade": {
+        "palha": 0.5
+      }
     },
     "pedra": {
       "nome": "Pedra",
-      "vem_de": [
-        "pedra"
-      ],
-      "m3": 0.15
+      "m3_por_unidade": {
+        "pedra": 0.15
+      }
     },
     "cimento": {
       "nome": "Pasta de Cimento",
-      "vem_de": [
-        "argamassa"
-      ],
-      "m3": 1
+      "m3_por_unidade": {
+        "argamassa": 1
+      }
     },
     "lingote": {
       "nome": "Lingote de Metal",
-      "vem_de": [
-        "ferro"
-      ],
-      "m3": 0.0025
+      "m3_por_unidade": {
+        "ferro": 0.0025,
+        "metal": 0.03
+      }
+    },
+    "obsidiana": {
+      "nome": "Obsidiana",
+      "m3_por_unidade": {
+        "obsidiana": 0.12
+      }
+    },
+    "cristal": {
+      "nome": "Cristal",
+      "m3_por_unidade": {
+        "cristal": 0.008
+      }
     }
   },
   "pecas": {
@@ -400,6 +406,164 @@
         "pedra": 185,
         "cimento": 25
       }
+    },
+    "muro_pedra_grande": {
+      "nome": "Muro de pedra grande",
+      "categoria": "Muros de pedra",
+      "tamanho": "6 × 6 m (1,2 m)",
+      "custo": {
+        "pedra": 275,
+        "cimento": 50
+      }
+    },
+    "muro_pedra_gigante": {
+      "nome": "Muro de pedra gigante",
+      "categoria": "Muros de pedra",
+      "tamanho": "9 × 9 m (1,8 m)",
+      "custo": {
+        "pedra": 665,
+        "cimento": 170
+      }
+    },
+    "portal_pedra_gigante": {
+      "nome": "Portal gigante de pedra",
+      "categoria": "Muros de pedra",
+      "tamanho": "9 × 9 m (vão de 6,6 × 7,5 m, para dinossauros grandes)",
+      "custo": {
+        "pedra": 400,
+        "cimento": 45,
+        "lingote": 30
+      }
+    },
+    "portao_pedra_gigante_esq": {
+      "nome": "Portão gigante de pedra (esquerda)",
+      "categoria": "Muros de pedra",
+      "tamanho": "3,28 × 7,46 m (uma folha)",
+      "custo": {
+        "madeira": 195,
+        "lingote": 2
+      }
+    },
+    "portao_pedra_gigante_dir": {
+      "nome": "Portão gigante de pedra (direita)",
+      "categoria": "Muros de pedra",
+      "tamanho": "3,28 × 7,46 m (uma folha)",
+      "custo": {
+        "madeira": 195,
+        "lingote": 2
+      }
+    },
+    "muro_metal": {
+      "nome": "Muro de metal",
+      "categoria": "Muros de metal",
+      "tamanho": "3 × 3 m (0,9 m)",
+      "custo": {
+        "lingote": 95
+      }
+    },
+    "muro_metal_grande": {
+      "nome": "Muro de metal grande",
+      "categoria": "Muros de metal",
+      "tamanho": "6 × 6 m (1,2 m)",
+      "custo": {
+        "lingote": 545
+      }
+    },
+    "muro_metal_gigante": {
+      "nome": "Muro de metal gigante",
+      "categoria": "Muros de metal",
+      "tamanho": "9 × 9 m (1,8 m)",
+      "custo": {
+        "lingote": 1280
+      }
+    },
+    "portal_metal_gigante": {
+      "nome": "Portal gigante de metal",
+      "categoria": "Muros de metal",
+      "tamanho": "9 × 9 m (vão de 6,6 × 7,5 m, para dinossauros grandes)",
+      "custo": {
+        "lingote": 710
+      }
+    },
+    "portao_metal_gigante_esq": {
+      "nome": "Portão gigante de metal (esquerda)",
+      "categoria": "Muros de metal",
+      "tamanho": "3,28 × 7,46 m (uma folha)",
+      "custo": {
+        "lingote": 130
+      }
+    },
+    "portao_metal_gigante_dir": {
+      "nome": "Portão gigante de metal (direita)",
+      "categoria": "Muros de metal",
+      "tamanho": "3,28 × 7,46 m (uma folha)",
+      "custo": {
+        "lingote": 130
+      }
+    },
+    "muro_obsidiana": {
+      "nome": "Muro de obsidiana",
+      "categoria": "Muros de obsidiana",
+      "tamanho": "3 × 3 m (0,9 m)",
+      "custo": {
+        "cimento": 5,
+        "lingote": 30,
+        "obsidiana": 50,
+        "cristal": 1
+      }
+    },
+    "muro_obsidiana_grande": {
+      "nome": "Muro de obsidiana grande",
+      "categoria": "Muros de obsidiana",
+      "tamanho": "6 × 6 m (1,2 m)",
+      "custo": {
+        "cimento": 45,
+        "lingote": 150,
+        "obsidiana": 315,
+        "cristal": 25
+      }
+    },
+    "muro_obsidiana_gigante": {
+      "nome": "Muro de obsidiana gigante",
+      "categoria": "Muros de obsidiana",
+      "tamanho": "9 × 9 m (1,8 m)",
+      "custo": {
+        "cimento": 160,
+        "lingote": 330,
+        "obsidiana": 800,
+        "cristal": 115
+      }
+    },
+    "portal_obsidiana_gigante": {
+      "nome": "Portal gigante de obsidiana",
+      "categoria": "Muros de obsidiana",
+      "tamanho": "9 × 9 m (vão de 6,6 × 7,5 m, para dinossauros grandes)",
+      "custo": {
+        "cimento": 55,
+        "lingote": 30,
+        "obsidiana": 365,
+        "cristal": 25
+      }
+    },
+    "portao_obsidiana_gigante_esq": {
+      "nome": "Portão gigante de obsidiana (esquerda)",
+      "categoria": "Muros de obsidiana",
+      "tamanho": "3,28 × 7,46 m (uma folha)",
+      "custo": {
+        "lingote": 40,
+        "obsidiana": 25,
+        "cristal": 4
+      }
+    },
+    "portao_obsidiana_gigante_dir": {
+      "nome": "Portão gigante de obsidiana (direita)",
+      "categoria": "Muros de obsidiana",
+      "tamanho": "3,28 × 7,46 m (uma folha)",
+      "custo": {
+        "lingote": 40,
+        "obsidiana": 25,
+        "cristal": 4
+      }
     }
   },
   "cenas": {
@@ -413,6 +577,17 @@
         "palha": 180,
         "graveto": 84,
         "fibra": 84
+      }
+    },
+    "muralhas_niveis": {
+      "nome": "Muralhas: pedra, metal e obsidiana",
+      "custo": {
+        "pedra": 2330,
+        "cimento": 970,
+        "lingote": 5974,
+        "madeira": 390,
+        "obsidiana": 2755,
+        "cristal": 307
       }
     },
     "mostruario_pmg": {
