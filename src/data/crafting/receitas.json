@@ -141,8 +141,8 @@
    "xp": 12,
    "categoria": "Estruturas",
    "ingredientes": {"madeira": 30, "pedra": 30, "couro": 10, "fibra": 20},
-   "nivel": 5,
-   "engrama": 2
+   "nivel": 1,
+   "engrama": 0
   },
   {
    "id": "piso",
