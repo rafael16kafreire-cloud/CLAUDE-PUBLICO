@@ -439,5 +439,33 @@
    "copyright": "uso pessoal",
    "url": "-"
   }
+ },
+ "moschops": {
+  "arquivo": "Moschops",
+  "giro": "y180",
+  "triangulos": 16000
+ },
+ "dimetrodonte": {
+  "arquivo": "Dimetrodon",
+  "giro": "y180",
+  "triangulos": 16000
+ },
+ "paquirrinossauro": {
+  "arquivo": "Accurate_Pachyrhinosaurus",
+  "giro": "cabeca_cima_costas",
+  "triangulos": 16000
+ },
+ "diplodoco": {
+  "arquivo": "Diplodocus",
+  "giro": "y180",
+  "triangulos": 16000
+ },
+ "terizinossauro": {
+  "arquivo": "Therizinosaurus",
+  "giro": "y180",
+  "exclui": [
+   "Saddle"
+  ],
+  "triangulos": 20000
  }
 }

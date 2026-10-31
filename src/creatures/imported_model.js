@@ -32,12 +32,18 @@ import galimimo from './imported/galimimo.js';
 import dodo from './imported/dodo.js';
 import paquicefalossauro from './imported/paquicefalossauro.js';
 import piranha from './imported/piranha.js';
+import moschops from './imported/moschops.js';
+import dimetrodonte from './imported/dimetrodonte.js';
+import paquirrinossauro from './imported/paquirrinossauro.js';
+import diplodoco from './imported/diplodoco.js';
+import terizinossauro from './imported/terizinossauro.js';
 
 export const IMPORTED = {
   espinossauro, trex, braquiossauro, titanoboa, deinosuchus, estegossauro,
   anquilossauro, parassauro, raptor, quetzalcoatlus, mamute, argentavis, reidodo,
   // com animação do próprio modelo
   sauropelta, argentinossauro, mosassauro, pterodactilo, carnotauro, triceratops, galimimo, dodo, paquicefalossauro, piranha,
+  moschops, dimetrodonte, paquirrinossauro, diplodoco, terizinossauro,
 };
 
 function bytes(b64) {
@@ -70,6 +76,11 @@ const TINTAS = {
   estegossauro: { costas: '#8f7f3d', barriga: '#d8cc9a', listra: '#3a301c', freq: 1.7, forca: 0.5, brilho: 1.9 },
   anquilossauro: { costas: '#75603c', barriga: '#bba67a', listra: '#2e2414', freq: 1.4, forca: 0.35, brilho: 1.9 },
   titanoboa: { costas: '#55612f', barriga: '#d3c48c', listra: '#1b2210', freq: 1.0, forca: 0.55, brilho: 1.8 },
+  // modelos com textura cinza ("Colorize"): pintamos os vértices e a textura dá o relevo
+  moschops: { costas: '#8a7650', barriga: '#cdbf98', listra: '#3d3220', freq: 1.6, forca: 0.4, brilho: 1.8 },
+  diplodoco: { costas: '#6f7d58', barriga: '#cfc8a4', listra: '#2b3320', freq: 0.8, forca: 0.35, brilho: 1.8 },
+  terizinossauro: { costas: '#7a6a48', barriga: '#d6c9a0', listra: '#352a18', freq: 1.0, forca: 0.4, brilho: 1.8 },
+  paquirrinossauro: { costas: '#85805a', barriga: '#d2c698', listra: '#3a3520', freq: 1.2, forca: 0.25, brilho: 2.3 },
   argentavis: { costas: '#5d4630', barriga: '#c4b391', listra: '#2a1d10', freq: 1.2, forca: 0.3, brilho: 1.9 },
 };
 

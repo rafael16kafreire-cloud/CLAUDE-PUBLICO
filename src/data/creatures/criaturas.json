@@ -2443,6 +2443,173 @@
     "forca": 0.05,
     "torpor": 0.06
    }
+  },
+  {
+   "id": "diplodoco",
+   "comprimento_m": [
+    24,
+    27
+   ],
+   "nome": "Diplodoco",
+   "dieta": "herbivoro",
+   "temperamento": "passivo",
+   "vida": 2400,
+   "dano": 130,
+   "vel_andar": 1.5,
+   "vel_correr": 6.1,
+   "tamanho": 1,
+   "raio": 3.2,
+   "altura": 13,
+   "biomas": [
+    "campos",
+    "selva"
+   ],
+   "peso_spawn": 1.5,
+   "grupo": [
+    1,
+    2
+   ],
+   "xp": 120,
+   "loot": {
+    "carne_crua": [
+     20,
+     35
+    ],
+    "couro": [
+     15,
+     25
+    ],
+    "ossos": [
+     6,
+     10
+    ]
+   },
+   "pode_domar": true,
+   "comida_preferida": "baga_mejo",
+   "revida": true,
+   "alcance_ataque": 4.0,
+   "intervalo_ataque": 2.2,
+   "pode_montar": false,
+   "carga": 1600,
+   "atributos": {
+    "vida": [
+     2277,
+     2277
+    ],
+    "forca": [
+     100,
+     100
+    ],
+    "peso": [
+     1600,
+     1600
+    ],
+    "stamina": [
+     240,
+     240
+    ],
+    "velocidade": [
+     100,
+     100
+    ],
+    "torpor": [
+     2000,
+     2000
+    ]
+   },
+   "ark_por_nivel": {
+    "vida": 0.2,
+    "stamina": 0.1,
+    "peso": 0.02,
+    "forca": 0.05,
+    "torpor": 0.06
+   }
+  },
+  {
+   "id": "terizinossauro",
+   "comprimento_m": [
+    9,
+    10
+   ],
+   "nome": "Terizinossauro",
+   "dieta": "herbivoro",
+   "temperamento": "medroso",
+   "vida": 1100,
+   "dano": 120,
+   "vel_andar": 1.7,
+   "vel_correr": 6.2,
+   "tamanho": 1,
+   "raio": 1.5,
+   "altura": 4.2,
+   "biomas": [
+    "selva",
+    "campos",
+    "serra"
+   ],
+   "peso_spawn": 1.8,
+   "grupo": [
+    1,
+    2
+   ],
+   "xp": 110,
+   "loot": {
+    "carne_crua": [
+     10,
+     16
+    ],
+    "couro": [
+     8,
+     12
+    ],
+    "ossos": [
+     3,
+     5
+    ],
+    "queratina": [
+     4,
+     8
+    ]
+   },
+   "pode_domar": true,
+   "comida_preferida": "baga_mejo",
+   "pode_montar": true,
+   "carga": 520,
+   "atributos": {
+    "vida": [
+     1100,
+     1100
+    ],
+    "forca": [
+     100,
+     100
+    ],
+    "peso": [
+     520,
+     520
+    ],
+    "stamina": [
+     300,
+     300
+    ],
+    "velocidade": [
+     100,
+     100
+    ],
+    "torpor": [
+     600,
+     600
+    ]
+   },
+   "ark_por_nivel": {
+    "vida": 0.2,
+    "stamina": 0.1,
+    "peso": 0.02,
+    "forca": 0.05,
+    "torpor": 0.06
+   },
+   "revida": true,
+   "alcance_ataque": 3.2,
+   "intervalo_ataque": 1.4
   }
  ]
 }

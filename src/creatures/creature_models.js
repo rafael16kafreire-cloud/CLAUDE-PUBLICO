@@ -738,6 +738,11 @@ MODELS.moschops = {
   ],
 };
 
+
+// Moldes de osso dos bichos que só existem como modelo importado (o jogo encaixa o esqueleto nestes moldes).
+MODELS.diplodoco = { ...MODELS.braquiossauro };
+MODELS.terizinossauro = { ...MODELS.iguanodonte, colors: { top: '#7a6a4a', belly: '#d8caa0', pattern: '#3a2e1c' } };
+
 // Paquirrinossauro: parente do triceratops sem chifres, com uma grande protuberância no nariz e gola curta
 MODELS.paquirrinossauro = {
   ...MODELS.triceratops,
