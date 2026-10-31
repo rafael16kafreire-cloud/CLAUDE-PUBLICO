@@ -25,6 +25,7 @@ import { foliageTexture, addPlantDetail } from './foliage_texture.js';
 import recursos from '../data/world/recursos.json';
 import * as P from './props.js';
 import { snowRockGeometry, snowRockMaterial } from './snow_models.js';
+import { makeLayeredRock, layeredRockMaterial } from './rochas.js';
 import { vegGeometry, vegMaterial } from './veg_models.js';
 
 const ROOTS = P.sumaumaRootColliders();
@@ -96,6 +97,10 @@ const TYPES = {
   arvore_morta_neve: { foot: 0.4, hi: P.makeSnowDeadTree, lo: P.makeSnowDeadTreeLow, collider: 0.3, shadow: true, scale: [0.8, 1.3], res: 'arvore_mole', cold: true, maxDist: 320 },
   arvore_seca: { foot: 0.4, hi: () => P.makeSnowDeadTree(false, 5), lo: () => P.makeSnowDeadTree(true, 5), collider: 0.25, shadow: true, scale: [0.9, 1.4], res: 'arvore_mole', cold: true, maxDist: 320 },
   arbusto_neve: { hi: P.makeSnowShrub, collider: 0, shadow: false, scale: [0.7, 1.4], res: 'arbusto', maxDist: 90 },
+  // rochedos em camadas (paredões e pedregulhos escuros de laje, como nas ilhas do ARK): 3 formatos
+  rochedo_camadas: { foot: 0.8, hi: () => makeLayeredRock(0), lo: () => makeLayeredRock(0, true), mat: layeredRockMaterial, loMat: layeredRockMaterial, collider: 0.6, shadow: true, scale: [3, 9], res: 'rochedo', maxDist: 320, rock: true, textured: true, cluster: 0.6 },
+  rochedo_camadas_b: { foot: 0.8, hi: () => makeLayeredRock(1), lo: () => makeLayeredRock(1, true), mat: layeredRockMaterial, loMat: layeredRockMaterial, collider: 0.6, shadow: true, scale: [2.5, 7], res: 'rochedo', maxDist: 320, rock: true, textured: true, cluster: 0.56 },
+  rochedo_camadas_c: { foot: 0.8, hi: () => makeLayeredRock(2), lo: () => makeLayeredRock(2, true), mat: layeredRockMaterial, loMat: layeredRockMaterial, collider: 0.6, shadow: true, scale: [4, 12], res: 'rochedo', maxDist: 320, rock: true, textured: true, cluster: 0.64 },
   rochedo: { foot: 1.6, hi: snowRockGeometry, mat: snowRockMaterial, lo: P.makeBoulderLow, collider: 1.0, shadow: true, scale: [1.8, 9], res: 'rochedo', maxDist: 320, rock: true, textured: true },
   // recursos por região (como no ARK): metal e cristal na serra, obsidiana
   // e petróleo nas montanhas, conchas com pérolas no fundo do mar
@@ -257,6 +262,8 @@ export class Vegetation {
         if (type === 'minerio_ferro' && h < 30) continue;
         if (key === 'neve' && (type === 'rocha_obsidiana' || type === 'cristal') && h < 60) continue; // no alto da montanha
         if (def.rock && ny < 0.3) continue;
+        // pedras em grupos (afloramentos): só nascem onde o ruído de rocha passa do limite
+        if (def.cluster && 0.5 + 0.5 * map.nRock(x * 0.0045 + 13.1, z * 0.0045 - 7.7) < def.cluster) continue;
         if (map.onPlateau(x, z)) continue; // topo dos platôs: livre para construir
         // sub-bosque: não nasce dentro de troncos e pedras
         if (layer.under) {

@@ -19,6 +19,7 @@ import { IMPORTED, buildImportedModel } from './imported_model.js';
 import { ESPINO_COR_HD, ESPINO_RELEVO_HD } from '../world/textures/hd.js';
 import { hdTextures } from '../core/settings.js';
 import { Creature, CSTATE } from './creature.js';
+import { aplicarCor, herdarCor, sortearCor } from './cores.js';
 import { sound } from '../audio/audio.js';
 import { settings } from '../core/settings.js';
 
@@ -85,6 +86,8 @@ export class CreatureManager {
       species, spec: MODELS[id], mesh, bones, level: lvl, x, z,
       world: this.world, manager: this, rand: this.rand,
     });
+    // cores próprias (como no ARK): cada bicho nasce com uma combinação de costas e barriga
+    aplicarCor(c, sortearCor(this.rand));
     this.scene.add(mesh);
     this.list.push(c);
     return c;
@@ -287,7 +290,7 @@ export class CreatureManager {
       st[k] = Math.round(st[k] * 1.1);
       mut = 1;
     }
-    return { st, mut: (mom.mutations ?? 0) + (dad.mutations ?? 0) + mut };
+    return { st, mut: (mom.mutations ?? 0) + (dad.mutations ?? 0) + mut, cor: herdarCor(mom.cor, dad.cor, this.rand) };
   }
 
   // Casal domado: ovo (choca no chão) ou gestação (mamífero).
@@ -315,6 +318,7 @@ export class CreatureManager {
     const baby = this.spawn(id, x, z, level);
     if (!baby) return null;
     if (gene?.st) baby.applyStats(gene.st);
+    if (gene && 'cor' in gene) aplicarCor(baby, gene.cor);
     baby.mutations = gene?.mut ?? 0;
     baby.age = 0;
     baby.setGrowth(0.3);

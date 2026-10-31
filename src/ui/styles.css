@@ -997,6 +997,12 @@ body.is-touch .hb-key { display: none; }
   .btn-play { min-height: 42px; font-size: 19px; }
 }
 
+/* ---------------- Vinheta sutil (estilo low-poly) ---------------- */
+.vinheta {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 58%, rgba(12, 14, 22, 0.32) 100%);
+}
+
 /* ---------------- Embaixo d'água ---------------- */
 .uw-overlay {
   position: absolute;

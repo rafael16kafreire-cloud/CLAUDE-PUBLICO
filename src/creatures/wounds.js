@@ -7,6 +7,7 @@
 // Sem objeto novo na cena: o custo é só umas contas no desenho.
 // =============================================================
 import * as THREE from 'three';
+import { clonarMaterial } from './cores.js';
 
 const KEY = 'feridas1';
 
@@ -40,7 +41,10 @@ function patch(mat, uni, freq) {
           diffuseColor.rgb *= 1.0 - 0.18 * uWound;           // couro um pouco mais sujo
         }`);
   };
-  mat.customProgramCacheKey = () => `${mat.customProgramCacheKey ? 'x' : ''}${KEY}`;
+  const prevKey = mat.customProgramCacheKey;
+  mat.customProgramCacheKey = function () {
+    return `${prevKey ? prevKey.call(this) : ''}|${KEY}`;
+  };
 }
 
 // frac = quanto da vida já perdeu (0 a 1). Chamar ao apanhar (e ao curar, se quiser).
@@ -55,7 +59,7 @@ export function aplicarFeridas(c, frac) {
     const uni = { value: 0 };
     const freq = { value: 11 / Math.max(0.5, maxDim) }; // ~11 manchas ao longo do corpo
     const clone = (m) => {
-      const n = m.clone();
+      const n = clonarMaterial(m); // clone() sozinho perdia o desenho da pele (listras, escamas)
       patch(n, uni, freq);
       n.needsUpdate = true;
       return n;

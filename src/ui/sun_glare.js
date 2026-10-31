@@ -170,6 +170,6 @@ export class SunGlare {
     const k = Math.min(1.4, 0.55 + 0.45 * brightness);
     this.wash.style.setProperty('--wx', `${this._sx.toFixed(0)}px`);
     this.wash.style.setProperty('--wy', `${this._sy.toFixed(0)}px`);
-    this.wash.style.opacity = Math.min(0.92, d * 0.85 * k).toFixed(3);
+    this.wash.style.opacity = Math.min(0.5, d * 0.45 * k).toFixed(3); // véu mais leve (sol baixo aparece muito na tela)
   }
 }

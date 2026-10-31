@@ -172,12 +172,12 @@
     "passo_m": 4.2,
     "_chances": "Para cada ponto da grade: chance (0 a 1) de nascer cada coisa, por bioma. A soma pode passar de 1 só até onde couber.",
     "biomas": {
-      "praia": { "coqueiro": 0.012, "palma_bl_a": 0.03, "palma_bl_b": 0.03, "palma_bl_c": 0.026, "planta_praia": 0.035, "arbusto_frutas": 0.012, "pedra_musgo": 0.014, "tronco_caido": 0.02 },
+      "praia": { "coqueiro": 0.012, "palma_bl_a": 0.03, "palma_bl_b": 0.03, "palma_bl_c": 0.026, "planta_praia": 0.035, "arbusto_frutas": 0.012, "pedra_musgo": 0.006, "tronco_caido": 0.02, "rochedo_camadas": 0.02, "rochedo_camadas_b": 0.026, "rochedo_camadas_c": 0.012 },
       "selva": {
         "copa_g_a": 0.009, "copa_g_b": 0.009, "copa_a": 0.01, "copa_b": 0.009, "copa_c": 0.009, "arvore_bl_a": 0.012, "arvore_bl_b": 0.012, "arvore_bl_c": 0.012, "media_a": 0.012, "media_b": 0.012, "acai": 0.024, "pinheiro_vd_a": 0.014, "pinheiro_vd_b": 0.014,
         "samambaia_gigante": 0.05, "bananeira": 0.025, "samambaia": 0.1,
         "arbusto_mejo": 0.025, "arbusto_escura": 0.02, "arbusto_frutas": 0.015,
-        "tronco_caido": 0.016, "tronco_pinho": 0.01, "pedra_musgo": 0.022, "arvore_folhosa": 0.008, "arvore_folhosa2": 0.008, "arvore_agar": 0.009
+        "tronco_caido": 0.016, "tronco_pinho": 0.01, "pedra_musgo": 0.016, "rochedo_camadas": 0.01, "rochedo_camadas_b": 0.014, "rochedo_camadas_c": 0.008, "arvore_folhosa": 0.008, "arvore_folhosa2": 0.008, "arvore_agar": 0.009
       },
       "igapo": {
         "copa_a": 0.024, "copa_b": 0.02, "copa_c": 0.024, "acai": 0.08, "mangue": 0.07, "samambaia_gigante": 0.06,
@@ -197,7 +197,7 @@
       },
       "campos": {
         "arvore_folhosa": 0.008, "arvore_folhosa2": 0.01, "arbusto_frutas": 0.02, "arbusto_mejo": 0.025, "arbusto_escura": 0.015,
-        "pedra_musgo": 0.012, "tronco_caido": 0.004, "bananeira": 0.006, "pedrinhas": 0.04, "gravetos": 0.02
+        "pedra_musgo": 0.008, "tronco_caido": 0.004, "bananeira": 0.006, "pedrinhas": 0.04, "gravetos": 0.02, "rochedo_camadas": 0.022, "rochedo_camadas_b": 0.028, "rochedo_camadas_c": 0.016
       },
       "mar": { "concha": 0.03, "rocha_petroleo": 0.004 }
     },

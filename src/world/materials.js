@@ -1,6 +1,6 @@
 // =============================================================
 // MATERIAIS – a "pintura" das superfícies
-// - Terreno: cor do bioma + textura de detalhe gerada por código.
+// - Terreno: low-poly, uma cor da paleta por face, luz facetada.
 // - Vegetação: vento (a planta enverga e as folhas tremulam) e
 //   tremida quando você bate numa árvore.
 // - Água: sabe a profundidade (clara e com espuma na beira,
@@ -9,12 +9,10 @@
 // - Impostor: árvore distante desenhada como "foto" (bem leve).
 // =============================================================
 import * as THREE from 'three';
-import { TERRA_COR, TERRA_RELEVO, TERRA_MEDIA } from './textures/terra.js';
-import { FOLHAGEM_COR } from './textures/veg_modelos.js';
-import { NEVE_COR, NEVE_RELEVO } from './textures/neve.js';
-import { ROCHA_NEVADA } from './textures/neve_modelos.js';
-import { TERRA_COR_HD, TERRA_RELEVO_HD, NEVE_COR_HD, NEVE_RELEVO_HD } from './textures/hd.js';
-import { hdTextures } from '../core/settings.js';
+import { PALETA, mistura } from '../core/paleta.js';
+
+// cor da paleta como constante GLSL (vec3 linear)
+const glsl = (c) => `vec3(${c.r.toFixed(4)}, ${c.g.toFixed(4)}, ${c.b.toFixed(4)})`;
 
 // Tempo compartilhado pelos materiais animados.
 export const sharedTime = { value: 0 };
@@ -108,133 +106,31 @@ export function detailTexture() {
 // ----------------------------------------------------------
 // Terreno
 // ----------------------------------------------------------
-function loadTiled(url, srgb) {
-  const tex = new THREE.TextureLoader().load(url);
-  tex.wrapS = THREE.RepeatWrapping;
-  tex.wrapT = THREE.RepeatWrapping;
-  tex.anisotropy = 4;
-  if (srgb) tex.colorSpace = THREE.SRGBColorSpace;
-  return tex;
-}
 
+// ----------------------------------------------------------
+// TERRENO LOW-POLY (estilo Valheim)
+// - Faces planas (flatShading): cada triângulo tem uma luz só.
+// - Uma cor por face: o vértice "dono" do triângulo pinta a face toda
+//   (variável "flat" no shader), sem degradê e sem textura.
+// - Neve: onde aSnow passa de 0,45 a face fica com a cor de neve da paleta.
+// As cores vêm de island_generator.js (_colorFor), que usa a paleta (core/paleta.js).
+// ----------------------------------------------------------
 export function makeTerrainMaterial() {
-  const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
-  // Textura de terra (arquivo Soft Dirt): cor + relevo. A cor do bioma
-  // continua mandando no brilho/tom; a terra dá os grãos, raízes e torrões.
-  const hd = hdTextures();
-  const dirtMap = loadTiled(hd ? TERRA_COR_HD : TERRA_COR, true);
-  const dirtNormal = loadTiled(hd ? TERRA_RELEVO_HD : TERRA_RELEVO, false);
-  const avg = new THREE.Color().setRGB(...TERRA_MEDIA, THREE.SRGBColorSpace);
-  // neve (arquivo Snow Material) para a Lapônia
-  const snowMap = loadTiled(hd ? NEVE_COR_HD : NEVE_COR, true);
-  const snowNormal = loadTiled(hd ? NEVE_RELEVO_HD : NEVE_RELEVO, false);
-  // rocha nevada (arquivo Snowy Rock PBR Material) nos paredões
-  const rockMap = loadTiled(ROCHA_NEVADA, true);
-  // folhagem rasteira no chão da floresta (arquivo Grass)
-  const leafMap = loadTiled(FOLHAGEM_COR, true);
-  rockMap.wrapS = THREE.MirroredRepeatWrapping;
-  rockMap.wrapT = THREE.MirroredRepeatWrapping;
+  const mat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
   mat.onBeforeCompile = (shader) => {
-    shader.uniforms.detailMap = { value: detailTexture() };
-    shader.uniforms.dirtMap = { value: dirtMap };
-    shader.uniforms.dirtNormal = { value: dirtNormal };
-    shader.uniforms.dirtAvg = { value: new THREE.Vector3(avg.r, avg.g, avg.b) };
-    shader.uniforms.snowMap = { value: snowMap };
-    shader.uniforms.snowNormal = { value: snowNormal };
-    shader.uniforms.rockMap = { value: rockMap };
-    shader.uniforms.leafMap = { value: leafMap };
+    shader.uniforms.uSnowCol = { value: PALETA.neve.clone() };
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nattribute float aDirt;\nvarying float vDirt;\nattribute float aSnow;\nvarying float vSnow;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvDirt = aDirt;\nvSnow = aSnow;');
+      .replace('#include <color_pars_vertex>', 'flat varying vec3 vColor;')
+      .replace('#include <common>', '#include <common>\nattribute float aSnow;\nflat varying float vSnow;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvSnow = aSnow;');
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nvarying float vDirt;\nuniform sampler2D detailMap;\nuniform sampler2D dirtMap;\nuniform sampler2D dirtNormal;\nuniform vec3 dirtAvg;\nvarying float vSnow;\nuniform sampler2D snowMap;\nuniform sampler2D snowNormal;\nuniform sampler2D rockMap;\nuniform sampler2D leafMap;')
+      .replace('#include <color_pars_fragment>', 'flat varying vec3 vColor;')
+      .replace('#include <common>', '#include <common>\nflat varying float vSnow;\nuniform vec3 uSnowCol;')
       .replace('#include <color_fragment>', `#include <color_fragment>
-        float dNear = texture2D(detailMap, vWPos.xz * 0.23).r;
-        float dFar = texture2D(detailMap, vWPos.xz * 0.019).r;
-        float dMid = texture2D(detailMap, vWPos.zx * 0.071).r;
-        float detail = dNear * 0.45 + dMid * 0.25 + dFar * 0.3;
-        // manchinhas de folhas secas e terra
-        float spots = smoothstep(0.55, 0.75, texture2D(detailMap, vWPos.xz * 0.43 + 0.37).r);
-        diffuseColor.rgb *= mix(0.7, 1.28, detail);
-        diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(1.25, 1.0, 0.7), spots * 0.35);
-        if (vDirt > 0.01) {
-          // 1 repetição a cada ~2,8 m, girada numa segunda escala para não "quadricular"
-          vec2 uvA = vWPos.xz * 0.36;
-          vec2 uvB = vec2(vWPos.z, -vWPos.x) * 0.11 + 0.31;
-          vec3 dA = texture2D(dirtMap, uvA).rgb;
-          vec3 dB = texture2D(dirtMap, uvB).rgb;
-          vec3 dc = mix(dA, dB, 0.35 * dFar);
-          // relevo falso: o normal map clareia o lado virado para o sol
-          vec3 nm = texture2D(dirtNormal, uvA).xyz * 2.0 - 1.0;
-          float relief = 1.0 + dot(nm.xy, vec2(0.55, -0.45)) * 0.55;
-          // padrão da terra com o brilho/tom do bioma
-          float lumB = dot(diffuseColor.rgb, vec3(0.333));
-          vec3 hueB = diffuseColor.rgb / max(lumB, 0.001);
-          vec3 hueD = dirtAvg / dot(dirtAvg, vec3(0.333));
-          vec3 pattern = dc / dirtAvg;
-          vec3 soil = lumB * pattern * mix(hueD, hueB, 0.45) * relief;
-          diffuseColor.rgb = mix(diffuseColor.rgb, soil, clamp(vDirt, 0.0, 1.0) * 0.9);
-          // floresta: manchas de folhagem rasteira (textura Grass) por cima da terra
-          if (vDirt > 0.9) {
-            float patchN = texture2D(detailMap, vWPos.xz * 0.006 + 0.13).r * 0.6 + dMid * 0.4;
-            float leafK = smoothstep(0.42, 0.62, patchN);
-            vec3 lc = texture2D(leafMap, vWPos.xz * 0.28).rgb * 0.65 + texture2D(leafMap, vWPos.zx * 0.083 + 0.4).rgb * 0.35;
-            diffuseColor.rgb = mix(diffuseColor.rgb, lc * 0.85 * relief, leafK * 0.85);
-          }
-        }
-        if (vDirt < -0.01) {
-          // rocha da montanha: textura "por três lados" (funciona em paredão
-          // vertical), com camadas, rachaduras e lascas
-          vec3 fn = normalize(cross(dFdx(vWPos), dFdy(vWPos)));
-          vec3 bw = pow(abs(fn), vec3(4.0));
-          bw /= (bw.x + bw.y + bw.z);
-          float r1 = texture2D(detailMap, vWPos.zy * 0.09).r * bw.x + texture2D(detailMap, vWPos.xz * 0.09).r * bw.y + texture2D(detailMap, vWPos.xy * 0.09).r * bw.z;
-          float f1 = texture2D(detailMap, vWPos.zy * 0.55).r * bw.x + texture2D(detailMap, vWPos.xz * 0.55).r * bw.y + texture2D(detailMap, vWPos.xy * 0.55).r * bw.z;
-          float big = texture2D(detailMap, vWPos.xz * 0.012 + vec2(0.0, vWPos.y * 0.01)).r;
-          // camadas horizontais (estratos) bem marcadas nos paredões
-          float strata = smoothstep(0.35, 0.65, 0.5 + 0.5 * sin(vWPos.y * 0.9 + r1 * 4.0 + big * 6.0));
-          float vert = 1.0 - bw.y; // quanto é parede
-          float rockK = mix(0.55, 1.4, r1) * mix(0.8, 1.15, f1) * mix(0.75, 1.15, big) * mix(1.0, mix(0.72, 1.12, strata), vert);
-          diffuseColor.rgb *= rockK;
-          // textura de rocha nevada do arquivo, projetada pelos três lados
-          vec3 rt = texture2D(rockMap, vWPos.zy * 0.05).rgb * bw.x + texture2D(rockMap, vWPos.xz * 0.05).rgb * bw.y + texture2D(rockMap, vWPos.xy * 0.05).rgb * bw.z;
-          diffuseColor.rgb = mix(diffuseColor.rgb, rt * mix(0.75, 1.1, r1), 0.55);
-          // líquen/ferrugem em manchas
-          diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(1.15, 1.0, 0.82), smoothstep(0.62, 0.8, f1) * 0.4);
-        }
-        if (vSnow > 0.01) {
-          // neve: textura do arquivo em duas escalas + relevo falso
-          vec2 su = vWPos.xz * 0.21;
-          vec3 sc = texture2D(snowMap, su).rgb * 0.6 + texture2D(snowMap, vWPos.zx * 0.047 + 0.5).rgb * 0.4;
-          vec3 sn = texture2D(snowNormal, su).xyz * 2.0 - 1.0;
-          float srel = 1.0 + dot(sn.xy, vec2(0.5, -0.4)) * 0.35;
-          vec3 snowCol = sc * 1.32 * srel;
-          // borda da neve mais suja, sem corte reto
-          float k = smoothstep(0.15, 0.75, vSnow + (dNear - 0.5) * 0.35);
-          diffuseColor.rgb = mix(diffuseColor.rgb, snowCol, k);
-        }
-        // areia: ondulações do vento/maré, grão fino e faixa molhada perto da água.
-        // sandGrad alimenta o relevo (mais abaixo, em normal_fragment_maps).
-        float sandK = (1.0 - smoothstep(0.0, 0.35, abs(vDirt))) * (1.0 - smoothstep(0.0, 0.3, vSnow));
-        float sandNear = 1.0 - smoothstep(22.0, 75.0, length(vViewPosition));
-        vec2 sandGrad = vec2(0.0);
-        if (sandK > 0.01) {
-          vec2 sp = vWPos.xz;
-          float sw = texture2D(detailMap, sp * 0.05).r;
-          float sw2 = texture2D(detailMap, sp * 0.21).r;
-          float a1 = dot(sp, vec2(0.83, 0.56)) * 4.2 + sw * 9.0;
-          float a2 = dot(sp, vec2(-0.5, 0.86)) * 11.0 + sw2 * 7.0;
-          float ripple = sin(a1) * 0.6 + sin(a2) * 0.4;
-          float grain = texture2D(detailMap, sp * 1.9).r;
-          float wet = 1.0 - smoothstep(0.1, 0.75, vWPos.y);
-          diffuseColor.rgb *= 1.0 + sandK * sandNear * (ripple * 0.12 + (grain - 0.5) * 0.3);
-          diffuseColor.rgb *= mix(1.0, 0.7, wet * sandK);
-          diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(0.95, 0.97, 1.05), wet * sandK * 0.5);
-          sandGrad = (cos(a1) * 0.6 * 4.2 * vec2(0.83, 0.56) + cos(a2) * 0.4 * 11.0 * vec2(-0.5, 0.86)) * 0.11 * sandNear;
-        }`)
-      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
-        normal = normalize(normal + (viewMatrix * vec4(-sandGrad.x, 0.0, -sandGrad.y, 0.0)).xyz * sandK);`);
+        // neve chapada (sem textura): a borda da neve segue as faces do terreno
+        if (vSnow > 0.45) diffuseColor.rgb = uSnowCol;`);
   };
+  mat.customProgramCacheKey = () => 'terreno-lowpoly1';
   return mat;
 }
 
@@ -468,7 +364,7 @@ export function makeSkyMaterial({ horizon, zenith, sunDir }) {
         float sd = max(dot(d, uSunDir), 0.0);
         float day = 1.0 - uNight;
         // degradê do céu: horizonte claro, azul mais fundo no alto
-        vec3 col = mix(uHorizon, uZenith, pow(smoothstep(0.0, 0.62, y), 0.85));
+        vec3 col = mix(uHorizon, uZenith, pow(smoothstep(-0.02, 0.5, y), 0.7));
         // luz do sol espalhada no ar: halo largo e, perto do horizonte, brilho dourado em volta do sol
         float hz = 1.0 - smoothstep(0.0, 0.45, y);
         col += uSunColor * day * (pow(sd, 3.0) * 0.1 + pow(sd, 7.0) * hz * 0.5 + pow(sd, 28.0) * 0.32);
@@ -476,14 +372,22 @@ export function makeSkyMaterial({ horizon, zenith, sunDir }) {
         float cl = 0.0;
         vec3 cloud = vec3(0.0);
         if (y > 0.0) {
-          vec2 uv = d.xz / (y + 0.12) * 0.22 + vec2(uTime * 0.0025, uTime * 0.0012);
-          float nn = texture2D(uNoise, uv).r * 0.65 + texture2D(uNoise, uv * 2.7 + 0.3).r * 0.35;
-          cl = smoothstep(0.46, 0.74, nn) * smoothstep(0.0, 0.2, y);
-          float dens = smoothstep(0.5, 0.85, nn);
-          // nuvem: topo claro, barriga mais escura, borda prateada contra o sol
-          vec3 lit = mix(vec3(0.72, 0.75, 0.8), vec3(1.0), dens);
-          vec3 shade = vec3(0.5, 0.54, 0.62);
-          cloud = mix(shade, lit, smoothstep(0.35, 0.8, nn + sd * 0.25)) + uSunColor * (pow(sd, 5.0) * 0.4 + pow(sd, 40.0) * 0.6);
+          // nuvens cúmulos (como no ARK): bolos brancos bem definidos, barriga cinza-azulada
+          // e borda prateada do lado do sol. O ruído é o mesmo do chão (sem textura nova).
+          vec2 wind = vec2(uTime * 0.0025, uTime * 0.0012);
+          vec2 uv = d.xz / (y + 0.1) * 0.16 + wind;
+          float n1 = texture2D(uNoise, uv).r;
+          float n2 = texture2D(uNoise, uv * 2.3 + 0.3).r;
+          float n3 = texture2D(uNoise, uv * 5.3 + 0.7).r;
+          float nn = n1 * 0.6 + n2 * 0.28 + n3 * 0.12;
+          cl = smoothstep(0.48, 0.64, nn) * smoothstep(0.0, 0.16, y); // borda macia (nuvem de Valheim é suave)
+          float dens = smoothstep(0.52, 0.78, nn);
+          // luz por dentro da nuvem: compara com o ruído um pouco na direção do sol
+          vec2 toSun = normalize(uSunDir.xz + 1e-4) * 0.035;
+          float ns = texture2D(uNoise, uv + toSun).r * 0.6 + texture2D(uNoise, (uv + toSun) * 2.3 + 0.3).r * 0.28 + n3 * 0.12;
+          float lit = clamp(0.62 + (nn - ns) * 5.0, 0.0, 1.0);
+          vec3 shade = ${glsl(mistura('pedraClara', 'agua', 0.3))};
+          cloud = mix(shade, ${glsl(PALETA.neve)} * 1.04, lit * (1.0 - dens * 0.45) + 0.18) + uSunColor * (pow(sd, 5.0) * 0.35 + pow(sd, 40.0) * 0.6) * (1.0 - dens * 0.5);
           cloud *= uCloud;
           vec3 st = d * 180.0;
           vec3 ip = floor(st);
@@ -492,7 +396,7 @@ export function makeSkyMaterial({ horizon, zenith, sunDir }) {
           float tw = 0.55 + 0.45 * sin(uTime * (1.5 + h * 4.0) + h * 60.0);
           float star = step(0.982, h) * smoothstep(0.34, 0.0, length(fp)) * tw;
           float big = step(0.9975, hash3(ip + 7.0)) * smoothstep(0.45, 0.0, length(fp)) * 1.6;
-          col += vec3(0.78, 0.88, 1.0) * (star + big) * uNight * smoothstep(0.02, 0.3, y) * (1.0 - cl);
+          col += ${glsl(PALETA.neve)} * (star + big) * uNight * smoothstep(0.02, 0.3, y) * (1.0 - cl);
         }
         col = mix(col, cloud, cl * 0.92);
         // sol: disco forte com borda macia (valores acima de 1: estoura em branco com o tom do filme)
@@ -500,7 +404,7 @@ export function makeSkyMaterial({ horizon, zenith, sunDir }) {
         col += uSunColor * day * (disc * 14.0 + pow(sd, 400.0) * 3.0 + pow(sd, 90.0) * 0.8);
         // lua: disco claro com halo fraco (a luz da noite vem da mesma direção)
         float md = sd;
-        col += vec3(0.86, 0.9, 1.0) * uNight * (smoothstep(0.9994, 0.99957, md) * 1.15 + pow(md, 260.0) * 0.2 + pow(md, 26.0) * 0.05);
+        col += ${glsl(PALETA.neve)} * uNight * (smoothstep(0.9994, 0.99957, md) * 1.15 + pow(md, 260.0) * 0.2 + pow(md, 26.0) * 0.05);
         gl_FragColor = vec4(col, 1.0);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>

@@ -52,6 +52,8 @@ import { Hotbar } from './ui/hotbar.js';
 import { InventoryScreen } from './ui/inventory_screen.js';
 import { Multiplayer } from './net/multiplayer.js';
 import { sound } from './audio/audio.js';
+import { aplicarCor } from './creatures/cores.js';
+import { aplicarLowPoly } from './world/estilo.js';
 
 // Ponte com o app Android (existe só dentro do APK).
 const androidApp = typeof window !== 'undefined' ? window.IlhaAndroid : undefined;
@@ -75,6 +77,9 @@ function boot(hotData = {}) {
   // ---------- Renderer (desenho 3D) ----------
   const canvas = document.createElement('canvas');
   canvas.id = 'game';
+  // visual levemente pixelado (estilo low-poly): a imagem é desenhada com menos pixels
+  // (pixel ratio 0,75 a 1, ver settings.js) e ampliada SEM borrar
+  canvas.style.imageRendering = 'pixelated';
   app.appendChild(canvas);
   // qualidade alta: bordas lisas (antialias) e sombra suave
   const high = hdTextures();
@@ -106,6 +111,10 @@ function boot(hotData = {}) {
   uwOverlay.className = 'uw-overlay';
   app.appendChild(uwOverlay);
 
+  // vinheta sutil (bordas um pouco mais escuras): feita com CSS, vale para todas as qualidades e não pesa
+  const vinheta = document.createElement('div');
+  vinheta.className = 'vinheta';
+  app.appendChild(vinheta);
   const sunGlare = new SunGlare(app); // clarão do sol (por cima do 3D, embaixo dos botões)
   const ui = document.createElement('div');
   ui.id = 'ui';
@@ -180,12 +189,11 @@ function boot(hotData = {}) {
       void main() {
         vec4 c = texture2D(tDiffuse, vUv);
         float l = dot(c.rgb, vec3(0.299, 0.587, 0.114));
-        c.rgb = mix(vec3(l), c.rgb, 1.2);                            // cores mais vivas
-        c.rgb = mix(c.rgb, c.rgb * c.rgb * (3.0 - 2.0 * c.rgb), 0.36); // contraste
-        c.rgb += vec3(0.026, 0.01, -0.02) * l * l;                    // luz quente nas partes claras
-        c.rgb += vec3(-0.012, 0.006, 0.02) * (1.0 - l);               // sombra azul-esverdeada
-        vec2 d = vUv - 0.5;
-        c.rgb *= 1.0 - dot(d, d) * 0.5;                               // vinheta
+        // >>> AJUSTE DE COR DA IMAGEM (qualidade média): mude os números para mudar o clima
+        c.rgb = mix(vec3(l), c.rgb, 0.96);                           // saturação (1 = igual; <1 = mais apagado)
+        c.rgb = mix(c.rgb, c.rgb * c.rgb * (3.0 - 2.0 * c.rgb), 0.28); // contraste
+        c.rgb += vec3(0.03, 0.012, -0.022) * l * l;                   // luz quente (sol) nas partes claras
+        c.rgb += vec3(-0.014, -0.004, 0.024) * (1.0 - l);             // sombra fria (azulada)
         gl_FragColor = vec4(clamp(c.rgb, 0.0, 1.0), c.a);
       }`,
   };
@@ -218,10 +226,9 @@ function boot(hotData = {}) {
       c.addPass(ao);
       const bloom = new pp.BloomEffect({ intensity: 0.32, luminanceThreshold: 0.88, luminanceSmoothing: 0.25, mipmapBlur: true });
       const tone = new pp.ToneMappingEffect({ mode: pp.ToneMappingMode.ACES_FILMIC });
-      const sat = new pp.HueSaturationEffect({ saturation: 0.14, hue: 0 });
-      const bc = new pp.BrightnessContrastEffect({ brightness: 0.03, contrast: 0.1 });
-      const vig = new pp.VignetteEffect({ offset: 0.32, darkness: 0.5 });
-      c.addPass(new pp.EffectPass(camera, bloom, tone, sat, bc, vig));
+      const sat = new pp.HueSaturationEffect({ saturation: -0.04, hue: 0 }); // paleta já é apagada: quase neutro
+      const bc = new pp.BrightnessContrastEffect({ brightness: 0.02, contrast: 0.12 });
+      c.addPass(new pp.EffectPass(camera, bloom, tone, sat, bc)); // vinheta: CSS (.vinheta)
       if (smaa) c.addPass(new pp.EffectPass(camera, new pp.SMAAEffect({ preset: pp.SMAAPreset.MEDIUM })));
       c.setSize(w, h);
       aoPass = ao;
@@ -256,7 +263,8 @@ function boot(hotData = {}) {
       composer = new EffectComposer(renderer);
       composer.addPass(new RenderPass(scene, camera));
       if (post === 'full') {
-        composer.addPass(new UnrealBloomPass(new THREE.Vector2(window.innerWidth / 2, window.innerHeight / 2), 0.2, 0.55, 0.92));
+        // bloom leve: só o que é bem claro (sol, fogo, céu) ganha um brilho em volta
+        composer.addPass(new UnrealBloomPass(new THREE.Vector2(window.innerWidth / 2, window.innerHeight / 2), 0.28, 0.5, 0.86));
       }
       composer.addPass(new OutputPass());
       if (post !== 'none') composer.addPass(new ShaderPass(GRADE_SHADER));
@@ -754,7 +762,7 @@ function boot(hotData = {}) {
       yaw: +c.yaw.toFixed(2), follow: !!c.follow, growth: +c.growth.toFixed(3), age: Math.round(c.age),
       hp: Math.round(c.health), name: c.name ?? null, adult: +c.adultScale.toFixed(4), saddled: !!c.saddled,
       saddle: c.saddleKind ?? null, imprint: c.imprint ?? 0, st: c.inherited ? c.stats : null, mut: c.mutations ?? 0,
-      gestation: c.gestation > 0 ? Math.round(c.gestation) : 0, unborn: c.unborn ?? null,
+      gestation: c.gestation > 0 ? Math.round(c.gestation) : 0, unborn: c.unborn ?? null, cor: c.cor ?? null,
       opts: { followDist: c.followDist, targetRange: c.targetRange, aggression: c.aggression, wander: !!c.wander, neutered: !!c.neutered },
     };
   }
@@ -768,6 +776,7 @@ function boot(hotData = {}) {
     if (t.opts) Object.assign(c, t.opts);
     c.mutations = t.mut ?? 0;
     if (t.st) c.applyStats(t.st);
+    if ('cor' in t) aplicarCor(c, t.cor); // save antigo (sem cor): fica com a sorteada agora
     if (t.gestation > 0) {
       c.gestation = t.gestation;
       c.unborn = t.unborn;
@@ -1147,6 +1156,7 @@ function boot(hotData = {}) {
   let menuAngle = 0;
   let pausedSkip = 0;
   let targetTimer = 0;
+  let estiloT = 0;
 
   function frame(now) {
     requestAnimationFrame(frame);
@@ -1158,6 +1168,12 @@ function boot(hotData = {}) {
 
     handleActions();
     autoQuality(dt);
+    // estilo low-poly: liga a luz facetada no que entrou na cena (bichos, construções...)
+    estiloT -= dt;
+    if (estiloT <= 0) {
+      estiloT = 1;
+      aplicarLowPoly(scene);
+    }
     const { world, player, camCtl, interaction, hud, minimap, inspect, buildGhost, touch, debug, creatures, hands, damageNumbers, crafting, invScreen, actions } = ctx;
     const look = input.consumeLook();
     const sens = settings.get('sensitivity');
@@ -1227,7 +1243,8 @@ function boot(hotData = {}) {
     // exposição do filme acompanha o sol (mais luz de dia, menos à noite) e brilho do sol na tela
     // brilho (gamma) escolhido nas opções + ofuscamento (olhando para o sol a imagem clareia e depois o olho se adapta)
     const bright = settings.get('brightness') ?? 1;
-    const expTarget = (world.sky.exposure ?? 1.15) * bright * (1 + 0.45 * sunGlare.dazzle * bright);
+    // ofuscamento mais fraco: o sol baixo (estilo Valheim) fica na frente da câmera com frequência
+    const expTarget = (world.sky.exposure ?? 1.15) * bright * (1 + 0.18 * sunGlare.dazzle * bright);
     renderer.toneMappingExposure += (expTarget - renderer.toneMappingExposure) * Math.min(1, dt * (expTarget > renderer.toneMappingExposure ? 6 : 1.2));
     sunGlare.update(dt, camera, world.sky, world, game.state === STATE.PLAYING && !world.cameraUnderwater, bright);
     if (game.state !== STATE.MENU) {

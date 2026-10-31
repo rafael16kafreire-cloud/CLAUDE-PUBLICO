@@ -15,13 +15,13 @@ const CELL = 1.25;
 
 // Quanto de cada planta por bioma (0 a 1).
 const BY_BIOME = {
-  [BIOME.JUNGLE]: { capim: 0.5, folha: 0.22, broto: 0.16, flor: 0.03, tint: [0.9, 1.0, 0.82], relva: 0.5, relvaK: 0.7, mini: 1 }, // chão da mata forrado de mato verde (como a Floresta Negra)
-  [BIOME.IGAPO]: { capim: 0.55, folha: 0.15, broto: 0.12, flor: 0.02, tint: [0.92, 0.98, 0.78], mini: 0.8 },
+  [BIOME.JUNGLE]: { capim: 0.5, folha: 0.22, broto: 0.16, flor: 0.03, tint: [0.74, 0.86, 0.56], relva: 0.5, relvaK: 0.7, mini: 1 }, // chão da mata forrado de mato verde (como a Floresta Negra)
+  [BIOME.IGAPO]: { capim: 0.55, folha: 0.15, broto: 0.12, flor: 0.02, tint: [0.84, 0.86, 0.6], mini: 0.8 },
   [BIOME.SWAMP]: { capim: 0.55, folha: 0.05, broto: 0.04, flor: 0.0, tint: [1.0, 0.95, 0.7] },
-  [BIOME.BEACH]: { capim: 0.08, folha: 0.0, broto: 0.0, flor: 0.01, tint: [1.15, 1.1, 0.8] },
+  [BIOME.BEACH]: { capim: 0.14, folha: 0.0, broto: 0.0, flor: 0.01, tint: [0.92, 0.88, 0.55] },
   // montanha (serra / cordilheira): sem capim, só neve e pedra
   // pastagem: o chão é coberto pela relva baixinha (abaixo); capim alto só de vez em quando, e mais baixo
-  [BIOME.PLAINS]: { capim: 0.22, folha: 0.02, broto: 0.01, flor: 0.11, tint: [0.78, 0.94, 0.66], hscale: 1.1, relva: true, mini: 0.3 },
+  [BIOME.PLAINS]: { capim: 0.3, folha: 0.02, broto: 0.01, flor: 0.08, tint: [0.76, 0.86, 0.5], hscale: 1.1, relva: true, mini: 0.3 },
 };
 
 // cores das flores (laranja do ARK, amarelo e branco-creme)
@@ -39,6 +39,7 @@ export class Grass {
     this.radius = 28;
     this.density = 1;
     const material = addWind(new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }), 0.25, 0.05, 1);
+    material.userData.suave = true;
     // lâmina de um lado só desenhada dos dois lados: a luz não pode virar de cabeça para baixo atrás dela
     const prevCompile = material.onBeforeCompile;
     material.onBeforeCompile = (shader, renderer) => {
@@ -52,13 +53,24 @@ export class Grass {
     atlasTex.colorSpace = THREE.SRGBColorSpace;
     atlasTex.anisotropy = 2;
     const matGrama = addWind(new THREE.MeshLambertMaterial({ map: atlasTex, alphaTest: 0.45, side: THREE.DoubleSide }), 0.25, 0.05, 1);
+    matGrama.userData.suave = true; // cartões de grama: luz de chão (flat shading deixava preto)
     const prevG = matGrama.onBeforeCompile;
     matGrama.onBeforeCompile = (shader, renderer) => {
       prevG?.(shader, renderer);
-      shader.fragmentShader = shader.fragmentShader.replace('#include <normal_fragment_begin>', THREE.ShaderChunk.normal_fragment_begin.replace('gl_FrontFacing ? 1.0 : - 1.0', '1.0'));
+      // altura dentro do tufo (0 no chão, 1 na ponta): base escura (sombra entre as folhas) e ponta
+      // mais clara e amarelada, como a grama do ARK. Sem isso o tufo ficava verde-limão chapado.
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\nvarying float vGH;')
+        .replace('#include <begin_vertex>', `#include <begin_vertex>\nvGH = clamp(position.y / ${ATLAS.altura.toFixed(3)}, 0.0, 1.3);`);
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <common>', '#include <common>\nvarying float vGH;')
+        .replace('#include <normal_fragment_begin>', THREE.ShaderChunk.normal_fragment_begin.replace('gl_FrontFacing ? 1.0 : - 1.0', '1.0'))
+        .replace('#include <color_fragment>', `#include <color_fragment>
+          diffuseColor.rgb *= mix(0.38, 0.9, smoothstep(0.0, 0.75, vGH));
+          diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(1.14, 1.04, 0.66), smoothstep(0.6, 1.05, vGH) * 0.45);`);
     };
     const prevGKey = matGrama.customProgramCacheKey;
-    matGrama.customProgramCacheKey = () => `${prevGKey ? prevGKey() : ''}-grama2`;
+    matGrama.customProgramCacheKey = () => `${prevGKey ? prevGKey() : ''}-grama3`;
     this.kinds = {
       capim: this._mesh(makeGramaCartao(0, 1), matGrama, 5200, 'Capim'),
       capim2: this._mesh(makeGramaCartao(1, 1), matGrama, 4200, 'Capim 2'),
@@ -234,7 +246,7 @@ export class Grass {
         // manchas: a maioria verde viva, alguns tufos dourados (como nos campos de Valheim)
         const dry = gold > 0.78 ? 1.38 : gold > 0.6 ? 1.15 : 1;
         // verde mais fundo (como no Valheim), com manchas douradas
-        this._c.setRGB(0.74 * v * dry, 0.9 * v, 0.62 * v / dry);
+        this._c.setRGB(0.7 * v * dry, 0.86 * v, 0.48 * v / dry);
         rm.setColorAt(n[rk], this._c);
         n[rk]++;
       }

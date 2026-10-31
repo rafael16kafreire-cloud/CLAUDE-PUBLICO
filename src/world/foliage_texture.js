@@ -252,8 +252,8 @@ export function addPlantDetail(material) {
         if (plantLeaf > 0.5) {
           // variação de cor por tufo: alguns mais amarelados, outros mais escuros
           float hv = fract(sin(dot(floor(vPlantP * 0.9), vec3(12.9898, 78.233, 37.719))) * 43758.5453);
-          diffuseColor.rgb *= mix(vec3(0.9, 0.98, 0.9), vec3(1.28, 1.12, 0.62), smoothstep(0.55, 0.95, hv));
-          diffuseColor.rgb *= 1.12;
+          diffuseColor.rgb *= mix(vec3(0.86, 0.96, 0.88), vec3(1.18, 1.06, 0.66), smoothstep(0.6, 0.95, hv));
+          diffuseColor.rgb *= vec3(0.9, 0.98, 0.9);
         }
         if (vMapUv.x > 0.88) {
           vec3 pp = vPlantP;
@@ -305,7 +305,7 @@ export function addPlantDetail(material) {
         #endif`);
   };
   const key = material.customProgramCacheKey;
-  material.customProgramCacheKey = () => `${key ? key() : ''}-planta5`;
+  material.customProgramCacheKey = () => `${key ? key() : ''}-planta6`;
   return material;
 }
 
@@ -315,6 +315,9 @@ export function addLeafLight(material, strength = 0.6) {
   const prev = material.onBeforeCompile;
   material.onBeforeCompile = (shader, renderer) => {
     prev?.(shader, renderer);
+    // folhas num verde mais fundo (menos verde-limão), como nas matas do ARK
+    shader.fragmentShader = shader.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
+        diffuseColor.rgb *= vec3(0.86, 0.93, 0.86);`);
     shader.fragmentShader = shader.fragmentShader.replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
         reflectedLight.indirectDiffuse *= 1.18;
         #if NUM_DIR_LIGHTS > 0
@@ -326,6 +329,6 @@ export function addLeafLight(material, strength = 0.6) {
         #endif`);
   };
   const key = material.customProgramCacheKey;
-  material.customProgramCacheKey = () => `${key ? key() : ''}-luzfolha`;
+  material.customProgramCacheKey = () => `${key ? key() : ''}-luzfolha3`;
   return material;
 }
