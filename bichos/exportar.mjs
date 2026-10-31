@@ -42,3 +42,18 @@ for (const n of names) {
   }
 }
 await browser.close();
+// close da cabeça (opcional): CLOSE=nome
+if (process.env.CLOSE) {
+  const b2 = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+  const p2 = await b2.newPage({ viewport: { width: 800, height: 500 } }); p2.setDefaultTimeout(600000);
+  if (process.env.THREE_DIR) await p2.route('https://cdn.jsdelivr.net/npm/three@0.160.0/**', route => {
+    const rel = new URL(route.request().url()).pathname.replace('/npm/three@0.160.0/', '');
+    route.fulfill({ body: readFileSync(join(process.env.THREE_DIR, rel)), contentType: 'text/javascript' });
+  });
+  await p2.goto(pathToFileURL(join(here, 'index.html')).href); await p2.waitForFunction(() => window.__ready === true);
+  await p2.evaluate(n => { document.getElementById('painel').style.display = 'none'; window.__frozen = true; window.__api.show(n); window.__api.play('parado', 0.4); }, process.env.CLOSE);
+  const [cp, ct] = JSON.parse(process.env.CLOSE_CAM);
+  await p2.evaluate(([cp, ct]) => window.__api.setCam(cp, ct), [cp, ct]); await p2.waitForTimeout(400);
+  await p2.screenshot({ path: join(outPrev, `${process.env.CLOSE}_cabeca.jpg`), type: 'jpeg', quality: 88 });
+  await b2.close();
+}

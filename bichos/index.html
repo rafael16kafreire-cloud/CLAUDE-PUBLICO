@@ -65,6 +65,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 
 /* ================================================================== */
 /* Utilidades                                                          */
@@ -84,16 +85,16 @@ function distSeg(p, a, b) {
 /* ================================================================== */
 /* Textura de escamas (neutra; a cor vem da cor por vértice)           */
 /* ================================================================== */
-function scaleTexture(N = 256) {
+function scaleTexture(N = 256, cells = 16, depth = 0.2) {
   // escamas arredondadas e suaves (sem "pixel"), em tons de cinza: a cor vem da cor por vértice
   const c = document.createElement('canvas'); c.width = c.height = N;
-  const g = c.getContext('2d'), img = g.createImageData(N, N), r = mulberry32(3), cell = N / 16;
-  const jit = [...Array(16 * 17)].map(() => [(r() - 0.5) * 0.35, (r() - 0.5) * 0.35, 0.92 + r() * 0.08]);
+  const g = c.getContext('2d'), img = g.createImageData(N, N), r = mulberry32(3), cell = N / cells;
+  const jit = [...Array(cells * (cells + 1))].map(() => [(r() - 0.5) * 0.35, (r() - 0.5) * 0.35, 0.92 + r() * 0.08]);
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
     const row = Math.floor(y / cell), xo = (row % 2) * cell / 2, col = Math.floor(((x + xo) % N) / cell);
-    const j = jit[row * 17 + col], fx = (((x + xo) % N) % cell) / cell - 0.5 - j[0] * 0.3, fy = (y % cell) / cell - 0.5 - j[1] * 0.3;
+    const j = jit[row * (cells + 1) + col], fx = (((x + xo) % N) % cell) / cell - 0.5 - j[0] * 0.3, fy = (y % cell) / cell - 0.5 - j[1] * 0.3;
     const d = Math.min(1, Math.sqrt(fx * fx + fy * fy) * 1.9);
-    const v = 255 * clamp((0.97 - 0.2 * d * d - 0.06 * fy) * j[2] + (r() - 0.5) * 0.025, 0, 1), i = (y * N + x) * 4;
+    const v = 255 * clamp((0.97 - depth * d * d - 0.08 * fy) * j[2] + (r() - 0.5) * 0.025, 0, 1), i = (y * N + x) * 4;
     img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 255;
   }
   g.putImageData(img, 0, 0);
@@ -103,6 +104,7 @@ function scaleTexture(N = 256) {
   return t;
 }
 const TEX = scaleTexture(256);
+const TEX64 = scaleTexture(64, 8, 0.42);
 
 /* ================================================================== */
 /* Esqueleto                                                           */
@@ -140,7 +142,8 @@ class Mesher {
     if (hint && n.dot(hint) < 0) [b, c] = [c, b];
     const k = 1 + (this.r() - 0.5) * 0.09, col = color.clone().multiplyScalar(k);
     for (const v of [a, b, c]) {
-      this.P.push(v.p.x, v.p.y, v.p.z); this.UV.push(...v.uv); this.Col.push(col.r, col.g, col.b);
+      const cc = v.col || col;
+      this.P.push(v.p.x, v.p.y, v.p.z); this.UV.push(...v.uv); this.Col.push(cc.r, cc.g, cc.b);
       const w = v.w.slice(0, 4); while (w.length < 4) w.push([0, 0]);
       this.SI.push(...w.map(q => q[0])); this.SW.push(...w.map(q => q[1]));
     }
@@ -153,18 +156,28 @@ class Mesher {
     for (let i = 0; i <= K; i++) {
       const t = i / K, c = curve.getPoint(t), T = curve.getTangent(t).normalize();
       const f = t * (pts.length - 1), k = Math.min(Math.floor(f), pts.length - 2), u = f - k;
-      const w = lerp(pts[k].w, pts[k + 1].w, u), h = lerp(pts[k].h, pts[k + 1].h, u), dy = lerp(pts[k].dy || 0, pts[k + 1].dy || 0, u);
+      const pv0 = (q, key) => q[key] ?? q.h ?? (q.top + q.bot) / 2, L = key => lerp(pv0(pts[k], key), pv0(pts[k + 1], key), u);
+      const w = lerp(pts[k].w, pts[k + 1].w, u), h = L('h'), top = L('top'), bot = L('bot'), dy = lerp(pts[k].dy || 0, pts[k + 1].dy || 0, u);
+      const ne = lerp(pts[k].n || 2, pts[k + 1].n || 2, u);
       const ref = Math.abs(T.y) > 0.8 ? V(0, 0, 1) : V(0, 1, 0);
       const S = T.clone().cross(ref).normalize(), U = S.clone().cross(T).normalize();
       if (prevC) arc += c.distanceTo(prevC); prevC = c;
       const wts = this.weights(c, chain), ring = [], circ = 2 * PI * Math.sqrt((w * w + h * h) / 2);
       for (let j = 0; j < sides; j++) {
         const a = 2 * PI * j / sides;
-        let x = Math.cos(a) * w, y = Math.sin(a) * h;
+        const ca = Math.cos(a), sa = Math.sin(a), hh = sa >= 0 ? top : bot;
+        let x = Math.sign(ca) * Math.abs(ca) ** (2 / ne) * w, y = Math.sign(sa) * Math.abs(sa) ** (2 / ne) * hh;
         if (flatBottom != null) y = Math.max(y, -h * flatBottom);
         if (flatTop != null) y = Math.min(y, h * flatTop);
         y += dy;
-        ring.push({ p: c.clone().addScaledVector(S, x).addScaledVector(U, y), uv: [j / sides * circ * this.uvK, arc * this.uvK], w: wts });
+        const pv = c.clone().addScaledVector(S, x).addScaledVector(U, y);
+        const v = { p: pv, uv: [(1 - Math.abs(2 * j / sides - 1)) * circ * 0.5 * this.uvK, arc * this.uvK], w: wts };
+        if (this.smooth) {
+          const nv = S.clone().multiplyScalar(ca / Math.max(w, 1e-3)).addScaledVector(U, sa / Math.max(hh, 1e-3)).normalize();
+          const nz = 1 + (Math.sin(pv.x * 13.1 + pv.y * 7.7) * Math.sin(pv.z * 9.3 - pv.y * 3.1)) * 0.05;
+          v.col = color(pv, nv, info).multiplyScalar(nz);
+        }
+        ring.push(v);
       }
       rings.push(ring); centers.push(c.clone().addScaledVector(U, dy)); tangents.push(T);
     }
@@ -236,8 +249,10 @@ class Mesher {
     g.setAttribute('color', new THREE.Float32BufferAttribute(this.Col, 3));
     g.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(this.SI, 4));
     g.setAttribute('skinWeight', new THREE.Float32BufferAttribute(this.SW, 4));
-    g.computeVertexNormals();
-    const mesh = new THREE.SkinnedMesh(g, material);
+    let geo = g;
+    if (this.smooth) geo = mergeVertices(g, 1e-4);   // vértices iguais viram um só → sombreado suave
+    geo.computeVertexNormals();
+    const mesh = new THREE.SkinnedMesh(geo, material);
     mesh.name = name + '_malha'; mesh.castShadow = mesh.receiveShadow = true;
     mesh.add(this.rig.root);
     this.rig.root.updateMatrixWorld(true);
@@ -559,99 +574,151 @@ function bipedClips(rig, o) {
 /* ================================================================== */
 function buildTRex() {
   const rig = new Rig();
-  const tailZ = [-0.6, -1.5, -2.4, -3.3, -4.2, -5.0, -5.8, -6.5, -7.15];
-  const tailY = z => 3.95 + 0.42 * (z / 7.15);
-  rig.bone('quadril', null, [0, 3.9, 0], [0, 3.95, 0.8])
-     .bone('coluna_1', 'quadril', [0, 3.95, 0.8], [0, 3.95, 1.6])
-     .bone('coluna_2', 'coluna_1', [0, 3.95, 1.6], [0, 3.85, 2.3])
-     .bone('coluna_3', 'coluna_2', [0, 3.85, 2.3], [0, 3.9, 2.85])
-     .bone('pescoco_1', 'coluna_3', [0, 3.9, 2.85], [0, 4.15, 3.15])
-     .bone('pescoco_2', 'pescoco_1', [0, 4.15, 3.15], [0, 4.4, 3.35])
-     .bone('pescoco_3', 'pescoco_2', [0, 4.4, 3.35], [0, 4.55, 3.55])
-     .bone('cabeca', 'pescoco_3', [0, 4.55, 3.55], [0, 4.3, 5.0])
-     .bone('mandibula', 'cabeca', [0, 4.42, 3.75], [0, 4.2, 4.95]);
+  const tailZ = [-0.7, -1.6, -2.5, -3.4, -4.3, -5.1, -5.9, -6.6, -7.3];
+  const tailY = z => 4.0 + 0.5 * (z / 7.3);
+  rig.bone('quadril', null, [0, 4.0, 0], [0, 4.0, 0.8])
+     .bone('coluna_1', 'quadril', [0, 4.0, 0.8], [0, 3.95, 1.6])
+     .bone('coluna_2', 'coluna_1', [0, 3.95, 1.6], [0, 3.92, 2.3])
+     .bone('coluna_3', 'coluna_2', [0, 3.92, 2.3], [0, 4.0, 2.85])
+     .bone('pescoco_1', 'coluna_3', [0, 4.0, 2.85], [0, 4.25, 3.15])
+     .bone('pescoco_2', 'pescoco_1', [0, 4.25, 3.15], [0, 4.48, 3.38])
+     .bone('pescoco_3', 'pescoco_2', [0, 4.48, 3.38], [0, 4.62, 3.6])
+     .bone('cabeca', 'pescoco_3', [0, 4.62, 3.6], [0, 4.42, 5.1])
+     .bone('mandibula', 'cabeca', [0, 4.5, 3.72], [0, 4.32, 5.05]);
   for (let i = 0; i < 8; i++)
     rig.bone(`cauda_${i + 1}`, i ? `cauda_${i}` : 'quadril', [0, tailY(tailZ[i]), tailZ[i]], [0, tailY(tailZ[i + 1]), tailZ[i + 1]]);
   for (const [s, x] of [['E', 1], ['D', -1]]) {
-    rig.bone(`ombro_${s}`, 'coluna_3', [0.55 * x, 3.3, 2.35], [0.65 * x, 2.95, 2.4])
-       .bone(`antebraco_${s}`, `ombro_${s}`, [0.65 * x, 2.95, 2.4], [0.62 * x, 2.75, 2.75])
-       .bone(`mao_${s}`, `antebraco_${s}`, [0.62 * x, 2.75, 2.75], [0.6 * x, 2.62, 2.95])
-       .bone(`coxa_${s}`, 'quadril', [0.6 * x, 3.75, 0.0], [0.7 * x, 2.4, 0.55])
-       .bone(`canela_${s}`, `coxa_${s}`, [0.7 * x, 2.4, 0.55], [0.68 * x, 1.0, -0.25])
-       .bone(`pe_${s}`, `canela_${s}`, [0.68 * x, 1.0, -0.25], [0.66 * x, 0.18, 0.15])
-       .bone(`dedos_${s}`, `pe_${s}`, [0.66 * x, 0.18, 0.15], [0.66 * x, 0.1, 0.95]);
+    rig.bone(`ombro_${s}`, 'coluna_3', [0.5 * x, 3.4, 2.4], [0.62 * x, 3.0, 2.45])
+       .bone(`antebraco_${s}`, `ombro_${s}`, [0.62 * x, 3.0, 2.45], [0.6 * x, 2.8, 2.78])
+       .bone(`mao_${s}`, `antebraco_${s}`, [0.6 * x, 2.8, 2.78], [0.58 * x, 2.68, 2.96])
+       .bone(`coxa_${s}`, 'quadril', [0.62 * x, 3.85, 0.0], [0.72 * x, 2.45, 0.55])
+       .bone(`canela_${s}`, `coxa_${s}`, [0.72 * x, 2.45, 0.55], [0.7 * x, 1.0, -0.28])
+       .bone(`pe_${s}`, `canela_${s}`, [0.7 * x, 1.0, -0.28], [0.68 * x, 0.2, 0.16])
+       .bone(`dedos_${s}`, `pe_${s}`, [0.68 * x, 0.2, 0.16], [0.68 * x, 0.1, 1.0]);
   }
   rig.build();
 
-  const pal = { back: C('#3d4724'), band: C('#5b3f24'), side: C('#6f7c46'), belly: C('#d8c89c'),
-    claw: C('#2a241d'), tooth: C('#e6d9a3'), eye: C('#d9a21b'), pupil: C('#111111'), mouth: C('#6e2622'), plate: C('#2f3720') };
+  const pal = { back: C('#566338'), band: C('#6e4b2a'), side: C('#8c9a5c'), belly: C('#e3d3a6'), throat: C('#d4bd8a'),
+    claw: C('#2a241d'), tooth: C('#e6d9a3'), eye: C('#d9a21b'), pupil: C('#111111'), mouth: C('#6e2622'),
+    gum: C('#8a3a32'), plate: C('#3f4a28'), nose: C('#1d1d16') };
   const skin = (c, n, info) => {
-    let col = pal.back.clone().lerp(pal.side, ss(0.65, 0.0, n.y) * 0.6).lerp(pal.belly, ss(-0.05, -0.6, n.y));
-    if (info.stripes && n.y > -0.25 && c.z < 2.9 && c.z > -6.6 && Math.sin(c.z * 2.3 + 0.8) > 0.35) col.lerp(pal.band, 0.75);
+    // costas escuras → laterais → barriga clara (pela direção da superfície)
+    let col = pal.back.clone().lerp(pal.side, ss(0.75, 0.05, n.y) * 0.7).lerp(pal.belly, ss(-0.1, -0.65, n.y));
+    if (info.stripes && n.y > -0.2 && c.z < 3.0 && c.z > -6.8) {
+      const band = Math.sin(c.z * 2.1 + 0.6 + Math.sin(c.z * 0.7) * 0.8);
+      col.lerp(pal.band, ss(0.25, 0.6, band) * ss(-0.2, 0.35, n.y) * 0.85);
+    }
+    if (info.head && n.y < -0.3) col.lerp(pal.throat, 0.5);
+    if (info.limb) col = pal.back.clone().lerp(pal.side, 0.35 + 0.35 * ss(0.6, -0.4, n.y)).multiplyScalar(info.dark ?? 1);
     return col;
   };
-  const m = new Mesher(rig, 11, 0.9);
+  const m = new Mesher(rig, 11, 2.4); m.smooth = true;
   const tailChain = [...Array(8)].map((_, i) => `cauda_${8 - i}`);
   const bodyChain = [...tailChain, 'quadril', 'coluna_1', 'coluna_2', 'coluna_3', 'pescoco_1', 'pescoco_2', 'pescoco_3', 'cabeca'];
+
+  // corpo: cauda → quadril → barriga funda → peito → pescoço em S
   m.loft({
     pts: [
-      { p: [0, 3.5, -7.25], w: 0.05, h: 0.05 }, { p: [0, 3.6, -6.3], w: 0.15, h: 0.18 },
-      { p: [0, 3.7, -5.0], w: 0.28, h: 0.33 }, { p: [0, 3.8, -3.6], w: 0.42, h: 0.5 },
-      { p: [0, 3.87, -2.2], w: 0.58, h: 0.68 }, { p: [0, 3.92, -1.0], w: 0.72, h: 0.84 },
-      { p: [0, 3.92, 0.0], w: 0.82, h: 0.96, dy: -0.1 }, { p: [0, 3.82, 1.0], w: 0.9, h: 1.15, dy: -0.25 },
-      { p: [0, 3.77, 1.9], w: 0.85, h: 1.1, dy: -0.25 }, { p: [0, 3.86, 2.6], w: 0.64, h: 0.78, dy: -0.12 },
-      { p: [0, 4.1, 3.05], w: 0.52, h: 0.62 }, { p: [0, 4.35, 3.3], w: 0.5, h: 0.58 },
-      { p: [0, 4.5, 3.5], w: 0.52, h: 0.6 }, { p: [0, 4.56, 3.66], w: 0.54, h: 0.62 },
-    ], K: 80, sides: 16, chain: bodyChain, color: skin, info: { stripes: true }, capEnd: false,
+      { p: [0, 3.5, -7.45], w: 0.03, top: 0.04, bot: 0.04 },
+      { p: [0, 3.56, -6.8], w: 0.11, top: 0.13, bot: 0.13 },
+      { p: [0, 3.66, -5.8], w: 0.21, top: 0.25, bot: 0.24 },
+      { p: [0, 3.77, -4.6], w: 0.33, top: 0.38, bot: 0.38 },
+      { p: [0, 3.87, -3.4], w: 0.46, top: 0.5, bot: 0.53 },
+      { p: [0, 3.95, -2.2], w: 0.6, top: 0.6, bot: 0.68 },
+      { p: [0, 4.0, -1.1], w: 0.72, top: 0.66, bot: 0.82 },
+      { p: [0, 4.02, 0.0], w: 0.8, top: 0.68, bot: 1.0, n: 2.2 },
+      { p: [0, 3.98, 0.9], w: 0.86, top: 0.68, bot: 1.28, n: 2.2 },
+      { p: [0, 3.94, 1.7], w: 0.84, top: 0.66, bot: 1.34, n: 2.2 },
+      { p: [0, 3.98, 2.4], w: 0.7, top: 0.58, bot: 1.08 },
+      { p: [0, 4.12, 2.9], w: 0.55, top: 0.5, bot: 0.78 },
+      { p: [0, 4.32, 3.2], w: 0.48, top: 0.44, bot: 0.64 },
+      { p: [0, 4.52, 3.45], w: 0.47, top: 0.42, bot: 0.6 },
+      { p: [0, 4.64, 3.68], w: 0.52, top: 0.44, bot: 0.56 },
+    ], K: 120, sides: 24, chain: bodyChain, color: skin, info: { stripes: true }, capEnd: false,
   });
-  // crânio grande e mandíbula
-  m.loft({ pts: [{ p: [0, 4.56, 3.56], w: 0.56, h: 0.62 }, { p: [0, 4.62, 3.92], w: 0.53, h: 0.56 }, { p: [0, 4.52, 4.32], w: 0.43, h: 0.44 },
-    { p: [0, 4.4, 4.72], w: 0.33, h: 0.31 }, { p: [0, 4.32, 5.04], w: 0.12, h: 0.12 }],
-    K: 18, sides: 14, chain: ['cabeca'], color: skin, flatBottom: 0.12 });
-  m.loft({ pts: [{ p: [0, 4.36, 3.62], w: 0.48, h: 0.33 }, { p: [0, 4.33, 4.0], w: 0.43, h: 0.26 }, { p: [0, 4.28, 4.5], w: 0.31, h: 0.19 },
-    { p: [0, 4.22, 4.97], w: 0.11, h: 0.08 }], K: 14, sides: 12, chain: ['mandibula'], color: (c, n) => n.y > 0.5 ? pal.mouth : skin(c, n, {}), flatTop: 0.3 });
-  // dentes grossos (banana)
-  for (let i = 0; i < 8; i++) {
-    const z = 4.0 + i * 0.12, f = (z - 4.0) / 1.0, wz = lerp(0.46, 0.18, f);
+  // crânio: largo atrás, focinho estreito, perfil quadradão
+  m.loft({ pts: [
+      { p: [0, 4.66, 3.6], w: 0.55, top: 0.44, bot: 0.14, n: 2.6 },
+      { p: [0, 4.7, 3.9], w: 0.6, top: 0.43, bot: 0.15, n: 2.8 },
+      { p: [0, 4.64, 4.25], w: 0.47, top: 0.36, bot: 0.14, n: 3 },
+      { p: [0, 4.56, 4.6], w: 0.37, top: 0.3, bot: 0.13, n: 3 },
+      { p: [0, 4.48, 4.92], w: 0.29, top: 0.24, bot: 0.12, n: 2.8 },
+      { p: [0, 4.43, 5.12], w: 0.17, top: 0.15, bot: 0.1, n: 2.4 },
+    ], K: 28, sides: 22, chain: ['cabeca'], color: skin, info: { head: true } });
+  // mandíbula: funda atrás (músculos), afina na frente
+  m.loft({ pts: [
+      { p: [0, 4.5, 3.64], w: 0.5, top: 0.05, bot: 0.38, n: 2.4 },
+      { p: [0, 4.48, 3.98], w: 0.48, top: 0.05, bot: 0.32, n: 2.6 },
+      { p: [0, 4.44, 4.42], w: 0.37, top: 0.05, bot: 0.22, n: 2.8 },
+      { p: [0, 4.4, 4.82], w: 0.27, top: 0.05, bot: 0.16, n: 2.6 },
+      { p: [0, 4.38, 5.06], w: 0.16, top: 0.04, bot: 0.11, n: 2.4 },
+    ], K: 24, sides: 20, chain: ['mandibula'], info: { head: true },
+    color: (c, n, i) => n.y > 0.6 ? pal.mouth.clone() : skin(c, n, i) });
+  // gengiva escura na borda da boca
+  for (const s of [1, -1]) {
+    m.loft({ pts: [{ p: [s * 0.5, 4.53, 3.95], w: 0.03, h: 0.03 }, { p: [s * 0.4, 4.5, 4.4], w: 0.03, h: 0.03 }, { p: [s * 0.29, 4.45, 4.85], w: 0.025, h: 0.025 }, { p: [s * 0.15, 4.42, 5.1], w: 0.02, h: 0.02 }],
+      K: 10, sides: 6, chain: ['cabeca'], color: () => pal.gum.clone() });
+  }
+  // dentes grossos (banana), curvados para trás
+  for (let i = 0; i < 9; i++) {
+    const f = i / 8, z = lerp(4.0, 5.02, f), wz = lerp(0.47, 0.17, f), len = lerp(0.15, 0.1, Math.abs(f - 0.35) * 1.5);
     for (const s of [1, -1]) {
-      m.cone([s * wz * 0.86, lerp(4.53, 4.4, f), z], [s * wz * 0.86, lerp(4.53, 4.4, f) - 0.15, z + 0.03], 0.035, 'cabeca', pal.tooth, 4);
-      m.cone([s * wz * 0.78, lerp(4.36, 4.26, f), z + 0.06], [s * wz * 0.78, lerp(4.36, 4.26, f) + 0.11, z + 0.04], 0.028, 'mandibula', pal.tooth, 4);
+      const yu = lerp(4.53, 4.43, f);
+      m.cone([s * wz * 0.93, yu, z], [s * wz * 0.93, yu - len, z + 0.035], 0.036, 'cabeca', pal.tooth, 5);
+      const yl = lerp(4.5, 4.41, f);
+      if (i < 8) m.cone([s * wz * 0.84, yl, z + 0.06], [s * wz * 0.84, yl + len * 0.75, z + 0.045], 0.028, 'mandibula', pal.tooth, 5);
     }
   }
   for (const s of [1, -1]) {
-    m.ball([s * 0.42, 4.78, 3.98], 0.075, 'cabeca', pal.eye);
-    m.ball([s * 0.47, 4.78, 3.99], 0.035, 'cabeca', pal.pupil);
-    m.cone([s * 0.36, 4.96, 3.78], [s * 0.38, 4.92, 4.15], 0.11, 'cabeca', pal.back, 5, 0.55);   // sobrancelha óssea
-    m.cone([s * 0.3, 4.95, 3.86], [s * 0.34, 5.08, 3.92], 0.06, 'cabeca', pal.plate, 4);        // chifrinho
+    m.ball([s * 0.47, 4.9, 3.98], 0.085, 'cabeca', pal.eye, 1);           // olho
+    m.geom(new THREE.BoxGeometry(0.02, 0.1, 0.035).translate(s * 0.55, 4.9, 3.99), 'cabeca', pal.pupil);  // pupila em fenda
+    m.cone([s * 0.38, 5.02, 3.76], [s * 0.42, 5.0, 4.18], 0.12, 'cabeca', pal.back, 6, 0.5);  // sobrancelha óssea
+    m.cone([s * 0.33, 5.04, 3.84], [s * 0.36, 5.17, 3.92], 0.07, 'cabeca', pal.plate, 5);       // chifrinho
+    m.ball([s * 0.1, 4.6, 5.02], 0.035, 'cabeca', pal.nose);               // narina
+    m.ball([s * 0.52, 4.62, 3.72], 0.17, 'mandibula', (c, n) => skin(c, n, { head: true }), 1);  // bochecha (músculo)
   }
-  // placas nas costas
-  for (let i = 0; i < 26; i++) {
-    const z = lerp(3.2, -5.6, i / 25), top = z > 2.6 ? 4.4 + (z - 2.6) * 0.5 : z > -1 ? 4.85 - Math.max(0, z - 1.5) * 0.25 : 4.75 + z * 0.13;
-    m.cone([0, top - 0.06, z], [0, top + lerp(0.2, 0.08, i / 25), z - 0.1], lerp(0.12, 0.06, i / 25), bodyChain, pal.plate, 4, 0.5);
+  // fileira dupla de escamas ósseas nas costas
+  for (let i = 0; i < 18; i++) {
+    const t = i / 17, z = lerp(2.7, -5.2, t);
+    const top = z > 2.4 ? 4.56 + (2.9 - z) * 0.2 : z > -1.1 ? 4.68 + 0.03 * Math.sin(z) : 4.68 + (z + 1.1) * 0.068;
+    const sz = lerp(0.13, 0.06, t);
+    for (const sx of [1, -1]) {
+      const g = new THREE.IcosahedronGeometry(sz, 1); g.scale(0.8, 0.45, 1.3); g.translate(sx * 0.1, top - sz * 0.15, z + (sx > 0 ? 0 : 0.22));
+      m.geom(g, bodyChain, pal.plate);
+    }
   }
   for (const [s, x] of [['E', 1], ['D', -1]]) {
     // bracinho de 2 dedos
-    m.loft({ pts: [{ p: [0.5 * x, 3.35, 2.32], w: 0.17, h: 0.19 }, { p: [0.65 * x, 2.95, 2.4], w: 0.12, h: 0.12 },
-      { p: [0.62 * x, 2.75, 2.75], w: 0.09, h: 0.09 }, { p: [0.6 * x, 2.62, 2.95], w: 0.07, h: 0.06 }],
-      K: 10, sides: 8, chain: [`ombro_${s}`, `antebraco_${s}`, `mao_${s}`], color: skin, info: {} });
-    for (const f of [-1, 1]) m.cone([(0.6 + f * 0.035) * x, 2.62, 2.94], [(0.6 + f * 0.05) * x, 2.48, 3.08], 0.03, `mao_${s}`, pal.claw, 4);
-    // perna enorme
-    m.loft({ pts: [{ p: [0.55 * x, 3.95, -0.1], w: 0.45, h: 0.72 }, { p: [0.68 * x, 3.1, 0.28], w: 0.42, h: 0.62 },
-      { p: [0.7 * x, 2.4, 0.55], w: 0.28, h: 0.33 }, { p: [0.69 * x, 1.7, 0.15], w: 0.22, h: 0.25 },
-      { p: [0.68 * x, 1.0, -0.25], w: 0.16, h: 0.17 }, { p: [0.67 * x, 0.6, -0.05], w: 0.14, h: 0.14 },
-      { p: [0.66 * x, 0.18, 0.15], w: 0.16, h: 0.14 }],
-      K: 24, sides: 12, chain: [`coxa_${s}`, `canela_${s}`, `pe_${s}`], color: skin, info: {} });
+    m.loft({ pts: [{ p: [0.42 * x, 3.48, 2.36], w: 0.18, top: 0.2, bot: 0.2 }, { p: [0.62 * x, 3.0, 2.45], w: 0.12, top: 0.13, bot: 0.13 },
+      { p: [0.6 * x, 2.8, 2.78], w: 0.09, top: 0.09, bot: 0.09 }, { p: [0.58 * x, 2.68, 2.97], w: 0.07, top: 0.06, bot: 0.06 }],
+      K: 12, sides: 12, chain: [`ombro_${s}`, `antebraco_${s}`, `mao_${s}`], color: skin, info: { limb: true } });
+    for (const f of [-1, 1]) m.cone([(0.58 + f * 0.035) * x, 2.67, 2.96], [(0.58 + f * 0.05) * x, 2.52, 3.1], 0.03, `mao_${s}`, pal.claw, 5);
+    // perna: coxa musculosa ("coxa de frango"), canela fina, pé forte
+    m.loft({ pts: [
+        { p: [0.28 * x, 4.45, -0.15], w: 0.2, top: 0.3, bot: 0.35 },
+        { p: [0.56 * x, 4.0, -0.04], w: 0.42, top: 0.58, bot: 0.74 },
+        { p: [0.66 * x, 3.45, 0.17], w: 0.45, top: 0.6, bot: 0.72 },
+        { p: [0.71 * x, 2.9, 0.42], w: 0.36, top: 0.42, bot: 0.46 },
+        { p: [0.72 * x, 2.45, 0.55], w: 0.25, top: 0.26, bot: 0.28 },
+        { p: [0.71 * x, 1.85, 0.25], w: 0.22, top: 0.2, bot: 0.3 },
+        { p: [0.7 * x, 1.3, -0.1], w: 0.16, top: 0.14, bot: 0.19 },
+        { p: [0.7 * x, 1.0, -0.28], w: 0.14, top: 0.13, bot: 0.15 },
+        { p: [0.69 * x, 0.6, -0.06], w: 0.13, top: 0.12, bot: 0.12 },
+        { p: [0.68 * x, 0.2, 0.16], w: 0.17, top: 0.15, bot: 0.15 },
+      ], K: 40, sides: 18, chain: [`coxa_${s}`, `canela_${s}`, `pe_${s}`], color: skin, info: { limb: true } });
     const D = `dedos_${s}`;
-    for (const [dx, ex, ez] of [[0, 0, 0.95], [-0.17, -0.25, 0.78], [0.17, 0.25, 0.78]]) {
-      m.tube([(0.66 + dx) * x, 0.15, 0.15], [(0.66 + ex) * x, 0.1, ez], 0.13, 0.075, D, pal.side, 7);
-      m.cone([(0.66 + ex) * x, 0.1, ez - 0.03], [(0.66 + ex * 1.08) * x, 0.03, ez + 0.2], 0.07, D, pal.claw, 5);
+    for (const [dx, ex, ez] of [[0, 0, 1.0], [-0.17, -0.26, 0.82], [0.17, 0.26, 0.82]]) {
+      m.loft({ pts: [{ p: [(0.68 + dx) * x, 0.16, 0.12], w: 0.13, top: 0.12, bot: 0.11 }, { p: [(0.68 + (dx + ex) / 2) * x, 0.12, (0.12 + ez) / 2], w: 0.1, top: 0.09, bot: 0.08 },
+        { p: [(0.68 + ex) * x, 0.1, ez], w: 0.075, top: 0.07, bot: 0.06 }], K: 8, sides: 10, chain: [D], color: skin, info: { limb: true, dark: 0.85 } });
+      m.cone([(0.68 + ex) * x, 0.11, ez - 0.02], [(0.68 + ex * 1.08) * x, 0.03, ez + 0.2], 0.07, D, pal.claw, 6);
     }
+    m.cone([(0.66) * x, 0.3, -0.05], [(0.62) * x, 0.22, -0.25], 0.05, D, pal.claw, 5);  // dedinho de trás
   }
-  const mat = new THREE.MeshStandardMaterial({ name: 'trex_pele', map: TEX, vertexColors: true, roughness: 0.8, metalness: 0 });
+  const mat = new THREE.MeshStandardMaterial({ name: 'trex_pele', map: TEX64, vertexColors: true, roughness: 0.82, metalness: 0 });
   const mesh = m.build('trex', mat);
   const clips = bipedClips(rig, {
-    k: 3.9 / 0.92, walk: [1.7, 0.64, 0.62, 0.1, 0.025, 0.03, 0.08], run: [1.0, 0.42, 1.05, 0.17, 0.05, 0.16, 0.25],
-    attack: 'mordida', roar: 'baixo', eat: 0.55, sleepDrop: 0.6, fold: { dz: -0.55, dy: -0.78, meta: 1.0, toe: 0.05 }, deathDrop: 0.74,
+    k: 4.0 / 0.92, walk: [1.7, 0.64, 0.62, 0.1, 0.025, 0.03, 0.08], run: [1.0, 0.42, 1.05, 0.17, 0.05, 0.16, 0.25],
+    attack: 'mordida', roar: 'baixo', eat: 0.55, sleepDrop: 0.6, fold: { dz: -0.55, dy: -0.8, meta: 1.0, toe: 0.05 }, deathDrop: 0.74,
   });
   const group = new THREE.Group(); group.name = 'trex'; group.add(mesh);
   return { group, mesh, clips, loops: { parado: 1, andar: 1, correr: 1, comer: 1, dormir: 1 } };
@@ -705,7 +772,7 @@ function show(name) {
   cur = get(name); curName = name; scene.add(cur.group);
   mixer = new THREE.AnimationMixer(cur.group);
   frame(cur.group);
-  const tris = cur.mesh.geometry.attributes.position.count / 3;
+  const gg = cur.mesh.geometry, tris = (gg.index ? gg.index.count : gg.attributes.position.count) / 3;
   document.getElementById('info').innerHTML = `<b>${BICHOS[name].nome}</b>${tris.toLocaleString('pt-BR')} triângulos · ${cur.mesh.skeleton.bones.length} ossos · ${cur.clips.length} animações<br>arquivo: ${BICHOS[name].arquivo}`;
   document.querySelectorAll('[data-bicho]').forEach(b => b.classList.toggle('ativo', b.dataset.bicho === name));
   const la = document.getElementById('listaAnim'); la.innerHTML = '';
@@ -748,7 +815,7 @@ document.getElementById('baixar').onclick = async () => {
 const b64 = buf => { const u = new Uint8Array(buf); let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode(...u.subarray(i, i + 0x8000)); return btoa(s); };
 window.__api = {
   names: Object.keys(BICHOS),
-  info: n => { const c = get(n); return { arquivo: BICHOS[n].arquivo, tris: c.mesh.geometry.attributes.position.count / 3, ossos: c.mesh.skeleton.bones.map(b => b.name), anims: c.clips.map(x => [x.name, x.duration]) }; },
+  info: n => { const c = get(n), gg = c.mesh.geometry; return { arquivo: BICHOS[n].arquivo, tris: (gg.index ? gg.index.count : gg.attributes.position.count) / 3, ossos: c.mesh.skeleton.bones.map(b => b.name), anims: c.clips.map(x => [x.name, x.duration]) }; },
   show, play, frame: () => frame(cur.group),
   setCam: (p, t) => { camera.position.set(...p); controls.target.set(...t); controls.update(); },
   export: async n => b64(await toGLB(n)),

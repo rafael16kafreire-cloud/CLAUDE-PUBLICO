@@ -13,5 +13,5 @@ Ossos e animações com os nomes do prompt (`parado`, `andar`, `correr`, `atacar
 
 | Bicho | Arquivo | Triângulos | Ossos |
 |---|---|--:|--:|
-| T-Rex | `trex.glb` | 6.156 | 31 |
+| T-Rex | `trex.glb` | 17.018 (sombreado suave, textura 64×64) | 31 |
 | Raptor | `raptor.glb` | 4.754 | 31 |
