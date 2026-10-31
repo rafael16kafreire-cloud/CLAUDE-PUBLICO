@@ -1,0 +1,18 @@
+{
+ "nome": "barionix",
+ "titulo": "Barionix",
+ "modelo": "../teste/bary_parado.glb",
+ "comprimento": 9,
+ "tipo": "bipede",
+ "ataque": "mordida",
+ "rugido": "cima",
+ "cabeca": 0.12,
+ "braco": 0.08,
+ "fonte": "Baryonix- Walkeri — add4d (AD&D 4D) — CC0 (domínio público) — https://sketchfab.com/3d-models/baryonix-walkeri-3e97de2fef8240edac9244c55ed6fcb3",
+ "preparo": "BASE_Z=-3.28 DEFORMAR=blender/tirar_base.py blender -b -P blender/preparar.py -- originais/bary_add4d.glb teste/bary_parado.glb 40000",
+ "rot": [
+  0,
+  -90,
+  0
+ ]
+}

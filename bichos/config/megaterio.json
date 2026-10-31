@@ -1,0 +1,5 @@
+{ "nome": "megaterio", "entrada": "../originais/megaterio_anees.glb", "saida": "../modelos/megaterio.glb", "comprimento": 5.5,
+  "osso_cabeca": "Bone.006_06", "osso_cauda": "Bone.011_055",
+  "animacoes": { "parado": "Armature|ArmatureAction" },
+  "preparo": "node adaptar.mjs config/megaterio.json && node completar.mjs completar/megaterio.mjs",
+  "fonte": "Animated Megatherium (Free) — Anees Animates — CC BY 4.0 — https://sketchfab.com/3d-models/animated-megatherium-free-ec0cb6a41c2e498780136e3d89fa1516" }

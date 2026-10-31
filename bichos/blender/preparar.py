@@ -5,6 +5,7 @@
 #  - exporta .glb parado
 # Uso: blender -b -P preparar.py -- entrada saida.glb [max_triangulos]
 #      (opcional) REMOVER="nome1,nome2" para tirar peças extras
+#      (opcional) GIRAR="x,-90" gira a malha (graus) em volta de um eixo antes de exportar (modelo deitado)
 #      (opcional) DEFORMAR=script.py roda um script com a malha final em 'obj' (ex.: remodelar um bicho)
 import bpy, sys, os
 a = sys.argv[sys.argv.index('--') + 1:]
@@ -53,6 +54,11 @@ tris = sum(len(p.vertices) - 2 for p in obj.data.polygons)
 if maxtris and tris > maxtris:
     m = obj.modifiers.new('reduzir', 'DECIMATE'); m.ratio = maxtris / tris
     bpy.ops.object.modifier_apply(modifier=m.name)
+if os.environ.get('GIRAR'):
+    import math, mathutils
+    for par in os.environ['GIRAR'].split(';'):
+        eixo, graus = par.split(',')
+        obj.data.transform(mathutils.Matrix.Rotation(math.radians(float(graus)), 4, eixo.strip().upper()))
 if os.environ.get('DEFORMAR'):
     exec(open(os.environ['DEFORMAR']).read(), {'bpy': bpy, 'obj': obj})
 tris2 = sum(len(p.vertices) - 2 for p in obj.data.polygons)

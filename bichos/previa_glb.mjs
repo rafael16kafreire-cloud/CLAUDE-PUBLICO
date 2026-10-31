@@ -39,7 +39,8 @@ window.ready = true;
 await p.waitForFunction(() => window.ready);
 // ALVO=osso,tamanho: câmera de perto num osso (ex.: cabeça)
 if (process.env.ALVO) await p.evaluate(a => { window.ALVO = [a[0], +a[1]]; }, process.env.ALVO.split(','));
-const anims = await p.evaluate(() => window.anims);
+let anims = await p.evaluate(() => window.anims);
+if (!anims.length) anims = [['estatico', 0]];   // modelo sem animação: uma foto parada
 const want = process.argv[3] ? process.argv[3].split(',') : anims.map(a => a[0]);
 for (const [a, dur] of anims.filter(x => want.includes(x[0]))) {
   const t = { parado: 0.3, andar: 0.3, correr: 0.2, morrer: dur * 0.97, dormir: dur * 0.5, voar: 1.5, planar: 2 }[a] ?? dur * 0.45;

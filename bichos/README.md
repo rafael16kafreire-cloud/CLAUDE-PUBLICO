@@ -72,3 +72,23 @@ encurta a cauda, aumenta a cabeça e fecha a boca. Depois é rigado e animado co
 
     DEFORMAR=blender/moschops.py blender -b -P blender/preparar.py -- dime_cp.glb teste/moschops_parado.glb 30000
     node animar.mjs config/moschops.json
+
+## Lote novo: Megatério, Bisão, Paraceratério, Edmontossauro, Barionix, Suchomimo, Giganotossauro, Sarcosuchus e chefes
+
+- `congelar.mjs entrada.glb saida.glb [animação] [tempo]`: congela um modelo animado numa pose (como o three.js mostra) e exporta malha parada.
+  Usado no Giganotossauro, cujo rig (Auto-Rig Pro) o Blender não reproduz.
+- `blender/tirar_base.py` (com `DEFORMAR=` e `BASE_Z=`): tira a base redonda de estátua e lascas soltas (Barionix CC0).
+- `preparar.py` aceita `GIRAR="x,-90"` para modelos deitados.
+- `variante.mjs` aceita `"efeito": "gelo" | "musgo" | "abismo"` (chefes: chefe_gelo = mamute ×1.9, chefe_pantano = sarcosuchus ×1.7, chefe_mar = mosassauro ×1.8).
+- Megatério e Bisão (Anees Animates) vêm com 1 animação; o resto é feito com `completar.mjs` (`completar/megaterio.mjs`, `completar/bisao.mjs`).
+
+### Sugestão de funções no jogo (herbívoros)
+
+| bicho | especialidade |
+|---|---|
+| megaterio | coleta de fibra e frutas no alto (anima puxando galhos), garras fortes contra insetos |
+| bisao | montaria de carga barata, coleta de couro/palha, investida em bando |
+| paraceraterio | carrega plataforma de construção, alcança árvores altas (madeira) |
+| edmontossauro | coleta de frutas/sementes em quantidade, alarme do bando (rugido) |
+| lystrosaurus | bichinho de colo (variante pequena do Moschops): bônus de experiência |
+| moschops | coleta de cogumelos/raízes, cabeçada derruba pedra |
