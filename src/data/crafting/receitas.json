@@ -140,14 +140,9 @@
    "tempo": 5,
    "xp": 12,
    "categoria": "Estruturas",
-   "ingredientes": {
-    "lingote_metal": 5,
-    "pedra": 50,
-    "madeira": 30,
-    "couro": 20
-   },
-   "nivel": 20,
-   "engrama": 18
+   "ingredientes": {"madeira": 30, "pedra": 30, "couro": 10, "fibra": 20},
+   "nivel": 5,
+   "engrama": 2
   },
   {
    "id": "piso",
