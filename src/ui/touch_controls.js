@@ -72,6 +72,7 @@ export class TouchControls {
     this.editBar.querySelector('[data-act="lock"]').addEventListener('click', () => this.stopEdit());
 
     this.scheme = 'gestos';
+    this.mountNear = null; // () => true se há um bicho domado montável por perto (o jogo preenche)
     this.flickJump = true; // pular com o gesto de arrastar para cima (opção nas Configurações)
     // tempos dos gestos em ms (padrão de dedo no celular; os testes automáticos alargam)
     this.timing = { flick: 280, double: 330, hold: 480, tap: 260, edge: 600, early: 45 };
@@ -178,7 +179,7 @@ export class TouchControls {
     const txt = document.querySelector('.hud .prompt:not([hidden])')?.textContent ?? '';
     navigator.vibrate?.(18);
     // segurar parado só monta/desmonta; não abre mais a mochila (abria sem querer)
-    if (this._mounted || /botão Montar/.test(txt)) this._tap('mount');
+    if (this._mounted || this.mountNear?.() || /Montar|montar/.test(txt)) this._tap('mount');
   }
 
   _setupGestures(layer) {
@@ -250,7 +251,8 @@ export class TouchControls {
           if (!st.moved && !st.cancelled && P.has(e.pointerId)) {
             st.held = true;
             const txt = document.querySelector('.hud .prompt:not([hidden])')?.textContent ?? '';
-            if (this._mounted || /botão Montar/.test(txt)) this._holdAction(); // montar / desmontar
+            // como no ARK: perto de um bicho domado (com ou sem sela) e segurando o dedo = montar / desmontar
+            if (this._mounted || this.mountNear?.() || /Montar|montar/.test(txt)) this._holdAction();
             else if (!st.repeat) {
               // segurar sem mexer: ataca ou colhe sem parar enquanto o dedo estiver na tela
               navigator.vibrate?.(10);

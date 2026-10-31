@@ -187,7 +187,7 @@ export class PlayerInteraction {
         if (held !== need) return { kind: 'hint', key: 'interact', text: `${c.species.nome} precisa de ${itemName(need)}` };
         return { kind: 'saddle', c, item: held, text: `Pôr a ${itemName(held)} em ${c.name ?? c.species.nome}` };
       }
-      const ride = rideable ? (c.saddled || !BALANCE.sela.precisa ? (game.isTouch ? ' · botão Montar' : ' · F: montar') : ' · sem sela') : '';
+      const ride = rideable ? (c.saddled || !BALANCE.sela.precisa ? (game.isTouch ? ' · segure para montar' : ' · F: montar') : ' · sem sela') : '';
       return { kind: 'tame-menu', c, text: `${c.name ?? c.species.nome}: opções (${c.follow ? 'seguindo' : 'parado'})${ride}` };
     }
     return null;

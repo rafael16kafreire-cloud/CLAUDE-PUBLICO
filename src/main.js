@@ -316,6 +316,12 @@ function boot(hotData = {}) {
     const inspect = new InspectPanel(hud.el, () => creatures.findAimed(camera.position, camCtl.forward, 45));
     const messages = new Messages(ui);
     const touch = new TouchControls(ui, input);
+    // segurar o dedo perto de um bicho domado que dá para montar (com ou sem sela) = montar, como no ARK
+    touch.mountNear = () => {
+      const p = ctx?.player;
+      if (!p || p.dead) return false;
+      return ctx.creatures.tamedBy(p).some((o) => o.species.pode_montar && !o.isBaby && Math.hypot(o.pos.x - p.position.x, o.pos.z - p.position.z) - o.radius < 5);
+    };
     const death = new DeathScreen(ui, world);
     const minimap = new Minimap(hud.el, world);
     const mapScreen = new MapScreen(ui, world);
