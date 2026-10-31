@@ -43,6 +43,35 @@ function gaitAt(c, p) {
   return c[i] + (c[(i + 1) % n] - c[i]) * (f - i);
 }
 
+// ---------------------------------------------------------
+// PERNAS COM CINEMÁTICA INVERSA (pé preso no chão)
+// Cada perna é coxa -> joelho -> pé. Em vez de balançar a coxa por uma curva, o jogo diz ONDE o pé
+// tem que estar (no chão, parado, enquanto o corpo passa; depois no ar até o próximo apoio) e
+// calcula o giro da coxa e do joelho para chegar lá. As rotações são em torno de X, então a conta
+// é no plano (y, z) da perna: ângulo medido de +y para +z (girar em X soma o ângulo).
+// ---------------------------------------------------------
+const wrapPi = (a) => Math.atan2(Math.sin(a), Math.cos(a));
+function solvePerna(u1, u2, T, prev) {
+  const a = Math.hypot(u1[0], u1[1]);
+  const b = Math.hypot(u2[0], u2[1]);
+  const d = clamp(Math.hypot(T[0], T[1]), Math.abs(a - b) + 0.002, a + b - 0.002);
+  const b0 = Math.acos(clamp((d * d - a * a - b * b) / (2 * a * b), -1, 1));
+  const phi1 = Math.atan2(u1[1], u1[0]);
+  const phi2 = Math.atan2(u2[1], u2[0]);
+  const aimT = Math.atan2(T[1], T[0]);
+  let best = null;
+  for (const sg of [1, -1]) {
+    const beta = sg * b0;
+    const A1 = aimT - Math.atan2(b * Math.sin(beta), a + b * Math.cos(beta));
+    const t1 = wrapPi(A1 - phi1);
+    const t2 = wrapPi(beta - (phi2 - phi1));
+    const cost = Math.abs(t2 - prev[1]) + Math.abs(t1 - prev[0]) * 0.5; // fica no mesmo dobrado (não vira o joelho)
+    if (!best || cost < best.cost) best = { t1, t2, cost };
+  }
+  return best;
+}
+const easeSwing = (w) => w * w * (3 - 2 * w);
+
 const FOOD_HIGH = new Set(['arvore_agar', 'arvore_dossel', 'arvore_media', 'acai', 'sumauma', 'pinheiro_neve', 'pinheiro', 'arvore_folhosa', 'arvore_folhosa2']);
 
 export const CSTATE = {
@@ -1279,6 +1308,30 @@ export class Creature {
     }
   }
 
+  // Monta os dados das pernas com IK: comprimento e posição de descanso de cada osso (medidos nos ossos de verdade).
+  _buildIK() {
+    const spec = this.spec;
+    if (!['quad', 'biped', 'croc'].includes(spec.body) || this.flies || this.aquatic) return null;
+    const legs = [];
+    const byName = {};
+    for (const leg of spec.legs ?? []) {
+      if (leg.name.startsWith('braco')) continue;
+      const thigh = this.bones[leg.name];
+      const knee = this.bones[`${leg.name}_joelho`];
+      const foot = this.bones[`${leg.name}_pe`];
+      if (!thigh || !knee || !foot) continue;
+      const u1 = [knee.position.y, knee.position.z];
+      const u2 = [foot.position.y, foot.position.z];
+      if (Math.hypot(...u1) < 1e-3 || Math.hypot(...u2) < 1e-3) continue;
+      const lk = { name: leg.name, u1, u2, R0y: u1[0] + u2[0], R0z: u1[1] + u2[1], offS: 0, liftS: 0, prev: [0, 0] };
+      legs.push(lk);
+      byName[leg.name] = lk;
+    }
+    if (!legs.length) return null;
+    const reach = legs.reduce((m, l) => m + Math.hypot(...l.u1) + Math.hypot(...l.u2), 0) / legs.length;
+    return { legs, byName, reach, bob: 0 };
+  }
+
   _animateCode(dt, ctx, yawVel) {
     const b = this.bones;
     const spec = this.spec;
@@ -1312,8 +1365,18 @@ export class Creature {
       ampK = clamp(Math.sqrt(want), 0.6, 2);
       freqK = clamp(want / ampK, 0.45, 2.5);
     }
-    const amp = moving * (0.34 + 0.36 * A.run) * ampK;
-    const stride = (spec.body === 'spider' ? legLen * 1.4 : Math.max(0.3, 4 * legLen * Math.sin(Math.max(0.2, amp / ampK)) * 0.85)) / freqK;
+    if (this._ik === undefined) this._ik = this._buildIK();
+    const ik = this._ik && !dead ? this._ik : null;
+    const amp = moving * (0.34 + 0.36 * A.run) * (ik ? 1 : ampK);
+    let stride = (spec.body === 'spider' ? legLen * 1.4 : Math.max(0.3, 4 * legLen * Math.sin(Math.max(0.2, amp / ampK)) * 0.85)) / freqK;
+    // pernas com IK: o passo varre uma fração do alcance da perna; o pé fica parado no chão pelo tempo do apoio
+    let ikS = 0;
+    let ikDuty = 0.64;
+    if (ik) {
+      ikDuty = 0.66 - 0.26 * A.run;
+      ikS = ik.reach * (0.5 + 0.38 * A.run);
+      stride = (ikS * this.scale) / ikDuty; // distância que o corpo anda em um ciclo completo da perna
+    }
     this.phase += (adt * spd) / stride;
     // pisada dos gigantes: poeira, barulho surdo e o chão treme
     const step = Math.floor(this.phase * 2);
@@ -1406,6 +1469,12 @@ export class Creature {
     }
 
     // ---------- pernas ----------
+    if (ik) {
+      // o mesmo balanço vertical do corpo que o bloco "corpo" aplica abaixo (para o pé compensar e não sair do chão)
+      const bobY = Math.abs(Math.sin(this.phase * TAU)) * amp * legLen * 0.09;
+      const breatheY = Math.sin(t * 1.6) * 0.012 * legLen * (1 - A.run);
+      ik.bob = (bobY + breatheY) / this.scale;
+    }
     const inWater = this.swims && !!this.world.waterAt(this.pos.x, this.pos.z) && this.pos.y < this.world.waterAt(this.pos.x, this.pos.z).level - 0.2;
     for (const leg of spec.legs ?? []) {
       const thigh = b[leg.name];
@@ -1428,6 +1497,32 @@ export class Creature {
       if (isArm) {
         const reach = this.attackAnim > 0 ? -Math.sin(this.attackAnim * Math.PI) * 0.8 : 0;
         thigh.rotation.x = 0.3 + Math.sin((this.phase + leg.phase) * TAU) * amp * 0.3 + reach;
+        continue;
+      }
+      // pé preso no chão (cinemática inversa)
+      const lk = ik?.byName[leg.name];
+      if (ik && lk) {
+        const u = (((this.phase + leg.phase) % 1) + 1) % 1;
+        let off;
+        let lift = 0;
+        if (u < ikDuty) off = -ikS / 2 + ikS * (u / ikDuty); // apoio: o pé fica parado e o corpo passa
+        else {
+          const w = (u - ikDuty) / (1 - ikDuty); // balanço: o pé volta ao ponto de apoio
+          off = ikS / 2 - ikS * easeSwing(w);
+          lift = Math.sin(w * Math.PI) * ik.reach * (0.14 + 0.1 * A.run);
+        }
+        // parado (ou quase): os pés voltam à posição de descanso
+        const wv = clamp(spd / 0.3, 0, 1);
+        lk.offS += (off * wv - lk.offS) * (wv < 1 ? Math.min(1, adt * 10) : 1);
+        lk.liftS += (lift * wv - lk.liftS) * (wv < 1 ? Math.min(1, adt * 10) : 1);
+        // o corpo sobe e desce (bob): o pé continua no chão, então o alvo desce junto, no referencial do osso pai
+        const T = [lk.R0y - ik.bob + lk.liftS, lk.R0z + lk.offS];
+        const sol = solvePerna(lk.u1, lk.u2, T, lk.prev);
+        lk.prev[0] = sol.t1;
+        lk.prev[1] = sol.t2;
+        thigh.rotation.x = sol.t1;
+        knee.rotation.x = sol.t2;
+        foot.rotation.x = -(sol.t1 + sol.t2); // pé sempre paralelo ao chão
         continue;
       }
       // curva de verdade (se o bicho tiver um jeito de andar)
