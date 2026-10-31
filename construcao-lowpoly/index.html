@@ -1,0 +1,898 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Construção Low-Poly</title>
+<style>
+  :root {
+    --bg: #f3efe6;
+    --panel: rgba(250, 247, 240, 0.94);
+    --text: #2b2520;
+    --muted: #6d6358;
+    --line: #ddd3c4;
+    --btn: #ece4d6;
+    --btn-hover: #e2d6c2;
+    --accent: #8a5a2b;
+    --accent-text: #fff8ee;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #15130f;
+      --panel: rgba(28, 25, 21, 0.94);
+      --text: #efe7da;
+      --muted: #a89c8c;
+      --line: #3a342c;
+      --btn: #2c2720;
+      --btn-hover: #3a3329;
+      --accent: #c98b4a;
+      --accent-text: #1a140d;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #15130f;
+    --panel: rgba(28, 25, 21, 0.94);
+    --text: #efe7da;
+    --muted: #a89c8c;
+    --line: #3a342c;
+    --btn: #2c2720;
+    --btn-hover: #3a3329;
+    --accent: #c98b4a;
+    --accent-text: #1a140d;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; overflow: hidden; }
+  #c { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+  #painel { position: fixed; top: 12px; right: 12px; bottom: 12px; width: 310px; background: var(--panel);
+    border: 1px solid var(--line); border-radius: 12px; padding: 14px; overflow-y: auto;
+    backdrop-filter: blur(6px); box-shadow: 0 8px 30px rgba(0,0,0,.18); }
+  h1 { font-size: 17px; margin: 0 0 2px; }
+  .sub { color: var(--muted); font-size: 12px; margin: 0 0 12px; }
+  h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 14px 0 6px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  button, select { font: inherit; color: var(--text); background: var(--btn); border: 1px solid var(--line);
+    border-radius: 8px; padding: 7px 9px; cursor: pointer; text-align: left; min-height: 34px; }
+  button:hover { background: var(--btn-hover); }
+  button.ativo { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  button.principal { background: var(--accent); color: var(--accent-text); border-color: var(--accent); text-align: center; width: 100%; }
+  .linha { display: flex; gap: 6px; align-items: center; margin-top: 6px; }
+  .linha > * { flex: 1; }
+  #info { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 13px; }
+  #info b { display: block; font-size: 14px; margin-bottom: 2px; }
+  #info span { color: var(--muted); display: block; }
+  .dl { display: flex; flex-direction: column; gap: 6px; }
+  .nota { color: var(--muted); font-size: 12px; margin-top: 10px; }
+  label.check { display: flex; gap: 6px; align-items: center; color: var(--muted); }
+  #toggle { display: none; }
+  @media (max-width: 720px) {
+    #painel { top: auto; left: 8px; right: 8px; bottom: 8px; width: auto; max-height: 46vh; }
+    #painel.fechado { max-height: 52px; overflow: hidden; }
+    #toggle { display: block; position: absolute; right: 10px; top: 10px; min-height: 30px; padding: 4px 10px; }
+  }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<canvas id="c"></canvas>
+<aside id="painel">
+  <button id="toggle">▾</button>
+  <h1>Construção Low-Poly</h1>
+  <p class="sub">Peças modulares estilo nórdico · grade de 3 m</p>
+
+  <div class="grid">
+    <button id="btnCasa" class="ativo">🏠 Casa de exemplo</button>
+    <button id="btnVariar">🎲 Nova variação</button>
+  </div>
+
+  <div id="listas"></div>
+
+  <h2>Peça selecionada</h2>
+  <div id="info"><b>Casa de exemplo</b><span>Montada só com as peças do kit.</span></div>
+
+  <h2>Aparência</h2>
+  <div class="linha">
+    <select id="tom">
+      <option value="media">Madeira média</option>
+      <option value="clara">Madeira clara</option>
+      <option value="escura">Madeira escura</option>
+      <option value="velha">Madeira envelhecida</option>
+    </select>
+  </div>
+  <div class="linha"><label class="check"><input type="checkbox" id="wire"> Mostrar polígonos (wireframe)</label></div>
+
+  <h2>Baixar (.glb)</h2>
+  <div class="dl">
+    <button class="principal" id="dlPeca">Baixar peça selecionada</button>
+    <button id="dlKit">Baixar kit completo (todas as peças)</button>
+    <button id="dlCasa">Baixar casa de exemplo</button>
+  </div>
+  <p class="nota">O .glb abre no Godot, Unity (com glTFast), Unreal e Blender. Medidas em metros; cada peça tem a origem no ponto de encaixe.</p>
+</aside>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
+
+/* ------------------------------------------------------------------ */
+/* Utilidades                                                          */
+/* ------------------------------------------------------------------ */
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+const hashStr = s => { let h = 2166136261; for (const ch of s) h = Math.imul(h ^ ch.charCodeAt(0), 16777619); return h >>> 0; };
+const PI = Math.PI;
+
+// ruído suave que repete (tileable) com períodos px × py
+function noise2(seed, px, py) {
+  const r = mulberry32(seed), g = Array.from({ length: px * py }, () => r());
+  const at = (i, j) => g[((j % py + py) % py) * px + ((i % px + px) % px)];
+  const s = t => t * t * (3 - 2 * t);
+  return (x, y) => {
+    const xi = Math.floor(x), yi = Math.floor(y), u = s(x - xi), v = s(y - yi);
+    const a = at(xi, yi), b = at(xi + 1, yi), c = at(xi, yi + 1), d = at(xi + 1, yi + 1);
+    return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/* Texturas pixeladas (64×64, filtro "nearest")                        */
+/* ------------------------------------------------------------------ */
+const T = 64;
+function makeTex(name, fn) {
+  const c = document.createElement('canvas'); c.width = c.height = T;
+  const g = c.getContext('2d'), img = g.createImageData(T, T), r = mulberry32(hashStr(name));
+  for (let y = 0; y < T; y++) for (let x = 0; x < T; x++) {
+    const [R, G, B] = fn(x, y, r), i = (y * T + x) * 4;
+    img.data[i] = Math.max(0, Math.min(255, R)); img.data[i + 1] = Math.max(0, Math.min(255, G));
+    img.data[i + 2] = Math.max(0, Math.min(255, B)); img.data[i + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  const t = new THREE.CanvasTexture(c);
+  t.name = name; t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.magFilter = THREE.NearestFilter; t.minFilter = THREE.NearestMipmapLinearFilter;
+  return t;
+}
+const mul = (c, k) => [c[0] * k, c[1] * k, c[2] * k];
+
+const nWood = noise2(11, 4, 32), nWood2 = noise2(12, 8, 64);
+const texMadeira = makeTex('madeira', (x, y, r) => {
+  const v = 0.65 * nWood(x / 16, y / 2) + 0.35 * nWood2(x / 8, y);
+  let k = 0.72 + 0.42 * v + (r() - 0.5) * 0.08;
+  if (v < 0.3) k *= 0.82;
+  return mul([168, 124, 82], k);
+});
+const texMadeiraEscura = makeTex('madeira_escura', (x, y, r) => {
+  const v = 0.6 * nWood(x / 16 + 2, y / 2 + 5) + 0.4 * nWood2(x / 8 + 3, y + 7);
+  let k = 0.7 + 0.4 * v + (r() - 0.5) * 0.08;
+  if (v < 0.3) k *= 0.8;
+  return mul([112, 80, 54], k);
+});
+const nBark = noise2(21, 4, 16), nBark2 = noise2(22, 16, 32);
+const texTronco = makeTex('tronco', (x, y, r) => {
+  const v = 0.6 * nBark(x / 16, y / 4) + 0.4 * nBark2(x / 4, y / 2);
+  let k = 0.7 + 0.5 * v + (r() - 0.5) * 0.1;
+  if (v < 0.38) k *= 0.6;
+  return mul([128, 96, 66], k);
+});
+const nStraw = noise2(31, 64, 4), strawCol = Array.from({ length: T }, (_, i) => mulberry32(i * 31 + 7)());
+const texPalha = makeTex('palha', (x, y, r) => {
+  const v = nStraw(x, y / 16);
+  let k = 0.5 + 0.45 * strawCol[x] + 0.3 * v + (r() - 0.5) * 0.08;
+  if (strawCol[x] < 0.18) k *= 0.6;
+  return [200 * k, 170 * k, 108 * k];
+});
+const nStone = noise2(41, 8, 8), nStone2 = noise2(42, 32, 32);
+const texPedra = makeTex('pedra', (x, y, r) => {
+  const v = 0.6 * nStone(x / 8, y / 8) + 0.4 * nStone2(x / 2, y / 2);
+  let k = 0.72 + 0.4 * v + (r() - 0.5) * 0.14;
+  if (r() < 0.04) k *= 0.75;
+  return [150 * k, 147 * k, 138 * k];
+});
+const texFerro = makeTex('ferro', (x, y, r) => mul([70, 68, 66], 0.85 + r() * 0.3));
+const nGrass = noise2(51, 16, 16);
+const texGrama = makeTex('grama', (x, y, r) => {
+  const v = nGrass(x / 4, y / 4);
+  const k = 0.75 + 0.4 * v + (r() - 0.5) * 0.18;
+  return [70 * k, 112 * k, 40 * k];
+});
+
+/* ------------------------------------------------------------------ */
+/* Materiais (compartilhados por todas as peças)                       */
+/* ------------------------------------------------------------------ */
+const mat = (name, map) => new THREE.MeshStandardMaterial({ name, map, vertexColors: true, roughness: 0.92, metalness: 0 });
+const MATS = {
+  madeira: mat('madeira', texMadeira),
+  madeira_escura: mat('madeira_escura', texMadeiraEscura),
+  tronco: mat('tronco', texTronco),
+  palha: mat('palha', texPalha),
+  pedra: mat('pedra', texPedra),
+  ferro: mat('ferro', texFerro),
+};
+MATS.ferro.roughness = 0.6; MATS.ferro.metalness = 0.4;
+const TONS = {
+  media: 0xffffff, clara: 0xffe9cf, escura: 0x9a8676, velha: 0xbdb8b0,
+};
+
+/* ------------------------------------------------------------------ */
+/* Construtor de peças: junta caixas/cilindros, aplica jitter,         */
+/* UV por projeção, cor por vértice e mescla por material.             */
+/* ------------------------------------------------------------------ */
+const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3(), _n = new THREE.Vector3(), _t = new THREE.Vector3();
+function boxUV(g, s, ou, ov) {
+  const p = g.attributes.position, uv = new Float32Array(p.count * 2);
+  for (let i = 0; i < p.count; i += 3) {
+    _a.fromBufferAttribute(p, i); _b.fromBufferAttribute(p, i + 1); _c.fromBufferAttribute(p, i + 2);
+    _n.subVectors(_b, _a).cross(_t.subVectors(_c, _a));
+    const ax = Math.abs(_n.x), ay = Math.abs(_n.y), az = Math.abs(_n.z);
+    for (let k = 0; k < 3; k++) {
+      const v = k === 0 ? _a : k === 1 ? _b : _c;
+      let u, w;
+      if (ax >= ay && ax >= az) { u = v.z; w = v.y; }
+      else if (ay >= az) { u = v.x; w = v.z; }
+      else { u = v.x; w = v.y; }
+      uv[(i + k) * 2] = u * s + ou; uv[(i + k) * 2 + 1] = w * s + ov;
+    }
+  }
+  g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+}
+
+class Builder {
+  constructor(seed) { this.r = mulberry32(seed); this.parts = {}; this.frame = new THREE.Matrix4(); }
+  rnd(a, b) { return a + (b - a) * this.r(); }
+  withFrame(m, fn) { const old = this.frame; this.frame = old.clone().multiply(m); fn(); this.frame = old; }
+  add(geom, matKey, { p = [0, 0, 0], rot = [0, 0, 0], tint = 1, jit = 0, uvs = 0.5 } = {}) {
+    geom.deleteAttribute('normal'); geom.deleteAttribute('uv');
+    let g = mergeVertices(geom);
+    if (jit > 0) {
+      const a = g.attributes.position;
+      for (let i = 0; i < a.count; i++)
+        a.setXYZ(i, a.getX(i) + (this.r() - .5) * 2 * jit, a.getY(i) + (this.r() - .5) * 2 * jit, a.getZ(i) + (this.r() - .5) * 2 * jit);
+    }
+    g = g.toNonIndexed();
+    boxUV(g, uvs, this.r(), this.r());
+    const m = new THREE.Matrix4().compose(new THREE.Vector3(...p),
+      new THREE.Quaternion().setFromEuler(new THREE.Euler(...rot)), new THREE.Vector3(1, 1, 1));
+    g.applyMatrix4(this.frame.clone().multiply(m));
+    const c = Array.isArray(tint) ? tint : [tint, tint, tint], n = g.attributes.position.count, col = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) col.set(c, i * 3);
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    (this.parts[matKey] ||= []).push(g);
+  }
+  box(w, h, d, matKey, o = {}, seg = [1, 1, 1]) { this.add(new THREE.BoxGeometry(w, h, d, ...seg), matKey, o); }
+  // tronco/cilindro deitado ao longo do eixo X
+  logX(len, r, matKey, o = {}, sides = 7) {
+    const g = new THREE.CylinderGeometry(r, r * this.rnd(0.95, 1.05), len, sides, 2);
+    g.rotateX(this.r() * PI * 2); g.rotateZ(PI / 2);
+    this.add(g, matKey, o);
+  }
+  // tronco em pé (veio da textura acompanha o comprimento)
+  logY(h, rTop, rBot, matKey, o = {}, sides = 7, hseg = 2) {
+    const g = new THREE.CylinderGeometry(rTop, rBot, h, sides, hseg);
+    g.rotateZ(PI / 2);
+    this.add(g, matKey, { ...o, rot: [0, this.r() * PI * 2, -PI / 2] });
+  }
+  // tronco entre dois pontos no plano XZ (altura y)
+  logBetween(x1, z1, x2, z2, y, r, matKey, o = {}) {
+    const dx = x2 - x1, dz = z2 - z1, len = Math.hypot(dx, dz) + 0.12;
+    this.logX(len, r, matKey, { ...o, p: [(x1 + x2) / 2, y, (z1 + z2) / 2], rot: [0, Math.atan2(-dz, dx), 0] });
+  }
+  wood() { return this.rnd(0.8, 1.08); }
+  stone() { const t = this.rnd(0.72, 1.05); return [t, t * this.rnd(0.97, 1.02), t * this.rnd(0.94, 1.04)]; }
+  build(name) {
+    const group = new THREE.Group(); group.name = name;
+    for (const [mk, list] of Object.entries(this.parts)) {
+      const g = mergeGeometries(list, false);
+      g.computeVertexNormals(); g.computeBoundingBox(); g.computeBoundingSphere();
+      const mesh = new THREE.Mesh(g, MATS[mk]);
+      mesh.name = `${name}_${mk}`; mesh.castShadow = true; mesh.receiveShadow = true;
+      group.add(mesh);
+    }
+    return group;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Medidas da grade (parecido com ARK: módulo de 3 m)                  */
+/* ------------------------------------------------------------------ */
+const S = 3;        // largura do módulo
+const H = 3;        // altura da parede
+const RISE = 3;     // telhado a 45°: sobe 3 m em 3 m
+const ROWS = 10;    // fileiras de tábuas por parede
+const Y0 = 0.18, ROWH = (H - 2 * Y0) / ROWS;
+const rowY = k => Y0 + k * ROWH;
+
+function subtract(a0, a1, holes) {
+  let segs = [[a0, a1]];
+  for (const [h0, h1] of holes) {
+    segs = segs.flatMap(([s0, s1]) => {
+      if (h1 <= s0 || h0 >= s1) return [[s0, s1]];
+      const out = [];
+      if (h0 > s0) out.push([s0, h0]);
+      if (h1 < s1) out.push([h1, s1]);
+      return out;
+    });
+  }
+  return segs.filter(([s0, s1]) => s1 - s0 > 0.04);
+}
+
+// parede de tábuas (externa horizontal sobreposta, interna vertical) com aberturas
+function wallPlanks(b, { w = S, h = H, openings = [] } = {}) {
+  const yTop = h - Y0, rows = Math.round((yTop - Y0) / ROWH), rh = (yTop - Y0) / rows;
+  // vigas de base e topo
+  for (const [x0, x1] of subtract(-w / 2, w / 2, openings.filter(o => o[2] < 0.1).map(o => [o[0], o[1]])))
+    b.box(x1 - x0, Y0, 0.26, 'madeira_escura', { p: [(x0 + x1) / 2, Y0 / 2, 0], tint: b.wood(), jit: 0.008 }, [2, 1, 1]);
+  b.box(w, Y0, 0.26, 'madeira_escura', { p: [0, h - Y0 / 2, 0], tint: b.wood(), jit: 0.008 }, [3, 1, 1]);
+  // tábuas externas (horizontais, levemente inclinadas = "lap siding")
+  for (let i = 0; i < rows; i++) {
+    const y0 = Y0 + i * rh, y1 = y0 + rh, yc = (y0 + y1) / 2;
+    const holes = openings.filter(o => o[2] < y1 - 0.01 && o[3] > y0 + 0.01).map(o => [o[0], o[1]]);
+    for (const [x0, x1] of subtract(-w / 2, w / 2, holes))
+      b.box(x1 - x0, rh + 0.035, 0.05, 'madeira', { p: [(x0 + x1) / 2, yc, 0.075], rot: [-0.07, 0, 0], tint: b.wood(), jit: 0.006 }, [2, 1, 1]);
+  }
+  // tábuas internas (verticais)
+  const cols = Math.round(w / 0.25), cw = w / cols;
+  for (let i = 0; i < cols; i++) {
+    const x0 = -w / 2 + i * cw, x1 = x0 + cw, xc = (x0 + x1) / 2;
+    const holes = openings.filter(o => o[0] < x1 - 0.01 && o[1] > x0 + 0.01).map(o => [o[2], o[3]]);
+    for (const [y0, y1] of subtract(Y0, yTop, holes))
+      b.box(cw - 0.012, y1 - y0, 0.04, 'madeira', { p: [xc, (y0 + y1) / 2, -0.07], tint: b.wood() * 0.95, jit: 0.005 }, [1, 2, 1]);
+  }
+  // batentes das aberturas
+  for (const [x0, x1, y0, y1] of openings) {
+    const oh = y1 - Math.max(y0, 0);
+    b.box(0.13, oh + 0.14, 0.3, 'madeira_escura', { p: [x0 - 0.065, Math.max(y0, 0) + oh / 2 + 0.07, 0], tint: b.wood(), jit: 0.008 });
+    b.box(0.13, oh + 0.14, 0.3, 'madeira_escura', { p: [x1 + 0.065, Math.max(y0, 0) + oh / 2 + 0.07, 0], tint: b.wood(), jit: 0.008 });
+    b.box(x1 - x0 + 0.42, 0.16, 0.32, 'madeira_escura', { p: [(x0 + x1) / 2, y1 + 0.08, 0], tint: b.wood(), jit: 0.01 }, [2, 1, 1]);
+    if (y0 > 0.1) b.box(x1 - x0 + 0.36, 0.1, 0.36, 'madeira_escura', { p: [(x0 + x1) / 2, y0 - 0.05, 0.02], tint: b.wood(), jit: 0.008 });
+  }
+}
+
+// grade de janela (treliça)
+function lattice(b, x0, x1, y0, y1) {
+  const n = 3;
+  for (let i = 1; i < n; i++) {
+    const x = x0 + (x1 - x0) * i / n;
+    b.box(0.045, y1 - y0, 0.05, 'madeira_escura', { p: [x, (y0 + y1) / 2, 0], tint: b.wood() });
+    const y = y0 + (y1 - y0) * i / n;
+    b.box(x1 - x0, 0.045, 0.05, 'madeira_escura', { p: [(x0 + x1) / 2, y, 0], tint: b.wood() });
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Definição das peças                                                 */
+/* ------------------------------------------------------------------ */
+const DOOR = [-0.75, 0.75, 0, rowY(8)];
+const WIN = [-0.5, 0.5, rowY(4), rowY(8)];
+
+const PIECES = {
+  fundacao_pedra: {
+    cat: 'Fundações', label: 'Fundação de pedra', size: '3 × 3 m (1 m de altura)', pivot: 'centro do topo (o chão fica em y = 0)',
+    build(b) {
+      b.box(S - 0.06, 1.0, S - 0.06, 'pedra', { p: [0, -0.53, 0], tint: 0.5 });
+      // pedras das laterais
+      for (let side = 0; side < 4; side++) {
+        b.withFrame(new THREE.Matrix4().makeRotationY(side * PI / 2), () => {
+          for (let k = 0; k < 3; k++) {
+            let x = -S / 2 - (k % 2 ? 0.3 : 0);
+            const yc = -0.2 - k * 0.31;
+            while (x < S / 2) {
+              const len = b.rnd(0.5, 0.85), xa = Math.max(x, -S / 2), xb = Math.min(x + len, S / 2);
+              if (xb - xa > 0.12) b.box(xb - xa - 0.05, 0.27, 0.22, 'pedra', { p: [(xa + xb) / 2, yc, S / 2 - 0.1], tint: b.stone(), jit: 0.022 });
+              x += len;
+            }
+          }
+        });
+      }
+      // calçamento do topo
+      const n = 6, cell = S / n;
+      for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+        const r = b.rnd(0.205, 0.235), sides = 5 + Math.floor(b.r() * 3);
+        b.add(new THREE.CylinderGeometry(r, r + 0.03, 0.12, sides), 'pedra', {
+          p: [-S / 2 + cell * (i + .5) + b.rnd(-.035, .035), -0.06, -S / 2 + cell * (j + .5) + b.rnd(-.035, .035)],
+          rot: [0, b.r() * PI, 0], tint: b.stone(), jit: 0.018,
+        });
+      }
+    },
+  },
+  fundacao_madeira: {
+    cat: 'Fundações', label: 'Fundação de madeira', size: '3 × 3 m', pivot: 'centro do topo (o chão fica em y = 0)',
+    build(b) {
+      const n = 10, pw = S / n;
+      for (let i = 0; i < n; i++)
+        b.box(S + 0.06, 0.08, pw - 0.02, 'madeira', { p: [b.rnd(-.03, .03), -0.04 + b.rnd(-.006, .006), -S / 2 + pw * (i + .5)], tint: b.wood(), jit: 0.007 }, [3, 1, 1]);
+      for (const z of [-1.36, 1.36]) b.logX(S + 0.3, 0.19, 'tronco', { p: [0, -0.26, z], tint: b.wood(), jit: 0.01 });
+      for (const x of [-1.36, 0, 1.36]) b.logX(S + 0.1, 0.17, 'tronco', { p: [x, -0.3, 0], rot: [0, PI / 2, 0], tint: b.wood(), jit: 0.01 });
+      for (const x of [-1.36, 1.36]) for (const z of [-1.36, 1.36])
+        b.logY(1.1, 0.17, 0.19, 'tronco', { p: [x, -0.65, z], tint: b.wood(), jit: 0.01 });
+    },
+  },
+  fundacao_triangular: {
+    cat: 'Fundações', label: 'Fundação triangular', size: 'triângulo de 3 m de lado', pivot: 'meio da aresta de base (encaixa na borda de outra fundação)',
+    build(b) {
+      const hgt = S * Math.sqrt(3) / 2;
+      for (let d = 0.15; d < hgt - 0.1; d += 0.3) {
+        const len = S * (1 - (d + 0.15) / hgt);
+        if (len > 0.15) b.box(len, 0.08, 0.28, 'madeira', { p: [0, -0.04, -d], tint: b.wood(), jit: 0.007 }, [2, 1, 1]);
+      }
+      b.logBetween(-S / 2, 0, S / 2, 0, -0.26, 0.19, 'tronco', { tint: b.wood(), jit: 0.01 });
+      b.logBetween(-S / 2, 0, 0, -hgt, -0.26, 0.19, 'tronco', { tint: b.wood(), jit: 0.01 });
+      b.logBetween(S / 2, 0, 0, -hgt, -0.26, 0.19, 'tronco', { tint: b.wood(), jit: 0.01 });
+      for (const [x, z] of [[-S / 2 + 0.2, -0.12], [S / 2 - 0.2, -0.12], [0, -hgt + 0.3]])
+        b.logY(1.1, 0.17, 0.19, 'tronco', { p: [x, -0.65, z], tint: b.wood(), jit: 0.01 });
+    },
+  },
+
+  parede_tabuas: {
+    cat: 'Paredes', label: 'Parede de tábuas', size: '3 × 3 m', pivot: 'centro da base; lado de fora = +Z',
+    build(b) { wallPlanks(b); },
+  },
+  parede_troncos: {
+    cat: 'Paredes', label: 'Parede de troncos', size: '3 × 3 m', pivot: 'centro da base',
+    build(b) {
+      const n = 10, sp = S / n;
+      for (let i = 0; i < n; i++) {
+        const r = b.rnd(0.14, 0.158), hh = H - b.rnd(0, 0.05);
+        b.logY(hh, r, r * b.rnd(1, 1.08), 'tronco', { p: [-S / 2 + sp * (i + .5), hh / 2, b.rnd(-.02, .02)], tint: b.wood(), jit: 0.012 }, 7, 3);
+      }
+      for (const y of [0.45, 2.55]) b.box(S, 0.18, 0.09, 'madeira_escura', { p: [0, y, -0.19], tint: b.wood(), jit: 0.01 }, [3, 1, 1]);
+    },
+  },
+  parede_janela: {
+    cat: 'Paredes', label: 'Parede com janela', size: '3 × 3 m (janela 1 × 1,06 m)', pivot: 'centro da base; lado de fora = +Z',
+    build(b) { wallPlanks(b, { openings: [WIN] }); lattice(b, WIN[0], WIN[1], WIN[2], WIN[3]); },
+  },
+  batente_porta: {
+    cat: 'Paredes', label: 'Batente de porta', size: '3 × 3 m (vão 1,5 × 2,29 m)', pivot: 'centro da base; lado de fora = +Z',
+    build(b) { wallPlanks(b, { openings: [DOOR] }); },
+  },
+  porta: {
+    cat: 'Paredes', label: 'Porta', size: '1,48 × 2,27 m', pivot: 'dobradiça (canto de baixo, lado esquerdo)',
+    build(b) {
+      const w = 1.48, h = 2.27, n = 6, pw = w / n;
+      for (let i = 0; i < n; i++)
+        b.box(pw - 0.012, h - b.rnd(0, 0.03), 0.07, 'madeira', { p: [pw * (i + .5), h / 2, 0], tint: b.wood(), jit: 0.006 }, [1, 2, 1]);
+      for (const y of [0.35, 1.92]) b.box(w - 0.12, 0.15, 0.05, 'madeira_escura', { p: [w / 2, y, -0.06], tint: b.wood() });
+      const dx = w - 0.3, dy = 1.92 - 0.35 - 0.15;
+      b.box(Math.hypot(dx, dy), 0.13, 0.05, 'madeira_escura', { p: [w / 2, (0.35 + 1.92) / 2, -0.06], rot: [0, 0, Math.atan2(dy, dx)], tint: b.wood() });
+      for (const y of [0.4, 1.86]) b.box(w - 0.18, 0.07, 0.02, 'ferro', { p: [w / 2 - 0.04, y, 0.045] });
+      for (const z of [0.07, -0.1]) b.add(new THREE.TorusGeometry(0.07, 0.014, 5, 8), 'ferro', { p: [w - 0.22, 1.1, z] });
+    },
+  },
+  meia_parede: {
+    cat: 'Paredes', label: 'Meia parede', size: '3 × 1,5 m', pivot: 'centro da base; lado de fora = +Z',
+    build(b) { wallPlanks(b, { h: 1.5 }); },
+  },
+  parede_triangular: {
+    cat: 'Paredes', label: 'Parede triangular (empena)', size: '3 m de base × 3 m de altura (45°)', pivot: 'canto baixo da base; gire 180° para o outro lado do telhado',
+    build(b) {
+      const w = S, hh = RISE, rows = 11, rh = (hh - Y0) / rows;
+      b.box(w, Y0, 0.26, 'madeira_escura', { p: [0, Y0 / 2, 0], tint: b.wood(), jit: 0.008 }, [3, 1, 1]);
+      b.box(0.18, hh, 0.26, 'madeira_escura', { p: [w / 2 - 0.09, hh / 2, 0], tint: b.wood(), jit: 0.008 }, [1, 3, 1]);
+      for (let i = 0; i < rows; i++) {
+        const y0 = Y0 + i * rh, y1 = y0 + rh, xMin = y1 * (w / hh) - w / 2;
+        if (w / 2 - xMin < 0.02) continue;
+        const yc = (y0 + y1) / 2;
+        for (const side of [1, -1]) {
+          const g = new THREE.BoxGeometry(1, rh + 0.035, 0.05), pa = g.attributes.position;
+          for (let v = 0; v < pa.count; v++)
+            pa.setX(v, pa.getX(v) < 0 ? Math.max(-w / 2, (yc + pa.getY(v)) * (w / hh) - w / 2) : w / 2);
+          b.add(g, 'madeira', { p: [0, yc, 0.075 * side], rot: [-0.07 * side, 0, 0], tint: b.wood(), jit: 0.004 });
+        }
+      }
+      const L = Math.hypot(w, hh) + 0.1;
+      b.box(L, 0.2, 0.28, 'madeira_escura', { p: [0, hh / 2, 0], rot: [0, 0, Math.atan2(hh, w)], tint: b.wood(), jit: 0.01 }, [4, 1, 1]);
+    },
+  },
+
+  teto_madeira: {
+    cat: 'Teto e piso', label: 'Teto / piso de madeira', size: '3 × 3 m (0,2 m)', pivot: 'centro de baixo (apoia em cima da parede)',
+    build(b) {
+      const n = 10, pw = S / n;
+      for (let i = 0; i < n; i++)
+        b.box(S, 0.07, pw - 0.015, 'madeira', { p: [0, 0.165, -S / 2 + pw * (i + .5)], tint: b.wood(), jit: 0.006 }, [3, 1, 1]);
+      for (const x of [-1.0, 0, 1.0]) b.box(0.16, 0.13, S, 'madeira_escura', { p: [x, 0.065, 0], tint: b.wood(), jit: 0.008 }, [1, 1, 3]);
+      for (const z of [-1.42, 1.42]) b.box(S, 0.13, 0.16, 'madeira_escura', { p: [0, 0.065, z], tint: b.wood(), jit: 0.008 }, [3, 1, 1]);
+    },
+  },
+
+  telhado_palha: {
+    cat: 'Telhados', label: 'Telhado de palha (45°)', size: 'cobre 3 × 3 m, sobe 3 m', pivot: 'centro do módulo na altura do topo da parede; beiral = +Z',
+    build(b) { roof(b, 'palha'); },
+  },
+  telhado_tabuinhas: {
+    cat: 'Telhados', label: 'Telhado de tabuinhas (45°)', size: 'cobre 3 × 3 m, sobe 3 m', pivot: 'centro do módulo na altura do topo da parede; beiral = +Z',
+    build(b) { roof(b, 'tabuinhas'); },
+  },
+  cumeeira: {
+    cat: 'Telhados', label: 'Cumeeira', size: '3 m', pivot: 'ponto mais alto do telhado (onde as duas águas se encontram)',
+    build(b) {
+      b.logX(S + 0.12, 0.2, 'tronco', { p: [0, 0.42, 0], tint: b.wood(), jit: 0.012 });
+      for (const s of [1, -1])
+        b.box(S + 0.05, 0.06, 0.62, 'madeira_escura', { p: [0, 0.36, 0.2 * s], rot: [PI / 4 * s, 0, 0], tint: b.wood(), jit: 0.01 }, [3, 1, 1]);
+    },
+  },
+  ornamento_empena: {
+    cat: 'Telhados', label: 'Ornamento de empena', size: '~1,9 m', pivot: 'ponto mais alto da empena',
+    build(b) {
+      for (const s of [1, -1]) {
+        b.withFrame(new THREE.Matrix4().makeRotationZ(-s * PI / 4), () => {
+          b.box(0.2, 2.0, 0.1, 'madeira_escura', { p: [0, 0.25, 0.08], tint: b.wood(), jit: 0.01 }, [1, 3, 1]);
+          b.add(new THREE.CylinderGeometry(0, 0.14, 0.3, 4), 'madeira_escura', { p: [0, 1.4, 0.08], rot: [0, PI / 4, 0], tint: b.wood() });
+        });
+      }
+    },
+  },
+
+  pilar: {
+    cat: 'Estrutura', label: 'Pilar', size: '3 m de altura', pivot: 'centro da base',
+    build(b) {
+      b.logY(H, 0.17, 0.19, 'tronco', { p: [0, H / 2, 0], tint: b.wood(), jit: 0.01 }, 8, 3);
+      for (const y of [0.07, H - 0.07]) b.box(0.44, 0.14, 0.44, 'madeira_escura', { p: [0, y, 0], tint: b.wood(), jit: 0.01 });
+    },
+  },
+  viga: {
+    cat: 'Estrutura', label: 'Viga', size: '3 m', pivot: 'centro',
+    build(b) { b.box(S, 0.22, 0.24, 'madeira_escura', { tint: b.wood(), jit: 0.012 }, [4, 1, 1]); },
+  },
+  escada: {
+    cat: 'Estrutura', label: 'Escada', size: '1,5 m de largura, sobe 3 m em 3 m', pivot: 'centro da base, no primeiro degrau',
+    build(b) {
+      const n = 12, st = 3 / n;
+      for (let i = 0; i < n; i++)
+        b.box(1.5, 0.06, st + 0.07, 'madeira', { p: [0, st * (i + 1) - 0.03, S / 2 - st * (i + .5)], tint: b.wood(), jit: 0.006 }, [2, 1, 1]);
+      const L = Math.hypot(S, RISE) + 0.25;
+      for (const x of [-0.72, 0.72])
+        b.box(0.1, 0.32, L, 'madeira_escura', { p: [x, RISE / 2 - 0.1, 0], rot: [PI / 4, 0, 0], tint: b.wood(), jit: 0.01 }, [1, 1, 4]);
+    },
+  },
+  cerca: {
+    cat: 'Estrutura', label: 'Cerca', size: '3 × 1,2 m', pivot: 'centro da base',
+    build(b) {
+      for (const x of [-1.45, 0, 1.45]) {
+        b.logY(1.25, 0.075, 0.085, 'tronco', { p: [x, 0.625, 0], tint: b.wood(), jit: 0.008 }, 6);
+        b.add(new THREE.CylinderGeometry(0, 0.075, 0.16, 6), 'tronco', { p: [x, 1.33, 0], tint: b.wood() });
+      }
+      for (const y of [0.45, 0.95]) b.box(S, 0.1, 0.05, 'madeira', { p: [0, y + b.rnd(-.03, .03), 0.1], rot: [0, 0, b.rnd(-.02, .02)], tint: b.wood(), jit: 0.008 }, [3, 1, 1]);
+    },
+  },
+};
+
+// telhado de 45° montado num "sistema inclinado" (s = distância ao longo da água)
+function roof(b, tipo) {
+  const L = Math.hypot(S, RISE), OH = 0.55, W = S + 0.04;
+  const frame = new THREE.Matrix4().makeTranslation(0, 0, S / 2).multiply(new THREE.Matrix4().makeRotationX(Math.atan2(RISE, S)));
+  b.withFrame(frame, () => {
+    // forro de tábuas e caibros (vistos por dentro)
+    const nb = 10, bw = W / nb;
+    for (let i = 0; i < nb; i++)
+      b.box(bw - 0.01, 0.04, L + OH, 'madeira', { p: [-W / 2 + bw * (i + .5), 0.02, -(L - OH) / 2], tint: b.wood() * 0.9 }, [1, 1, 3]);
+    for (const x of [-1.38, 0, 1.38])
+      b.box(0.14, 0.16, L + OH, 'madeira_escura', { p: [x, -0.08, -(L - OH) / 2], tint: b.wood(), jit: 0.008 }, [1, 1, 4]);
+    if (tipo === 'palha') {
+      const n = 7, step = (L + OH) / n;
+      for (let i = 0; i < n; i++) {
+        const s0 = -OH + step * i, len = step * 1.7;
+        const g = new THREE.BoxGeometry(W + b.rnd(0.04, 0.12), 0.26, len, 10, 1, 2), pa = g.attributes.position;
+        // borda de baixo desfiada: pontas irregulares e mais grossas
+        for (let v = 0; v < pa.count; v++) if (pa.getZ(v) > len / 2 - 0.01) {
+          pa.setZ(v, pa.getZ(v) + b.rnd(-0.07, 0.09));
+          pa.setY(v, pa.getY(v) + (pa.getY(v) < 0 ? -0.05 : 0.03));
+        }
+        b.add(g, 'palha', { p: [b.rnd(-.03, .03), 0.19, -(s0 + len / 2)], rot: [-0.09, 0, 0], tint: b.rnd(0.82, 1.08), jit: 0.03, uvs: 1 });
+      }
+    } else {
+      const step = 0.3, tl = 0.46;
+      let row = 0;
+      for (let s0 = -OH; s0 < L - 0.05; s0 += step, row++) {
+        let x = -W / 2 - (row % 2 ? 0.15 : 0);
+        while (x < W / 2) {
+          const tw = Math.min(b.rnd(0.24, 0.36), W / 2 - x);
+          const xa = Math.max(x, -W / 2), wReal = x + tw - xa;
+          if (wReal > 0.08)
+            b.box(wReal - 0.018, 0.035, tl, 'madeira_escura', { p: [xa + wReal / 2, 0.075, -(s0 + tl / 2)], rot: [-0.11, b.rnd(-.02, .02), 0], tint: b.rnd(0.75, 1.1), jit: 0.006 });
+          x += tw;
+        }
+      }
+    }
+  });
+}
+
+/* ------------------------------------------------------------------ */
+/* Cache de peças + casa de exemplo                                    */
+/* ------------------------------------------------------------------ */
+let SEED = 1;
+const cache = new Map();
+function getPiece(name, seed = SEED) {
+  const key = name + ':' + seed;
+  if (!cache.has(key)) {
+    const b = new Builder(hashStr(name) ^ seed * 7919);
+    PIECES[name].build(b);
+    cache.set(key, b.build(name));
+  }
+  return cache.get(key);
+}
+const triCount = obj => { let t = 0; obj.traverse(o => { if (o.isMesh) t += o.geometry.attributes.position.count / 3; }); return t; };
+
+function buildHouse() {
+  const g = new THREE.Group(); g.name = 'casa_exemplo';
+  let k = 0;
+  const place = (name, x, y, z, ry = 0) => {
+    const o = getPiece(name, SEED + (k++ % 3)).clone();
+    o.position.set(x, y, z); o.rotation.y = ry; g.add(o); return o;
+  };
+  // casa principal: 2 × 3 módulos (6 × 9 m)
+  const Y = 0.5;
+  for (const x of [-1.5, 1.5]) for (const z of [-3, 0, 3]) place('fundacao_pedra', x, Y, z);
+  place('batente_porta', -1.5, Y, 4.5); place('parede_tabuas', 1.5, Y, 4.5);
+  place('parede_tabuas', -1.5, Y, -4.5, PI); place('parede_janela', 1.5, Y, -4.5, PI);
+  [['parede_tabuas', -3], ['parede_janela', 0], ['parede_tabuas', 3]].forEach(([n, z]) => { place(n, -3, Y, z, -PI / 2); place(n, 3, Y, z, PI / 2); });
+  for (const x of [-3, 0, 3]) for (const z of [-4.5, -1.5, 1.5, 4.5])
+    if (Math.abs(x) === 3 || Math.abs(z) === 4.5) place('pilar', x, Y, z);
+  place('porta', -2.24, Y + 0.005, 4.5, 0.55);
+  for (const z of [4.5, -4.5]) { place('parede_triangular', -1.5, Y + H, z, 0); place('parede_triangular', 1.5, Y + H, z, PI); }
+  for (const z of [-3, 0, 3]) {
+    place('telhado_palha', -1.5, Y + H, z, -PI / 2); place('telhado_palha', 1.5, Y + H, z, PI / 2);
+    place('cumeeira', 0, Y + H + RISE, z, PI / 2);
+  }
+  place('ornamento_empena', 0, Y + H + RISE, 4.62); place('ornamento_empena', 0, Y + H + RISE, -4.62, PI);
+  for (const z of [-1.5, 1.5]) for (const x of [-1.5, 1.5]) place('viga', x, Y + H - 0.12, z);
+
+  // galpão: troncos + fundação de madeira + telhado de tabuinhas
+  const Y2 = 0.35;
+  for (const x of [8, 11]) {
+    place('fundacao_madeira', x, Y2, 0);
+    place('parede_troncos', x, Y2, -1.5, PI);
+    place('telhado_tabuinhas', x, Y2 + H, 0, x === 8 ? -PI / 2 : PI / 2);
+  }
+  place('parede_troncos', 6.5, Y2, 0, -PI / 2); place('parede_troncos', 12.5, Y2, 0, PI / 2);
+  for (const x of [6.5, 9.5, 12.5]) for (const z of [-1.5, 1.5]) place('pilar', x, Y2, z);
+  for (const z of [1.5, -1.5]) { place('parede_triangular', 8, Y2 + H, z, 0); place('parede_triangular', 11, Y2 + H, z, PI); }
+  place('cumeeira', 9.5, Y2 + H + RISE, 0, PI / 2);
+  place('meia_parede', 11, Y2, 1.5);
+
+  // cerca
+  for (let i = 0; i < 7; i++) place('cerca', -7.5 + i * 3, 0, 9);
+  for (let i = 0; i < 5; i++) place('cerca', -9, 0, 7.5 - i * 3, PI / 2);
+  return g;
+}
+
+/* ------------------------------------------------------------------ */
+/* Cena: céu, neblina, luz de fim de tarde, grama com vento            */
+/* ------------------------------------------------------------------ */
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+const scene = new THREE.Scene();
+const HORIZ = new THREE.Color(0xc4dbe0);
+scene.fog = new THREE.FogExp2(HORIZ, 0.014);
+scene.background = HORIZ;
+
+const sky = new THREE.Mesh(new THREE.SphereGeometry(400, 24, 12), new THREE.ShaderMaterial({
+  side: THREE.BackSide, depthWrite: false, fog: false,
+  uniforms: { top: { value: new THREE.Color(0x3f7fc0) }, mid: { value: HORIZ }, sun: { value: new THREE.Color(0xffe6b8) } },
+  vertexShader: `varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }`,
+  fragmentShader: `uniform vec3 top; uniform vec3 mid; uniform vec3 sun; varying vec3 vP;
+    void main(){ float h = clamp(vP.y, 0., 1.); vec3 c = mix(mid, top, pow(h, .55));
+      float s = max(dot(vP, normalize(vec3(.55,.42,.35))), 0.); c += sun * pow(s, 18.) * .55;
+      gl_FragColor = vec4(c, 1.); }`,
+}));
+scene.add(sky);
+
+scene.add(new THREE.HemisphereLight(0xcfe4ff, 0x4d5a2c, 1.1));
+const sunL = new THREE.DirectionalLight(0xffe0b0, 2.6);
+sunL.position.set(22, 17, 14); sunL.castShadow = true;
+sunL.shadow.mapSize.set(2048, 2048);
+Object.assign(sunL.shadow.camera, { left: -20, right: 20, top: 20, bottom: -20, near: 1, far: 80 });
+sunL.shadow.bias = -0.0005; sunL.shadow.normalBias = 0.03;
+scene.add(sunL);
+
+texGrama.repeat.set(90, 90);
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(300, 300), new THREE.MeshStandardMaterial({ map: texGrama, roughness: 1 }));
+ground.rotation.x = -PI / 2; ground.receiveShadow = true; scene.add(ground);
+
+const timeU = { value: 0 };
+(function grass() {
+  const blade = new THREE.BufferGeometry();
+  blade.setAttribute('position', new THREE.Float32BufferAttribute([-0.07, 0, 0, 0.07, 0, 0, 0, 0.5, 0], 3));
+  blade.setAttribute('normal', new THREE.Float32BufferAttribute([0, 1, 0, 0, 1, 0, 0, 1, 0], 3));
+  const m = new THREE.MeshStandardMaterial({ side: THREE.DoubleSide, roughness: 1 });
+  m.onBeforeCompile = sh => {
+    sh.uniforms.uTime = timeU;
+    sh.vertexShader = 'uniform float uTime;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+      vec4 wp = instanceMatrix * vec4(0.,0.,0.,1.);
+      transformed.x += sin(uTime*1.6 + wp.x*.35 + wp.z*.22) * .14 * position.y;
+      transformed.z += cos(uTime*1.2 + wp.x*.18) * .07 * position.y;`);
+  };
+  const N = 40000, inst = new THREE.InstancedMesh(blade, m, N), r = mulberry32(5), d = new THREE.Object3D(), c = new THREE.Color();
+  let i = 0;
+  while (i < N) {
+    const x = (r() - .5) * 70, z = (r() - .5) * 70;
+    if (x > -4 && x < 4 && z > -5.5 && z < 5.5) continue;
+    if (x > 5.8 && x < 13.2 && z > -2.2 && z < 2.2) continue;
+    d.position.set(x, 0, z); d.rotation.set(0, r() * PI, (r() - .5) * .4);
+    d.scale.set(1, 0.6 + r() * 0.9, 1); d.updateMatrix();
+    inst.setMatrixAt(i, d.matrix);
+    c.setHSL(0.25 + r() * 0.04, 0.5 + r() * 0.2, 0.15 + r() * 0.09); inst.setColorAt(i, c);
+    i++;
+  }
+  inst.receiveShadow = true; scene.add(inst);
+})();
+
+(function trees() {
+  const r = mulberry32(9);
+  const trunkM = new THREE.MeshStandardMaterial({ color: 0x5b4330, roughness: 1, flatShading: true });
+  const pineM = new THREE.MeshStandardMaterial({ color: 0x2f5a35, roughness: 1, flatShading: true });
+  const leafM = new THREE.MeshStandardMaterial({ color: 0x4f7d34, roughness: 1, flatShading: true });
+  for (let i = 0; i < 90; i++) {
+    const a = r() * PI * 2, dist = 30 + r() * 60, x = Math.cos(a) * dist, z = Math.sin(a) * dist, s = 0.9 + r() * 1.3;
+    const t = new THREE.Group(); t.position.set(x, 0, z); t.rotation.y = r() * PI;
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.18 * s, 0.3 * s, 3 * s, 6), trunkM); trunk.position.y = 1.5 * s; t.add(trunk);
+    if (r() < 0.65) {
+      for (let k = 0; k < 4; k++) {
+        const cone = new THREE.Mesh(new THREE.ConeGeometry((2.4 - k * 0.5) * s, 2.8 * s, 7), pineM);
+        cone.position.y = (2.8 + k * 1.6) * s; t.add(cone);
+      }
+    } else {
+      for (let k = 0; k < 4; k++) {
+        const blob = new THREE.Mesh(new THREE.IcosahedronGeometry((1.5 + r()) * s, 0), leafM);
+        blob.position.set((r() - .5) * 2.2 * s, (3.6 + r() * 1.8) * s, (r() - .5) * 2.2 * s); t.add(blob);
+      }
+    }
+    t.traverse(o => { if (o.isMesh) o.castShadow = true; });
+    scene.add(t);
+  }
+})();
+
+const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 900);
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true; controls.maxPolarAngle = PI * 0.495;
+
+function resize() {
+  const w = innerWidth, h = innerHeight;
+  renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize); resize();
+
+/* ------------------------------------------------------------------ */
+/* Interface                                                           */
+/* ------------------------------------------------------------------ */
+let current = null, mode = 'casa', selected = null;
+const info = document.getElementById('info');
+
+function show(obj) {
+  if (current) scene.remove(current);
+  current = obj; scene.add(obj);
+}
+function frameObject(obj, dir = new THREE.Vector3(1, 0.55, 1.2)) {
+  const box = new THREE.Box3().setFromObject(obj), size = box.getSize(new THREE.Vector3()), c = box.getCenter(new THREE.Vector3());
+  const r = Math.max(size.x, size.y, size.z) * 0.5 + 0.5;
+  const dist = r / Math.sin(camera.fov * PI / 360) * (camera.aspect < 1 ? 1.5 : 1.05);
+  camera.position.copy(c).addScaledVector(dir.normalize(), dist);
+  controls.target.copy(c); controls.update();
+}
+function showHouse(reframe = true) {
+  mode = 'casa'; selected = null;
+  show(buildHouse());
+  if (reframe) { camera.position.set(14, 7, 16); controls.target.set(3.5, 2.6, 0); controls.update(); }
+  info.innerHTML = `<b>Casa de exemplo</b><span>Montada só com as peças do kit · ${triCount(current).toLocaleString('pt-BR')} triângulos</span>`;
+  markActive();
+}
+function showPiece(name, reframe = true) {
+  mode = 'peca'; selected = name;
+  const holder = new THREE.Group(), p = getPiece(name).clone();
+  holder.add(p);
+  const box = new THREE.Box3().setFromObject(p);
+  p.position.y = -box.min.y + 0.001;
+  show(holder);
+  if (reframe) frameObject(holder);
+  const d = PIECES[name];
+  info.innerHTML = `<b>${d.label}</b><span>Tamanho: ${d.size}</span><span>Origem: ${d.pivot}</span><span>${triCount(p).toLocaleString('pt-BR')} triângulos · arquivo: ${name}.glb</span>`;
+  markActive();
+}
+
+const listas = document.getElementById('listas');
+const cats = {};
+for (const [name, d] of Object.entries(PIECES)) (cats[d.cat] ||= []).push([name, d]);
+for (const [cat, items] of Object.entries(cats)) {
+  const h = document.createElement('h2'); h.textContent = cat; listas.appendChild(h);
+  const g = document.createElement('div'); g.className = 'grid';
+  for (const [name, d] of items) {
+    const bt = document.createElement('button'); bt.textContent = d.label; bt.dataset.peca = name;
+    bt.onclick = () => showPiece(name); g.appendChild(bt);
+  }
+  listas.appendChild(g);
+}
+function markActive() {
+  document.querySelectorAll('[data-peca]').forEach(b => b.classList.toggle('ativo', b.dataset.peca === selected));
+  document.getElementById('btnCasa').classList.toggle('ativo', mode === 'casa');
+}
+
+document.getElementById('btnCasa').onclick = () => showHouse();
+document.getElementById('btnVariar').onclick = () => {
+  SEED = Math.floor(Math.random() * 1e6) + 1;
+  mode === 'casa' ? showHouse(false) : showPiece(selected, false);
+};
+document.getElementById('tom').onchange = e => {
+  const c = TONS[e.target.value];
+  for (const k of ['madeira', 'madeira_escura', 'tronco']) MATS[k].color.setHex(c);
+};
+document.getElementById('wire').onchange = e => { for (const m of Object.values(MATS)) m.wireframe = e.target.checked; };
+const painel = document.getElementById('painel');
+document.getElementById('toggle').onclick = () => {
+  painel.classList.toggle('fechado');
+  document.getElementById('toggle').textContent = painel.classList.contains('fechado') ? '▴' : '▾';
+};
+
+/* ------------------------------------------------------------------ */
+/* Exportação .glb                                                     */
+/* ------------------------------------------------------------------ */
+const exporter = new GLTFExporter();
+async function toGLB(obj) {
+  const prev = Object.values(MATS).map(m => m.wireframe);
+  Object.values(MATS).forEach(m => m.wireframe = false);
+  const data = await exporter.parseAsync(obj, { binary: true });
+  Object.values(MATS).forEach((m, i) => m.wireframe = prev[i]);
+  return data;
+}
+function kitObject() {
+  const g = new THREE.Group(); g.name = 'kit_construcao';
+  Object.keys(PIECES).forEach((name, i) => {
+    const p = getPiece(name).clone();
+    p.position.set((i % 6) * 5, 0, Math.floor(i / 6) * 6); g.add(p);
+  });
+  return g;
+}
+function download(buf, file) {
+  const url = URL.createObjectURL(new Blob([buf], { type: 'model/gltf-binary' }));
+  const a = document.createElement('a'); a.href = url; a.download = file;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+document.getElementById('dlPeca').onclick = async () => {
+  if (!selected) { alert('Escolha uma peça na lista primeiro (ou use "Baixar casa").'); return; }
+  download(await toGLB(getPiece(selected)), selected + '.glb');
+};
+document.getElementById('dlKit').onclick = async () => download(await toGLB(kitObject()), 'kit_construcao.glb');
+document.getElementById('dlCasa').onclick = async () => download(await toGLB(buildHouse()), 'casa_exemplo.glb');
+
+// API usada pelo script de exportação automática (exportar.mjs)
+const b64 = buf => { const u = new Uint8Array(buf); let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode(...u.subarray(i, i + 0x8000)); return btoa(s); };
+window.__api = {
+  names: Object.keys(PIECES),
+  showPiece, showHouse,
+  exportPiece: async n => b64(await toGLB(getPiece(n))),
+  exportKit: async () => b64(await toGLB(kitObject())),
+  exportHouse: async () => b64(await toGLB(buildHouse())),
+  tris: n => triCount(getPiece(n)),
+};
+
+/* ------------------------------------------------------------------ */
+const clock = new THREE.Clock();
+renderer.setAnimationLoop(() => {
+  timeU.value = clock.getElapsedTime();
+  controls.update();
+  renderer.render(scene, camera);
+});
+showHouse();
+window.__ready = true;
+</script>
+</body>
+</html>
