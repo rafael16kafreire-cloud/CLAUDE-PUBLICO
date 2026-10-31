@@ -1,0 +1,23 @@
+Crie no Blender um animal terrestre **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com escamas grandes e rugosas, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+
+ESPÉCIE: Braquiossauro. Saurópode gigante de 21 m e 13 m de altura. Pescoço muito longo e ERGUIDO, patas da frente mais altas que as de trás, cabeça pequena com crista nasal arredondada, cauda longa e grossa. Cores: cinza-azulado nas costas com faixas escuras no pescoço, barriga cinza-claro.
+
+MALHA: entre 12.000 e 16.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
+
+TEXTURA: uma textura pintada (Base Color) de 1024×1024, salva em JPG, com todos os detalhes da espécie bem visíveis nesse tamanho (escamas, padrão de cor, barriga mais clara, olhos e dentes). Normal Map opcional com metade desse tamanho. Material único (Principled BSDF), sem transparência. UV aberta sem sobreposição, aproveitando bem a textura.
+
+POSIÇÃO: em pose neutra, de pé, pés tocando Z = 0, olhando para -Y, em tamanho real (metros). Aplique Ctrl+A → All Transforms antes de exportar.
+
+ESQUELETO (Armature): ossos de quadril (raiz), coluna (3), pescoço LONGO (6 a 8), cabeça, mandíbula, cauda LONGA (8 a 10) e as 4 pernas (coxa/ombro, canela/antebraço, pé). Skinning com pesos limpos, sem a malha rasgar ou afundar ao dobrar.
+
+ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
+- `parado`: respira, mexe a cabeça olhando em volta, a cauda balança de leve (loop).
+- `andar`: ciclo de passos, pés plantados no chão sem escorregar (loop).
+- `correr`: ciclo de corrida, corpo inclinado para frente (loop).
+- `atacar`: empinar e pisar (sem loop).
+- `rugir`: abre a boca, levanta a cabeça e chama (sem loop).
+- `comer`: estica o pescoço para cima e come as folhas do alto das árvores (loop).
+- `dormir`: deitado no chão, respirando devagar (loop).
+- `morrer`: cambaleia e cai de lado (sem loop, termina deitado).
+
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: braquiossauro.glb
