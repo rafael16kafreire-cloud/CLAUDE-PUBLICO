@@ -452,6 +452,8 @@ export class IslandMap {
         const biome = this._classify(x, z, h, this.coast[idx]);
         this.biomes[idx] = biome;
         if (biome === BIOME.SNOW) this.snow[idx] = this._snowAmount(x, z, h, normalY);
+        // serras e cordilheira: neve nas partes altas e planas, pedra nos paredões (o vulcão fica de pedra escura)
+        else if (biome === BIOME.HIGHLAND && this.volcanoWeight(x, z) < 0.08) this.snow[idx] = this._snowAmount(x, z, h, normalY) * smoothstep(8, 28, h);
         this._colorFor(c, biome, x, z, h, normalY);
         this.colors[idx * 3] = c.r;
         this.colors[idx * 3 + 1] = c.g;
@@ -650,10 +652,9 @@ export class IslandMap {
         out.lerp(COLORS.tundra, smoothstep(30, 8, h) * 0.6);
         break;
       case BIOME.HIGHLAND:
-        // pedra com capim nas partes planas e veios escuros nos paredões
+        // pedra nos paredões, veios escuros; a neve vem do shader (aSnow) nas partes mais altas e menos íngremes
         out.copy(COLORS.serraRock).lerp(COLORS.serraDark, clamp(n2 * 0.8 + 0.4, 0, 1));
         out.multiplyScalar(0.85 + 0.25 * (0.5 + 0.5 * Math.sin(h * 0.7 + n1 * 3)));
-        out.lerp(COLORS.serraGrass, smoothstep(0.82, 0.95, normalY) * smoothstep(55, 25, h) * 0.75);
         // Vulcão: cinza escura e basalto, com veios avermelhados perto da cratera
         {
           const vw = this.volcanoWeight(x, z);

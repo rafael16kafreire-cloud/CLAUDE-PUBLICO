@@ -19,7 +19,7 @@ const BY_BIOME = {
   [BIOME.IGAPO]: { capim: 0.55, folha: 0.15, broto: 0.12, flor: 0.02, tint: [0.92, 0.98, 0.78], mini: 0.8 },
   [BIOME.SWAMP]: { capim: 0.55, folha: 0.05, broto: 0.04, flor: 0.0, tint: [1.0, 0.95, 0.7] },
   [BIOME.BEACH]: { capim: 0.08, folha: 0.0, broto: 0.0, flor: 0.01, tint: [1.15, 1.1, 0.8] },
-  [BIOME.HIGHLAND]: { capim: 0.2, folha: 0.0, broto: 0.03, flor: 0.02, tint: [0.95, 0.95, 0.8] },
+  // montanha (serra / cordilheira): sem capim, só neve e pedra
   // pastagem: o chão é coberto pela relva baixinha (abaixo); capim alto só de vez em quando, e mais baixo
   [BIOME.PLAINS]: { capim: 0.22, folha: 0.02, broto: 0.01, flor: 0.11, tint: [0.78, 0.94, 0.66], hscale: 1.1, relva: true, mini: 0.3 },
 };

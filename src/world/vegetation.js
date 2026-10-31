@@ -253,7 +253,7 @@ export class Vegetation {
         const ny = map.normalAt(x, z, normal).y;
         if (ny < 0.78 && type !== 'pedra_musgo' && def.collider !== 'log' && !def.rock) continue;
         // pinheiro não sobe nos picos (linha das árvores); minério só no alto
-        if (def.cold && h > 75) continue;
+        if (def.cold && h > (key === 'serra' ? 120 : 75)) continue; // na serra os pinheiros de neve sobem mais
         if (type === 'minerio_ferro' && h < 30) continue;
         if (key === 'neve' && (type === 'rocha_obsidiana' || type === 'cristal') && h < 60) continue; // no alto da montanha
         if (def.rock && ny < 0.3) continue;
