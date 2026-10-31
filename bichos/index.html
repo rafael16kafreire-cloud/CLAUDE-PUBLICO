@@ -66,6 +66,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 /* ================================================================== */
 /* Utilidades                                                          */
@@ -753,6 +754,125 @@ function buildTRex() {
   return { group, mesh, clips, loops: { parado: 1, andar: 1, correr: 1, comer: 1, dormir: 1 } };
 }
 
+
+/* ================================================================== */
+/* MODELO IMPORTADO (IA do Blender, Sketchfab livre…):                 */
+/* mede o corpo, encaixa o esqueleto, liga a pele e cria as animações  */
+/* ================================================================== */
+async function buildImported(buf, cfg) {
+  const gltf = await new GLTFLoader().parseAsync(buf, '');
+  gltf.scene.updateMatrixWorld(true);
+  const parts = [];
+  gltf.scene.traverse(o => { if (o.isMesh) { const g = o.geometry.clone(); g.applyMatrix4(o.matrixWorld); parts.push({ g, mat: o.material }); } });
+  // orientação: cabeça para +Z, em pé em Y
+  const R = new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(...(cfg.rot || [0, 0, 0]).map(d => d * PI / 180), 'XYZ'));
+  parts.forEach(q => q.g.applyMatrix4(R));
+  const box = new THREE.Box3(); parts.forEach(q => { q.g.computeBoundingBox(); box.union(q.g.boundingBox); });
+  const sc = cfg.comprimento / (box.max.z - box.min.z);
+  const T = new THREE.Matrix4().makeScale(sc, sc, sc).multiply(new THREE.Matrix4().makeTranslation(-(box.min.x + box.max.x) / 2, -box.min.y, -(box.min.z + box.max.z) / 2));
+  parts.forEach(q => q.g.applyMatrix4(T));
+  // nuvem de pontos para medir
+  const P = []; parts.forEach(q => { const a = q.g.attributes.position; for (let i = 0; i < a.count; i++) P.push(V(a.getX(i), a.getY(i), a.getZ(i))); });
+  const bb = new THREE.Box3().setFromPoints(P), L = bb.max.z - bb.min.z, H = bb.max.y, W = bb.max.x - bb.min.x;
+  const med = arr => { const s2 = [...arr].sort((a, b) => a - b); return s2[Math.floor(s2.length / 2)] ?? 0; };
+  const fit = cfg.ajuste || {};
+  // pés: pontos perto do chão
+  const feet = P.filter(p => p.y < 0.07 * H);
+  const zf = fit.zPe ?? med(feet.map(p => p.z)), xf = fit.xPe ?? Math.max(0.05 * W, med(feet.map(p => Math.abs(p.x))));
+  const toeMax = Math.max(...feet.map(p => p.z));
+  const zh = fit.zQuadril ?? zf - 0.03 * L;
+  // linha do meio do corpo (só o tronco, sem as pernas)
+  const centerY = (z, halfwin = 0.025 * L, minY = 0.45 * H) => {
+    const sl = P.filter(p => Math.abs(p.z - z) < halfwin && Math.abs(p.x) < 0.3 * W && p.y > minY);
+    if (sl.length < 3) return null;
+    const ys = sl.map(p => p.y); return { c: (Math.max(...ys) + Math.min(...ys)) / 2, top: Math.max(...ys), bot: Math.min(...ys) };
+  };
+  const hipS = centerY(zh) || { c: 0.75 * H, top: H, bot: 0.5 * H };
+  const hipY = fit.yQuadril ?? hipS.c;
+  // pescoço = parte mais fina entre o peito e a cabeça
+  const zEnd = bb.max.z, zTail = bb.min.z;
+  let zNeck = zh + 0.6 * (zEnd - zh), thin = 1e9;
+  for (let z = zh + 0.42 * (zEnd - zh); z < zEnd - 0.1 * L; z += 0.01 * L) {
+    const s2 = centerY(z, 0.012 * L, 0.3 * H); if (s2 && s2.top - s2.bot < thin) { thin = s2.top - s2.bot; zNeck = z; }
+  }
+  zNeck = fit.zPescoco ?? zNeck;
+  const skullZ = fit.zCranio ?? Math.max(zNeck + 0.02 * L, zEnd - (cfg.cabeca ?? 0.13) * L);
+  // centro do corpo em qualquer ponto (perto das pernas ignora a parte de baixo)
+  const cyRaw = z => {
+    const legZone = Math.abs(z - zf) < 0.14 * L;
+    const sl = P.filter(p => Math.abs(p.z - z) < 0.02 * L && Math.abs(p.x) < 0.3 * W && (!legZone || p.y > 0.5 * hipY));
+    if (sl.length < 3) return null;
+    const ys = sl.map(p => p.y); return (Math.max(...ys) + Math.min(...ys)) / 2;
+  };
+  const cy = z => { for (let d = 0; d < 0.2 * L; d += 0.01 * L) { const v = cyRaw(z + d) ?? cyRaw(z - d); if (v != null) return v; } return hipY; };
+  const headS = centerY((skullZ + zEnd) / 2, 0.03 * L, 0.3 * H) || { c: hipY, top: hipY + 0.1, bot: hipY - 0.1 };
+  const neckBase = zh + 0.62 * (zNeck - zh);
+  // ----- esqueleto (mesmos nomes dos outros bichos)
+  const rig = new Rig(), k = hipY / 0.92;
+  const sp = t => { const z = lerp(zh, neckBase, t); return [0, cy(z), z]; };
+  rig.bone('quadril', null, sp(0), sp(0.25))
+     .bone('coluna_1', 'quadril', sp(0.25), sp(0.5))
+     .bone('coluna_2', 'coluna_1', sp(0.5), sp(0.75))
+     .bone('coluna_3', 'coluna_2', sp(0.75), sp(1));
+  const nk = t => { const z = lerp(neckBase, skullZ, t); return [0, cy(z), z]; };
+  rig.bone('pescoco_1', 'coluna_3', nk(0), nk(1 / 3)).bone('pescoco_2', 'pescoco_1', nk(1 / 3), nk(2 / 3)).bone('pescoco_3', 'pescoco_2', nk(2 / 3), nk(1))
+     .bone('cabeca', 'pescoco_3', nk(1), [0, headS.c, zEnd])
+     .bone('mandibula', 'cabeca', [0, lerp(headS.c, headS.bot, 0.55), lerp(skullZ, zEnd, 0.12)], [0, lerp(headS.c, headS.bot, 0.7), zEnd - 0.01 * L]);
+  const tz = i => lerp(zh - 0.04 * L, zTail, i / 8);
+  for (let i = 0; i < 8; i++) rig.bone(`cauda_${i + 1}`, i ? `cauda_${i}` : 'quadril', [0, cy(tz(i)), tz(i)], [0, cy(tz(i + 1)), tz(i + 1)]);
+  const chestBot = (centerY(neckBase - 0.04 * L) || { bot: hipY * 0.8 }).bot;
+  const armL = (cfg.braco ?? 0.06) * L;
+  for (const [s, x] of [['E', 1], ['D', -1]]) {
+    const shZ = neckBase - 0.03 * L, shY = lerp(cy(shZ), chestBot, 0.55), ax = 0.6 * xf * x;
+    rig.bone(`ombro_${s}`, 'coluna_3', [ax, shY, shZ], [ax * 1.15, shY - armL * 0.45, shZ - armL * 0.05])
+       .bone(`antebraco_${s}`, `ombro_${s}`, [ax * 1.15, shY - armL * 0.45, shZ - armL * 0.05], [ax * 1.1, shY - armL * 0.65, shZ + armL * 0.35])
+       .bone(`mao_${s}`, `antebraco_${s}`, [ax * 1.1, shY - armL * 0.65, shZ + armL * 0.35], [ax * 1.05, shY - armL * 0.8, shZ + armL * 0.55]);
+    const lx = xf * x, legH = hipY;
+    rig.bone(`coxa_${s}`, 'quadril', [lx * 0.85, hipY - 0.05 * legH, zh], [lx, 0.6 * legH, zh + 0.14 * legH])
+       .bone(`canela_${s}`, `coxa_${s}`, [lx, 0.6 * legH, zh + 0.14 * legH], [lx, 0.25 * legH, zh - 0.07 * legH])
+       .bone(`pe_${s}`, `canela_${s}`, [lx, 0.25 * legH, zh - 0.07 * legH], [lx, 0.05 * legH, zf - 0.02 * L])
+       .bone(`dedos_${s}`, `pe_${s}`, [lx, 0.05 * legH, zf - 0.02 * L], [lx, 0.02 * legH, toeMax]);
+  }
+  rig.build();
+  // ----- pele: cada vértice segue os 3 ossos mais próximos (membros só do próprio lado)
+  const segs = rig.order.map(n => ({ n, i: rig.idx[n], s: rig.spec[n], side: n.endsWith('_E') ? 1 : n.endsWith('_D') ? -1 : 0 }));
+  const group = new THREE.Group(); group.name = cfg.nome;
+  group.add(rig.root); group.updateMatrixWorld(true);
+  const skeleton = new THREE.Skeleton(rig.list);
+  let tris = 0;
+  const meshes = parts.map((q, mi) => {
+    const g = q.g, a = g.attributes.position, n = a.count, SI = new Uint16Array(n * 4), SW = new Float32Array(n * 4), p = V(0, 0, 0);
+    for (let i = 0; i < n; i++) {
+      p.set(a.getX(i), a.getY(i), a.getZ(i));
+      const c = [];
+      for (const sg of segs) {
+        if (sg.side && Math.sign(p.x) !== sg.side && Math.abs(p.x) > 0.04 * W) continue;
+        c.push([sg.i, distSeg(p, sg.s.head, sg.s.tail)]);
+      }
+      c.sort((u, v) => u[1] - v[1]);
+      const top = c.slice(0, 3), ws = top.map(t => 1 / Math.pow(t[1] + 0.02 * k, 4)), sum = ws.reduce((u, v) => u + v, 0);
+      top.forEach((t, j) => { SI[i * 4 + j] = t[0]; SW[i * 4 + j] = ws[j] / sum; });
+    }
+    g.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(SI, 4));
+    g.setAttribute('skinWeight', new THREE.Float32BufferAttribute(SW, 4));
+    if (!g.attributes.normal) g.computeVertexNormals();
+    tris += (g.index ? g.index.count : n) / 3;
+    const m = new THREE.SkinnedMesh(g, q.mat);
+    m.name = `${cfg.nome}_malha_${mi}`; m.castShadow = m.receiveShadow = true; m.frustumCulled = false;
+    group.add(m); m.bind(skeleton, new THREE.Matrix4());
+    return m;
+  });
+  const bellyMin = (centerY(lerp(zh, neckBase, 0.4), 0.03 * L, 0.2 * H) || { bot: hipY * 0.6 }).bot;
+  const clips = bipedClips(rig, Object.assign({
+    k, walk: [1.1 * Math.sqrt(k), 0.62, 0.62, 0.1, 0.025, 0.04, 0.12], run: [0.6 * Math.sqrt(k), 0.4, 1.15, 0.2, 0.06, 0.2, 0.35],
+    attack: cfg.ataque || 'mordida', roar: cfg.rugido || 'baixo', eat: 0.6,
+    sleepDrop: Math.max(0.1, (bellyMin - 0.03 * H) / k), fold: { dz: -0.15 * k, dy: -0.18 * k, meta: 1.0, toe: 0.1 },
+    deathDrop: (hipY - 0.45 * W) / k,
+  }, cfg.anim || {}));
+  return { group, mesh: meshes[0], meshes, clips, rig, tris, loops: { parado: 1, andar: 1, correr: 1, comer: 1, dormir: 1 },
+    medidas: { L, H, W, zf, xf, zh, hipY, zNeck, skullZ } };
+}
+
 const BICHOS = {
   trex: { nome: 'T-Rex', arquivo: 'trex.glb', build: buildTRex },
   raptor: { nome: 'Raptor', arquivo: 'raptor.glb', build: buildRaptor },
@@ -801,9 +921,11 @@ function show(name) {
   cur = get(name); curName = name; scene.add(cur.group);
   mixer = new THREE.AnimationMixer(cur.group);
   frame(cur.group);
-  const gg = cur.mesh.geometry, tris = (gg.index ? gg.index.count : gg.attributes.position.count) / 3;
-  document.getElementById('info').innerHTML = `<b>${BICHOS[name].nome}</b>${tris.toLocaleString('pt-BR')} triângulos · ${cur.mesh.skeleton.bones.length} ossos · ${cur.clips.length} animações<br>arquivo: ${BICHOS[name].arquivo}`;
+  const gg = cur.mesh.geometry, tris = cur.tris ?? (gg.index ? gg.index.count : gg.attributes.position.count) / 3;
+  document.getElementById('info').innerHTML = `<b>${BICHOS[name]?.nome ?? name}</b>${tris.toLocaleString('pt-BR')} triângulos · ${cur.mesh.skeleton.bones.length} ossos · ${cur.clips.length} animações<br>arquivo: ${BICHOS[name]?.arquivo ?? name + '.glb'}`;
   document.querySelectorAll('[data-bicho]').forEach(b => b.classList.toggle('ativo', b.dataset.bicho === name));
+  if (window.__osso) { scene.remove(window.__osso); window.__osso = null; }
+  if (window.__mostrarOssos) { window.__osso = new THREE.SkeletonHelper(cur.group); scene.add(window.__osso); }
   const la = document.getElementById('listaAnim'); la.innerHTML = '';
   for (const c of cur.clips) {
     const b = document.createElement('button'); b.textContent = c.name; b.dataset.anim = c.name;
@@ -848,6 +970,14 @@ window.__api = {
   show, play, frame: () => frame(cur.group),
   setCam: (p, t) => { camera.position.set(...p); controls.target.set(...t); controls.update(); },
   export: async n => b64(await toGLB(n)),
+  // modelo importado: base64 do .glb parado + config → registra como bicho
+  importar: async (b64glb, cfg) => {
+    const bin = Uint8Array.from(atob(b64glb), c => c.charCodeAt(0)).buffer;
+    const c = await buildImported(bin, cfg);
+    cache[cfg.nome] = c; BICHOS[cfg.nome] = { nome: cfg.titulo || cfg.nome, arquivo: cfg.nome + '.glb', build: () => c };
+    return { tris: c.tris, medidas: Object.fromEntries(Object.entries(c.medidas).map(([a, v]) => [a, +v.toFixed(3)])) };
+  },
+  ossos: on => { window.__mostrarOssos = on; },
 };
 
 const clock = new THREE.Clock();
@@ -857,6 +987,9 @@ renderer.setAnimationLoop(() => {
   controls.update(); renderer.render(scene, camera);
 });
 show('trex');
+// câmera de lado (para conferir o esqueleto)
+window.__lado = () => { const box = new THREE.Box3().setFromObject(cur.group), c = box.getCenter(V(0, 0, 0)), sz = box.getSize(V(0, 0, 0));
+  const d = Math.max(sz.z, sz.y) * 1.25; return [[c.x + d, c.y + sz.y * 0.1, c.z + d * 0.05], [c.x, c.y, c.z]]; };
 window.__ready = true;
 </script>
 </body>

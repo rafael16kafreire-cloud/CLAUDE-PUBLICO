@@ -15,3 +15,22 @@ Ossos e animações com os nomes do prompt (`parado`, `andar`, `correr`, `atacar
 |---|---|--:|--:|
 | T-Rex | `trex.glb` | 18.292 (sombreado suave, pele lisa 64×64) | 31 |
 | Raptor | `raptor.glb` | 4.754 | 31 |
+
+## Animar modelos prontos (IA do Blender, Sketchfab com licença livre)
+
+Para usar um modelo realista que já existe (sem esqueleto ou com esqueleto diferente):
+
+1. **Preparar** (tira esqueleto/animações antigas, junta as partes, reduz triângulos):
+   `blender -b -P blender/preparar.py -- modelo_original.fbx teste/meu_bicho_parado.glb 15000`
+   (aceita `.glb`, `.gltf`, `.fbx`, `.obj`, `.blend`, `.usdz`, `.stl`)
+2. **Configurar**: crie `config/<nome>.json` com o nome, o arquivo parado, o comprimento real em metros,
+   a rotação para a cabeça apontar para a frente e o tipo de ataque/rugido (veja `config/teste_trex.json`).
+3. **Animar**: `node animar.mjs config/<nome>.json` → gera `modelos/<nome>.glb` com o esqueleto padrão
+   (mesmos nomes de ossos) e as 8 animações, mais `previas/<nome>_ossos.jpg` para conferir o encaixe.
+   Se algum osso ficar fora do lugar, corrija com `"ajuste"` no JSON (ex.: `zQuadril`, `yQuadril`, `zPescoco`, `zCranio`, `zPe`, `xPe`).
+
+Teste incluído: `config/teste_trex.json`, usando o T-Rex do pacote CC0 "Animated LowPoly Dinosaurs"
+de [Quaternius](https://quaternius.itch.io/animated-lowpoly-dinosaurs) com o esqueleto original removido.
+
+**Licença dos modelos:** use só modelos feitos por você/sua IA ou com licença CC0/CC-BY do próprio autor.
+Modelos extraídos de jogos (ex.: ARK, Jurassic World Evolution) não podem ir para o jogo, mesmo que o site diga "grátis".
