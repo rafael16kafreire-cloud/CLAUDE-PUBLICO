@@ -13,6 +13,7 @@ import { Vegetation } from './vegetation.js';
 import { Grass } from './grass.js';
 import { LightShafts } from './light_shafts.js';
 import { Snowfall } from './snowfall.js';
+import { Atmosfera } from './atmosfera.js';
 import { Sky, NIGHT_START, NIGHT_END } from './sky.js';
 import { Effects } from './effects.js';
 import { Underwater } from './underwater.js';
@@ -54,6 +55,8 @@ export class World {
     this.sky = new Sky(scene);
     this.shafts = new LightShafts(scene, this.map, this.water);
     this.snowfall = new Snowfall(scene);
+    // fumaça/fagulhas das fogueiras, vaga-lumes, poeira, folhas e o clima (chuva, neblina)
+    this.atmosfera = new Atmosfera(scene);
     this.effects = new Effects(scene);
     this._focus = null;
     this.fallingTrees = new FallingTrees(scene, this.vegetation, this.effects, this.map);
@@ -228,7 +231,8 @@ export class World {
     const morroVerde = inForest === BIOME.JUNGLE || inForest === BIOME.IGAPO || inForest === BIOME.PLAINS ? 1 : 0;
     const mist = Math.max(hill * hill * (3 - 2 * hill) * morroVerde, forest) * (1 - cold);
     this.sky.mist = (this.sky.mist ?? 0) + (mist - (this.sky.mist ?? 0)) * Math.min(1, dt * 0.5);
-    if (!this.sky.underwater) this.sky.scene.fog.density = (2.0 / this.viewDistance) * (1 + this.sky.mist * 1.0); // >>> força da névoa na mata/morros
+    // >>> força da névoa na mata/morros (mist) e do clima (chuva/neblina densa: atmosfera.js)
+    if (!this.sky.underwater) this.sky.scene.fog.density = (2.0 / this.viewDistance) * (1 + this.sky.mist * 1.0) * (this.atmosfera?.fatorNevoa ?? 1);
   }
 
   setQuality(q) {
@@ -238,6 +242,7 @@ export class World {
     this.grass.setQuality(q.grassRadius, q.grassDensity);
     this.grass.setEnabled(q.grassRadius > 0);
     this.fallingTrees.setDetail(q.post === 'cinema' ? 2 : 1);
+    this.atmosfera.setQualidade(q.post === 'cinema' ? 'alta' : q.post === 'none' ? 'baixa' : 'media');
     this._quality = q;
     this.setLowPoly(this.lowPoly ?? false, true);
   }
@@ -301,6 +306,7 @@ export class World {
     this.grass.update(focus);
     this.shafts.update(camera, this.sky, focus, !this.cameraUnderwater);
     this.snowfall.update(camera, dt, this.sky.cold ?? 0, this.sky.daylight ?? 1, this.cameraUnderwater);
+    this.atmosfera.update(dt, this, camera, this.cameraUnderwater);
     this.vegetation.update(dt, camera, this.viewDistance);
     this.effects.update(dt);
     this._focus = focus;

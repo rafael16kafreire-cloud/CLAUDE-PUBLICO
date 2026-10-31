@@ -20,6 +20,7 @@
 // peça (menos a porta) desmonta e devolve metade do material.
 // =============================================================
 import * as THREE from 'three';
+import { PALETA, mistura } from '../core/paleta.js';
 import { events, EV } from '../core/event_bus.js';
 import { Structure } from './structures.js';
 
@@ -48,14 +49,14 @@ export function parsePiece(id) {
 export const PIECES = [];
 for (const t of Object.keys(TIERS)) for (const b of TIERS[t].pecas ?? BASES) PIECES.push(pieceId(b, t));
 
-const WOOD = new THREE.MeshLambertMaterial({ color: '#8a6438' });
-const WOOD_DARK = new THREE.MeshLambertMaterial({ color: '#5e4226' });
-const THATCH = new THREE.MeshLambertMaterial({ color: '#a08848' });
-const THATCH_DARK = new THREE.MeshLambertMaterial({ color: '#7a6430' });
-const STONE = new THREE.MeshLambertMaterial({ color: '#8f8b82' });
-const STONE_DARK = new THREE.MeshLambertMaterial({ color: '#5e5a54' });
-const METAL = new THREE.MeshLambertMaterial({ color: '#8c939c' });
-const METAL_DARK = new THREE.MeshLambertMaterial({ color: '#4c5258' });
+const WOOD = new THREE.MeshLambertMaterial({ color: PALETA.madeira.clone() }); // >>> cores das construções (paleta)
+const WOOD_DARK = new THREE.MeshLambertMaterial({ color: PALETA.marrom.clone() });
+const THATCH = new THREE.MeshLambertMaterial({ color: mistura('capimSeco', 'madeira', 0.25) });
+const THATCH_DARK = new THREE.MeshLambertMaterial({ color: mistura('capimSeco', 'marrom', 0.55) });
+const STONE = new THREE.MeshLambertMaterial({ color: PALETA.pedraClara.clone() });
+const STONE_DARK = new THREE.MeshLambertMaterial({ color: PALETA.pedra.clone() });
+const METAL = new THREE.MeshLambertMaterial({ color: mistura('pedraClara', 'neve', 0.25) });
+const METAL_DARK = new THREE.MeshLambertMaterial({ color: PALETA.pedraEscura.clone() });
 // [principal, detalhe, teto]
 const MATS = {
   palha: [THATCH, THATCH_DARK, THATCH],

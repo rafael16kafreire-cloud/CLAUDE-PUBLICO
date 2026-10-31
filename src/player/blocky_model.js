@@ -1,5 +1,7 @@
 // =============================================================
-// PERSONAGEM QUADRADINHO (blocos, como em Minecraft/Roblox clássico).
+// PERSONAGEM LOW-POLY (estilo Valheim): sobrevivente com túnica de couro, capa de pele nos
+// ombros, barba e botas, feito de formas simples facetadas nas cores da paleta (core/paleta.js).
+// (Antes era o "quadradinho" com textura de pixel; a opção do menu continua com o mesmo nome.)
 // Cada parte é um bloco com articulação de verdade: cintura, ombros, cotovelos, quadris e joelhos,
 // então as animações (andar, correr, pular, machadada, mineração, lança, soco) dobram nos lugares certos.
 // As poses vêm das mesmas contas do PlayerModel (_computePose); aqui só se aplicam nas juntas.
@@ -7,12 +9,23 @@
 import * as THREE from 'three';
 import { PlayerModel } from './player_model.js';
 import { makeTool } from './player_hands.js';
-import { pixelTexture } from './pixel_tex.js';
+import { PALETA } from '../core/paleta.js';
+import { ROUPA } from './roupa.js';
 
-const lamb = (hex) => new THREE.MeshLambertMaterial({ color: hex, map: pixelTexture() });
-const flat = (hex) => new THREE.MeshLambertMaterial({ color: hex });
+const mat = (c) => new THREE.MeshLambertMaterial({ color: c, flatShading: true });
 
-function box(w, h, d, material, x = 0, y = 0, z = 0) {
+// "bloco" low-poly: cilindro de poucos lados (w = largura, d = profundidade), com afunilamento
+function box(w, h, d, material, x = 0, y = 0, z = 0, lados = 6, afunila = 0.9) {
+  const g = new THREE.CylinderGeometry(0.5 * afunila, 0.5, 1, lados, 1);
+  g.rotateY(Math.PI / lados);
+  g.scale(w, h, d);
+  const m = new THREE.Mesh(g, material);
+  m.position.set(x, y, z);
+  m.castShadow = true;
+  return m;
+}
+// bloco reto (olhos, cinto, botas)
+function cubo(w, h, d, material, x = 0, y = 0, z = 0) {
   const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
   m.position.set(x, y, z);
   m.castShadow = true;
@@ -21,14 +34,15 @@ function box(w, h, d, material, x = 0, y = 0, z = 0) {
 
 export class BlockyModel {
   constructor() {
-    const SKIN = lamb('#d4a174');
-    const SHIRT = lamb('#3f8fc4');
-    const SLEEVE = lamb('#3a83b5');
-    const PANTS = lamb('#43498f');
-    const BOOT = lamb('#4a3526');
-    const HAIR = lamb('#4a2f1c');
-    const DARK = flat('#1d1713');
-    const WHITE = flat('#f2f2ee');
+    const SKIN = mat(ROUPA.pele());
+    const SHIRT = mat(ROUPA.tunica());
+    const SLEEVE = mat(ROUPA.tunica().multiplyScalar(0.9));
+    const PANTS = mat(ROUPA.calca());
+    const BOOT = mat(ROUPA.bota());
+    const HAIR = mat(ROUPA.cabelo());
+    const FUR = mat(ROUPA.pelo());
+    const DARK = mat(PALETA.ceuNoite.clone());
+    const BELT = mat(ROUPA.cinto());
 
     this.root = new THREE.Group();
     this.root.name = 'Jogador';
@@ -41,17 +55,18 @@ export class BlockyModel {
     this.body = new THREE.Group();
     this.body.position.y = 0.9;
     this.model.add(this.body);
-    this.body.add(box(0.46, 0.16, 0.25, PANTS, 0, -0.02, 0));
+    this.body.add(box(0.46, 0.18, 0.27, PANTS, 0, -0.02, 0, 7, 0.95));
 
     // pernas: coxa (quadril) + canela (joelho) + pé
     const leg = (x) => {
       const hip = new THREE.Group();
       hip.position.set(x, -0.08, 0);
-      hip.add(box(0.2, 0.42, 0.22, PANTS, 0, -0.21, 0));
+      hip.add(box(0.2, 0.42, 0.21, PANTS, 0, -0.21, 0, 6, 0.85));
       const knee = new THREE.Group();
       knee.position.set(0, -0.42, 0);
-      knee.add(box(0.19, 0.36, 0.2, PANTS, 0, -0.18, 0));
-      knee.add(box(0.2, 0.1, 0.3, BOOT, 0, -0.41, 0.04));
+      knee.add(box(0.17, 0.22, 0.18, PANTS, 0, -0.1, 0, 6, 0.9));
+      knee.add(box(0.19, 0.2, 0.2, BOOT, 0, -0.29, 0, 6, 1.1)); // cano da bota
+      knee.add(cubo(0.19, 0.09, 0.3, BOOT, 0, -0.41, 0.045)); // pé
       hip.add(knee);
       this.body.add(hip);
       return { hip, knee };
@@ -66,35 +81,61 @@ export class BlockyModel {
     this.spine = new THREE.Group();
     this.spine.position.y = 0.06;
     this.body.add(this.spine);
-    this.spine.add(box(0.48, 0.58, 0.25, SHIRT, 0, 0.3, 0));
-    this.spine.add(box(0.5, 0.06, 0.27, flat('#6b4a2c'), 0, 0.03, 0)); // cinto
+    this.spine.add(box(0.48, 0.58, 0.27, SHIRT, 0, 0.3, 0, 7, 1.12)); // túnica: ombros mais largos
+    this.spine.add(box(0.5, 0.07, 0.29, BELT, 0, 0.04, 0, 7, 1)); // cinto
+    this.spine.add(cubo(0.08, 0.06, 0.03, mat(PALETA.pedraClara.clone()), 0, 0.04, 0.15)); // fivela
+    {
+      // capa de pele sobre os ombros (cone baixo e largo)
+      const g = new THREE.ConeGeometry(0.4, 0.2, 7, 1, true);
+      g.scale(1, 1, 0.68);
+      const capa = new THREE.Mesh(g, FUR);
+      capa.material.side = THREE.DoubleSide;
+      capa.position.set(0, 0.6, -0.01);
+      capa.castShadow = true;
+      this.spine.add(capa);
+    }
 
     // cabeça
     this.head = new THREE.Group();
     this.head.position.y = 0.62;
-    this.head.add(box(0.14, 0.06, 0.14, SKIN, 0, 0.03, 0)); // pescoço
-    this.head.add(box(0.31, 0.31, 0.31, SKIN, 0, 0.2, 0));
-    this.head.add(box(0.33, 0.1, 0.33, HAIR, 0, 0.38, -0.005)); // cabelo: topo
-    this.head.add(box(0.33, 0.28, 0.08, HAIR, 0, 0.22, -0.125)); // atrás
-    this.head.add(box(0.04, 0.2, 0.3, HAIR, 0.16, 0.26, -0.02)); // costeletas
-    this.head.add(box(0.04, 0.2, 0.3, HAIR, -0.16, 0.26, -0.02));
-    for (const sx of [-1, 1]) {
-      this.head.add(box(0.06, 0.05, 0.01, WHITE, sx * 0.075, 0.22, 0.156));
-      this.head.add(box(0.035, 0.05, 0.012, DARK, sx * 0.075 + sx * 0.0, 0.22, 0.158));
+    this.head.add(box(0.14, 0.08, 0.14, SKIN, 0, 0.03, 0)); // pescoço
+    {
+      const cab = new THREE.Mesh(new THREE.IcosahedronGeometry(0.17, 0), SKIN);
+      cab.scale.set(0.95, 1.05, 1);
+      cab.position.y = 0.21;
+      cab.castShadow = true;
+      this.head.add(cab);
+      // cabelo: calota facetada por cima e atrás
+      const cabelo = new THREE.Mesh(new THREE.DodecahedronGeometry(0.175, 0), HAIR);
+      cabelo.scale.set(1.02, 0.7, 1.05);
+      cabelo.position.set(0, 0.3, -0.03);
+      cabelo.castShadow = true;
+      this.head.add(cabelo);
+      // barba: cone para baixo na frente do queixo
+      const bg = new THREE.ConeGeometry(0.12, 0.2, 6);
+      bg.rotateX(Math.PI);
+      const barba = new THREE.Mesh(bg, HAIR);
+      barba.scale.set(1, 1, 0.7);
+      barba.position.set(0, 0.09, 0.09);
+      this.head.add(barba);
     }
-    this.head.add(box(0.08, 0.04, 0.02, lamb('#b87d56'), 0, 0.16, 0.165)); // nariz
-    this.head.add(box(0.12, 0.02, 0.012, lamb('#8a4b3c'), 0, 0.1, 0.157)); // boca
+    for (const sx of [-1, 1]) this.head.add(cubo(0.035, 0.035, 0.02, DARK, sx * 0.065, 0.23, 0.15)); // olhos
+    this.head.add(box(0.05, 0.06, 0.05, SKIN, 0, 0.18, 0.16, 4, 0.7)); // nariz
     this.spine.add(this.head);
 
     // braços: ombro + cotovelo + mão
     const arm = (x) => {
       const sh = new THREE.Group();
       sh.position.set(x, 0.54, 0);
-      sh.add(box(0.17, 0.3, 0.17, SLEEVE, 0, -0.14, 0));
+      sh.add(box(0.17, 0.3, 0.17, SLEEVE, 0, -0.14, 0, 6, 1.05));
       const el = new THREE.Group();
       el.position.set(0, -0.29, 0);
-      el.add(box(0.16, 0.2, 0.16, SKIN, 0, -0.09, 0));
-      el.add(box(0.17, 0.1, 0.17, SKIN, 0, -0.23, 0)); // mão
+      el.add(box(0.14, 0.2, 0.14, SKIN, 0, -0.09, 0, 6, 1.05));
+      el.add(box(0.15, 0.06, 0.15, FUR, 0, -0.02, 0, 6, 1)); // munhequeira de couro
+      const mao = new THREE.Mesh(new THREE.DodecahedronGeometry(0.075, 0), SKIN);
+      mao.position.y = -0.23;
+      mao.castShadow = true;
+      el.add(mao);
       sh.add(el);
       this.spine.add(sh);
       return { sh, el };

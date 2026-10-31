@@ -757,6 +757,29 @@ class Sound {
     this._wind = { lp, g };
   }
 
+  // Chuva: chiado (ruído branco filtrado), volume = força da chuva
+  setChuva(v) {
+    this._chuvaAlvo = v;
+  }
+
+  _startRain() {
+    const c = this.ctx;
+    const src = c.createBufferSource();
+    src.buffer = this.noise;
+    src.loop = true;
+    const hp = c.createBiquadFilter();
+    hp.type = 'highpass';
+    hp.frequency.value = 700;
+    const lp = c.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = this.leve ? 4000 : 6500;
+    const g = c.createGain();
+    g.gain.value = 0;
+    src.connect(hp).connect(lp).connect(g).connect(this.ambBus);
+    src.start();
+    this._rain = { g };
+  }
+
   _startFire() {
     const c = this.ctx;
     const src = c.createBufferSource();
@@ -785,6 +808,10 @@ class Sound {
     a.t += dt;
     this._updateMusic(night);
     this._updateChase(dt);
+    // chuva (atmosfera.js): liga o chiado na primeira vez que chove
+    const chuva = this._chuvaAlvo ?? 0;
+    if (chuva > 0.01 && !this._rain) this._startRain();
+    if (this._rain) this._rain.g.gain.setTargetAtTime(chuva * 0.22, t, 0.8);
     // cigarras: zumbido contínuo de dia, some à noite
     if (this._cicada) this._cicada.g.gain.setTargetAtTime(night ? 0 : 0.018 + 0.012 * Math.sin(a.t * 0.4), t, 1.5);
 

@@ -1291,6 +1291,7 @@ function boot(hotData = {}) {
     player.model.setTool(toolKind);
     damageNumbers.update(dt, camera);
     // trilha de perseguição (como no ARK): toca quando um bicho selvagem está te caçando, mais forte quanto mais perto
+    sound.setChuva(world.cameraUnderwater ? 0 : world.atmosfera?.clima.chuva ?? 0);
     sound.setPerseguicao(game.state === STATE.PLAYING && !player.dead && !photo ? creatures.nivelPerseguicao(player) : 0);
     hands.update(dt, {
       visible: !photo && game.state === STATE.PLAYING && camCtl.mode === 'primeira' && !player.dead,

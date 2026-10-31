@@ -5,13 +5,14 @@
 // de lança. A ferramenta em uso aparece na mão direita.
 // =============================================================
 import * as THREE from 'three';
-import { pixelTexture } from './pixel_tex.js';
+import { PALETA } from '../core/paleta.js';
+import { ROUPA } from './roupa.js';
 import { settings } from '../core/settings.js';
 
-const WOOD = new THREE.MeshLambertMaterial({ color: '#7a5a3a' });
-const STONE = new THREE.MeshLambertMaterial({ color: '#8a8a90' });
-const FLINT = new THREE.MeshLambertMaterial({ color: '#4c505a' });
-const ROPE = new THREE.MeshLambertMaterial({ color: '#a89058' });
+const WOOD = new THREE.MeshLambertMaterial({ color: PALETA.marrom.clone() });
+const STONE = new THREE.MeshLambertMaterial({ color: PALETA.pedra.clone() });
+const FLINT = new THREE.MeshLambertMaterial({ color: PALETA.pedraEscura.clone() });
+const ROPE = new THREE.MeshLambertMaterial({ color: PALETA.capimSeco.clone() });
 
 // Braço direito em primeira pessoa, simples como o do Minecraft: um bloco comprido na cor da
 // pele do personagem. A ponta da frente é a mão (onde as ferramentas encaixam).
@@ -93,22 +94,26 @@ function skinArm() {
   return g;
 }
 
-// Braço quadradinho (blocos com "pixels"): manga azul, antebraço e punho de pele
+// Braço low-poly (mesmas cores do personagem): manga da túnica, antebraço, munhequeira e punho
 function blockyArm() {
-  const tex = pixelTexture();
-  const m = (hex) => new THREE.MeshLambertMaterial({ color: hex, map: tex, emissive: '#2a1d16' });
+  const m = (c) => new THREE.MeshLambertMaterial({ color: c, flatShading: true, emissive: PALETA.terraEscura.clone().multiplyScalar(0.25) });
   const g = new THREE.Group();
   const hand = new THREE.Group();
   hand.position.z = -0.26;
-  const part = (w, h, d, mat, z) => {
-    const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+  const part = (r0, r1, len, mat, z) => {
+    const geo = new THREE.CylinderGeometry(r1, r0, len, 6, 1);
+    geo.rotateX(Math.PI / 2);
+    const b = new THREE.Mesh(geo, mat);
     b.position.z = z;
     hand.add(b);
   };
-  const skin = m('#d4a174');
-  part(0.085, 0.085, 0.34, skin, 0.1); // antebraço
-  part(0.1, 0.1, 0.3, m('#3a83b5'), 0.4); // manga
-  part(0.095, 0.095, 0.1, skin, -0.1); // punho
+  const skin = m(ROUPA.pele());
+  part(0.05, 0.045, 0.34, skin, 0.1); // antebraço
+  part(0.06, 0.06, 0.3, m(ROUPA.tunica().multiplyScalar(0.9)), 0.4); // manga
+  part(0.055, 0.055, 0.06, m(ROUPA.pelo()), -0.06); // munhequeira
+  const punho = new THREE.Mesh(new THREE.DodecahedronGeometry(0.06, 0), skin);
+  punho.position.z = -0.12;
+  hand.add(punho);
   g.add(hand);
   g.userData.fist = hand;
   g.scale.setScalar(1.25);

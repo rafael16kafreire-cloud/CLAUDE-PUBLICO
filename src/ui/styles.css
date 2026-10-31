@@ -2313,3 +2313,140 @@ body.inv-open #ui > .hud, body.inv-open #ui > .hotbar, body.inv-open #ui > .hud-
 .saves-confirm-box { width: min(420px, 90%); padding: 16px; background: #0b2430; border: 1px solid #6fe6ff; border-radius: 8px; text-align: center; }
 .saves-confirm-box p { margin: 0 0 14px; font-size: 16px; line-height: 1.35; color: #e8fbff; }
 .saves-confirm-btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+
+/* =============================================================
+   ETAPA 5 – TEMA NÓRDICO LOW-POLY (estilo Valheim)
+   HUD minimalista e translúcido, sem molduras pesadas, fonte de
+   estilo rústico (serifada do próprio aparelho, em caixa alta e
+   espaçada: nenhum arquivo de fonte novo). Cores da paleta
+   (core/paleta.js). Fica no fim para valer por cima dos temas antigos.
+   >>> AJUSTE: mude as variáveis --p-* e --font-nordica abaixo.
+   ============================================================= */
+:root {
+  --font-nordica: "Palatino Linotype", "Book Antiqua", Palatino, "Noto Serif", "Droid Serif", Georgia, "Times New Roman", serif;
+  --p-ferrugem: #94482f;
+  --p-sol: #e3a456;
+  --p-capim: #9c9258;
+  --p-agua: #46687e;
+  --p-neve: #dde3e6;
+  --p-madeira: #977653;
+  --p-terra: #3a3027;
+  --p-noite: #1a2335;
+  /* menus e painéis: couro/madeira escura translúcida, sem hexágonos, borda fina */
+  --ark-deep: rgba(24, 20, 16, 0.84);
+  --ark-mid: rgba(40, 33, 26, 0.84);
+  --ark-tile: rgba(151, 118, 83, 0.16);
+  --ark-tile-hi: rgba(227, 164, 86, 0.26);
+  --ark-line: rgba(227, 164, 86, 0.3);
+  --ark-cyan: #e8c890;
+  --ark-text: #ece4d4;
+  --ark-hex: none;
+  --ember: #e3a456;
+  --ember-deep: #94482f;
+  --panel: rgba(28, 23, 18, 0.7);
+  --panel-solid: #2a231c;
+  --line: rgba(227, 164, 86, 0.28);
+  --bone: #ece4d4;
+  --bone-dim: #b8ab94;
+  --track: rgba(10, 8, 6, 0.42);
+}
+.panel, .inv-panel, .cmenu-panel, .ark-panel {
+  border-width: 1px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45) !important;
+}
+.pause-head h2, .death-title, .inv-head h2, .rd-head h3 {
+  font-family: var(--font-nordica);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: #e8c890;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+
+/* ---------- HUD: barras finas e translúcidas, embaixo no meio ---------- */
+.hud-status { width: 140px; }
+.lvl-badge { font-family: var(--font-nordica); font-weight: 700; letter-spacing: 0.12em; color: #e8c890; text-transform: uppercase; }
+.xp-track { height: 3px; border: 0; background: rgba(10, 8, 6, 0.45); border-radius: 2px; }
+.xp-track i { background: var(--p-neve); opacity: 0.8; }
+.hud-clock, .hud-temp b { font-family: var(--font-nordica); letter-spacing: 0.08em; }
+.hud-gauges {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 5px;
+  width: 210px;
+  padding: 7px 10px 6px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(14, 12, 10, 0.28), rgba(14, 12, 10, 0.42));
+}
+body.is-touch .hud-gauges { width: 180px; }
+.hud-gauges .stat {
+  display: grid;
+  grid-template-columns: 52px 1fr 30px;
+  align-items: center;
+  gap: 6px;
+  width: auto;
+  height: 10px;
+}
+.hud-gauges .stat .rot {
+  font: 700 9.5px var(--font-nordica);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(236, 228, 212, 0.85);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  white-space: nowrap;
+}
+.hud-gauges .stat .track {
+  position: relative;
+  inset: auto;
+  height: 5px;
+  border-radius: 3px;
+  overflow: hidden;
+  background: rgba(10, 8, 6, 0.5);
+  -webkit-mask: none;
+  mask: none;
+  box-shadow: inset 0 0 0 1px rgba(236, 228, 212, 0.08);
+}
+.hud-gauges .stat .fill {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  background: var(--c);
+  transform-origin: left center;
+  transform: scaleX(var(--v, 1));
+  transition: transform 0.25s;
+  border-radius: 3px;
+}
+.hud-gauges .stat .num {
+  position: static;
+  transform: none;
+  text-align: right;
+  font: 700 10px var(--font-nordica);
+  color: rgba(236, 228, 212, 0.9);
+  text-shadow: 0 1px 2px #000;
+}
+/* cores das barras (paleta) */
+.hud-gauges .stat-health { --c: #b0533a; }
+.hud-gauges .stat-stamina { --c: var(--p-sol); }
+.hud-gauges .stat-food { --c: var(--p-capim); }
+.hud-gauges .stat-water { --c: #6a90a8; }
+.hud-gauges .stat-oxygen { --c: var(--p-neve); }
+.hud-gauges .stat-xp { --c: var(--p-neve); }
+.hud-gauges .stat-weight { --c: var(--p-madeira); }
+.hud-gauges .stat.low { --c: #d0583a; }
+.hud-gauges .stat.low .rot { color: #f0a080; }
+
+/* aviso de nível, mensagens e dicas na mesma letra */
+.hud-levelup { font-family: var(--font-nordica) !important; letter-spacing: 0.12em !important; color: #e8c890 !important; }
+.prompt { font-family: var(--font-nordica); letter-spacing: 0.06em; background: rgba(14, 12, 10, 0.5); border: 0; }
+.msg { font-family: var(--font-nordica); letter-spacing: 0.04em; }
+/* (tema nórdico) vence as regras antigas do HUD do ARK, que tinham seletor mais forte */
+body .hud-gauges, body.is-touch .hud-gauges, body.is-touch:not(.touch-botoes) .hud-gauges, body:not(.is-touch) .hud-gauges {
+  align-items: stretch;
+  gap: 5px;
+  bottom: calc(2vh + var(--safe-b, 0px));
+}
+.hud-gauges .stat, .hud-gauges .stat-food, .hud-gauges .stat-water { width: auto; height: 10px; opacity: 1; }
+.hud-gauges .stat .num { display: block; }
+.hud-gauges .stat-food, .hud-gauges .stat-water { align-self: stretch; }
+/* dica de interação acima do painel de barras (não cobre a Vida) */
+:root, body, body.is-touch, body:not(.is-touch) { --prompt-bottom: calc(2vh + 112px); }

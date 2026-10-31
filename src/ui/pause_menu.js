@@ -94,7 +94,7 @@ export class PauseMenu {
               <input type="checkbox" id="opt-smaa">
               <label for="opt-char">Personagem (ao reabrir o jogo)</label>
               <select id="opt-char">
-                <option value="quadradinho">Quadradinho</option>
+                <option value="quadradinho">Low-poly</option>
                 <option value="realista">Realista</option>
               </select>
               <label for="opt-lowpoly">Grama e árvores low poly</label>

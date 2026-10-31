@@ -15,14 +15,15 @@ import { BUTTON_ICONS } from './button_icons.js';
 
 // Ordem do ARK Mobile (embaixo, no meio): stamina, vida, XP/nível, peso (e fôlego quando
 // mergulha). Fome e sede aparecem ao lado só quando estão baixas (abaixo de 50%).
+// Etapa 5 (tema nórdico): barras empilhadas na ordem vida, stamina, fome, sede, fôlego, peso, nível.
 const BARS = [
-  { key: 'stamina', label: 'Stamina' },
   { key: 'health', label: 'Vida' },
-  { key: 'xp', label: 'Nível' },
-  { key: 'weight', label: 'Peso' },
-  { key: 'oxygen', label: 'Fôlego' },
+  { key: 'stamina', label: 'Stamina' },
   { key: 'food', label: 'Fome' },
   { key: 'water', label: 'Sede' },
+  { key: 'oxygen', label: 'Fôlego' },
+  { key: 'weight', label: 'Peso' },
+  { key: 'xp', label: 'Nível' },
 ];
 // só aparecem quando baixos
 const SHOW_WHEN_LOW = { food: 0.5, water: 0.5 };
@@ -68,6 +69,7 @@ export class Hud {
       <div class="hud-gauges">
         ${BARS.map((b) => `
           <div class="stat stat-${b.key}" data-stat="${b.key}" title="${b.label}" ${b.key === 'oxygen' || SHOW_WHEN_LOW[b.key] ? 'hidden' : ''}>
+            <span class="rot">${b.label}</span>
             <div class="track"><i class="fill"></i></div>
             <span class="ico">${ICONS[b.key] ?? ''}</span>
             <b class="num">100</b>
@@ -256,7 +258,8 @@ export class Hud {
       }
       const ratio = Math.max(0, Math.min(1, value / max));
       if (SHOW_WHEN_LOW[b.key] !== undefined) r.row.hidden = ratio >= SHOW_WHEN_LOW[b.key];
-      r.fill.style.transform = `scaleY(${Math.min(1, ratio).toFixed(3)})`;
+      // o tamanho da barra vai numa variável de CSS (o tema decide se enche para o lado ou para cima)
+      r.fill.style.setProperty('--v', Math.min(1, ratio).toFixed(3));
       // vermelho: vida/stamina/comida/água/fôlego baixos, ou carga acima do máximo
       r.row.classList.toggle('low', b.key === 'weight' ? ratio > 1 : b.key === 'xp' ? false : ratio < 0.2);
     }
