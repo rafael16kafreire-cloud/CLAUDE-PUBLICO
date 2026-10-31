@@ -1,6 +1,6 @@
 // Tira fotos das animações de um .glb pronto: node previa_glb.mjs modelos/raptor.glb [anim1,anim2,...]
 import { createRequire } from 'node:module'; import { readFileSync, existsSync, mkdirSync } from 'node:fs';
-import { join, dirname, basename, resolve } from 'node:path'; import { fileURLToPath } from 'node:url';
+import { join, dirname, basename, resolve } from 'node:path'; import { fileURLToPath } from 'node:url'; import { execFileSync } from 'node:child_process';
 const { chromium } = createRequire(import.meta.url)('playwright');
 const here = dirname(fileURLToPath(import.meta.url)), file = resolve(process.argv[2]), nome = basename(file, '.glb');
 const T = process.env.THREE_DIR;
@@ -28,7 +28,8 @@ const mx = new THREE.AnimationMixer(gl.scene);
 window.anims = gl.animations.map(a => [a.name, a.duration]);
 window.pose = (name, t) => { mx.stopAllAction(); const c = gl.animations.find(a => a.name === name); if (c) { mx.clipAction(c).play(); mx.setTime(t); }
   gl.scene.updateMatrixWorld(true);
-  const box = new THREE.Box3().setFromObject(gl.scene), s = box.getSize(new THREE.Vector3()), ctr = box.getCenter(new THREE.Vector3()), R = Math.max(s.x, s.y, s.z);
+  const box = new THREE.Box3().setFromObject(gl.scene), s = box.getSize(new THREE.Vector3()), ctr = box.getCenter(new THREE.Vector3()); let R = Math.max(s.x, s.y, s.z);
+  if (window.ALVO) { const o = gl.scene.getObjectByName(window.ALVO[0]); o.getWorldPosition(ctr); box.setFromCenterAndSize(ctr, new THREE.Vector3(1, 1, 1).multiplyScalar(window.ALVO[1])); s.setScalar(window.ALVO[1]); R = window.ALVO[1]; }
   cam.position.copy(ctr).add(new THREE.Vector3(1, 0.45, 0.8).normalize().multiplyScalar(R * 1.55)); cam.lookAt(ctr); window.dbg = [ctr.toArray().map(x=>+x.toFixed(1)), R.toFixed(1)];
   d.position.copy(ctr).add(new THREE.Vector3(R, R * 1.6, R * 0.8)); d.target.position.copy(ctr);
   Object.assign(d.shadow.camera, { left: -R, right: R, top: R, bottom: -R, far: R * 6 }); d.shadow.camera.updateProjectionMatrix();
@@ -36,10 +37,17 @@ window.pose = (name, t) => { mx.stopAllAction(); const c = gl.animations.find(a 
 window.ready = true;
 </script></body></html>`, { url: 'http://x/' });
 await p.waitForFunction(() => window.ready);
+// ALVO=osso,tamanho: câmera de perto num osso (ex.: cabeça)
+if (process.env.ALVO) await p.evaluate(a => { window.ALVO = [a[0], +a[1]]; }, process.env.ALVO.split(','));
 const anims = await p.evaluate(() => window.anims);
 const want = process.argv[3] ? process.argv[3].split(',') : anims.map(a => a[0]);
 for (const [a, dur] of anims.filter(x => want.includes(x[0]))) {
   const t = { parado: 0.3, andar: 0.3, correr: 0.2, morrer: dur * 0.97, dormir: dur * 0.5, voar: 1.5, planar: 2 }[a] ?? dur * 0.45;
+  const nq = +(process.env.QUADROS || 0);      // QUADROS=n: n quadros da animação numa folha só (pasta OUT)
+  if (nq) { const out = process.env.OUT || join(here, 'previas'), fs = [];
+    for (let i = 0; i < nq; i++) { await p.evaluate(([a, t]) => window.pose(a, t), [a, dur * i / (nq - 1) * 0.999]);
+      const f = join(out, `${nome}_${a}_${i}.jpg`); fs.push(f); await p.screenshot({ path: f, type: 'jpeg', quality: 80 }); }
+    execFileSync('montage', [...fs, '-tile', `${nq}x1`, '-geometry', '400x250+2+2', join(out, `${nome}_${a}_seq.jpg`)]); continue; }
   await p.evaluate(([a, t]) => window.pose(a, t), [a, Math.min(t, dur)]);
   await p.screenshot({ path: join(here, 'previas', `${nome}_${a}.jpg`), type: 'jpeg', quality: 85 });
 }

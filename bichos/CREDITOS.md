@@ -44,4 +44,10 @@ Modelos de terceiros usados no jogo (obrigatório manter estes créditos no jogo
 
 | arquivo | observação |
 |---|---|
-| titanoboa | modelo procedural (index.html → buildTitanoboa), sem modelo de terceiros |
+| titanoboa_simples | modelo procedural antigo (index.html → buildTitanoboa); não é exportado por padrão |
+
+## Licença NÃO comercial (atenção)
+
+| arquivo | crédito |
+|---|---|
+| titanoboa | Snake Titanoboa by Dino Raul — kenchoo — **CC BY-NC 4.0** (só uso não comercial; para vender o jogo é preciso trocar este modelo ou pedir licença ao autor) — https://sketchfab.com/3d-models/snake-titanoboa-by-dino-raul-ce8d56f440ea4259b3e328eb9a1a90ca |
