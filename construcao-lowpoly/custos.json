@@ -1,0 +1,436 @@
+{
+  "recursos": {
+    "madeira": {
+      "nome": "Madeira",
+      "vem_de": [
+        "madeira",
+        "madeira_escura",
+        "tronco"
+      ],
+      "m3": 0.04
+    },
+    "palha": {
+      "nome": "Palha",
+      "vem_de": [
+        "palha"
+      ],
+      "m3": 0.25
+    },
+    "graveto": {
+      "nome": "Graveto",
+      "vem_de": [
+        "palha"
+      ],
+      "m3": 0.5
+    },
+    "fibra": {
+      "nome": "Fibra",
+      "vem_de": [
+        "palha"
+      ],
+      "m3": 0.5
+    },
+    "pedra": {
+      "nome": "Pedra",
+      "vem_de": [
+        "pedra"
+      ],
+      "m3": 0.15
+    },
+    "cimento": {
+      "nome": "Pasta de Cimento",
+      "vem_de": [
+        "argamassa"
+      ],
+      "m3": 1
+    },
+    "lingote": {
+      "nome": "Lingote de Metal",
+      "vem_de": [
+        "ferro"
+      ],
+      "m3": 0.0025
+    }
+  },
+  "pecas": {
+    "fundacao_pedra": {
+      "nome": "Fundação de pedra",
+      "categoria": "Fundações",
+      "tamanho": "3 × 3 m (1 m de altura)",
+      "custo": {
+        "pedra": 17,
+        "cimento": 9
+      }
+    },
+    "fundacao_madeira": {
+      "nome": "Fundação de madeira",
+      "categoria": "Fundações",
+      "tamanho": "3 × 3 m",
+      "custo": {
+        "madeira": 60
+      }
+    },
+    "fundacao_triangular": {
+      "nome": "Fundação triangular",
+      "categoria": "Fundações",
+      "tamanho": "triângulo de 3 m de lado",
+      "custo": {
+        "madeira": 35
+      }
+    },
+    "parede_tabuas": {
+      "nome": "Parede de tábuas",
+      "categoria": "Paredes",
+      "tamanho": "3 × 3 m",
+      "custo": {
+        "madeira": 25
+      }
+    },
+    "parede_troncos": {
+      "nome": "Parede de troncos",
+      "categoria": "Paredes",
+      "tamanho": "3 × 3 m",
+      "custo": {
+        "madeira": 50
+      }
+    },
+    "parede_janela": {
+      "nome": "Parede com janela",
+      "categoria": "Paredes",
+      "tamanho": "3 × 3 m (janela 1 × 1,06 m)",
+      "custo": {
+        "madeira": 30
+      }
+    },
+    "batente_porta": {
+      "nome": "Batente de porta",
+      "categoria": "Paredes",
+      "tamanho": "3 × 3 m (vão 1,5 × 2,29 m)",
+      "custo": {
+        "madeira": 25
+      }
+    },
+    "porta": {
+      "nome": "Porta",
+      "categoria": "Paredes",
+      "tamanho": "1,48 × 2,27 m",
+      "custo": {
+        "madeira": 6,
+        "lingote": 2
+      }
+    },
+    "meia_parede": {
+      "nome": "Meia parede",
+      "categoria": "Paredes",
+      "tamanho": "3 × 1,5 m",
+      "custo": {
+        "madeira": 15
+      }
+    },
+    "parede_triangular": {
+      "nome": "Parede triangular (empena)",
+      "categoria": "Paredes",
+      "tamanho": "3 m de base × 3 m de altura (45°)",
+      "custo": {
+        "madeira": 25
+      }
+    },
+    "teto_madeira": {
+      "nome": "Teto / piso de madeira",
+      "categoria": "Teto e piso",
+      "tamanho": "3 × 3 m (0,2 m)",
+      "custo": {
+        "madeira": 25
+      }
+    },
+    "telhado_palha": {
+      "nome": "Telhado de palha (45°)",
+      "categoria": "Telhados",
+      "tamanho": "cobre 3 × 3 m, sobe 3 m",
+      "custo": {
+        "madeira": 20,
+        "palha": 30,
+        "graveto": 14,
+        "fibra": 14
+      }
+    },
+    "telhado_tabuinhas": {
+      "nome": "Telhado de tabuinhas (45°)",
+      "categoria": "Telhados",
+      "tamanho": "cobre 3 × 3 m, sobe 3 m",
+      "custo": {
+        "madeira": 40
+      }
+    },
+    "cumeeira": {
+      "nome": "Cumeeira",
+      "categoria": "Telhados",
+      "tamanho": "3 m",
+      "custo": {
+        "madeira": 14
+      }
+    },
+    "ornamento_empena": {
+      "nome": "Ornamento de empena",
+      "categoria": "Telhados",
+      "tamanho": "~1,9 m",
+      "custo": {
+        "madeira": 2
+      }
+    },
+    "pilar": {
+      "nome": "Pilar",
+      "categoria": "Estrutura",
+      "tamanho": "3 m de altura",
+      "custo": {
+        "madeira": 8
+      }
+    },
+    "viga": {
+      "nome": "Viga",
+      "categoria": "Estrutura",
+      "tamanho": "3 m",
+      "custo": {
+        "madeira": 4
+      }
+    },
+    "escada": {
+      "nome": "Escada",
+      "categoria": "Estrutura",
+      "tamanho": "1,5 m de largura, sobe 3 m em 3 m",
+      "custo": {
+        "madeira": 16
+      }
+    },
+    "cerca": {
+      "nome": "Cerca",
+      "categoria": "Estrutura",
+      "tamanho": "3 × 1,2 m",
+      "custo": {
+        "madeira": 2
+      }
+    },
+    "muro_pedra": {
+      "nome": "Muro de pedra",
+      "categoria": "Muros e portões",
+      "tamanho": "3 × 3 m (0,9 m de espessura)",
+      "custo": {
+        "pedra": 30,
+        "cimento": 5
+      }
+    },
+    "muro_ameias": {
+      "nome": "Ameias (topo do muro)",
+      "categoria": "Muros e portões",
+      "tamanho": "3 × 1 m",
+      "custo": {
+        "pedra": 7,
+        "cimento": 1
+      }
+    },
+    "torre_pedra": {
+      "nome": "Torre de canto",
+      "categoria": "Muros e portões",
+      "tamanho": "1,4 × 1,4 × 5,3 m",
+      "custo": {
+        "pedra": 35,
+        "cimento": 6
+      }
+    },
+    "portal_pedra": {
+      "nome": "Portal grande de pedra",
+      "categoria": "Muros e portões",
+      "tamanho": "6 × 6,6 m (vão de 4,2 × 4,8 m)",
+      "custo": {
+        "pedra": 130,
+        "cimento": 10,
+        "lingote": 9
+      }
+    },
+    "portao_grande_esq": {
+      "nome": "Portão grande (folha esquerda)",
+      "categoria": "Muros e portões",
+      "tamanho": "2,08 × 4,76 m",
+      "custo": {
+        "madeira": 35,
+        "lingote": 15
+      }
+    },
+    "portao_grande_dir": {
+      "nome": "Portão grande (folha direita)",
+      "categoria": "Muros e portões",
+      "tamanho": "2,08 × 4,76 m",
+      "custo": {
+        "madeira": 35,
+        "lingote": 15
+      }
+    },
+    "parede_pedra_p": {
+      "nome": "Parede de pedra P",
+      "categoria": "Paredes de pedra",
+      "tamanho": "1,5 × 3 m (0,5 m de espessura)",
+      "custo": {
+        "pedra": 11,
+        "cimento": 1
+      }
+    },
+    "parede_pedra_m": {
+      "nome": "Parede de pedra M",
+      "categoria": "Paredes de pedra",
+      "tamanho": "3 × 3 m (0,5 m de espessura)",
+      "custo": {
+        "pedra": 20,
+        "cimento": 2
+      }
+    },
+    "parede_pedra_g": {
+      "nome": "Parede de pedra G",
+      "categoria": "Paredes de pedra",
+      "tamanho": "6 × 3 m (0,5 m de espessura)",
+      "custo": {
+        "pedra": 45,
+        "cimento": 5
+      }
+    },
+    "piso_pedra_p": {
+      "nome": "Piso de pedra P",
+      "categoria": "Pisos de pedra",
+      "tamanho": "1,5 × 1,5 m (0,3 m)",
+      "custo": {
+        "pedra": 3,
+        "cimento": 1
+      }
+    },
+    "piso_pedra_m": {
+      "nome": "Piso de pedra M",
+      "categoria": "Pisos de pedra",
+      "tamanho": "3 × 3 m (0,3 m)",
+      "custo": {
+        "pedra": 9,
+        "cimento": 1
+      }
+    },
+    "piso_pedra_g": {
+      "nome": "Piso de pedra G",
+      "categoria": "Pisos de pedra",
+      "tamanho": "6 × 6 m (0,3 m)",
+      "custo": {
+        "pedra": 35,
+        "cimento": 6
+      }
+    },
+    "escada_pedra_p": {
+      "nome": "Escada de pedra P",
+      "categoria": "Escadas de pedra",
+      "tamanho": "1,5 m de largura, sobe 1,5 m em 1,5 m",
+      "custo": {
+        "pedra": 10,
+        "cimento": 1
+      }
+    },
+    "escada_pedra_m": {
+      "nome": "Escada de pedra M",
+      "categoria": "Escadas de pedra",
+      "tamanho": "3 m de largura, sobe 3 m em 3 m (um andar)",
+      "custo": {
+        "pedra": 40,
+        "cimento": 12
+      }
+    },
+    "escada_pedra_g": {
+      "nome": "Escada de pedra G",
+      "categoria": "Escadas de pedra",
+      "tamanho": "6 m de largura, sobe 3 m em 3 m (escadaria)",
+      "custo": {
+        "pedra": 70,
+        "cimento": 25
+      }
+    },
+    "rampa_pedra_p": {
+      "nome": "Rampa de pedra P",
+      "categoria": "Rampas de pedra",
+      "tamanho": "1,5 × 3 m, sobe 1,5 m",
+      "custo": {
+        "pedra": 11,
+        "cimento": 2
+      }
+    },
+    "rampa_pedra_m": {
+      "nome": "Rampa de pedra M",
+      "categoria": "Rampas de pedra",
+      "tamanho": "3 × 6 m, sobe 3 m (um andar)",
+      "custo": {
+        "pedra": 45,
+        "cimento": 25
+      }
+    },
+    "rampa_pedra_g": {
+      "nome": "Rampa de pedra G",
+      "categoria": "Rampas de pedra",
+      "tamanho": "6 × 6 m, sobe 3 m (larga, para montarias)",
+      "custo": {
+        "pedra": 70,
+        "cimento": 50
+      }
+    },
+    "ponte_p": {
+      "nome": "Ponte P",
+      "categoria": "Pontes",
+      "tamanho": "6 m de vão × 3 m de largura",
+      "custo": {
+        "madeira": 110
+      }
+    },
+    "ponte_m": {
+      "nome": "Ponte M",
+      "categoria": "Pontes",
+      "tamanho": "9 m × 3 m, 1 pilar de pedra (4 m de altura)",
+      "custo": {
+        "madeira": 150,
+        "pedra": 95,
+        "cimento": 13
+      }
+    },
+    "ponte_g": {
+      "nome": "Ponte G",
+      "categoria": "Pontes",
+      "tamanho": "15 m × 3 m, 2 pilares de pedra (4 m de altura)",
+      "custo": {
+        "madeira": 240,
+        "pedra": 185,
+        "cimento": 25
+      }
+    }
+  },
+  "cenas": {
+    "casa_exemplo": {
+      "nome": "Casa de exemplo",
+      "custo": {
+        "pedra": 102,
+        "cimento": 54,
+        "madeira": 1235,
+        "lingote": 2,
+        "palha": 180,
+        "graveto": 84,
+        "fibra": 84
+      }
+    },
+    "mostruario_pmg": {
+      "nome": "Mostruário P / M / G",
+      "custo": {
+        "pedra": 654,
+        "cimento": 169,
+        "madeira": 500
+      }
+    },
+    "muralha_exemplo": {
+      "nome": "Fortaleza de exemplo",
+      "custo": {
+        "pedra": 720,
+        "cimento": 106,
+        "lingote": 39,
+        "madeira": 102
+      }
+    }
+  }
+}
