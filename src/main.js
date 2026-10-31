@@ -28,7 +28,6 @@ import { BuildGhost } from './world/building.js';
 import { saddleFor } from './creatures/saddle.js';
 import { itemName } from './items/items.js';
 import { DamageNumbers } from './ui/damage_numbers.js';
-import { Perigo } from './ui/perigo.js';
 import { CreatureMenu } from './ui/creature_menu.js';
 import { ActionWheel } from './ui/action_wheel.js';
 import { WhistleWheel } from './ui/whistle_wheel.js';
@@ -375,7 +374,6 @@ function boot(hotData = {}) {
     };
     const hotbar = new Hotbar(ui, inventory, (i) => actions.pressHotbar(i));
     const damageNumbers = new DamageNumbers(ui);
-    const perigo = new Perigo(ui);
     const whistle = new WhistleWheel(ui, { creatures, player, camCtl, onClose: () => closeCreatureMenu() });
     const actionWheel = new ActionWheel(ui, {
       onClose: () => closeCreatureMenu(),
@@ -444,7 +442,7 @@ function boot(hotData = {}) {
     game.world = world;
     game.player = player;
     ctx = {
-      world, player, camCtl, interaction, hud, minimap, mapScreen, inspect, buildGhost, messages, touch, death, debug, pause, help, creatures, hands, damageNumbers, perigo,
+      world, player, camCtl, interaction, hud, minimap, mapScreen, inspect, buildGhost, messages, touch, death, debug, pause, help, creatures, hands, damageNumbers,
       inventory, crafting, actions, hotbar, invScreen, creatureMenu, whistle, actionWheel,
     };
     ctx.net = new Multiplayer({ world, player, creatures, inventory, actions, camCtl });
@@ -1275,7 +1273,8 @@ function boot(hotData = {}) {
     if (hands.toolKind !== toolKind) hands.setTool(toolKind);
     player.model.setTool(toolKind);
     damageNumbers.update(dt, camera);
-    ctx.perigo.update(dt, { player, creatures, yaw: camCtl.yaw, ativo: game.state === STATE.PLAYING && !photo });
+    // trilha de perseguição (como no ARK): toca quando um bicho selvagem está te caçando, mais forte quanto mais perto
+    sound.setPerseguicao(game.state === STATE.PLAYING && !player.dead && !photo ? creatures.nivelPerseguicao(player) : 0);
     hands.update(dt, {
       visible: !photo && game.state === STATE.PLAYING && camCtl.mode === 'primeira' && !player.dead,
       speed: Math.hypot(player.velocity.x, player.velocity.z),

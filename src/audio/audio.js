@@ -83,6 +83,8 @@ class Sound {
     this._muffled = false;
     this.musicVolume = 0.35;
     this._music = { next: 0, bar: 0, step: 0 };
+    // trilha de perseguição: alvo (0..1) vem do jogo, lvl é o valor suavizado
+    this._chase = { alvo: 0, lvl: 0, next: 0, step: 0 };
   }
 
   // Precisa de um toque/clique do jogador para começar (regra dos navegadores).
@@ -117,6 +119,9 @@ class Sound {
         this.musicBus = c.createGain();
         this.musicBus.gain.value = this.musicVolume;
         this.musicBus.connect(this.master);
+        this.chaseBus = c.createGain();
+        this.chaseBus.gain.value = 1;
+        this.chaseBus.connect(this.master);
         // eco de floresta (reverberação gerada aqui)
         this.verbIn = c.createGain();
         this.verbIn.gain.value = 0.32;
@@ -147,7 +152,7 @@ class Sound {
   // Música (separada dos efeitos).
   setMusicVolume(v) {
     this.musicVolume = v;
-    if (this.musicBus) this.musicBus.gain.setTargetAtTime(v, this.ctx.currentTime, 0.2);
+    if (this.musicBus) this.musicBus.gain.setTargetAtTime(v * (1 - 0.85 * this._chase.lvl), this.ctx.currentTime, 0.2);
   }
 
   setVolume(v) {
@@ -779,6 +784,7 @@ class Sound {
     const a = this._amb;
     a.t += dt;
     this._updateMusic(night);
+    this._updateChase(dt);
     // cigarras: zumbido contínuo de dia, some à noite
     if (this._cicada) this._cicada.g.gain.setTargetAtTime(night ? 0 : 0.018 + 0.012 * Math.sin(a.t * 0.4), t, 1.5);
 
@@ -994,6 +1000,101 @@ class Sound {
     }
     M.next = t0 + barLen;
     M.bar++;
+  }
+
+  // ---------------------------------------------------------
+  // Trilha de perseguição (como no ARK): quando um bicho selvagem
+  // está te caçando, a música calma abaixa e entra batida de tambor,
+  // um motivo grave em Lá frígio e, bem perto, golpes agudos.
+  // nivel = 0..1 (0 = ninguém caçando). Tudo gerado aqui.
+  // ---------------------------------------------------------
+  setPerseguicao(nivel) {
+    this._chase.alvo = nivel;
+  }
+
+  _updateChase(dt) {
+    const C = this._chase;
+    if (!this.chaseBus || !this.musicBus) return;
+    // sobe rápido (0,4 s), desce devagar (3 s) para a música não cortar de repente
+    const k = C.alvo > C.lvl ? 1 - Math.exp(-dt / 0.4) : 1 - Math.exp(-dt / 3);
+    C.lvl += (C.alvo - C.lvl) * k;
+    if (C.lvl < 0.02 && C.alvo <= 0) {
+      if (C.lvl !== 0) {
+        C.lvl = 0;
+        this.musicBus.gain.setTargetAtTime(this.musicVolume, this.ctx.currentTime, 0.6);
+      }
+      C.next = 0;
+      return;
+    }
+    const c = this.ctx;
+    const lvl = C.lvl;
+    // música calma abaixa; a de perseguição segue o mesmo controle de volume da música
+    this.musicBus.gain.setTargetAtTime(this.musicVolume * (1 - 0.85 * lvl), c.currentTime, 0.25);
+    this.chaseBus.gain.setTargetAtTime(this.musicVolume > 0.001 ? Math.min(1.6, this.musicVolume * 2.6) : 0, c.currentTime, 0.2);
+    if (this.musicVolume <= 0.001) return;
+    if (C.next < c.currentTime) {
+      C.next = c.currentTime + 0.05;
+      C.step = 0;
+    }
+    // agenda 1 colcheia de cada vez, um pouco antes da hora
+    const colcheia = 0.19; // ~158 batidas por minuto
+    while (C.next - c.currentTime < 0.45) {
+      this._chaseStep(C.next, C.step, lvl, colcheia);
+      C.next += colcheia;
+      C.step = (C.step + 1) % 16;
+    }
+  }
+
+  _chaseStep(t, step, lvl, dur) {
+    const c = this.ctx;
+    const out = this.chaseBus;
+    const hz = (n) => 440 * Math.pow(2, (n - 69) / 12);
+    // bumbo a cada tempo (e "galope" nas contratempos quando está perto)
+    if (step % 2 === 0) {
+      this._osc('sine', 150, t, 0.2, out, 0.55 + 0.35 * lvl, 0.004, 48);
+      this._noise(t, 0.05, out, { peak: 0.1 + 0.15 * lvl, type: 'highpass', f: 2500 }); // estalo p/ celular ouvir
+    }
+    if (lvl > 0.5 && step % 4 === 3) this._osc('sine', 130, t, 0.14, out, 0.3 + 0.2 * lvl, 0.004, 52);
+    // tambor grave no começo de cada compasso de 8 colcheias
+    if (step % 8 === 0) this._noise(t, 0.35, out, { peak: 0.25 + 0.25 * lvl, type: 'lowpass', f: 420, fTo: 120, brown: true });
+    // motivo grave em Lá frígio (A, A, C, A, Bb, A, C, Eb) – entra a partir de um nível médio
+    if (lvl > 0.3) {
+      const NOTAS = [57, 57, 60, 57, 58, 57, 60, 63];
+      const o = c.createOscillator();
+      o.type = 'sawtooth';
+      o.frequency.value = hz(NOTAS[step % 8]);
+      const lp = c.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = 650 + 900 * lvl;
+      const g = c.createGain();
+      this._env(g.gain, t, 0.05 + 0.07 * lvl, 0.012, dur * 1.7);
+      o.connect(lp).connect(g).connect(out);
+      o.start(t);
+      o.stop(t + dur * 1.7 + 0.1);
+    }
+    // cordas tensas (trítono) sustentadas: uma por compasso
+    if (step % 8 === 0) {
+      for (const n of [45, 51, 57]) {
+        const o = c.createOscillator();
+        o.type = 'sawtooth';
+        o.frequency.value = hz(n);
+        const lp = c.createBiquadFilter();
+        lp.type = 'lowpass';
+        lp.frequency.value = 800;
+        const g = c.createGain();
+        const pico = (n === 57 ? 0.018 : 0.03) * (0.4 + 0.6 * lvl);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(pico, t + dur * 3);
+        g.gain.linearRampToValueAtTime(0.0001, t + dur * 8.2);
+        o.connect(lp).connect(g).connect(out);
+        o.start(t);
+        o.stop(t + dur * 8.3);
+      }
+    }
+    // golpes agudos de cordas quando o bicho está bem perto
+    if (lvl > 0.75 && (step % 8 === 0 || step % 8 === 4)) {
+      this._osc('sawtooth', hz(81), t, dur * 1.4, out, 0.035 * lvl, 0.01, hz(82) * 0.97);
+    }
   }
 
   _tocarFaixa(night, buf) {

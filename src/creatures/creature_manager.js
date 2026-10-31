@@ -376,6 +376,19 @@ export class CreatureManager {
   // Carcaças: carne, couro e ossos
   // ---------------------------------------------------------
   // Carcaça com carne perto (carnívoro com fome vai comer).
+  /** 0..1: quão perto está o bicho selvagem que te caça (0 = ninguém caçando). Alimenta a trilha de perseguição. */
+  nivelPerseguicao(player) {
+    let melhor = Infinity;
+    for (const c of this.list) {
+      if (!c.alive || c.tamed || c.netControlled || c.target !== player) continue;
+      if (c.state !== CSTATE.CHASE && c.state !== CSTATE.ATTACK) continue;
+      const d = Math.hypot(c.position.x - player.position.x, c.position.z - player.position.z);
+      if (d < melhor) melhor = d;
+    }
+    if (melhor > 75) return 0;
+    return Math.min(1, Math.max(0.25, 1 - (melhor - 8) / 67));
+  }
+
   nearestCarcass(pos, radius) {
     let best = null;
     let bestD = radius;
