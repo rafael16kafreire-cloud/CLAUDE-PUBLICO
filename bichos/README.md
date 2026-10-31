@@ -29,8 +29,9 @@ Para usar um modelo realista que já existe (sem esqueleto ou com esqueleto dife
    (mesmos nomes de ossos) e as 8 animações, mais `previas/<nome>_ossos.jpg` para conferir o encaixe.
    Se algum osso ficar fora do lugar, corrija com `"ajuste"` no JSON (ex.: `zQuadril`, `yQuadril`, `zPescoco`, `zCranio`, `zPe`, `xPe`).
 
-Teste incluído: `config/teste_trex.json`, usando o T-Rex do pacote CC0 "Animated LowPoly Dinosaurs"
-de [Quaternius](https://quaternius.itch.io/animated-lowpoly-dinosaurs) com o esqueleto original removido.
+Os modelos originais (baixados do Sketchfab) e os arquivos intermediários não ficam no repositório, só os `.glb` prontos em `modelos/`.
+Para refazer um bicho: baixe o original pelo link em `CREDITOS.md`, salve em `originais/` com o nome usado no `config/<nome>.json`
+(campo `entrada`/`modelo`), rode o `preparar.py` (veja o campo `preparo` no JSON, se houver) e depois `animar.mjs` ou `adaptar.mjs`.
 
 **Licença dos modelos:** use só modelos feitos por você/sua IA ou com licença CC0/CC-BY do próprio autor.
 Modelos extraídos de jogos (ex.: ARK, Jurassic World Evolution) não podem ir para o jogo, mesmo que o site diga "grátis".

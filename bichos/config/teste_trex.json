@@ -1,2 +1,0 @@
-{ "nome": "teste_trex", "titulo": "Teste (T-Rex CC0 sem esqueleto)", "modelo": "../teste/trex_parado.glb",
-  "comprimento": 12, "rot": [0, 0, 0], "tipo": "bipede", "ataque": "mordida", "rugido": "baixo", "cabeca": 0.13, "braco": 0.04 }
