@@ -2278,3 +2278,32 @@ body.inv-open #ui > .hud, body.inv-open #ui > .hotbar, body.inv-open #ui > .hud-
 .sun-haze { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen; --hx: 50%; --hy: 30%; --hc: 255, 190, 110;
   background: radial-gradient(circle at var(--hx) var(--hy), rgba(var(--hc), 0.62) 0, rgba(var(--hc), 0.34) 22%, rgba(var(--hc), 0.14) 50%, rgba(var(--hc), 0.05) 80%, transparent 120%); }
 .sun-haze[hidden] { display: none; }
+
+/* ---------------- Jogos salvos ---------------- */
+.saves-overlay { z-index: 40; background: rgba(4, 12, 16, 0.78); }
+.saves-panel {
+  position: relative; width: min(760px, 100%); max-height: 100%; overflow-y: auto; box-sizing: border-box;
+  padding: 14px 16px 12px; background: rgba(8, 22, 30, 0.96); border: 1px solid rgba(110, 215, 245, 0.45); border-radius: 8px; color: #d4f4ff;
+}
+.saves-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.saves-head h2 { margin: 0; font: 700 22px var(--font-ui); letter-spacing: 0.04em; color: #bff1ff; }
+.saves-x { background: none; border: 1px solid rgba(110, 215, 245, 0.45); color: #bff1ff; font-size: 18px; width: 36px; height: 36px; border-radius: 6px; cursor: pointer; }
+.saves-list { display: flex; flex-direction: column; gap: 8px; }
+.save-card {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  padding: 8px 10px; background: rgba(14, 40, 52, 0.7); border: 1px solid rgba(110, 215, 245, 0.25); border-radius: 6px;
+}
+.save-card.vazio { opacity: 0.85; border-style: dashed; }
+.save-card.ativo { border-color: #6fe6ff; box-shadow: 0 0 0 1px rgba(111, 230, 255, 0.35) inset; }
+.save-info { display: flex; flex-direction: column; gap: 2px; min-width: 190px; flex: 1; }
+.save-info b { font-size: 15px; color: #e8fbff; }
+.save-info span { font-size: 13px; color: #9fd3e6; }
+.save-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.save-btns .btn { min-height: 34px; padding: 0 12px; font-size: 14px; }
+.btn-danger { border-color: #d65a4a; color: #ffb4a8; }
+.saves-note { margin: 10px 2px 0; font-size: 12px; color: #7fb4c8; }
+.saves-confirm { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(2, 8, 12, 0.82); border-radius: 8px; }
+.saves-confirm[hidden] { display: none; }
+.saves-confirm-box { width: min(420px, 90%); padding: 16px; background: #0b2430; border: 1px solid #6fe6ff; border-radius: 8px; text-align: center; }
+.saves-confirm-box p { margin: 0 0 14px; font-size: 16px; line-height: 1.35; color: #e8fbff; }
+.saves-confirm-btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }

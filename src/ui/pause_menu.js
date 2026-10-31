@@ -30,7 +30,7 @@ const KEYS = [
 ];
 
 export class PauseMenu {
-  constructor(root, { onResume, onHelp, onQuitToMenu, onCloseApp, onSaveSlot, onLoadSlot, onLeaveCoop, onAdjustButtons }) {
+  constructor(root, { onResume, onHelp, onQuitToMenu, onCloseApp, onSaveSlot, onLoadSlot, onLeaveCoop, onAdjustButtons, onOpenSaves }) {
     const el = document.createElement('div');
     el.className = 'overlay pause';
     el.hidden = true;
@@ -163,6 +163,7 @@ export class PauseMenu {
           <h2>SALVAR JOGO</h2>
           <button type="button" class="ark-square ark-x" data-go="main" aria-label="Fechar">✕</button>
         </div>
+        <button type="button" class="btn btn-small" id="pause-saves">Jogos salvos (escolher, novo, apagar, resetar nível)</button>
         <div class="save-list" id="save-list"></div>
       </div>
     `;
@@ -209,6 +210,7 @@ export class PauseMenu {
     el.querySelectorAll('.po-cat').forEach((b) => b.addEventListener('click', () => this.cat(b.dataset.cat)));
     this.cat('audio');
     this.saveList = $('save-list');
+    $('pause-saves')?.addEventListener('click', () => onOpenSaves?.());
     this.onSaveSlot = onSaveSlot;
     this.onLoadSlot = onLoadSlot;
     $('pause-resume').addEventListener('click', () => onResume());

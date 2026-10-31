@@ -58,7 +58,7 @@ const TIPS = [
 ];
 
 export class StartScreen {
-  constructor(root, { onPlay, onHost, onJoin, onNewGame, onLoadSlot, playerName = '' }) {
+  constructor(root, { onPlay, onHost, onJoin, onNewGame, onLoadSlot, onOpenSaves, playerName = '' }) {
     const el = document.createElement('div');
     el.className = 'overlay start';
     el.innerHTML = `
@@ -93,6 +93,7 @@ export class StartScreen {
         <p class="eyebrow">v${typeof __VERSION__ !== 'undefined' ? __VERSION__ : ''}</p>
         <section class="menu-page" data-page="jogar">
         <button type="button" class="btn btn-small btn-new" id="btn-new" hidden>Novo jogo (apaga o salvo)</button>
+        <button type="button" class="btn btn-small" id="btn-saves">Jogos salvos</button>
         <details class="load-box" id="load-box" hidden><summary>Carregar jogo salvo</summary><div class="save-list" id="start-slots"></div></details>
         <p class="menu-tip" id="menu-tip"></p>
         </section>
@@ -162,6 +163,7 @@ export class StartScreen {
     this.button = el.querySelector('#btn-play');
     this.button.addEventListener('click', () => onPlay());
     this.onLoadSlot = onLoadSlot;
+    el.querySelector('#btn-saves')?.addEventListener('click', () => onOpenSaves?.());
     this._renderSlots();
     this.newButton = el.querySelector('#btn-new');
     this.newButton.addEventListener('click', () => {

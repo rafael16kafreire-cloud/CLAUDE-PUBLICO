@@ -31,7 +31,8 @@ import { DamageNumbers } from './ui/damage_numbers.js';
 import { CreatureMenu } from './ui/creature_menu.js';
 import { ActionWheel } from './ui/action_wheel.js';
 import { WhistleWheel } from './ui/whistle_wheel.js';
-import { loadGame, saveGame, clearSave, saveSlot, useSlot, hasSave } from './core/save.js';
+import { loadGame, saveGame, clearSave, saveSlot, useSlot, hasSave, setActiveSlot, deleteSlot, resetLevelSlot, resetLevelMain, newGameInSlot, getActiveSlot } from './core/save.js';
+import { SaveScreen } from './ui/save_screen.js';
 import { LoadingScreen } from './ui/loading_screen.js';
 import { Messages } from './ui/messages.js';
 import { TouchControls } from './ui/touch_controls.js';
@@ -123,7 +124,34 @@ function boot(hotData = {}) {
 
   let ctx = null; // tudo do jogo, criado depois de gerar a ilha
 
+  // Tela de Jogos salvos (escolher, novo, apagar, resetar nível). Recarregar a página para aplicar:
+  // trava o salvamento automático (senão o jogo aberto regrava por cima do que acabou de ser mudado).
+  const recarregar = (entrarDireto = true) => {
+    window.__semSalvar = true;
+    try { if (entrarDireto) sessionStorage.setItem('ilha-primordial:auto-continuar', '1'); } catch { /* ok */ }
+    window.location.reload();
+  };
+  const noJogo = () => !!ctx && game.state !== STATE.MENU;
+  const saves = new SaveScreen(ui, {
+    onContinue: () => { saves.close(); entrar(); },
+    onPlaySlot: (n) => { setActiveSlot(n); loadSlotAndRestart(n); },
+    onNewInSlot: (n) => { newGameInSlot(n); recarregar(true); },
+    onDeleteSlot: (n) => { deleteSlot(n); },
+    onResetSlot: (n) => {
+      const ativo = getActiveSlot() === n;
+      resetLevelSlot(n);
+      if (ativo && noJogo()) recarregar(true);
+    },
+    onResetMain: () => { resetLevelMain(); if (noJogo()) recarregar(true); else saves.render(); },
+    onSaveHere: (n) => {
+      const ok = saveSlot(n, gameSnapshot());
+      if (ok) setActiveSlot(n);
+      events.emit(EV.MESSAGE, { text: ok ? `Jogo salvo no Espaço ${n}.` : 'Não deu para salvar (sem espaço no aparelho).', kind: ok ? 'gain' : 'warn' });
+    },
+  });
+
   const start = new StartScreen(ui, {
+    onOpenSaves: () => saves.open({ inGame: false }),
     onPlay: () => entrar(),
     onLoadSlot: (n) => loadSlotAndRestart(n),
     onHost: (name) => hostCoop(name),
@@ -397,6 +425,7 @@ function boot(hotData = {}) {
         events.emit(EV.MESSAGE, { text: ok ? `Jogo salvo no Espaço ${n}.` : 'Não deu para salvar (sem espaço no aparelho).', kind: ok ? 'gain' : 'warn' });
       },
       onLoadSlot: (n) => loadSlotAndRestart(n),
+      onOpenSaves: () => saves.open({ inGame: true }),
       // ajustar botões: esconde o menu, arrasta, Travar salva e volta ao menu
       onAdjustButtons: () => {
         ctx.pause.hide();
@@ -592,6 +621,7 @@ function boot(hotData = {}) {
   // Carregar um espaço: vira o salvo principal e o jogo recomeça dele.
   function loadSlotAndRestart(n) {
     if (!useSlot(n)) return;
+    window.__semSalvar = true; // não deixa o jogo aberto regravar por cima do espaço escolhido
     sessionStorage.setItem('ilha-primordial:auto-continuar', '1');
     window.location.reload();
   }
@@ -769,7 +799,7 @@ function boot(hotData = {}) {
 
   // Salva (não no co-op como convidado: o mundo é do anfitrião).
   function autosave() {
-    if (!ctx || game.state === STATE.MENU || game.playTime < 2 || ctx.creatures.netClient) return;
+    if (window.__semSalvar || !ctx || game.state === STATE.MENU || game.playTime < 2 || ctx.creatures.netClient) return;
     saveGame(gameSnapshot());
   }
   setInterval(autosave, 30000);
