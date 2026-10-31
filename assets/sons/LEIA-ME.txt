@@ -1,0 +1,46 @@
+SONS GRAVADOS (opcional)
+========================
+Ponha aqui arquivos .mp3, .ogg ou .wav com o NOME do som. O jogo toca o
+arquivo no lugar do som gerado por código. Variações: nome_1.mp3,
+nome_2.mp3 ... (o jogo sorteia uma e muda um pouco o tom).
+
+Jogador e coleta:
+  passo_mato  passo_areia  passo_agua  passo_neve  (ou só "passo")
+  esforco (o "huss" ao bater)  golpe (golpe no ar)  dor  morte  pulo  queda
+  madeira  pedra  folhas  carne  comer  beber  splash  acender  colocar
+  pegar  criar  nivel  clique
+
+Bichos: bicho_<espécie> ou bicho_<espécie>_<tipo>
+  espécies: trex espinossauro carnotauro reidodo raptor dilofossauro onca
+    deinosuchus titanoboa aranha triceratops estegossauro anquilossauro
+    paquicefalossauro parassauro braquiossauro mamute galimimo dodo
+    capivara compsognato pterodactilo quetzalcoatlus argentavis arara
+  tipos: chamado (à toa)  rugido (viu você)  ataque  dor  morte
+  ex.: bicho_trex_rugido.mp3, bicho_raptor_ataque_1.mp3, bicho_mamute.mp3
+
+Depois: npm run build (gera o jogo de novo).
+Atenção à licença dos sons (sons de outros jogos só como provisório).
+
+SONS PROVISÓRIOS DO ARK (NÃO PUBLICAR COM ELES)
+-----------------------------------------------
+Os arquivos bicho_*.mp3 que estão aqui foram cortados do "ARK Survival
+Evolved Soundboard" (101soundboards.com). São sons do jogo ARK, da
+Studio Wildcard: servem só para testar. Troque por sons próprios ou com
+licença livre antes de publicar o jogo.
+Qual som do ARK virou qual bicho:
+  Argentavis -> argentavis   Dodo -> dodo   Dodorex -> reidodo
+  Quetzal -> quetzalcoatlus   Dimorphodon -> pterodactilo
+  Giganotosaurus -> trex   Sarco -> deinosuchus   Xiphactinus -> piranha
+  Microraptor -> compsognato e dilofossauro   Ravager -> onca
+  Brood Mother -> aranha   Turkey -> galimimo   Dragon -> espinossauro
+  Magmasaur -> carnotauro   Zilla -> argentinossauro
+  Astrocetus -> mosassauro   Pelagornis -> arara
+Para tirar: apague os bicho_*.mp3 e rode npm run build (volta o som
+feito por código).
+
+SONS LIVRES (Kenney, CC0 – pode publicar)
+-----------------------------------------
+pegar_*, folhas_*, madeira_*, pedra_*, colocar_*, criar_*, clique_*,
+carne_*, passo_mato_*, passo_neve_*, passo_areia_* (.ogg) vêm dos
+pacotes "RPG Audio", "Impact Sounds" e "Interface Sounds" de
+Kenney.nl, licença CC0 (domínio público). Ver LICENCA-kenney.txt.
