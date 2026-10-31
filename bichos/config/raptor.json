@@ -1,0 +1,6 @@
+{ "nome": "raptor", "entrada": "../originais/raptor_ferocious.glb", "saida": "../modelos/raptor.glb", "comprimento": 3.2,
+  "osso_cabeca": "Head_09", "osso_cauda": "Root_02", "remover": ["Icosphere"],
+  "animacoes": { "parado": "Idle_01", "andar": "Walk", "correr": "Sprint", "atacar": "Bite_01", "rugir": "Roar_01",
+                 "comer": "Eat Prey", "dormir": "Sleep_Loop", "morrer": "Death_01",
+                 "pular": "Leap_01", "farejar": "Sniff", "beber": "Drink", "ferido": "Hurt_01", "trotar": "Jog", "chamar": "Call_Alert" },
+  "fonte": "PBR Velociraptor (Animated) — Ferocious Industries — CC BY 4.0 — https://sketchfab.com/3d-models/pbr-velociraptor-animated-8f1744af7b0847a2aabe3df90be802f0" }
