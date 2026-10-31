@@ -2,3 +2,12 @@ Modelos 3D originais enviados pelo Rafael para o jogo ISLA (guardados como viera
 Os bichos convertidos para o jogo ficam em src/creatures/imported/*.js.
 Desde a v0.98.0 (estilo low-poly) o jogo usa o gerador de bichos por código;
 estes arquivos ficam aqui para serem reaproveitados (ex.: novos modelos do Blender).
+
+convertidos_do_jogo/ — os modelos que estavam guardados dentro do jogo (de todas as conversas),
+exportados de volta para .glb (abre no Blender: File > Import > glTF 2.0):
+  bichos/  30 bichos com esqueleto e textura (+ sela). 7 têm animação própria
+           (argentinossauro, carnotauro, mosassauro, pterodáctilo, raptor, sauropelta, triceratops).
+  plantas/ 55 árvores, palmeiras, copas, capins, arbustos, troncos e a caixa.
+  neve/    árvores de neve e a pedra nevada.
+Não são idênticos aos originais: na conversão para o jogo foram reduzidos (menos triângulos, textura menor).
+Gerados por tools/models/exportar_glb_entrada.js.
