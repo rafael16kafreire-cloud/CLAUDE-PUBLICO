@@ -62,6 +62,7 @@
   #info { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 13px; }
   #info b { display: block; font-size: 14px; margin-bottom: 2px; }
   #info span { color: var(--muted); display: block; }
+  #info span.custo { color: var(--text); margin: 3px 0; }
   .dl { display: flex; flex-direction: column; gap: 6px; }
   .nota { color: var(--muted); font-size: 12px; margin-top: 10px; }
   label.check { display: flex; gap: 6px; align-items: center; color: var(--muted); }
@@ -89,6 +90,7 @@
   <div class="grid">
     <button id="btnCasa" class="ativo">🏠 Casa de exemplo</button>
     <button id="btnMuralha">🏰 Fortaleza de exemplo</button>
+    <button id="btnMostruario" class="full">📏 Mostruário P / M / G</button>
     <button id="btnVariar" class="full">🎲 Nova variação</button>
   </div>
 
@@ -253,8 +255,47 @@ function boxUV(g, s, ou, ov) {
   g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
 }
 
+// volume de uma malha fechada (soma de tetraedros) — usado para calcular o custo
+function meshVolume(g) {
+  const p = g.attributes.position; let v = 0;
+  for (let i = 0; i < p.count; i += 3) {
+    _a.fromBufferAttribute(p, i); _b.fromBufferAttribute(p, i + 1); _c.fromBufferAttribute(p, i + 2);
+    v += _a.dot(_t.crossVectors(_b, _c)) / 6;
+  }
+  return Math.abs(v);
+}
+
+/* ------------------------------------------------------------------ */
+/* Materiais de construção (receita de cada peça)                      */
+/* O custo sai do volume real de cada material na peça:                */
+/*   1 Madeira ≈ 0,04 m³ · 1 Pedra ≈ 0,15 m³ · 1 Palha ≈ 0,25 m³ ·      */
+/*   1 Ferro ≈ 0,0025 m³ — mude RECURSOS[x].m3 para balancear o jogo.   */
+/* ------------------------------------------------------------------ */
+const RECURSOS = {
+  madeira: { nome: 'Madeira', icone: '🪵', mats: ['madeira', 'madeira_escura', 'tronco'], m3: 0.04 },
+  pedra: { nome: 'Pedra', icone: '🪨', mats: ['pedra'], m3: 0.15 },
+  palha: { nome: 'Palha', icone: '🌾', mats: ['palha'], m3: 0.25 },
+  ferro: { nome: 'Ferro', icone: '⛓️', mats: ['ferro'], m3: 0.0025 },
+};
+function recipe(vol) {
+  const out = {};
+  for (const [k, r] of Object.entries(RECURSOS)) {
+    const v = r.mats.reduce((s, m) => s + (vol[m] || 0), 0);
+    if (v <= 0) continue;
+    const n = v / r.m3;
+    out[k] = n < 20 ? Math.max(1, Math.round(n)) : Math.round(n / 5) * 5;
+  }
+  return out;
+}
+const custoTexto = c => Object.entries(c).map(([k, n]) => `${RECURSOS[k].icone} ${n} ${RECURSOS[k].nome}`).join(' · ');
+function sumCost(obj) {
+  const tot = {};
+  obj.traverse(o => { if (o.userData.custo) for (const [k, n] of Object.entries(o.userData.custo)) tot[k] = (tot[k] || 0) + n; });
+  return tot;
+}
+
 class Builder {
-  constructor(seed) { this.r = mulberry32(seed); this.parts = {}; this.frame = new THREE.Matrix4(); }
+  constructor(seed) { this.r = mulberry32(seed); this.parts = {}; this.vol = {}; this.frame = new THREE.Matrix4(); }
   rnd(a, b) { return a + (b - a) * this.r(); }
   withFrame(m, fn) { const old = this.frame; this.frame = old.clone().multiply(m); fn(); this.frame = old; }
   add(geom, matKey, { p = [0, 0, 0], rot = [0, 0, 0], tint = 1, jit = 0, uvs = 0.5 } = {}) {
@@ -266,6 +307,7 @@ class Builder {
         a.setXYZ(i, a.getX(i) + (this.r() - .5) * 2 * jit, a.getY(i) + (this.r() - .5) * 2 * jit, a.getZ(i) + (this.r() - .5) * 2 * jit);
     }
     g = g.toNonIndexed();
+    this.vol[matKey] = (this.vol[matKey] || 0) + meshVolume(g);
     boxUV(g, uvs, this.r(), this.r());
     const m = new THREE.Matrix4().compose(new THREE.Vector3(...p),
       new THREE.Quaternion().setFromEuler(new THREE.Euler(...rot)), new THREE.Vector3(1, 1, 1));
@@ -279,7 +321,7 @@ class Builder {
   // tronco/cilindro deitado ao longo do eixo X
   logX(len, r, matKey, o = {}, sides = 7) {
     const g = new THREE.CylinderGeometry(r, r * this.rnd(0.95, 1.05), len, sides, 2);
-    g.rotateX(this.r() * PI * 2); g.rotateZ(PI / 2);
+    g.rotateY(this.r() * PI * 2); g.rotateZ(PI / 2);
     this.add(g, matKey, o);
   }
   // tronco em pé (veio da textura acompanha o comprimento)
@@ -304,6 +346,7 @@ class Builder {
       mesh.name = `${name}_${mk}`; mesh.castShadow = true; mesh.receiveShadow = true;
       group.add(mesh);
     }
+    group.userData.custo = recipe(this.vol);
     return group;
   }
 }
@@ -628,7 +671,114 @@ const PIECES = {
     cat: 'Muros e portões', label: 'Portão grande (folha direita)', size: '2,08 × 4,76 m', pivot: 'dobradiça (canto de baixo); a folha vai para −X',
     build(b) { gateLeaf(b, -1); },
   },
+  parede_pedra_p: stonePiece('Paredes de pedra', 'Parede de pedra P', '1,5 × 3 m (0,5 m de espessura)', 'centro da base', b => stoneWall(b, 1.5)),
+  parede_pedra_m: stonePiece('Paredes de pedra', 'Parede de pedra M', '3 × 3 m (0,5 m de espessura)', 'centro da base', b => stoneWall(b, 3)),
+  parede_pedra_g: stonePiece('Paredes de pedra', 'Parede de pedra G', '6 × 3 m (0,5 m de espessura)', 'centro da base', b => stoneWall(b, 6)),
+
+  piso_pedra_p: stonePiece('Pisos de pedra', 'Piso de pedra P', '1,5 × 1,5 m (0,3 m)', 'centro de baixo (apoia em cima da parede)', b => stoneFloor(b, 1.5)),
+  piso_pedra_m: stonePiece('Pisos de pedra', 'Piso de pedra M', '3 × 3 m (0,3 m)', 'centro de baixo (apoia em cima da parede)', b => stoneFloor(b, 3)),
+  piso_pedra_g: stonePiece('Pisos de pedra', 'Piso de pedra G', '6 × 6 m (0,3 m)', 'centro de baixo (apoia em cima da parede)', b => stoneFloor(b, 6)),
+
+  escada_pedra_p: stonePiece('Escadas de pedra', 'Escada de pedra P', '1,5 m de largura, sobe 1,5 m em 1,5 m', 'centro da base; sobe para −Z', b => stoneStairs(b, 1.5, 1.5, 1.5)),
+  escada_pedra_m: stonePiece('Escadas de pedra', 'Escada de pedra M', '3 m de largura, sobe 3 m em 3 m (um andar)', 'centro da base; sobe para −Z', b => stoneStairs(b, 3, 3, 3)),
+  escada_pedra_g: stonePiece('Escadas de pedra', 'Escada de pedra G', '6 m de largura, sobe 3 m em 3 m (escadaria)', 'centro da base; sobe para −Z', b => stoneStairs(b, 6, 3, 3)),
+
+  rampa_pedra_p: stonePiece('Rampas de pedra', 'Rampa de pedra P', '1,5 × 3 m, sobe 1,5 m', 'centro da base; sobe para −Z', b => stoneRamp(b, 1.5, 3, 1.5)),
+  rampa_pedra_m: stonePiece('Rampas de pedra', 'Rampa de pedra M', '3 × 6 m, sobe 3 m (um andar)', 'centro da base; sobe para −Z', b => stoneRamp(b, 3, 6, 3)),
+  rampa_pedra_g: stonePiece('Rampas de pedra', 'Rampa de pedra G', '6 × 6 m, sobe 3 m (larga, para montarias)', 'centro da base; sobe para −Z', b => stoneRamp(b, 6, 6, 3)),
+
+  ponte_p: stonePiece('Pontes', 'Ponte P', '6 m de vão × 3 m de largura', 'centro do piso da ponte (y = 0 é onde se pisa); comprimento em X', b => bridge(b, 6, [])),
+  ponte_m: stonePiece('Pontes', 'Ponte M', '9 m × 3 m, 1 pilar de pedra (4 m de altura)', 'centro do piso da ponte (y = 0 é onde se pisa); comprimento em X', b => bridge(b, 9, [0])),
+  ponte_g: stonePiece('Pontes', 'Ponte G', '15 m × 3 m, 2 pilares de pedra (4 m de altura)', 'centro do piso da ponte (y = 0 é onde se pisa); comprimento em X', b => bridge(b, 15, [-2.5, 2.5])),
 };
+
+function stonePiece(cat, label, size, pivot, build) { return { cat, label, size, pivot, build }; }
+
+function stoneWall(b, w) {
+  stoneBlock(b, { w, d: 0.5, h: H - 0.25, rowH: 0.39, minL: 0.35, maxL: 0.75, depth: 0.18 });
+  coping(b, w, 0.5, H - 0.25);
+}
+
+function stoneFloor(b, w) {
+  const T = 0.3;
+  stoneBlock(b, { w, d: w, h: T - 0.12, rowH: T - 0.12, minL: 0.4, maxL: 0.8, depth: 0.15 });
+  const top = new THREE.Matrix4().makeTranslation(0, T, 0).multiply(new THREE.Matrix4().makeRotationX(-PI / 2));
+  b.withFrame(top, () => stoneFace(b, w, w, -w / 2, { rowH: w < 2 ? 0.375 : 0.5, minL: 0.45, maxL: 0.9, depth: 0.12 }));
+}
+
+// sistema da rampa/escada: corre em +X local (baixo → alto), largura em Z; girado para subir em −Z
+const RUN_FRAME = () => new THREE.Matrix4().makeRotationY(PI / 2);
+function slopeSides(b, W, L, top, dep = 0.2) {
+  const T = (x, z, ry) => new THREE.Matrix4().makeTranslation(x, 0, z).multiply(new THREE.Matrix4().makeRotationY(ry));
+  b.withFrame(T(0, W / 2, 0), () => stoneFace(b, L, top(L / 2), 0, { rowH: 0.4, minL: 0.4, maxL: 0.8, depth: dep, top }));
+  b.withFrame(T(0, -W / 2, PI), () => stoneFace(b, L, top(L / 2), 0, { rowH: 0.4, minL: 0.4, maxL: 0.8, depth: dep, top: x => top(-x) }));
+}
+
+function stoneRamp(b, W, L, R) {
+  const slope = x => R * (x + L / 2) / L, ang = Math.atan2(R, L), Ls = Math.hypot(L, R);
+  b.withFrame(RUN_FRAME(), () => {
+    const core = new THREE.BoxGeometry(L, R, W - 0.3, 4, 1, 1); core.translate(0, R / 2, 0);
+    b.add(clampTop(core, x => slope(x) - 0.08, 0), 'pedra', { tint: 0.42 });
+    slopeSides(b, W, L, x => slope(x) - 0.04);
+    b.withFrame(new THREE.Matrix4().makeTranslation(L / 2, 0, 0).multiply(new THREE.Matrix4().makeRotationY(PI / 2)),
+      () => stoneFace(b, W - 0.4, R - 0.1, 0, { rowH: 0.4, minL: 0.4, maxL: 0.8, depth: 0.2 }));
+    // lajes do piso inclinado, com frisos para não escorregar
+    b.withFrame(new THREE.Matrix4().makeTranslation(-L / 2, 0, 0).multiply(new THREE.Matrix4().makeRotationZ(ang)), () => {
+      const rows = Math.round(Ls / 0.5), sl = Ls / rows;
+      for (let i = 0; i < rows; i++) {
+        let z = -W / 2;
+        while (z < W / 2 - 0.05) {
+          const zb = Math.min(z + b.rnd(0.5, 1.0), W / 2);
+          b.box(sl - 0.05, 0.12, zb - z - 0.05, 'pedra', { p: [sl * (i + .5), -0.05, (z + zb) / 2], tint: b.stone(), jit: 0.015 });
+          z = zb;
+        }
+      }
+    });
+  });
+}
+
+function stoneStairs(b, W, R, L) {
+  const n = Math.round(R / 0.25), rs = R / n, run = L / n, slope = x => R * (x + L / 2) / L;
+  b.withFrame(RUN_FRAME(), () => {
+    const core = new THREE.BoxGeometry(L, R, W - 0.3, 4, 1, 1); core.translate(0, R / 2, 0);
+    b.add(clampTop(core, x => slope(x) - 0.02, 0), 'pedra', { tint: 0.42 });
+    for (let i = 0; i < n; i++) {
+      let z = -W / 2 + 0.25;
+      while (z < W / 2 - 0.3) {
+        const zb = Math.min(z + b.rnd(0.6, 1.2), W / 2 - 0.25);
+        b.box(run + 0.06, rs, zb - z - 0.04, 'pedra', { p: [-L / 2 + run * (i + .5) + 0.03, rs * (i + .5), (z + zb) / 2], tint: b.stone(), jit: 0.012 });
+        z = zb;
+      }
+    }
+    // muretas laterais (corrimão de pedra), acompanham a inclinação
+    slopeSides(b, W, L, x => Math.min(R + 0.35, slope(x) + 0.45), 0.25);
+    b.withFrame(new THREE.Matrix4().makeTranslation(L / 2, 0, 0).multiply(new THREE.Matrix4().makeRotationY(PI / 2)),
+      () => stoneFace(b, W - 0.5, R, 0, { rowH: 0.4, minL: 0.4, maxL: 0.8, depth: 0.2 }));
+  });
+}
+
+function bridge(b, L, piers) {
+  const W = 3, n = Math.round(L / 0.3), pw = L / n;
+  for (let i = 0; i < n; i++)
+    b.box(pw - 0.02, 0.08, W + b.rnd(0, 0.12), 'madeira', { p: [-L / 2 + pw * (i + .5), -0.04 + b.rnd(-.006, .006), b.rnd(-.04, .04)], tint: b.wood(), jit: 0.007 }, [1, 1, 3]);
+  for (const z of [-1.15, 0, 1.15]) b.logX(L + 0.3, 0.19, 'tronco', { p: [0, -0.27, z], tint: b.wood(), jit: 0.012 });
+  for (const x of [-L / 2 + 0.2, L / 2 - 0.2])
+    for (const z of [-1.2, 1.2]) b.logY(1.8, 0.17, 0.19, 'tronco', { p: [x, -0.95, z], tint: b.wood(), jit: 0.01 });
+  // guarda-corpo
+  const posts = Math.round(L / 1.5);
+  for (const z of [-W / 2 + 0.08, W / 2 - 0.08]) {
+    for (let i = 0; i <= posts; i++) b.logY(1.15, 0.07, 0.085, 'tronco', { p: [-L / 2 + (L / posts) * i, 0.575, z], tint: b.wood(), jit: 0.008 }, 6);
+    b.logX(L + 0.1, 0.065, 'tronco', { p: [0, 1.08, z], tint: b.wood(), jit: 0.01 }, 6);
+    b.box(L, 0.1, 0.05, 'madeira', { p: [0, 0.55, z], tint: b.wood(), jit: 0.01 }, [Math.ceil(L / 1.5), 1, 1]);
+  }
+  for (const x of piers) {
+    stoneBlock(b, { x, w: 1.2, d: W + 0.6, h: 3.85, y0: -4.44, rowH: 0.48, minL: 0.4, maxL: 0.8 });
+    b.box(1.45, 0.15, W + 0.85, 'pedra', { p: [x, -0.515, 0], tint: b.stone(), jit: 0.015 }, [2, 1, 2]);
+    for (const s of [1, -1])   // quebra-mar (ponta do pilar)
+      b.add(new THREE.CylinderGeometry(0.62, 0.62, 3.85, 4, 1), 'pedra', { p: [x, -2.515, s * (W / 2 + 0.3)], rot: [0, PI / 4, 0], tint: b.stone(), jit: 0.02 });
+  }
+}
+
 
 /* ------------------------------------------------------------------ */
 /* Pedra: faces de blocos irregulares sobre um miolo de argamassa      */
@@ -636,7 +786,13 @@ const PIECES = {
 const GATE = { w: 4.2, h: 4.8 };
 
 // uma face de pedras no plano XY, superfície em z = 0, pedras para dentro (−Z)
-function stoneFace(b, w, h, y0, { rowH = 0.5, minL = 0.55, maxL = 1.05, depth = 0.24 } = {}) {
+// corta o topo de uma geometria numa linha: y ≤ fn(x)
+function clampTop(g, fn, floor = -Infinity) {
+  const pa = g.attributes.position;
+  for (let v = 0; v < pa.count; v++) { const t = fn(pa.getX(v)); if (pa.getY(v) > t) pa.setY(v, Math.max(t, floor)); }
+  return g;
+}
+function stoneFace(b, w, h, y0, { rowH = 0.5, minL = 0.55, maxL = 1.05, depth = 0.24, top = null } = {}) {
   const rows = Math.max(1, Math.round(h / rowH)), rh = h / rows;
   for (let r = 0; r < rows; r++) {
     const yc = y0 + rh * (r + .5);
@@ -644,8 +800,13 @@ function stoneFace(b, w, h, y0, { rowH = 0.5, minL = 0.55, maxL = 1.05, depth = 
     while (x < w / 2) {
       const len = b.rnd(minL, maxL), xa = Math.max(x, -w / 2), xb = Math.min(x + len, w / 2);
       if (xb - xa > 0.1) {
-        const dd = depth + b.rnd(0, 0.06);
-        b.box(xb - xa - 0.045, rh - 0.045, dd, 'pedra', { p: [(xa + xb) / 2, yc, dd / 2 - depth], tint: b.stone(), jit: Math.min(0.03, rh * 0.06) });
+        const dd = depth + b.rnd(0, 0.06), bw = xb - xa - 0.045, bh = rh - 0.045, cx = (xa + xb) / 2, jit = Math.min(0.03, rh * 0.06);
+        if (!top) b.box(bw, bh, dd, 'pedra', { p: [cx, yc, dd / 2 - depth], tint: b.stone(), jit });
+        else if (Math.max(top(xa), top(xb)) > yc - bh / 2 + 0.06) {
+          const g = new THREE.BoxGeometry(bw, bh, dd, 2, 1, 1);
+          g.translate(cx, yc, dd / 2 - depth);
+          b.add(clampTop(g, top, yc - bh / 2), 'pedra', { tint: b.stone(), jit: jit * 0.5 });
+        }
       }
       x += len;
     }
@@ -770,6 +931,18 @@ function buildFortress() {
   return g;
 }
 
+// mostruário: cada família em P / M / G
+function buildShowcase() {
+  const g = new THREE.Group(); g.name = 'mostruario_pmg';
+  const place = placer(g), xs = [-8, -3.5, 4];
+  ['parede_pedra', 'piso_pedra', 'escada_pedra', 'rampa_pedra'].forEach((fam, row) => {
+    const z = [12, 5, -2, -11][row];
+    ['p', 'm', 'g'].forEach((sz, i) => place(`${fam}_${sz}`, xs[i], 0, z));
+  });
+  place('ponte_p', -11, 4.44, -22); place('ponte_m', -1, 4.44, -22); place('ponte_g', 13, 4.44, -22);
+  return g;
+}
+
 function buildHouse() {
   const g = new THREE.Group(); g.name = 'casa_exemplo';
   const place = placer(g);
@@ -848,6 +1021,7 @@ const ground = new THREE.Mesh(new THREE.PlaneGeometry(300, 300), new THREE.MeshS
 ground.rotation.x = -PI / 2; ground.receiveShadow = true; scene.add(ground);
 
 const timeU = { value: 0 };
+let grassMesh = null;
 (function grass() {
   const blade = new THREE.BufferGeometry();
   blade.setAttribute('position', new THREE.Float32BufferAttribute([-0.07, 0, 0, 0.07, 0, 0, 0, 0.5, 0], 3));
@@ -872,7 +1046,7 @@ const timeU = { value: 0 };
     c.setHSL(0.25 + r() * 0.04, 0.5 + r() * 0.2, 0.15 + r() * 0.09); inst.setColorAt(i, c);
     i++;
   }
-  inst.receiveShadow = true; scene.add(inst);
+  inst.receiveShadow = true; scene.add(inst); grassMesh = inst;
 })();
 
 (function trees() {
@@ -929,6 +1103,7 @@ function frameObject(obj, dir = new THREE.Vector3(1, 0.55, 1.2)) {
 }
 const SCENES = {
   casa: { label: 'Casa de exemplo', file: 'casa_exemplo', build: () => buildHouse(), cam: [14, 7, 16], target: [3.5, 2.6, 0] },
+  mostruario: { label: 'Mostruário P / M / G', file: 'mostruario_pmg', build: () => buildShowcase(), cam: [20, 17, 24], target: [1, 0, -5], grass: false },
   muralha: { label: 'Fortaleza de exemplo', file: 'muralha_exemplo', build: () => buildFortress(), cam: [11, 6.5, 19], target: [0, 3, -1.5] },
 };
 function showScene(key, reframe = true) {
@@ -936,12 +1111,13 @@ function showScene(key, reframe = true) {
   mode = key; selected = null;
   show(sc.build());
   if (reframe) { camera.position.set(...sc.cam); controls.target.set(...sc.target); controls.update(); }
-  info.innerHTML = `<b>${sc.label}</b><span>Montada só com as peças do kit · ${triCount(current).toLocaleString('pt-BR')} triângulos</span>`;
+  info.innerHTML = `<b>${sc.label}</b><span>Montada só com as peças do kit · ${triCount(current).toLocaleString('pt-BR')} triângulos</span><span class="custo">Total de materiais: ${custoTexto(sumCost(current))}</span>`;
+  grassMesh.visible = sc.grass !== false;
   markActive();
 }
 const showHouse = (reframe = true) => showScene('casa', reframe);
 function showPiece(name, reframe = true) {
-  mode = 'peca'; selected = name;
+  mode = 'peca'; selected = name; grassMesh.visible = true;
   const holder = new THREE.Group(), p = getPiece(name).clone();
   holder.add(p);
   const box = new THREE.Box3().setFromObject(p);
@@ -949,7 +1125,7 @@ function showPiece(name, reframe = true) {
   show(holder);
   if (reframe) frameObject(holder);
   const d = PIECES[name];
-  info.innerHTML = `<b>${d.label}</b><span>Tamanho: ${d.size}</span><span>Origem: ${d.pivot}</span><span>${triCount(p).toLocaleString('pt-BR')} triângulos · arquivo: ${name}.glb</span>`;
+  info.innerHTML = `<b>${d.label}</b><span>Tamanho: ${d.size}</span><span>Origem: ${d.pivot}</span><span class="custo">Precisa de: ${custoTexto(p.userData.custo)}</span><span>${triCount(p).toLocaleString('pt-BR')} triângulos · arquivo: ${name}.glb</span>`;
   markActive();
 }
 
@@ -969,10 +1145,12 @@ function markActive() {
   document.querySelectorAll('[data-peca]').forEach(b => b.classList.toggle('ativo', b.dataset.peca === selected));
   document.getElementById('btnCasa').classList.toggle('ativo', mode === 'casa');
   document.getElementById('btnMuralha').classList.toggle('ativo', mode === 'muralha');
+  document.getElementById('btnMostruario').classList.toggle('ativo', mode === 'mostruario');
 }
 
 document.getElementById('btnCasa').onclick = () => showScene('casa');
 document.getElementById('btnMuralha').onclick = () => showScene('muralha');
+document.getElementById('btnMostruario').onclick = () => showScene('mostruario');
 document.getElementById('btnVariar').onclick = () => {
   SEED = Math.floor(Math.random() * 1e6) + 1;
   mode === 'peca' ? showPiece(selected, false) : showScene(mode, false);
@@ -1037,6 +1215,11 @@ window.__api = {
   exportKit: async () => b64(await toGLB(kitObject())),
   exportHouse: async () => b64(await toGLB(buildHouse())),
   tris: n => triCount(getPiece(n)),
+  recursos: Object.fromEntries(Object.entries(RECURSOS).map(([k, r]) => [k, { nome: r.nome, m3: r.m3 }])),
+  custos: () => ({
+    pecas: Object.fromEntries(Object.entries(PIECES).map(([n, d]) => [n, { nome: d.label, categoria: d.cat, tamanho: d.size, custo: getPiece(n).userData.custo }])),
+    cenas: Object.fromEntries(Object.entries(SCENES).map(([k, sc]) => [sc.file, { nome: sc.label, custo: sumCost(sc.build()) }])),
+  }),
 };
 
 /* ------------------------------------------------------------------ */

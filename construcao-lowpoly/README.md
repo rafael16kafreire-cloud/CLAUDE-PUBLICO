@@ -7,9 +7,12 @@ mas com visual low-poly nórdico, texturas pixeladas e madeira rústica.
 
 ![Fortaleza de exemplo](previas/muralha_exemplo.jpg)
 
+![Mostruário P / M / G](previas/mostruario_pmg.jpg)
+
 ## Como usar
 
-- **Arquivos prontos:** pasta [`modelos/`](modelos) — um `.glb` por peça, mais `kit_construcao.glb` (todas juntas), `casa_exemplo.glb` e `muralha_exemplo.glb`.
+- **Arquivos prontos:** pasta [`modelos/`](modelos) — um `.glb` por peça, mais `kit_construcao.glb` (todas juntas), `casa_exemplo.glb`, `muralha_exemplo.glb` e `mostruario_pmg.glb`.
+- **Materiais de cada peça:** [`CUSTOS.md`](CUSTOS.md) (para ler) e [`custos.json`](custos.json) (para o jogo ler). O custo também vai dentro de cada `.glb`, em `extras.custo`.
 - **Editor no navegador:** abra `index.html` (precisa de internet para carregar o three.js). Dá para girar a câmera, ver cada peça,
   trocar o tom da madeira, gerar variações e baixar os `.glb`.
 - **Gerar tudo de novo:** `node exportar.mjs` (precisa do `playwright`). Cria `modelos/` e `previas/`.
@@ -41,6 +44,25 @@ Exemplo de encaixe: fundação em `y = 0` → paredes em `y = 0` nas bordas (±1
 
 Muralha: portal no meio, muros a cada 3 m a partir de ±4,5 m, ameias em cima (`y = 3`) e torres nas pontas.
 As folhas do portão giram em Y na dobradiça (abrir = girar até ~90°).
+
+## Peças em 3 tamanhos (P / M / G)
+
+| Família | P | M | G | Origem |
+|---|---|---|---|---|
+| Parede de pedra (`parede_pedra_*`) | 1,5 × 3 m | 3 × 3 m | 6 × 3 m | centro da base |
+| Piso de pedra (`piso_pedra_*`), 0,3 m | 1,5 × 1,5 m | 3 × 3 m | 6 × 6 m | centro de baixo (apoia no topo da parede) |
+| Escada de pedra (`escada_pedra_*`) | 1,5 larg., sobe 1,5 | 3 larg., sobe 3 | 6 larg., sobe 3 | centro da base; sobe para −Z |
+| Rampa de pedra (`rampa_pedra_*`) | 1,5 × 3, sobe 1,5 | 3 × 6, sobe 3 | 6 × 6, sobe 3 | centro da base; sobe para −Z |
+| Ponte (`ponte_*`), 3 m de largura | 6 m | 9 m, 1 pilar | 15 m, 2 pilares | centro do piso (y = 0); comprimento em X |
+
+Os pilares das pontes descem 4,4 m abaixo do piso (para rio ou vale).
+
+## Materiais
+
+Cada peça custa **Madeira**, **Pedra**, **Palha** e/ou **Ferro**. O custo é calculado pelo volume real de cada
+material na peça (1 Madeira ≈ 0,04 m³, 1 Pedra ≈ 0,15 m³, 1 Palha ≈ 0,25 m³, 1 Ferro ≈ 0,0025 m³), então peça maior
+custa mais. Para balancear o jogo, mude `m3` em `RECURSOS` no `index.html` e rode `node exportar.mjs` de novo.
+Tabela completa em [`CUSTOS.md`](CUSTOS.md).
 
 ## Importar na engine
 

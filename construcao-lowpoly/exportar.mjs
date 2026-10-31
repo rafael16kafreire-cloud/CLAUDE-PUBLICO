@@ -40,6 +40,26 @@ save(join(outModels, 'kit_construcao.glb'), await page.evaluate(() => window.__a
 const scenes = await page.evaluate(() => window.__api.scenes);
 for (const [k, file] of Object.entries(scenes)) save(join(outModels, file + '.glb'), await page.evaluate(k => window.__api.exportScene(k), k));
 console.log('kit_construcao.glb,', Object.values(scenes).map(f => f + '.glb').join(', '));
+
+// tabela de materiais (custos.json para o jogo e CUSTOS.md para ler)
+const { pecas, cenas } = await page.evaluate(() => window.__api.custos());
+const recursos = await page.evaluate(() => window.__api.recursos);
+writeFileSync(join(here, 'custos.json'), JSON.stringify({ recursos, pecas, cenas }, null, 2) + '\n');
+const cols = Object.keys(recursos), cell = (c, k) => c[k] ?? '—';
+let md = '# Materiais de cada peça\n\nGerado por `exportar.mjs` a partir do volume real de cada material na peça.\n'
+  + 'Para balancear, mude `m3` em `RECURSOS` no `index.html` (quantos m³ vale 1 unidade) e rode o script de novo.\n';
+let cat = null;
+for (const [n, d] of Object.entries(pecas)) {
+  if (d.categoria !== cat) {
+    cat = d.categoria;
+    md += `\n## ${cat}\n\n| Peça | Tamanho | ${cols.map(k => recursos[k].nome).join(' | ')} |\n|---|---|${cols.map(() => '--:').join('|')}|\n`;
+  }
+  md += `| ${d.nome} (\`${n}\`) | ${d.tamanho} | ${cols.map(k => cell(d.custo, k)).join(' | ')} |\n`;
+}
+md += `\n## Construções de exemplo (total)\n\n| Cena | ${cols.map(k => recursos[k].nome).join(' | ')} |\n|---|${cols.map(() => '--:').join('|')}|\n`;
+for (const [f, d] of Object.entries(cenas)) md += `| ${d.nome} (\`${f}.glb\`) | ${cols.map(k => cell(d.custo, k)).join(' | ')} |\n`;
+writeFileSync(join(here, 'CUSTOS.md'), md);
+console.log('custos.json, CUSTOS.md');
 }
 
 if (!process.env.SEM_PREVIAS) {
