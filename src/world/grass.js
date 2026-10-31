@@ -8,24 +8,37 @@
 import * as THREE from 'three';
 import { BIOME } from './island_generator.js';
 import { addWind } from './materials.js';
-import { makeBroadPlant, makeSprout, makeFlowerTuft, makeMiniPlant, makeLowTuft, makeGramaCartao } from './props.js';
-import ATLAS from './imported/grama_atlas.js';
+import { makeMiniPlant } from './props.js';
+import { capim, samambaia } from './lowpoly_veg.js';
+import { PALETA } from '../core/paleta.js';
+
+// normal de cada vértice puxada para cima (k = 0 normal da face, 1 = para cima)
+function normaisParaCima(g, k) {
+  const n = g.getAttribute('normal');
+  for (let i = 0; i < n.count; i++) {
+    const x = n.getX(i) * (1 - k);
+    const y = n.getY(i) * (1 - k) + k;
+    const z = n.getZ(i) * (1 - k);
+    const l = Math.hypot(x, y, z) || 1;
+    n.setXYZ(i, x / l, y / l, z / l);
+  }
+  return g;
+}
 
 const CELL = 1.25;
 
 // Quanto de cada planta por bioma (0 a 1).
+// Quanto de cada planta por bioma (0 a 1). ETAPA 2 (low-poly): bem menos grama que antes (tufos
+// espaçados, chão aparecendo), sem o tapete de relva e sem as plantinhas miúdas.
+// tint: multiplica a cor da paleta de cada lâmina (1 = cor da paleta).
 const BY_BIOME = {
-  [BIOME.JUNGLE]: { capim: 0.5, folha: 0.22, broto: 0.16, flor: 0.03, tint: [0.74, 0.86, 0.56], relva: 0.5, relvaK: 0.7, mini: 1 }, // chão da mata forrado de mato verde (como a Floresta Negra)
-  [BIOME.IGAPO]: { capim: 0.55, folha: 0.15, broto: 0.12, flor: 0.02, tint: [0.84, 0.86, 0.6], mini: 0.8 },
-  [BIOME.SWAMP]: { capim: 0.55, folha: 0.05, broto: 0.04, flor: 0.0, tint: [1.0, 0.95, 0.7] },
-  [BIOME.BEACH]: { capim: 0.14, folha: 0.0, broto: 0.0, flor: 0.01, tint: [0.92, 0.88, 0.55] },
+  [BIOME.JUNGLE]: { capim: 0.16, folha: 0.1, broto: 0.06, flor: 0.0, tint: [0.95, 1.0, 0.95] },
+  [BIOME.IGAPO]: { capim: 0.2, folha: 0.08, broto: 0.06, flor: 0.0, tint: [0.95, 0.98, 0.92] },
+  [BIOME.SWAMP]: { capim: 0.24, folha: 0.03, broto: 0.03, flor: 0.0, tint: [1.0, 0.98, 0.9] },
+  [BIOME.BEACH]: { capim: 0.05, folha: 0.0, broto: 0.0, flor: 0.0, tint: [1.08, 1.02, 0.9] },
   // montanha (serra / cordilheira): sem capim, só neve e pedra
-  // pastagem: o chão é coberto pela relva baixinha (abaixo); capim alto só de vez em quando, e mais baixo
-  [BIOME.PLAINS]: { capim: 0.3, folha: 0.02, broto: 0.01, flor: 0.08, tint: [0.76, 0.86, 0.5], hscale: 1.1, relva: true, mini: 0.3 },
+  [BIOME.PLAINS]: { capim: 0.2, folha: 0.0, broto: 0.02, flor: 0.04, tint: [1.0, 1.0, 1.0], hscale: 1.1 },
 };
-
-// cores das flores (laranja do ARK, amarelo e branco-creme)
-const FLOWER_COLORS = [[1.0, 0.52, 0.12], [1.0, 0.8, 0.2], [0.98, 0.92, 0.8], [0.9, 0.3, 0.2], [1.0, 0.86, 0.1], [0.55, 0.5, 0.95], [0.95, 0.95, 1.0]];
 
 function cellHash(ix, iz, s = 0) {
   const h = Math.sin(ix * 127.1 + iz * 311.7 + s * 74.7) * 43758.5453;
@@ -48,41 +61,22 @@ export class Grass {
     };
     const prevKey = material.customProgramCacheKey;
     material.customProgramCacheKey = () => `${prevKey ? prevKey() : ''}-mato1`;
-    // grama cheia: figura de tufo recortada pela transparência (dois retângulos em X por tufo)
-    const atlasTex = new THREE.TextureLoader().load(ATLAS.png);
-    atlasTex.colorSpace = THREE.SRGBColorSpace;
-    atlasTex.anisotropy = 2;
-    const matGrama = addWind(new THREE.MeshLambertMaterial({ map: atlasTex, alphaTest: 0.45, side: THREE.DoubleSide }), 0.25, 0.05, 1);
-    matGrama.userData.suave = true; // cartões de grama: luz de chão (flat shading deixava preto)
-    const prevG = matGrama.onBeforeCompile;
-    matGrama.onBeforeCompile = (shader, renderer) => {
-      prevG?.(shader, renderer);
-      // altura dentro do tufo (0 no chão, 1 na ponta): base escura (sombra entre as folhas) e ponta
-      // mais clara e amarelada, como a grama do ARK. Sem isso o tufo ficava verde-limão chapado.
-      shader.vertexShader = shader.vertexShader
-        .replace('#include <common>', '#include <common>\nvarying float vGH;')
-        .replace('#include <begin_vertex>', `#include <begin_vertex>\nvGH = clamp(position.y / ${ATLAS.altura.toFixed(3)}, 0.0, 1.3);`);
-      shader.fragmentShader = shader.fragmentShader
-        .replace('#include <common>', '#include <common>\nvarying float vGH;')
-        .replace('#include <normal_fragment_begin>', THREE.ShaderChunk.normal_fragment_begin.replace('gl_FrontFacing ? 1.0 : - 1.0', '1.0'))
-        .replace('#include <color_fragment>', `#include <color_fragment>
-          diffuseColor.rgb *= mix(0.38, 0.9, smoothstep(0.0, 0.75, vGH));
-          diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(1.14, 1.04, 0.66), smoothstep(0.6, 1.05, vGH) * 0.45);`);
-    };
-    const prevGKey = matGrama.customProgramCacheKey;
-    matGrama.customProgramCacheKey = () => `${prevGKey ? prevGKey() : ''}-grama3`;
+    // ETAPA 2 (low-poly): tufos de lâminas de 1 triângulo, cor da paleta por lâmina (lowpoly_veg.js).
+    // Normais puxadas para cima: o tufo acende como o chão (sem lâmina preta do lado da sombra).
+    const tufo = (o) => normaisParaCima(capim({ larg: 0.045, ...o }), 0.72);
     this.kinds = {
-      capim: this._mesh(makeGramaCartao(0, 1), matGrama, 5200, 'Capim'),
-      capim2: this._mesh(makeGramaCartao(1, 1), matGrama, 4200, 'Capim 2'),
-      folha: this._mesh(makeBroadPlant(), material, 2600, 'Folhagem'),
-      broto: this._mesh(makeSprout(), material, 1800, 'Brotos'),
-      flor: this._mesh(makeFlowerTuft(), material, 1500, 'Flores'),
-      relva: this._mesh(makeGramaCartao(2, 1.12), matGrama, 5200, 'Relva'),
-      relva2: this._mesh(makeGramaCartao(3, 0.98), matGrama, 4200, 'Relva 2'),
-      longe: this._mesh(makeLowTuft(), material, 16000, 'Grama longe'),
+      capim: this._mesh(tufo({ alt: 0.55, laminas: 6, seed: 101 }), material, 5200, 'Capim'),
+      capim2: this._mesh(tufo({ alt: 0.75, laminas: 5, seed: 102, cores: ['folhaClara', 'capimSeco', 'musgo'] }), material, 4200, 'Capim 2'),
+      folha: this._mesh(normaisParaCima(samambaia({ tam: 0.45, seed: 103, folhas: 5 }), 0.6), material, 2600, 'Folhagem'),
+      broto: this._mesh(tufo({ alt: 0.35, laminas: 4, seed: 104, cores: ['musgoEscuro', 'musgo'] }), material, 1800, 'Brotos'),
+      flor: this._mesh(tufo({ alt: 0.45, laminas: 5, seed: 105, flor: PALETA.neve }), material, 1500, 'Flores'),
+      relva: this._mesh(tufo({ alt: 0.25, laminas: 4, seed: 106 }), material, 5200, 'Relva'),
+      relva2: this._mesh(tufo({ alt: 0.22, laminas: 4, seed: 107, cores: ['folhaClara', 'capimSeco'] }), material, 4200, 'Relva 2'),
+      longe: this._mesh(tufo({ alt: 0.5, laminas: 4, seed: 108 }), material, 16000, 'Grama longe'),
       mini: this._mesh(makeMiniPlant(0), material, 7000, 'Plantinhas'),
       mini2: this._mesh(makeMiniPlant(1), material, 6000, 'Plantinhas 2'),
     };
+
     this.enabled = true;
     this.lowPoly = false;
     this._step = -1;
@@ -183,13 +177,9 @@ export class Grass {
         this._p.set(x, h - 0.03, z);
         this._m.compose(this._p, this._q, this._s);
         mesh.setMatrixAt(n[kind], this._m);
-        const v = 0.8 + cellHash(ix, iz, 7) * 0.35;
-        if (kind === 'flor') {
-          const fc = FLOWER_COLORS[Math.floor(cellHash(ix, iz, 8) * FLOWER_COLORS.length)];
-          this._c.setRGB(fc[0], fc[1], fc[2]);
-        } else {
-          this._c.setRGB(cfg.tint[0] * v, cfg.tint[1] * v, cfg.tint[2] * v);
-        }
+        const v = 0.85 + cellHash(ix, iz, 7) * 0.25;
+        // low-poly: a cor vem da lâmina (paleta); a instância só varia o brilho
+        this._c.setRGB(cfg.tint[0] * v, cfg.tint[1] * v, cfg.tint[2] * v);
         mesh.setColorAt(n[kind], this._c);
         n[kind]++;
       }
@@ -323,7 +313,7 @@ export class Grass {
     const dens = Math.sqrt(Math.max(0.3, this.density));
     const rings = this.lowPoly
       ? [{ step: 0.5 / dens, r0: 0, r1: Math.min(15, FR), sc: 1.05 }, { step: 1.1 / dens, r0: Math.min(15, FR), r1: FR, sc: 1.2 }]
-      : [{ step: 1.25 / dens, r0: this.radius * 0.55, r1: FR, sc: 1 }];
+      : [{ step: 1.7 / dens, r0: this.radius * 0.55, r1: FR, sc: 1 }]; // low-poly: tufos mais espaçados
     for (const ring of rings) {
       const FC = ring.step;
       const fx0 = Math.floor((focus.x - ring.r1) / FC);

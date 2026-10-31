@@ -24,9 +24,15 @@ import { renderImpostor } from './impostor.js';
 import { foliageTexture, addPlantDetail } from './foliage_texture.js';
 import recursos from '../data/world/recursos.json';
 import * as P from './props.js';
-import { snowRockGeometry, snowRockMaterial } from './snow_models.js';
-import { makeLayeredRock, layeredRockMaterial } from './rochas.js';
-import { vegGeometry, vegMaterial } from './veg_models.js';
+import { MODELOS_LOWPOLY, materialLowPoly } from './lowpoly_veg.js';
+// ETAPA 2: os modelos antigos (com textura) saíram; tudo vem de lowpoly_veg.js (veja MODELOS_LOWPOLY
+// abaixo da tabela). Os nomes antigos ficam só para a tabela continuar legível.
+const vegGeometry = () => null;
+const vegMaterial = () => null;
+const snowRockGeometry = null;
+const snowRockMaterial = null;
+const makeLayeredRock = () => null;
+const layeredRockMaterial = null;
 
 const ROOTS = P.sumaumaRootColliders();
 
@@ -117,6 +123,24 @@ const TYPES = {
   taboa: { shore: true, hi: P.makeCattail, collider: 0, shadow: false, scale: [0.8, 1.3], res: 'junco', water: true, maxDist: 70 },
   vitoria_regia: { hi: P.makeWaterLily, collider: 0, shadow: false, scale: [0.6, 1.7], res: null, surface: true, maxDist: 120 },
 };
+
+// =============================================================
+// ETAPA 2 (low-poly / Valheim): todo tipo de planta e pedra passa a usar o
+// modelo feito de formas simples (lowpoly_veg.js), um material só (cor por
+// face + vento) e sem "foto" de longe: o modelo médio é leve o bastante para
+// ir até a neblina. Nome, colisão e recurso de cada tipo continuam os mesmos.
+// =============================================================
+for (const [t, m] of Object.entries(MODELOS_LOWPOLY(ROOTS))) {
+  const d = TYPES[t];
+  if (!d) continue;
+  d.hi = m.hi;
+  d.lo = m.lo;
+  d.mat = materialLowPoly;
+  d.loMat = materialLowPoly;
+  delete d.imp;
+  d.textured = true; // cor já vem pintada: a instância só varia o brilho
+  if (m.collider) d.collider = m.collider;
+}
 
 const CHUNK = 48;
 

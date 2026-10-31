@@ -85,6 +85,7 @@ export const CSTATE = {
   DEAD: 'morto',
   KO: 'desmaiado',   // torpor no máximo: dá para domar
   FOLLOW: 'seguir',  // domado indo atrás do dono
+  SLEEP: 'dormir',   // de noite: deitado, dormindo (acorda de manhã, com barulho ou se apanhar)
 };
 
 const TAU = Math.PI * 2;
@@ -157,6 +158,7 @@ export class Creature {
     this.yaw = rand() * TAU;
     this.speed = 0;
     this.state = CSTATE.WANDER;
+    this.sleepy = rand() < 0.35; // carnívoro: só uns 35% dormem de noite (os outros caçam no escuro)
     this.stateTime = 0;
     this.target = null;
     this.threat = null;
@@ -482,6 +484,7 @@ export class Creature {
     }
     // desmaiado: deita e come o que tiver no prato
     this.koAnim = clamp((this.koAnim ?? 0) + (this.state === CSTATE.KO ? dt * 1.5 : -dt * 1.2), 0, 1);
+    this.sleepAnim = clamp((this.sleepAnim ?? 0) + (this.state === CSTATE.SLEEP ? dt * 0.5 : -dt * 1.5), 0, 1);
     if (this.state === CSTATE.KO) {
       this._updateKO(dt);
       this._animate(dt, ctx, 0);
@@ -574,6 +577,27 @@ export class Creature {
     const temp = sp.temperamento;
     const dPlayer = player.dead ? Infinity : this._dist2D(player.position);
     const perceived = player.crouching ? dPlayer * 1.6 : dPlayer;
+
+    this._olhaJogador = dPlayer < 14 + this.radius && !player.dead ? player : null;
+
+    // DORMIR À NOITE: herbívoros (e alguns carnívoros) deitam e dormem. Acordam de manhã, se
+    // alguém chegar perto fazendo barulho (correndo acorda de longe, agachado quase não acorda)
+    // ou se apanharem (takeDamage). Carnívoros com fome continuam caçando.
+    const noite = !!ctx.world.sky?.isNight;
+    if (this.state === CSTATE.SLEEP) {
+      const ouve = player.running ? 16 : player.crouching ? 3 : 7;
+      if (!noite || dPlayer < ouve + this.radius) {
+        this._setState(CSTATE.IDLE);
+        this.idleFor = 1 + this.rand() * 2;
+      } else {
+        return;
+      }
+    } else if (noite && !sp.ambiente && !this.flies && !this.aquatic && !this.isBaby
+      && (this.state === CSTATE.IDLE || this.state === CSTATE.WANDER) && dPlayer > 20
+      && (sp.dieta !== 'carnivoro' || this.sleepy) && this.rand() < 0.04) {
+      this._setState(CSTATE.SLEEP);
+      return;
+    }
 
     if (this.state === CSTATE.FLEE) {
       if (this.stateTime > 9 || (this.threat && this._dist2D(this.threat.position) > 45)) this._setState(CSTATE.WANDER);
@@ -856,6 +880,9 @@ export class Creature {
         }
         break;
       }
+      case CSTATE.SLEEP:
+        this._brake(dt);
+        break;
       case CSTATE.IDLE:
       case CSTATE.EAT:
         this._brake(dt);
@@ -1218,6 +1245,7 @@ export class Creature {
   // Dano e morte
   // ---------------------------------------------------------
   takeDamage(amount, attacker) {
+    if (this.state === CSTATE.SLEEP) this._setState(CSTATE.IDLE); // acorda com o golpe
     if (!this.alive) return;
     if (this.netControlled) {
       // co-op (convidado): quem decide o dano é o anfitrião
@@ -1598,6 +1626,13 @@ export class Creature {
       const dz = tgt.position.z - this.pos.z;
       wantYaw = clamp(angleDelta(this.yaw, Math.atan2(-dx, -dz)), -0.8, 0.8);
       wantPitch = clamp(((tgt.position.y + 1) - (this.pos.y + this.height)) / (Math.hypot(dx, dz) + 1), -0.4, 0.4);
+    } else if (this._olhaJogador && !dead && this.state !== CSTATE.SLEEP) {
+      // jogador perto: vira a cabeça para olhar (curiosidade/atenção)
+      const p = this._olhaJogador;
+      const dx = p.position.x - this.pos.x;
+      const dz = p.position.z - this.pos.z;
+      wantYaw = clamp(angleDelta(this.yaw, Math.atan2(-dx, -dz)), -0.9, 0.9);
+      wantPitch = clamp(((p.position.y + 1.2) - (this.pos.y + this.height)) / (Math.hypot(dx, dz) + 1), -0.35, 0.35);
     } else if (this.state === CSTATE.IDLE) {
       wantYaw = Math.sin(t * 0.5 + this.id) * 0.5;
       wantPitch = Math.sin(t * 0.3 + this.id * 2) * 0.12;
@@ -1716,6 +1751,15 @@ export class Creature {
       // desmaiado: deita de lado
       const side = ['snake', 'croc', 'fish', 'spider'].includes(this.spec.body) ? Math.PI * 0.5 : Math.PI * 0.45;
       m.rotation.set(this.pitch, this.yaw, this.roll + side * ko * ko * (3 - 2 * ko), 'YXZ');
+      return;
+    }
+    const zz = this.sleepAnim ?? 0;
+    if (zz > 0) {
+      // dormindo: deita de lado devagar (um pouco menos que desmaiado) e respira fundo
+      const side = ['snake', 'croc', 'fish', 'spider'].includes(this.spec.body) ? 0 : Math.PI * 0.4;
+      const e = zz * zz * (3 - 2 * zz);
+      m.rotation.set(this.pitch, this.yaw, this.roll + side * e + Math.sin(performance.now() * 0.0012 + this.id) * 0.015 * e, 'YXZ');
+      m.position.y -= this.height * 0.12 * e;
       return;
     }
     m.rotation.set(this.pitch + this._standUp + this._lunge * 0.1, this.yaw, this.roll, 'YXZ');

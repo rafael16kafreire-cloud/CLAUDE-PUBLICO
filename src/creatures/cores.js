@@ -9,28 +9,29 @@
 // O filhote herda cada região do pai ou da mãe.
 // =============================================================
 import * as THREE from 'three';
+import { PALETA_HEX, misturaHex } from '../core/paleta.js';
 
-// [costas, barriga] em hex
+// [costas, barriga] — misturas da paleta (core/paleta.js), para os bichos combinarem com o mundo low-poly
+const H = (a, b, t) => misturaHex(a, b, t);
 const NATURAL = [
-  ['#6b5232', '#c9b48a'], // marrom e creme
-  ['#4f5a2c', '#b8b083'], // verde-oliva
-  ['#5d5d58', '#b9b4a6'], // cinza
-  ['#8a6a3c', '#e0cfa2'], // areia
-  ['#3f4a33', '#9a9a78'], // verde-escuro
-  ['#7a4a2a', '#d0b08a'], // ferrugem
-  ['#4a3c30', '#a89880'], // chocolate
-  ['#6e6a4a', '#d6ceaa'], // pardo
+  [H('marrom', 'terraEscura', 0.2), H('areia', 'capimSeco', 0.4)], // marrom e creme
+  [H('musgo', 'musgoEscuro', 0.3), H('capimSeco', 'areia', 0.5)], // verde-musgo
+  [H('pedra', 'pedraEscura', 0.3), H('pedraClara', 'areia', 0.3)], // cinza
+  [H('madeira', 'marrom', 0.3), H('areia', 'neve', 0.2)], // areia
+  [H('musgoEscuro', 'terraEscura', 0.3), H('folhaClara', 'capimSeco', 0.5)], // verde-escuro
+  [H('ferrugem', 'marrom', 0.4), H('areia', 'madeira', 0.3)], // ferrugem
+  [H('terraEscura', 'marrom', 0.4), H('madeira', 'areia', 0.4)], // chocolate
+  [H('capimSeco', 'marrom', 0.35), H('areia', 'neve', 0.3)], // pardo
 ];
 const VIVA = [
-  ['#8e2418', '#d8a070'], // vermelho
-  ['#1f6f78', '#a8d0c4'], // azul-turquesa
-  ['#5a2f7a', '#c0a8d0'], // roxo
-  ['#b0581a', '#ecc690'], // laranja
-  ['#26262a', '#6e6a66'], // preto
-  ['#2a4c8a', '#b8c4d8'], // azul
-  ['#3d6e2a', '#d6d07a'], // verde-folha com barriga amarela
-  ['#d8d2c4', '#f4efe4'], // quase branco
-  ['#7a1c3a', '#d89ab0'], // vinho
+  [PALETA_HEX.ferrugem, H('solLaranja', 'areia', 0.5)], // vermelho-ferrugem
+  [H('agua', 'musgo', 0.25), H('pedraClara', 'agua', 0.3)], // azul-esverdeado
+  [H('ceuNoite', 'ferrugem', 0.35), H('pedraClara', 'ferrugem', 0.2)], // roxo-escuro
+  [PALETA_HEX.solLaranja, H('areia', 'neve', 0.3)], // laranja
+  [H('ceuNoite', 'pedraEscura', 0.4), PALETA_HEX.pedra], // preto
+  [PALETA_HEX.agua, H('pedraClara', 'neve', 0.3)], // azul-aço
+  [PALETA_HEX.folhaClara, H('capimSeco', 'solLaranja', 0.3)], // verde-folha com barriga amarela
+  [H('neve', 'pedraClara', 0.3), PALETA_HEX.neve], // quase branco
 ];
 
 const LUM = new THREE.Vector3(0.2126, 0.7152, 0.0722);

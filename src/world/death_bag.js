@@ -6,19 +6,45 @@
 // =============================================================
 import * as THREE from 'three';
 import { BALANCE } from '../core/balance.js';
-import { vegGeometry, vegMaterial } from './veg_models.js';
-import { CAIXA_ALTURA } from './textures/veg_caixa.js';
+import { PALETA } from '../core/paleta.js';
 import { sound } from '../audio/audio.js';
 
-// Caixa de itens largados (modelo feito no Blender), compartilhada por todas.
+// Caixa de itens largados (low-poly: tábuas e cantoneiras, cores da paleta), compartilhada por todas.
+const CAIXA_ALTURA = 0.44;
 let crateGeo = null;
 let crateMat = null;
 const HALF = CAIXA_ALTURA / 2;     // metade da altura: a posição da caixa é o centro
+
+// caixa de 0,56 x 0,44 x 0,44 com a base em y = 0: corpo de madeira clara e reforços escuros nas bordas
+function caixaLowPoly() {
+  const partes = [];
+  const add = (w, h, d, x, y, z, cor) => {
+    const g = new THREE.BoxGeometry(w, h, d).toNonIndexed();
+    g.translate(x, y, z);
+    const n = g.attributes.position.count;
+    const c = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) { c[i * 3] = cor.r; c[i * 3 + 1] = cor.g; c[i * 3 + 2] = cor.b; }
+    g.setAttribute('color', new THREE.BufferAttribute(c, 3));
+    partes.push(g);
+  };
+  const H = CAIXA_ALTURA;
+  add(0.56, H, 0.44, 0, H / 2, 0, PALETA.madeira);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) add(0.06, H + 0.01, 0.06, sx * 0.26, H / 2, sz * 0.2, PALETA.marrom);
+  add(0.58, 0.05, 0.46, 0, H - 0.04, 0, PALETA.marrom);
+  const pos = [];
+  const col = [];
+  for (const g of partes) { pos.push(...g.attributes.position.array); col.push(...g.attributes.color.array); }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  geo.computeVertexNormals();
+  return geo;
+}
 const _e = new THREE.Euler();
 const _qy = new THREE.Quaternion();
 
-const SACK_MAT = new THREE.MeshLambertMaterial({ color: '#7a5a3a', flatShading: true });
-const TIE_MAT = new THREE.MeshLambertMaterial({ color: '#d9c48f', flatShading: true });
+const SACK_MAT = new THREE.MeshLambertMaterial({ color: PALETA.marrom, flatShading: true });
+const TIE_MAT = new THREE.MeshLambertMaterial({ color: PALETA.capimSeco, flatShading: true });
 const BEAM_MAT = new THREE.MeshBasicMaterial({
   color: '#ffd27a',
   transparent: true,
@@ -48,8 +74,8 @@ export class DeathBag {
     if (this.crate) {
       // caixa de madeira: cai da mão, quica, rola e assenta em pé; flutua na água
       if (!crateGeo) {
-        crateGeo = vegGeometry('caixa_bl', CAIXA_ALTURA, 0);
-        crateMat = vegMaterial('caixa_bl');
+        crateGeo = caixaLowPoly();
+        crateMat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
       }
       this.body = new THREE.Group();
       const mesh = new THREE.Mesh(crateGeo, crateMat);

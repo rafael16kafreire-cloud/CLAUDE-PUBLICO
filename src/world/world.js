@@ -7,7 +7,7 @@
 import layout from '../data/world/ilha.json';
 import { BALANCE } from '../core/balance.js';
 import { IslandMap, BIOME_KEYS, BIOME } from './island_generator.js';
-import { buildTerrain } from './terrain.js';
+import { buildTerrain, updateTerrain } from './terrain.js';
 import { WaterSystem } from './water.js';
 import { Vegetation } from './vegetation.js';
 import { Grass } from './grass.js';
@@ -224,9 +224,11 @@ export class World {
     const hill = Math.min(1, Math.max(0, (ground - 14) / 26));
     const inForest = this.map.biomeAt(camera.position.x, camera.position.z);
     const forest = inForest === BIOME.JUNGLE || inForest === BIOME.IGAPO ? 0.38 : 0; // neblina azulada fixa dentro da mata
-    const mist = Math.max(hill * hill * (3 - 2 * hill), forest) * (1 - cold);
+    // só nos morros da mata/campo (na serra a névoa forte deixava tudo branco)
+    const morroVerde = inForest === BIOME.JUNGLE || inForest === BIOME.IGAPO || inForest === BIOME.PLAINS ? 1 : 0;
+    const mist = Math.max(hill * hill * (3 - 2 * hill) * morroVerde, forest) * (1 - cold);
     this.sky.mist = (this.sky.mist ?? 0) + (mist - (this.sky.mist ?? 0)) * Math.min(1, dt * 0.5);
-    if (!this.sky.underwater) this.sky.scene.fog.density = (2.0 / this.viewDistance) * (1 + this.sky.mist * 1.6);
+    if (!this.sky.underwater) this.sky.scene.fog.density = (2.0 / this.viewDistance) * (1 + this.sky.mist * 1.0); // >>> força da névoa na mata/morros
   }
 
   setQuality(q) {
@@ -293,6 +295,8 @@ export class World {
       this.fireLight.intensity = 0;
     }
     this._updateAltitude(camera, dt);
+    // terreno: monta os pedaços perto e descarta os longe (até um pouco além da visão)
+    updateTerrain(this.terrain, camera.position.x, camera.position.z, this.viewDistance + 80, dt);
     this.sky.update(camera, focus);
     this.grass.update(focus);
     this.shafts.update(camera, this.sky, focus, !this.cameraUnderwater);

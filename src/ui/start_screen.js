@@ -3,44 +3,19 @@
 // Atrás dela, a câmera sobrevoa a ilha de verdade.
 // (Menu completo com Novo Jogo/Continuar/Opções/Créditos: Fase 12.)
 // =============================================================
-import { IMPORTED } from '../creatures/imported_model.js';
-import criaturas from '../data/creatures/criaturas.json';
 import { listSlots, slotLabel } from '../core/save.js';
 
-const SPECIES = Object.fromEntries(criaturas.especies.map((e) => [e.id, e]));
-
-// "Fulano (https://sketchfab.com/...)" -> "Fulano"
-const authorName = (a = '') => a.replace(/\s*\(.*\)\s*$/, '');
-const esc = (t = '') => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
-
-const PLANT_CREDITS = [
-  ['Palmeira', 'Palm Tree Realistic', '00amza'],
-  ['Tamareiras e plantas da praia', 'Date palm and vegetation', 'borsh_and'],
-  ['Árvores folhosas e capim', 'Low Poly Tree Scene Free', 'Nicholas-3D'],
-  ['Folhagem do chão da floresta', 'Grass', 'Epic_Tree_Store'],
-  ['Árvore alta da mata', 'Agarwood', 'Valery.Li'],
-  ['Arbustos de bagas', 'Bush with Berries', 'ivanmm1'],
-  ['Troncos caídos', 'Mossy old tree log / Fallen Spruce Tree', 'autores no Sketchfab'],
-];
-
-// Créditos dos modelos 3D (licença CC-BY pede o nome do autor)
+// Créditos (o visual low-poly é todo feito por código: bichos, plantas, pedras, céu e água)
 function creditsHtml() {
-  const rows = Object.entries(IMPORTED).map(([id, d]) => {
-    const c = d.credito ?? {};
-    const lic = (c.licenca ?? '').split(' ')[0];
-    return `<li><b>${esc(SPECIES[id]?.nome ?? id)}</b>: “${esc(c.titulo)}” por ${esc(authorName(c.autor))} (Sketchfab), ${esc(lic)} — adaptado.</li>`;
-  });
-  // plantas da praia e da floresta (também CC-BY 4.0)
-  for (const [what, title, author] of PLANT_CREDITS) {
-    rows.push(`<li><b>${esc(what)}</b>: “${esc(title)}” por ${esc(author)} (Sketchfab), CC-BY-4.0 — adaptado.</li>`);
-  }
+  const rows = [];
+  rows.push('<li><b>Bichos, plantas, pedras, terreno, céu e água</b>: gerados por código no próprio jogo (estilo low-poly).</li>');
   rows.push('<li><b>Sons de passos, coleta e interface</b>: Kenney.nl (CC0).</li>');
   // bibliotecas de efeitos visuais (as licenças pedem manter o aviso)
   rows.push('<li><b>Motor 3D</b>: three.js (MIT), © os autores do three.js.</li>');
   rows.push('<li><b>Efeitos de imagem</b>: postprocessing, © Raoul van Rüschen (Zlib).</li>');
   rows.push('<li><b>Raios de sol</b>: three-good-godrays, © 2022 Casey Primozic, adaptado de goodGodRays de n8python (Zlib).</li>');
   rows.push('<li><b>Oclusão ambiental</b>: N8AO, de n8python (licença livre: CC0 no arquivo, ISC no npm).</li>');
-  return `<div class="credits"><p>Modelos 3D e sons usados no jogo (licença pede o nome do autor):</p><ul>${rows.join('')}</ul></div>`;
+  return `<div class="credits"><p>Créditos:</p><ul>${rows.join('')}</ul></div>`;
 }
 
 // Dicas que vão passando embaixo do botão Jogar

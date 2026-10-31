@@ -145,11 +145,11 @@ export function pinheiro(alt = 20, { neve = false, seed = 1, low = false, camada
 // CARVALHO / árvore de copa: tronco, galhos e copa de "bolas" facetadas
 // larg: largura da copa; achatada: copa de guarda-chuva (árvores gigantes da mata)
 // ------------------------------------------------------------
-export function carvalho(alt = 14, { seed = 1, low = false, larg = 1, achatada = false, folhas = ['musgo', 'folhaClara', 'musgoEscuro'], troncoCor = 'marrom', bolas = 6 } = {}) {
+export function carvalho(alt = 14, { seed = 1, low = false, larg = 1, achatada = false, folhas = ['musgo', 'folhaClara', 'musgoEscuro'], troncoCor = 'marrom', bolas = 6, grosso = 1 } = {}) {
   const M = new Malha(seed);
   const r = M.r;
   const yc = alt * (achatada ? 0.8 : 0.66);
-  const rt = Math.max(0.15, alt * 0.035);
+  const rt = Math.max(0.15, alt * 0.035) * grosso;
   M.add(new THREE.CylinderGeometry(rt * 0.55, rt, yc, low ? 5 : 7), { cor: cor(troncoCor), m: pos(0, yc / 2, 0), jitter: low ? 0 : rt * 0.25 });
   const R = alt * 0.27 * larg;
   if (!low) {
@@ -399,7 +399,7 @@ export function arvoreMorta(alt = 7, { seed = 1, low = false, neve = false, corT
 export function pedregulho({ seed = 1, low = false, cores = ['pedra', 'pedraEscura'], topo = null, veio = null, achata = 0.75 } = {}) {
   const M = new Malha(seed);
   const r = M.r;
-  const g = low ? new THREE.OctahedronGeometry(1, 0) : new THREE.DodecahedronGeometry(1, 0);
+  const g = low ? new THREE.IcosahedronGeometry(1, 0) : new THREE.DodecahedronGeometry(1, 0); // longe: icosaedro (octaedro virava pirâmide)
   g.scale(1, achata, 1);
   const cA = cor(cores[0]);
   const cB = cor(cores[1]);
@@ -569,4 +569,98 @@ export function materialLowPoly() {
   m.customProgramCacheKey = () => `${k ? k() : ''}-lowpoly-veg1`;
   matVeg = m;
   return m;
+}
+
+// ------------------------------------------------------------
+// TABELA: cada tipo de planta/pedra do jogo -> modelo low-poly (perto e médio).
+// Os nomes, tamanhos de colisão e recursos continuam os de vegetation.js.
+// collider (opcional): novo raio de colisão quando o formato mudou muito.
+// ------------------------------------------------------------
+export function MODELOS_LOWPOLY(raizes) {
+  const L = { low: true };
+  const par = (f) => ({ hi: () => f({}), lo: () => f(L) });
+  const C = (nome) => PALETA[nome];
+  const arv = (alt, o) => par((x) => carvalho(alt, { ...o, ...x }));
+  const pin = (alt, o) => par((x) => pinheiro(alt, { ...o, ...x }));
+  const pal = (alt, o) => par((x) => palmeira(alt, { ...o, ...x }));
+  const ped = (o, extra = {}) => ({ ...par((x) => pedregulho({ ...o, ...x })), ...extra });
+  const so = (f) => ({ hi: f, lo: f });
+  return {
+    // árvores da mata e do campo
+    sumauma: par((x) => sumauma(raizes, { seed: 40, ...x })),
+    arvore_dossel: arv(24, { seed: 41, achatada: true, larg: 1.15, bolas: 7 }),
+    arvore_media: arv(10, { seed: 42, larg: 0.9, bolas: 4 }),
+    copa_a: arv(30, { seed: 5, achatada: true, larg: 1.15, bolas: 7, grosso: 1.1 }),
+    copa_b: arv(37, { seed: 6, achatada: true, larg: 1.25, bolas: 8, grosso: 1.1 }),
+    copa_c: arv(25.8, { seed: 7, achatada: true, larg: 1.1, bolas: 7 }),
+    copa_g_a: arv(47.8, { seed: 8, achatada: true, larg: 1.3, bolas: 9, grosso: 1.6 }),
+    copa_g_b: arv(45.7, { seed: 9, achatada: true, larg: 1.3, bolas: 9, grosso: 1.5 }),
+    media_a: arv(13.8, { seed: 10, larg: 0.85 }),
+    media_b: arv(16.9, { seed: 11, larg: 0.85 }),
+    arvore_bl_a: arv(22, { seed: 14 }),
+    arvore_bl_b: arv(22, { seed: 15, folhas: ['folhaClara', 'musgo', 'capimSeco'] }),
+    arvore_bl_c: arv(22, { seed: 16, folhas: ['musgoEscuro', 'musgo', 'folhaClara'] }),
+    arvore_folhosa: arv(15, { seed: 17 }),
+    arvore_folhosa2: arv(11, { seed: 18, larg: 0.9 }),
+    arvore_agar: arv(24, { seed: 19, larg: 0.9, achatada: true }),
+    mangue: par((x) => mangue({ seed: 43, ...x })),
+    // pinheiros (verdes e com neve)
+    pinheiro: pin(14, { seed: 24 }),
+    pinheiro_vd_a: pin(24.9, { seed: 27 }),
+    pinheiro_vd_b: pin(19.9, { seed: 28 }),
+    pinheiro_neve: pin(14, { seed: 25, neve: true }),
+    pinheiro_nv_a: pin(22.9, { seed: 29, neve: true }),
+    pinheiro_nv_b: pin(27.9, { seed: 30, neve: true }),
+    pinheiro_nv_c: pin(18.9, { seed: 31, neve: true }),
+    // palmeiras
+    coqueiro: pal(11, { seed: 1, curva: 0.18 }),
+    palma_bl_a: pal(14.2, { seed: 2, curva: 0.12 }),
+    palma_bl_b: pal(11, { seed: 3, curva: 0.2 }),
+    palma_bl_c: pal(16.1, { seed: 4, curva: 0.08 }),
+    tamareira: pal(8.5, { seed: 12, curva: 0.05, folhas: 10, larg: 0.8, caida: 0.45, cocos: false }),
+    tamareira2: pal(7, { seed: 13, curva: 0.07, folhas: 9, larg: 0.8, caida: 0.5, cocos: false }),
+    acai: pal(13, { seed: 44, curva: 0.04, folhas: 7, cocos: false, larg: 0.45, caida: 0.85, tronco: ['marrom', 'marrom'] }),
+    bananeira: par((x) => bananeira({ seed: 45, cacho: true, ...x })),
+    bananeira_vazia: par((x) => bananeira({ seed: 45, cacho: false, ...x })),
+    samambaia_gigante: par((x) => samambaiaGigante({ seed: 46, ...x })),
+    // mortas e secas
+    arvore_morta: par((x) => arvoreMorta(7, { seed: 47, ...x })),
+    arvore_morta_neve: par((x) => arvoreMorta(10, { seed: 48, neve: true, ...x })),
+    arvore_seca: par((x) => arvoreMorta(5, { seed: 49, neve: true, ...x })),
+    // arbustos (bagas: a cor de cada tipo)
+    arbusto_mejo: par((x) => arbusto({ seed: 50, bagas: mix('agua', 'ceuNoite', 0.35), ...x })),
+    arbusto_escura: par((x) => arbusto({ seed: 51, bagas: C('ceuNoite'), ...x })),
+    arbusto_frutas: par((x) => arbusto({ seed: 52, bagas: C('ferrugem'), ...x })),
+    arbusto: par((x) => arbusto({ seed: 53, ...x })),
+    arbusto_neve: par((x) => arbusto({ seed: 54, neve: true, folhas: ['musgoEscuro', 'pedraEscura'], raio: 0.6, ...x })),
+    // capins, juncos e flores
+    capim: so(() => capim({ alt: 0.8, laminas: 8, seed: 60 })),
+    capim_bq_a: so(() => capim({ alt: 0.9, laminas: 9, seed: 61 })),
+    capim_bq_d: so(() => capim({ alt: 0.8, laminas: 8, seed: 62, cores: ['folhaClara', 'capimSeco', 'musgo'] })),
+    margarida_bq: so(() => capim({ alt: 0.6, laminas: 7, seed: 63, flor: C('neve') })),
+    capim_praia: so(() => capim({ alt: 0.9, laminas: 7, seed: 64, cores: ['capimSeco', 'folhaClara'] })),
+    planta_praia: so(() => capim({ alt: 1.0, laminas: 8, seed: 65, cores: ['folhaClara', 'musgo', 'capimSeco'], abre: 0.6, larg: 0.09 })),
+    junco: so(() => capim({ alt: 1.6, laminas: 10, seed: 66, abre: 0.15, larg: 0.035 })),
+    taboa: so(() => capim({ alt: 1.7, laminas: 9, seed: 67, cabeca: C('marrom'), abre: 0.12, larg: 0.04 })),
+    samambaia: so(() => samambaia({ tam: 0.9, seed: 68 })),
+    vitoria_regia: so(() => vitoriaRegia({ seed: 69 })),
+    // chão
+    tronco_caido: par((x) => troncoCaido({ meio: 2.3, raio: 0.7, seed: 70, ...x })),
+    tronco_pinho: par((x) => troncoCaido({ meio: 4.3, raio: 0.45, seed: 71, musgo: false, ...x })),
+    pedrinhas: so(() => pedrinhas({ seed: 72 })),
+    gravetos: so(() => gravetos({ seed: 73 })),
+    cogumelos: so(() => cogumelos({ seed: 74 })),
+    concha: so(() => concha({ seed: 75 })),
+    cristal: so(() => cristais({ seed: 76 })),
+    // pedras (raio ~1 e altura ~1 antes da escala)
+    rochedo: ped({ seed: 80 }),
+    rochedo_camadas: ped({ seed: 81, cores: ['pedra', 'pedraClara'], achata: 0.95 }, { collider: 0.95 }),
+    rochedo_camadas_b: ped({ seed: 82, cores: ['pedraEscura', 'pedra'], topo: 'musgo', achata: 0.85 }, { collider: 0.95 }),
+    rochedo_camadas_c: ped({ seed: 83, cores: ['pedra', 'pedraEscura'], achata: 1.0 }, { collider: 0.95 }),
+    pedra_musgo: ped({ seed: 84, topo: 'musgo', achata: 0.7 }),
+    rocha_metal: ped({ seed: 85, cores: ['pedraEscura', 'pedra'], veio: 'pedraClara' }),
+    minerio_ferro: ped({ seed: 86, cores: ['pedra', 'pedraEscura'], veio: 'ferrugem' }),
+    rocha_obsidiana: ped({ seed: 87, cores: ['ceuNoite', 'pedraEscura'], achata: 0.9 }),
+    rocha_petroleo: ped({ seed: 88, cores: ['terraEscura', 'pedraEscura'], veio: 'ceuNoite', achata: 0.6 }),
+  };
 }

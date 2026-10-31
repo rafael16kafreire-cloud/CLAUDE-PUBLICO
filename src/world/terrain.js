@@ -7,6 +7,9 @@
 import * as THREE from 'three';
 import { makeTerrainMaterial } from './materials.js';
 
+// Os pedaços NÃO são montados todos de uma vez: updateTerrain() monta os que estão
+// perto do jogador e descarta (libera a memória) os que ficaram longe. Ao andar,
+// a ilha vai sendo "carregada" à frente.
 export function buildTerrain(map, chunkCells) {
   const group = new THREE.Group();
   group.name = 'Terreno';
@@ -15,21 +18,60 @@ export function buildTerrain(map, chunkCells) {
 
   const perSide = Math.ceil(map.cells / chunkCells);
   const chunks = [];
-
+  const lado = chunkCells * map.cell;
   for (let cz = 0; cz < perSide; cz++) {
     for (let cx = 0; cx < perSide; cx++) {
-      const geom = buildChunkGeometry(map, cx * chunkCells, cz * chunkCells, chunkCells);
-      const mesh = new THREE.Mesh(geom, material);
-      mesh.name = `terreno_${cx}_${cz}`;
-      mesh.receiveShadow = true;
-      mesh.matrixAutoUpdate = false;
-      mesh.updateMatrix();
-      group.add(mesh);
-      chunks.push(mesh);
+      const x0 = cx * lado - map.half;
+      const z0 = cz * lado - map.half;
+      chunks.push({ cx, cz, x0, z0, x1: x0 + lado, z1: z0 + lado, mesh: null });
     }
   }
 
-  return { group, material, chunks };
+  return { group, material, chunks, chunkCells, map, last: { x: 1e9, z: 1e9, t: 0 }, loaded: 0 };
+}
+
+// >>> CHUNKS DO TERRENO: raio = até onde monta (metros); FOLGA = quanto além disso
+//     ainda segura antes de descartar (evita montar/descartar o mesmo pedaço indo e voltando).
+const FOLGA = 200;
+const PERTO = 180; // pedaços a menos disso são montados na hora (sem buraco ao renascer/teleportar)
+
+/** Monta os pedaços perto de (x, z) e descarta os longe. porQuadro = quantos monta de cada vez (além dos de perto). */
+export function updateTerrain(T, x, z, raio, dt = 0.016, porQuadro = 3) {
+  T.last.t -= dt;
+  const andou = Math.hypot(x - T.last.x, z - T.last.z);
+  if (andou < 12 && T.last.t > 0 && !T.pendente) return;
+  T.last.x = x;
+  T.last.z = z;
+  T.last.t = 0.4;
+  let feitos = 0;
+  T.pendente = false;
+  for (const c of T.chunks) {
+    // distância do jogador até o retângulo do pedaço
+    const dx = Math.max(c.x0 - x, 0, x - c.x1);
+    const dz = Math.max(c.z0 - z, 0, z - c.z1);
+    const d = Math.hypot(dx, dz);
+    if (!c.mesh && d < raio) {
+      if (d > PERTO && feitos >= porQuadro) {
+        T.pendente = true; // falta montar: continua no próximo quadro
+        continue;
+      }
+      const geom = buildChunkGeometry(T.map, c.cx * T.chunkCells, c.cz * T.chunkCells, T.chunkCells);
+      const mesh = new THREE.Mesh(geom, T.material);
+      mesh.name = `terreno_${c.cx}_${c.cz}`;
+      mesh.receiveShadow = true;
+      mesh.matrixAutoUpdate = false;
+      mesh.updateMatrix();
+      T.group.add(mesh);
+      c.mesh = mesh;
+      T.loaded++;
+      feitos++;
+    } else if (c.mesh && d > raio + FOLGA) {
+      T.group.remove(c.mesh);
+      c.mesh.geometry.dispose();
+      c.mesh = null;
+      T.loaded--;
+    }
+  }
 }
 
 function buildChunkGeometry(map, i0, j0, size) {
