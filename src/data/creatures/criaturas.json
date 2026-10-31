@@ -2030,7 +2030,7 @@
    ],
    "nome": "Iguanodonte",
    "dieta": "herbivoro",
-   "temperamento": "medroso",
+   "temperamento": "passivo",
    "vida": 525,
    "dano": 55,
    "vel_andar": 1.8,
@@ -2061,7 +2061,7 @@
    },
    "pode_domar": true,
    "comida_preferida": "baga_mejo",
-   "pode_montar": true,
+   "pode_montar": false,
    "carga": 450,
    "atributos": {
     "vida": [
@@ -2533,7 +2533,7 @@
    ],
    "nome": "Terizinossauro",
    "dieta": "herbivoro",
-   "temperamento": "medroso",
+   "temperamento": "passivo",
    "vida": 1100,
    "dano": 120,
    "vel_andar": 1.7,
