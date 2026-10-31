@@ -64,3 +64,11 @@ girando ossos por cima de uma pose existente (eixos do mundo: X = esquerda do bi
 | titanoboa | parado, andar, correr, nadar, nadar_rapido, atacar, rugir, comer, dormir, morrer (depois `adaptar.mjs config/titanoboa.json`) |
 
 `previa_glb.mjs` aceita `QUADROS=n OUT=pasta` (folha com n quadros de cada animação) e `ALVO=osso,tamanho` (câmera de perto).
+
+## Moschops
+
+Feito a partir do Dimetrodonte (cp4096, CC BY): `blender/moschops.py` achata a vela numa corcova, deixa o corpo em barril,
+encurta a cauda, aumenta a cabeça e fecha a boca. Depois é rigado e animado como os outros:
+
+    DEFORMAR=blender/moschops.py blender -b -P blender/preparar.py -- dime_cp.glb teste/moschops_parado.glb 30000
+    node animar.mjs config/moschops.json

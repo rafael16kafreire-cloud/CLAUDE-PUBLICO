@@ -46,6 +46,12 @@ Modelos de terceiros usados no jogo (obrigatório manter estes créditos no jogo
 |---|---|
 | titanoboa_simples | modelo procedural antigo (index.html → buildTitanoboa); não é exportado por padrão |
 
+## Remodelados a partir de outro modelo
+
+| arquivo | crédito |
+|---|---|
+| moschops | Dimetrodon — cp4096 — CC BY 4.0 — https://sketchfab.com/3d-models/dimetrodon-3ac7c6aada5e4c03849f9544bbc1afed (modificado: vela removida, corpo, cauda, cabeça e boca remodelados em blender/moschops.py) |
+
 ## Licença NÃO comercial (atenção)
 
 | arquivo | crédito |

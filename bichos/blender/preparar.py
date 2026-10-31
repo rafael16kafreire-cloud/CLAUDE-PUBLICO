@@ -5,6 +5,7 @@
 #  - exporta .glb parado
 # Uso: blender -b -P preparar.py -- entrada saida.glb [max_triangulos]
 #      (opcional) REMOVER="nome1,nome2" para tirar peças extras
+#      (opcional) DEFORMAR=script.py roda um script com a malha final em 'obj' (ex.: remodelar um bicho)
 import bpy, sys, os
 a = sys.argv[sys.argv.index('--') + 1:]
 src, out = a[0], a[1]
@@ -52,6 +53,8 @@ tris = sum(len(p.vertices) - 2 for p in obj.data.polygons)
 if maxtris and tris > maxtris:
     m = obj.modifiers.new('reduzir', 'DECIMATE'); m.ratio = maxtris / tris
     bpy.ops.object.modifier_apply(modifier=m.name)
+if os.environ.get('DEFORMAR'):
+    exec(open(os.environ['DEFORMAR']).read(), {'bpy': bpy, 'obj': obj})
 tris2 = sum(len(p.vertices) - 2 for p in obj.data.polygons)
 print(f"PREPARADO {os.path.basename(src)}: {tris} -> {tris2} triângulos, materiais={[s.material.name if s.material else None for s in obj.material_slots]}")
 bpy.ops.export_scene.gltf(filepath=out, export_format='GLB', export_animations=False, export_skins=False)
