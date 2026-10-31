@@ -1313,7 +1313,7 @@
    "vida": 805,
    "dano": 130,
    "vel_andar": 3.0,
-   "vel_correr": 17.2,
+   "vel_correr": 10.5,
    "tamanho": 1,
    "raio": 1.6,
    "altura": 5.0,
