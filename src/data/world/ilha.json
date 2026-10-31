@@ -91,7 +91,19 @@
     "grande_montanha": { "pico_x": -1012, "pico_z": -972, "largura_m": 1600, "altura_m": 300, "raio_m": 700 },
     "colinas": { "altura_m": 60, "periodo_m": 1100 },
     "_platos": "Pedras gigantes de topo plano perto do mar (dá para construir em cima). x/z = centro, raio_m = tamanho do topo, altura_m = quanto sobe acima do chão do centro, rampa_graus = para onde desce a rampa (0 = leste, 90 = sul, 180 = oeste, 270 = norte).",
-    "platos": []
+    "platos": [
+      { "x": 1148, "z": -656, "raio_m": 55, "altura_m": 6, "rampa_graus": 200 },
+      { "x": -84, "z": 264, "raio_m": 50, "altura_m": 6, "rampa_graus": 90 },
+      { "x": 136, "z": -1124, "raio_m": 55, "altura_m": 6, "rampa_graus": 270 },
+      { "x": 364, "z": -576, "raio_m": 45, "altura_m": 6, "rampa_graus": 0 },
+      { "x": 2050, "z": -330, "raio_m": 60, "altura_m": 5, "rampa_graus": 180 },
+      { "x": 2150, "z": 230, "raio_m": 65, "altura_m": 5, "rampa_graus": 180 },
+      { "x": 2320, "z": -90, "raio_m": 55, "altura_m": 5, "rampa_graus": 0 },
+      { "x": 1950, "z": -20, "raio_m": 50, "altura_m": 5, "rampa_graus": 180 },
+      { "x": 2300, "z": 520, "raio_m": 55, "altura_m": 5, "rampa_graus": 0 },
+      { "x": 1900, "z": -650, "raio_m": 45, "altura_m": 5, "rampa_graus": 90 },
+      { "x": -930, "z": -880, "raio_m": 60, "altura_m": 8, "rampa_graus": 45 }
+    ]
   },
 
   "_vulcao": "O Vulcão (lat 43,6 / lon 37,9 no ARK): cone grande de rocha escura com cratera no topo.",

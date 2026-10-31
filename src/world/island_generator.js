@@ -276,7 +276,10 @@ export class IslandMap {
     const ridge = 1 - Math.abs(fbm(this.nRidge, x * 0.012 + 5, z * 0.012 - 9, 4));
     const bumps = fbm(this.nRock, x * 0.03, z * 0.03, 3);
     const top = (this.L.serras.find((c) => Math.hypot(x - c.x, z - c.z) < c.raio_m * 1.3)?.altura_m) ?? 50;
-    return k * (top * (0.35 + 0.65 * ridge * ridge) + bumps * 4);
+    // topos achatados: a altura satura perto do alto (sem agulhas de 1 m²), as cristas viram mesetas largas
+    const v = k * (top * (0.4 + 0.6 * ridge * ridge) + bumps * 3);
+    const cap = top * 0.78;
+    return cap * Math.tanh(v / cap) / Math.tanh(1) * 0.9;
   }
 
   // "Quanto dentro do pântano": > 0 dentro, < 0 fora (com borda irregular).
@@ -349,9 +352,17 @@ export class IslandMap {
       if (dx * dx + dz * dz > far * far) continue;
       if (this._plateauTop === undefined) this._plateauTop = [];
       if (this._plateauTop[i] === undefined) {
-        // topo = chão do centro (sem os platôs) + altura
+        // topo = o ponto mais alto do chão dentro do círculo (sem os platôs) + um pouco: o topo nivela (corta e aterra)
         this._plateauTop[i] = -Infinity;
-        this._plateauTop[i] = this.rawHeight(p.x, p.z, this.coastDistance(p.x, p.z)) + p.altura_m;
+        let mx = this.rawHeight(p.x, p.z, this.coastDistance(p.x, p.z));
+        for (const f of [0.45, 0.85]) {
+          for (let a = 0; a < 8; a++) {
+            const px = p.x + Math.cos((a * Math.PI) / 4) * p.raio_m * f;
+            const pz = p.z + Math.sin((a * Math.PI) / 4) * p.raio_m * f;
+            mx = Math.max(mx, this.rawHeight(px, pz, this.coastDistance(px, pz)));
+          }
+        }
+        this._plateauTop[i] = mx + p.altura_m * 0.4;
       }
       const top = this._plateauTop[i];
       if (top === -Infinity) continue;
@@ -361,15 +372,16 @@ export class IslandMap {
       const R = p.raio_m * (1 + 0.12 * Math.sin(ang * 3 + i) + 0.07 * Math.sin(ang * 7 + i * 2));
       // topo: quase plano (calombos de 20 cm)
       const flat = top + fbm(this.nRock, x * 0.08, z * 0.08, 2) * 0.2;
-      // paredão quase reto
-      const cliff = flat - smoothstep(R, R + 9, r) * p.altura_m * 1.6;
-      // rampa (10 m de largura, ~27°)
+      // dentro do círculo vale o topo; fora, um paredão de 10 m liga o topo ao chão de verdade
+      const t = smoothstep(R, R + 10, r);
+      h = flat * (1 - t) + h * t;
+      // rampa (10 m de largura, ~27°) para subir
       const ra = ((p.rampa_graus ?? 0) * Math.PI) / 180;
       const along = dx * Math.cos(ra) + dz * Math.sin(ra);
       const side = Math.abs(-dx * Math.sin(ra) + dz * Math.cos(ra));
       let ramp = -Infinity;
       if (along > 0 && side < 5 + 3 * smoothstep(5, 0, along - R)) ramp = flat - Math.max(0, along - R * 0.85) * 0.5;
-      h = Math.max(h, cliff, ramp);
+      h = Math.max(h, ramp);
     }
     return h;
   }
