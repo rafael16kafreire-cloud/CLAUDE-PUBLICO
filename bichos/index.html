@@ -105,6 +105,27 @@ function scaleTexture(N = 256, cells = 16, depth = 0.2) {
 }
 const TEX = scaleTexture(256);
 const TEX64 = scaleTexture(64, 8, 0.42);
+function skinTexture(N = 64) {
+  const c = document.createElement('canvas'); c.width = c.height = N;
+  const g = c.getContext('2d'), img = g.createImageData(N, N), r = mulberry32(17);
+  const layer = P => { const v = [...Array(P * P)].map(() => r()); return (x, y) => {
+    const fx = x / N * P, fy = y / N * P, x0 = Math.floor(fx), y0 = Math.floor(fy), tx = fx - x0, ty = fy - y0;
+    const at = (i, j) => v[((j % P) + P) % P * P + ((i % P) + P) % P], s2 = t => t * t * (3 - 2 * t);
+    const a = lerp(at(x0, y0), at(x0 + 1, y0), s2(tx)), b = lerp(at(x0, y0 + 1), at(x0 + 1, y0 + 1), s2(tx));
+    return lerp(a, b, s2(ty)); }; };
+  const n1 = layer(4), n2 = layer(8), n3 = layer(16);
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const v = 0.5 * n1(x, y) + 0.32 * n2(x, y) + 0.18 * n3(x, y);
+    const k = 255 * clamp(0.8 + 0.22 * v, 0, 1), i = (y * N + x) * 4;
+    img.data[i] = img.data[i + 1] = img.data[i + 2] = k; img.data[i + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  const t = new THREE.CanvasTexture(c);
+  t.name = 'pele'; t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearMipmapLinearFilter;
+  return t;
+}
+const SKIN64 = skinTexture(64);
 
 /* ================================================================== */
 /* Esqueleto                                                           */
@@ -583,8 +604,8 @@ function buildTRex() {
      .bone('pescoco_1', 'coluna_3', [0, 4.0, 2.85], [0, 4.25, 3.15])
      .bone('pescoco_2', 'pescoco_1', [0, 4.25, 3.15], [0, 4.48, 3.38])
      .bone('pescoco_3', 'pescoco_2', [0, 4.48, 3.38], [0, 4.62, 3.6])
-     .bone('cabeca', 'pescoco_3', [0, 4.62, 3.6], [0, 4.42, 5.1])
-     .bone('mandibula', 'cabeca', [0, 4.5, 3.72], [0, 4.32, 5.05]);
+     .bone('cabeca', 'pescoco_3', [0, 4.62, 3.6], [0, 4.4, 5.15])
+     .bone('mandibula', 'cabeca', [0, 4.42, 3.7], [0, 4.25, 5.1]);
   for (let i = 0; i < 8; i++)
     rig.bone(`cauda_${i + 1}`, i ? `cauda_${i}` : 'quadril', [0, tailY(tailZ[i]), tailZ[i]], [0, tailY(tailZ[i + 1]), tailZ[i + 1]]);
   for (const [s, x] of [['E', 1], ['D', -1]]) {
@@ -609,10 +630,12 @@ function buildTRex() {
       col.lerp(pal.band, ss(0.25, 0.6, band) * ss(-0.2, 0.35, n.y) * 0.85);
     }
     if (info.head && n.y < -0.3) col.lerp(pal.throat, 0.5);
+    const spot = Math.sin(c.x * 5.3 + c.z * 3.1) * Math.sin(c.z * 4.7 - c.y * 6.2) * Math.sin(c.y * 3.3 + c.x * 2.1);
+    if (n.y > -0.2) col.multiplyScalar(1 - 0.18 * ss(0.15, 0.45, spot));
     if (info.limb) col = pal.back.clone().lerp(pal.side, 0.35 + 0.35 * ss(0.6, -0.4, n.y)).multiplyScalar(info.dark ?? 1);
     return col;
   };
-  const m = new Mesher(rig, 11, 2.4); m.smooth = true;
+  const m = new Mesher(rig, 11, 0.35); m.smooth = true;
   const tailChain = [...Array(8)].map((_, i) => `cauda_${8 - i}`);
   const bodyChain = [...tailChain, 'quadril', 'coluna_1', 'coluna_2', 'coluna_3', 'pescoco_1', 'pescoco_2', 'pescoco_3', 'cabeca'];
 
@@ -630,52 +653,58 @@ function buildTRex() {
       { p: [0, 3.98, 0.9], w: 0.86, top: 0.68, bot: 1.28, n: 2.2 },
       { p: [0, 3.94, 1.7], w: 0.84, top: 0.66, bot: 1.34, n: 2.2 },
       { p: [0, 3.98, 2.4], w: 0.7, top: 0.58, bot: 1.08 },
-      { p: [0, 4.12, 2.9], w: 0.55, top: 0.5, bot: 0.78 },
-      { p: [0, 4.32, 3.2], w: 0.48, top: 0.44, bot: 0.64 },
-      { p: [0, 4.52, 3.45], w: 0.47, top: 0.42, bot: 0.6 },
-      { p: [0, 4.64, 3.68], w: 0.52, top: 0.44, bot: 0.56 },
+      { p: [0, 4.14, 2.9], w: 0.6, top: 0.54, bot: 0.82 },
+      { p: [0, 4.36, 3.18], w: 0.56, top: 0.5, bot: 0.72 },
+      { p: [0, 4.55, 3.42], w: 0.56, top: 0.5, bot: 0.66 },
+      { p: [0, 4.62, 3.62], w: 0.58, top: 0.48, bot: 0.6 },
     ], K: 120, sides: 24, chain: bodyChain, color: skin, info: { stripes: true }, capEnd: false,
   });
-  // crânio: largo atrás, focinho estreito, perfil quadradão
+  // crânio de T-Rex: alto e largo atrás (olhos para a frente), focinho mais estreito
+  const mouthY = z => lerp(4.38, 4.27, clamp((z - 3.6) / 1.55, 0, 1));
   m.loft({ pts: [
-      { p: [0, 4.66, 3.6], w: 0.55, top: 0.44, bot: 0.14, n: 2.6 },
-      { p: [0, 4.7, 3.9], w: 0.6, top: 0.43, bot: 0.15, n: 2.8 },
-      { p: [0, 4.64, 4.25], w: 0.47, top: 0.36, bot: 0.14, n: 3 },
-      { p: [0, 4.56, 4.6], w: 0.37, top: 0.3, bot: 0.13, n: 3 },
-      { p: [0, 4.48, 4.92], w: 0.29, top: 0.24, bot: 0.12, n: 2.8 },
-      { p: [0, 4.43, 5.12], w: 0.17, top: 0.15, bot: 0.1, n: 2.4 },
-    ], K: 28, sides: 22, chain: ['cabeca'], color: skin, info: { head: true } });
-  // mandíbula: funda atrás (músculos), afina na frente
+      { p: [0, 4.47, 3.52], w: 0.56, top: 0.58, bot: 0.1, n: 2.4 },
+      { p: [0, 4.45, 3.8], w: 0.66, top: 0.64, bot: 0.1, n: 2.9 },
+      { p: [0, 4.42, 4.1], w: 0.54, top: 0.57, bot: 0.1, n: 3.1 },
+      { p: [0, 4.39, 4.45], w: 0.41, top: 0.45, bot: 0.1, n: 3.1 },
+      { p: [0, 4.36, 4.8], w: 0.32, top: 0.34, bot: 0.1, n: 2.9 },
+      { p: [0, 4.34, 5.05], w: 0.23, top: 0.23, bot: 0.09, n: 2.5 },
+      { p: [0, 4.33, 5.17], w: 0.1, top: 0.1, bot: 0.06 },
+    ], K: 30, sides: 24, chain: ['cabeca'], color: skin, info: { head: true } });
+  // mandíbula funda e forte
   m.loft({ pts: [
-      { p: [0, 4.5, 3.64], w: 0.5, top: 0.05, bot: 0.38, n: 2.4 },
-      { p: [0, 4.48, 3.98], w: 0.48, top: 0.05, bot: 0.32, n: 2.6 },
-      { p: [0, 4.44, 4.42], w: 0.37, top: 0.05, bot: 0.22, n: 2.8 },
-      { p: [0, 4.4, 4.82], w: 0.27, top: 0.05, bot: 0.16, n: 2.6 },
-      { p: [0, 4.38, 5.06], w: 0.16, top: 0.04, bot: 0.11, n: 2.4 },
-    ], K: 24, sides: 20, chain: ['mandibula'], info: { head: true },
+      { p: [0, 4.36, 3.58], w: 0.57, top: 0.05, bot: 0.52, n: 2.4 },
+      { p: [0, 4.35, 3.9], w: 0.56, top: 0.05, bot: 0.47, n: 2.6 },
+      { p: [0, 4.32, 4.3], w: 0.43, top: 0.05, bot: 0.37, n: 2.8 },
+      { p: [0, 4.29, 4.7], w: 0.33, top: 0.05, bot: 0.28, n: 2.7 },
+      { p: [0, 4.27, 5.0], w: 0.23, top: 0.045, bot: 0.2, n: 2.5 },
+      { p: [0, 4.26, 5.13], w: 0.12, top: 0.04, bot: 0.1 },
+    ], K: 26, sides: 22, chain: ['mandibula'], info: { head: true },
     color: (c, n, i) => n.y > 0.6 ? pal.mouth.clone() : skin(c, n, i) });
-  // gengiva escura na borda da boca
+  // gengiva na borda da boca
   for (const s of [1, -1]) {
-    m.loft({ pts: [{ p: [s * 0.5, 4.53, 3.95], w: 0.03, h: 0.03 }, { p: [s * 0.4, 4.5, 4.4], w: 0.03, h: 0.03 }, { p: [s * 0.29, 4.45, 4.85], w: 0.025, h: 0.025 }, { p: [s * 0.15, 4.42, 5.1], w: 0.02, h: 0.02 }],
+    m.loft({ pts: [{ p: [s * 0.6, 4.39, 3.85], w: 0.035, h: 0.035 }, { p: [s * 0.46, 4.36, 4.3], w: 0.032, h: 0.032 }, { p: [s * 0.32, 4.32, 4.8], w: 0.028, h: 0.028 }, { p: [s * 0.17, 4.3, 5.1], w: 0.022, h: 0.022 }],
       K: 10, sides: 6, chain: ['cabeca'], color: () => pal.gum.clone() });
   }
-  // dentes grossos (banana), curvados para trás
-  for (let i = 0; i < 9; i++) {
-    const f = i / 8, z = lerp(4.0, 5.02, f), wz = lerp(0.47, 0.17, f), len = lerp(0.15, 0.1, Math.abs(f - 0.35) * 1.5);
+  // dentes grossos (banana)
+  const wAt = z => z < 3.8 ? 0.62 : z < 4.1 ? lerp(0.62, 0.52, (z - 3.8) / 0.3) : z < 4.45 ? lerp(0.52, 0.4, (z - 4.1) / 0.35) : z < 4.8 ? lerp(0.4, 0.31, (z - 4.45) / 0.35) : lerp(0.31, 0.2, (z - 4.8) / 0.3);
+  for (let i = 0; i < 10; i++) {
+    const f = i / 9, z = lerp(3.95, 5.05, f), wz = wAt(z), len = lerp(0.17, 0.11, Math.abs(f - 0.3) * 1.4), yu = mouthY(z);
     for (const s of [1, -1]) {
-      const yu = lerp(4.53, 4.43, f);
-      m.cone([s * wz * 0.93, yu, z], [s * wz * 0.93, yu - len, z + 0.035], 0.036, 'cabeca', pal.tooth, 5);
-      const yl = lerp(4.5, 4.41, f);
-      if (i < 8) m.cone([s * wz * 0.84, yl, z + 0.06], [s * wz * 0.84, yl + len * 0.75, z + 0.045], 0.028, 'mandibula', pal.tooth, 5);
+      m.cone([s * wz * 0.92, yu + 0.02, z], [s * wz * 0.92, yu - len, z + 0.04], 0.04, 'cabeca', pal.tooth, 5);
+      if (i < 9) m.cone([s * wz * 0.84, yu - 0.04, z + 0.06], [s * wz * 0.84, yu + len * 0.7, z + 0.045], 0.032, 'mandibula', pal.tooth, 5);
     }
   }
   for (const s of [1, -1]) {
-    m.ball([s * 0.47, 4.9, 3.98], 0.085, 'cabeca', pal.eye, 1);           // olho
-    m.geom(new THREE.BoxGeometry(0.02, 0.1, 0.035).translate(s * 0.55, 4.9, 3.99), 'cabeca', pal.pupil);  // pupila em fenda
-    m.cone([s * 0.38, 5.02, 3.76], [s * 0.42, 5.0, 4.18], 0.12, 'cabeca', pal.back, 6, 0.5);  // sobrancelha óssea
-    m.cone([s * 0.33, 5.04, 3.84], [s * 0.36, 5.17, 3.92], 0.07, 'cabeca', pal.plate, 5);       // chifrinho
-    m.ball([s * 0.1, 4.6, 5.02], 0.035, 'cabeca', pal.nose);               // narina
-    m.ball([s * 0.52, 4.62, 3.72], 0.17, 'mandibula', (c, n) => skin(c, n, { head: true }), 1);  // bochecha (músculo)
+    m.ball([s * 0.5, 4.92, 3.92], 0.085, 'cabeca', pal.eye, 1);                                          // olho alto, virado para a frente
+    m.geom(new THREE.BoxGeometry(0.02, 0.1, 0.03).translate(s * 0.565, 4.92, 3.95), 'cabeca', pal.pupil);  // pupila
+    m.loft({ pts: [{ p: [s * 0.4, 4.98, 3.74], w: 0.07, h: 0.04 }, { p: [s * 0.43, 5.01, 3.93], w: 0.09, h: 0.055 }, { p: [s * 0.38, 4.97, 4.1], w: 0.05, h: 0.03 }],
+      K: 8, sides: 10, chain: ['cabeca'], color: skin, info: { head: true } });                         // protuberância sobre o olho
+    m.geom(new THREE.IcosahedronGeometry(0.035, 1).scale(1, 0.5, 1.4).translate(s * 0.1, 4.565, 5.06), 'cabeca', C('#2c3319'));  // narina
+  }
+  for (let i = 0; i < 7; i++) {                                                                            // rugosidades no alto do focinho
+    const z = lerp(4.2, 4.95, i / 6), g = new THREE.IcosahedronGeometry(lerp(0.09, 0.06, i / 6), 1);
+    g.scale(1.2, 0.5, 1.1); g.translate(0, lerp(4.83, 4.58, i / 6) + 0.01, z);
+    m.geom(g, 'cabeca', pal.plate);
   }
   // fileira dupla de escamas ósseas nas costas
   for (let i = 0; i < 18; i++) {
@@ -714,7 +743,7 @@ function buildTRex() {
     }
     m.cone([(0.66) * x, 0.3, -0.05], [(0.62) * x, 0.22, -0.25], 0.05, D, pal.claw, 5);  // dedinho de trás
   }
-  const mat = new THREE.MeshStandardMaterial({ name: 'trex_pele', map: TEX64, vertexColors: true, roughness: 0.82, metalness: 0 });
+  const mat = new THREE.MeshStandardMaterial({ name: 'trex_pele', map: SKIN64, vertexColors: true, roughness: 0.82, metalness: 0 });
   const mesh = m.build('trex', mat);
   const clips = bipedClips(rig, {
     k: 4.0 / 0.92, walk: [1.7, 0.64, 0.62, 0.1, 0.025, 0.03, 0.08], run: [1.0, 0.42, 1.05, 0.17, 0.05, 0.16, 0.25],
