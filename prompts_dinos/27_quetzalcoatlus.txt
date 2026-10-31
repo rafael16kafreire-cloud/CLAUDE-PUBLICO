@@ -1,4 +1,4 @@
-Crie no Blender um animal voador **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com pele com penugem curta, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+Crie no Blender um animal voador **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com penugem curta, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
 
 ESPÉCIE: Quetzalcoatlus. Réptil voador GIGANTE de 11 m de envergadura, do tamanho de uma girafa no chão. Bico enorme e reto, pescoço longo, crista pequena, asas de membrana. Cores: corpo branco-acinzentado, asas cinza com pontas escuras, bico amarelado.
 

@@ -32,7 +32,7 @@ Cada arquivo `.txt` abaixo é um prompt completo: abra, copie tudo e cole na IA 
 | 23 | MAMUTE-LANOSO | [`23_mamute.txt`](23_mamute.txt) | `mamute.glb` | 9.000–13.000 | 1024×1024 | parado, andar, correr, atacar, rugir, comer, dormir, morrer |
 | 24 | DODÔ | [`24_dodo.txt`](24_dodo.txt) | `dodo.glb` | 4.000–6.000 | 256×256 | parado, andar, correr, atacar, rugir, comer, dormir, morrer |
 | 25 | REI-DODÔ | [`25_reidodo.txt`](25_reidodo.txt) | `reidodo.glb` | 12.000–16.000 | 1024×1024 | parado, andar, correr, atacar, rugir, comer, dormir, morrer |
-| 26 | PTERANODONTE | [`26_pterodactilo.txt`](26_pterodactilo.txt) | `pterodactilo.glb` | 6.000–9.000 | 512×512 | parado, andar, voar, planar, decolar, atacar, dormir, morrer |
+| 26 | PTERANODONTE | [`26_pteranodonte.txt`](26_pteranodonte.txt) | `pteranodonte.glb` | 6.000–9.000 | 512×512 | parado, andar, voar, planar, decolar, atacar, dormir, morrer |
 | 27 | QUETZALCOATLUS | [`27_quetzalcoatlus.txt`](27_quetzalcoatlus.txt) | `quetzalcoatlus.glb` | 9.000–13.000 | 1024×1024 | parado, andar, voar, planar, decolar, atacar, dormir, morrer |
 | 28 | ARGENTAVIS | [`28_argentavis.txt`](28_argentavis.txt) | `argentavis.glb` | 6.000–9.000 | 512×512 | parado, andar, voar, planar, decolar, atacar, dormir, morrer |
 | 29 | TITANOBOA | [`29_titanoboa.txt`](29_titanoboa.txt) | `titanoboa.glb` | 9.000–13.000 | 1024×1024 | parado, andar, correr, nadar, atacar, dormir, morrer |

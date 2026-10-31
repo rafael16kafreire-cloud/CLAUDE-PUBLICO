@@ -1,4 +1,4 @@
-Crie no Blender um animal voador **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com pele com penugem curta, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+Crie no Blender um animal voador **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com penugem curta, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
 
 ESPÉCIE: Pteranodonte. Réptil voador de 7 m de envergadura. Crista longa apontando para trás da cabeça, bico comprido e pontudo sem dentes, asas de membrana, corpo pequeno. Cores: corpo cinza-claro, asas marrom com bordas escuras, crista vermelha e amarela.
 
@@ -20,4 +20,4 @@ ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
 - `dormir`: pousado, asas fechadas, cabeça baixa (loop).
 - `morrer`: cai e fica deitado (sem loop).
 
-EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: pterodactilo.glb
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: pteranodonte.glb

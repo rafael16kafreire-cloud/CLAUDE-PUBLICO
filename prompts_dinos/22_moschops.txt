@@ -1,4 +1,4 @@
-Crie no Blender um animal terrestre **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com pele grossa e enrugada, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+Crie no Blender um animal terrestre **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele grossa e enrugada, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
 
 ESPÉCIE: Moschops. Animal pré-histórico de 2,8 m, quadrúpede baixo, robusto e com cabeça curta e grossa (testa óssea para cabeçadas), pernas da frente abertas. Cores: marrom-acinzentado com manchas mais claras no dorso.
 

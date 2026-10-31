@@ -1,6 +1,6 @@
 Crie no Blender um animal terrestre **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com escamas grossas, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
 
-ESPÉCIE: Paquirrinossauro. Parente do triceratops, 6,4 m. Em vez de chifre no nariz tem uma CALOMBO ósseo grosso e achatado, escudo curto com 2 chifres curvos para fora no topo. Cores: marrom-acinzentado com faixas escuras, escudo com bordas brancas.
+ESPÉCIE: Paquirrinossauro. Parente do triceratops, 6,4 m. Em vez de chifre no nariz tem um CALOMBO ósseo grosso e achatado, escudo curto com 2 chifres curvos para fora no topo. Cores: marrom-acinzentado com faixas escuras, escudo com bordas brancas.
 
 MALHA: entre 9.000 e 13.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
 
