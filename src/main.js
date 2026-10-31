@@ -316,11 +316,13 @@ function boot(hotData = {}) {
     const inspect = new InspectPanel(hud.el, () => creatures.findAimed(camera.position, camCtl.forward, 45));
     const messages = new Messages(ui);
     const touch = new TouchControls(ui, input);
-    // segurar o dedo perto de um bicho domado que dá para montar (com ou sem sela) = montar, como no ARK
+    // segurar o dedo MIRANDO num bicho domado seu e perto (até ~6 m) = montar / mensagem de sela, como no ARK
     touch.mountNear = () => {
       const p = ctx?.player;
       if (!p || p.dead) return false;
-      return ctx.creatures.tamedBy(p).some((o) => o.species.pode_montar && !o.isBaby && Math.hypot(o.pos.x - p.position.x, o.pos.z - p.position.z) - o.radius < 5);
+      const c = ctx.creatures.findAimed(ctx.camCtl.camera.position, ctx.camCtl.forward, 14);
+      if (!c || !c.tamed || c.owner !== p || !c.species.pode_montar || c.isBaby) return false;
+      return Math.hypot(c.pos.x - p.position.x, c.pos.z - p.position.z) - c.radius < 6;
     };
     const death = new DeathScreen(ui, world);
     const minimap = new Minimap(hud.el, world);
@@ -781,7 +783,11 @@ function boot(hotData = {}) {
       p.dismount();
       return;
     }
-    const c = ctx.creatures.findMountable(p, p.position, 5);
+    // monta o bicho que você está mirando (com sela e perto); se não mira em nenhum, o domado montável mais perto
+    const aimed = ctx.creatures.findAimed(ctx.camCtl.camera.position, ctx.camCtl.forward, 14);
+    const noOlho = aimed && aimed.tamed && aimed.owner === p && aimed.species.pode_montar && !aimed.isBaby && (aimed.saddled || !BALANCE.sela.precisa)
+      && Math.hypot(aimed.pos.x - p.position.x, aimed.pos.z - p.position.z) - aimed.radius < 6;
+    const c = noOlho ? aimed : ctx.creatures.findMountable(p, p.position, 5);
     if (c) p.mount(c);
     else if (ctx.creatures.tamedBy(p).length) {
       const near = ctx.creatures.tamedBy(p).find((o) => o.species.pode_montar && Math.hypot(o.pos.x - p.position.x, o.pos.z - p.position.z) - o.radius < 5);
