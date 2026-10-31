@@ -204,7 +204,8 @@ export class PlayerActions {
       if (n > 0) got[id] = n;
     }
     this._give(got);
-    this.player.stats.addXP(res.xp ?? 1);
+    // XP por golpe igual ao do ARK: machado 0,3; picareta e mão 0,2 (antes era 1 a 3 por golpe)
+    this.player.stats.addXP(mode === 'machado' ? 0.3 : 0.2);
     veg.consume(rec);
     if (mode !== 'colher') this._wear();
     // coleta tem um tempinho até a próxima (e animação de pegar)

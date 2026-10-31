@@ -161,7 +161,7 @@ export default {
     gravidade: 9.8,            // a flecha cai com a distância
     intervalo_seg: 0.9,        // tempo entre um tiro e outro
     alcance_m: 120,            // depois disso a flecha some
-    xp_acerto: 1,
+    xp_acerto: 0.1,
   },
 
   // Armadura (roupas de pele vestidas): cada peça tira X% do dano
