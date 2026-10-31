@@ -288,15 +288,18 @@ class Mesher {
 /* IK de perna (plano lateral Z/Y): pé no chão sem escorregar          */
 /* ================================================================== */
 const ang = (a, b) => Math.atan2(b.y - a.y, b.z - a.z);
-function legIK(rig, side, target, metaDelta, toeDelta, rp) {
-  const g = n => rig.spec[`${n}_${side}`];
-  const S = g('coxa').head, K0 = g('canela').head, A0 = g('pe').head, T0 = g('dedos').head, TT = g('dedos').tail;
+const legNames = key => key[0] === 'F'
+  ? [`ombro_${key.slice(1)}`, `antebraco_${key.slice(1)}`, `mao_${key.slice(1)}`, `dedos_mao_${key.slice(1)}`]
+  : [`coxa_${key}`, `canela_${key}`, `pe_${key}`, `dedos_${key}`];
+function legIK(rig, names, target, metaDelta, toeDelta, rp, bend = 1) {
+  const [n1, n2, n3, n4] = names.map(n => rig.spec[n]);
+  const S = n1.head, K0 = n2.head, A0 = n3.head, T0 = n4.head, TT = n4.tail;
   const L1 = Math.hypot(K0.y - S.y, K0.z - S.z), L2 = Math.hypot(A0.y - K0.y, A0.z - K0.z);
   const dz = target.z - S.z, dy = target.y - S.y;
   const d = clamp(Math.hypot(dz, dy), Math.abs(L1 - L2) + 1e-3, L1 + L2 - 1e-3);
   const beta = Math.atan2(dy, dz);
   const gamma = Math.acos(clamp((L1 * L1 + d * d - L2 * L2) / (2 * L1 * d), -1, 1));
-  const a1 = beta + gamma;                          // joelho para frente
+  const a1 = beta + bend * gamma;                   // bend 1: joelho para frente; -1: cotovelo para trás
   const K = { z: S.z + L1 * Math.cos(a1), y: S.y + L1 * Math.sin(a1) };
   const A = { z: S.z + d * Math.cos(beta), y: S.y + d * Math.sin(beta) };
   const a2 = Math.atan2(A.y - K.y, A.z - K.z);
@@ -304,7 +307,7 @@ function legIK(rig, side, target, metaDelta, toeDelta, rp) {
   const f1 = r1 - a1, f2 = (r2 - a2) - f1;
   const f3 = r3 - (r3 + metaDelta) - f1 - f2 - rp;
   const f4 = r4 - (r4 + toeDelta) - f1 - f2 - f3 - rp;
-  return { [`coxa_${side}`]: f1, [`canela_${side}`]: f2, [`pe_${side}`]: f3, [`dedos_${side}`]: f4 };
+  return { [names[0]]: f1, [names[1]]: f2, [names[2]]: f3, [names[3]]: f4 };
 }
 // alvo do tornozelo num ciclo de passo
 function gait(phase, stance, stride, lift) {
@@ -326,13 +329,15 @@ function bake(rig, name, dur, poseFn, fps = 30) {
     const t = i / fps * (dur * fps / n), u = t / dur, P = poseFn(t, u);
     const rot = { ...(P.rot || {}) }, rr = P.rootRot || [0, 0, 0], ro = P.root || [0, 0, 0];
     if (P.legs) for (const [side, L] of Object.entries(P.legs)) {
-      const A0 = rig.spec[`pe_${side}`].head;
+      const names = legNames(side);
+      if (!rig.spec[names[0]]) continue;
+      const A0 = rig.spec[names[2]].head;
       const world = V(A0.x, A0.y + L.dy, A0.z + L.dz);
       // alvo no sistema do quadril (desfaz posição e inclinação do corpo)
       const hipW = rest.clone().add(V(...ro));
       const inv = new THREE.Quaternion().setFromEuler(new THREE.Euler(rr[0], rr[1], rr[2], 'XYZ')).invert();
       const local = world.sub(hipW).applyQuaternion(inv).add(rest);
-      const ik = legIK(rig, side, local, L.meta || 0, L.toe || 0, rr[0]);
+      const ik = legIK(rig, names, local, L.meta || 0, L.toe || 0, rr[0], side[0] === 'F' ? -1 : 1);
       const blend = L.blend ?? 1;
       for (const [bn, v] of Object.entries(ik)) { const cur = rot[bn] || [0, 0, 0]; rot[bn] = [cur[0] + v * blend, cur[1], cur[2]]; }
     }
@@ -474,6 +479,101 @@ function buildRaptor() {
 
   const group = new THREE.Group(); group.name = 'raptor'; group.add(mesh);
   return { group, mesh, clips, loops: { parado: 1, andar: 1, correr: 1, comer: 1, dormir: 1 } };
+}
+
+/* Animações de quadrúpede (triceratops, estegossauro, mamute…) — k = altura do quadril / 0,92 m */
+function quadClips(rig, o) {
+  const k = o.k, clips = [];
+  const neck = ['pescoco_1', 'pescoco_2', 'pescoco_3'], spine = ['coluna_1', 'coluna_2', 'coluna_3'];
+  const tails = [...Array(8)].map((_, i) => `cauda_${i + 1}`).filter(n => rig.spec[n]);
+  const legs = (f = () => ({ dz: 0, dy: 0 })) => ({ E: f('E'), D: f('D'), FE: f('FE'), FD: f('FD') });
+  const loops = {};
+
+  clips.push(bake(rig, 'parado', 4, (t, u) => {
+    const rot = {}, w = 2 * PI * u;
+    chainRot(rot, spine, [0.01 * Math.sin(w * 2), 0, 0]);
+    chainRot(rot, neck, [0.03 * Math.sin(w * 2), 0.08 * Math.sin(w), 0]);
+    rot.cabeca = [0.04 * Math.sin(w * 2 + 1), 0.2 * Math.sin(w) * Math.abs(Math.sin(w)), 0];
+    rot.mandibula = [0.03 + 0.03 * Math.sin(w * 2), 0, 0];
+    tails.forEach((b, i) => rot[b] = [0.01 * Math.sin(w * 2 - i * 0.4), 0.04 * Math.sin(w - i * 0.35), 0]);
+    return { rot, root: [0, -0.01 * k * (1 - Math.cos(w * 2)), 0], legs: legs() };
+  }));
+  // ciclo: andar = 4 tempos (trás E, frente E, trás D, frente D); correr = pares diagonais
+  const cycle = (name, dur, stance, stride, lift, bob, phases, lean) => clips.push(bake(rig, name, dur, (t, u) => {
+    const rot = {}, w = 2 * PI * u;
+    chainRot(rot, spine, [0, 0.025 * Math.sin(w), 0]);
+    chainRot(rot, neck, [0.03 * Math.sin(w * 2) + lean * 0.3, -0.03 * Math.sin(w), 0]);
+    rot.cabeca = [-0.03 * Math.sin(w * 2 + 0.6), 0.03 * Math.sin(w), 0];
+    tails.forEach((b, i) => rot[b] = [0.012 * Math.sin(w * 2 - i * 0.5), 0.05 * Math.sin(w - 0.6 - i * 0.3), 0]);
+    const L = {};
+    for (const [key, ph] of Object.entries(phases)) L[key] = gait(u + ph, stance, stride * k, lift * k);
+    return { rot, root: [0.008 * k * Math.sin(w), -bob * k * (0.5 + 0.5 * Math.cos(w * 2)), 0], rootRot: [lean + 0.015 * Math.sin(w * 2), 0.02 * Math.sin(w), 0.015 * Math.sin(w)], legs: L };
+  }));
+  cycle('andar', ...o.walk, { E: 0, FE: 0.25, D: 0.5, FD: 0.75 }, 0);
+  cycle('correr', ...o.run, { E: 0, FD: 0.08, D: 0.5, FE: 0.58 }, 0.04);
+
+  const atk = o.attack || 'chifrada';
+  if (atk === 'chifrada' || atk === 'investida' || atk === 'presas' || atk === 'cabecada') clips.push(bake(rig, 'atacar', 1.5, (t, u) => {
+    const rot = {}, wind = env(u, 0, 0.25, 0.3, 0.42), hit = env(u, 0.35, 0.5, 0.62, 0.9);
+    const side = atk === 'presas' ? Math.sin(PI * clamp((u - 0.35) / 0.4, 0, 1)) : 0;
+    chainRot(rot, neck, [-0.12 * wind + 0.2 * hit, 0.25 * side, 0]);
+    rot.cabeca = [-0.15 * wind + 0.35 * hit, 0.3 * side, 0];
+    rot.mandibula = [0.15 * wind, 0, 0];
+    tails.forEach(b => rot[b] = [0.03 * hit, 0, 0]);
+    return { rot, root: [0, -0.05 * k * hit, (0.35 * hit - 0.12 * wind) * k], rootRot: [0.08 * hit - 0.05 * wind, 0, 0], legs: legs() };
+  }));
+  if (atk === 'cauda' || atk === 'chicote') clips.push(bake(rig, 'atacar', 1.7, (t, u) => {
+    const rot = {}, turn = env(u, 0.05, 0.3, 0.6, 0.9), whip = Math.sin(PI * clamp((u - 0.3) / 0.35, 0, 1));
+    const yaw = atk === 'cauda' ? 0.5 * turn : 0;
+    chainRot(rot, neck, [0, -0.15 * turn, 0]);
+    tails.forEach((b, i) => rot[b] = [0.03 * whip, (0.14 + i * 0.02) * (whip * 1.0 - 0.4 * turn), 0]);
+    return { rot, root: [0, 0, 0], rootRot: [0, yaw, 0], legs: legs() };
+  }));
+  if (atk === 'pisar') clips.push(bake(rig, 'atacar', 2.0, (t, u) => {
+    const rot = {}, rear = env(u, 0.05, 0.4, 0.55, 0.7);
+    chainRot(rot, neck, [-0.12 * rear, 0, 0]);
+    tails.forEach(b => rot[b] = [-0.06 * rear, 0, 0]);
+    const front = s => ({ dz: 0.15 * k * rear, dy: 0.6 * k * rear, meta: -0.5 * rear });
+    return { rot, root: [0, 0.05 * k * rear, -0.1 * k * rear], rootRot: [-0.42 * rear, 0, 0], legs: { E: { dz: 0, dy: 0 }, D: { dz: 0, dy: 0 }, FE: front(), FD: front() } };
+  }));
+
+  clips.push(bake(rig, 'rugir', 2.4, (t, u) => {
+    const rot = {}, up = env(u, 0, 0.2, 0.75, 0.95), roar = env(u, 0.15, 0.28, 0.7, 0.85);
+    chainRot(rot, neck, [-0.14 * up, 0.04 * roar * Math.sin(t * 9), 0]);
+    rot.cabeca = [-0.2 * up, 0.08 * roar * Math.sin(t * 11), 0];
+    rot.mandibula = [0.7 * roar, 0, 0];
+    tails.forEach((b, i) => rot[b] = [0.02 * up, 0.04 * roar * Math.sin(t * 6 - i * 0.5), 0]);
+    return { rot, root: [0, 0, -0.04 * k * up], rootRot: [-0.04 * up, 0, 0], legs: legs() };
+  }));
+
+  clips.push(bake(rig, 'comer', 2.4, (t, u) => {
+    const rot = {}, w = 2 * PI * u, chew = Math.max(0, Math.sin(w * 3)), e = o.eat ?? 1;
+    if (o.comerAlto) { chainRot(rot, neck, [-0.15 * e, 0.06 * Math.sin(w), 0]); rot.cabeca = [-0.1 * e, 0, 0]; }
+    else { chainRot(rot, neck, [0.3 * e, 0.05 * Math.sin(w), 0]); rot.cabeca = [(0.3 - 0.1 * Math.sin(w * 2)) * e, 0, 0]; }
+    rot.mandibula = [0.3 * chew, 0, 0];
+    tails.forEach((b, i) => rot[b] = [0.01, 0.03 * Math.sin(w - i * 0.4), 0]);
+    return { rot, root: [0, -0.03 * k, 0], rootRot: [o.comerAlto ? -0.02 : 0.06 * e, 0, 0], legs: legs() };
+  }));
+
+  clips.push(bake(rig, 'dormir', 4, (t, u) => {
+    const rot = {}, w = 2 * PI * u, br = Math.sin(w);
+    chainRot(rot, spine, [0.015 * br, 0, 0]);
+    chainRot(rot, neck, [0.18, 0.18, 0]); rot.cabeca = [0.1 + 0.02 * br, 0.15, 0];
+    tails.forEach(b => rot[b] = [-0.03, -0.1, 0]);
+    const fold = key => key[0] === 'F' ? { dz: 0.12 * k, dy: -o.foldF, meta: -1.0, toe: 0.3, blend: 1 } : { dz: -0.18 * k, dy: -o.foldB, meta: 1.0, toe: 0.1, blend: 1 };
+    return { rot, root: [0, (-o.sleepDrop + 0.01 * br) * k, 0], rootRot: [0, 0, 0], legs: legs(fold) };
+  }));
+
+  clips.push(bake(rig, 'morrer', 2.6, (t, u) => {
+    const rot = {}, stag = env(u, 0, 0.1, 0.35, 0.45), fall = ss(0.35, 0.7, u);
+    chainRot(rot, neck, [0.15 * stag + 0.15 * fall, 0.08 * stag * Math.sin(t * 6), -0.2 * fall]);
+    rot.cabeca = [0.15 * fall, 0, -0.2 * fall];
+    rot.mandibula = [0.25 * fall, 0, 0];
+    tails.forEach(b => rot[b] = [-0.02 * fall, 0.06 * fall, 0]);
+    const wob = key => ({ dz: 0.04 * k * stag * Math.sin(t * 8 + (key[0] === 'F' ? 1 : 0)), dy: 0, blend: 1 - fall });
+    return { rot, root: [-0.03 * k * fall, (-0.08 * stag - o.deathDrop * fall) * k, 0], rootRot: [0.05 * stag, 0, 0.1 * stag * Math.sin(t * 5) + (PI / 2 - 0.1) * fall], legs: legs(wob) };
+  }));
+  return clips;
 }
 
 /* Animações de bípede (raptor, T-Rex, carnotauro…) — k = escala (altura do quadril / 0,92 m) */
@@ -778,9 +878,22 @@ async function buildImported(buf, cfg) {
   const fit = cfg.ajuste || {};
   // pés: pontos perto do chão
   const feet = P.filter(p => p.y < 0.07 * H);
-  const zf = fit.zPe ?? med(feet.map(p => p.z)), xf = fit.xPe ?? Math.max(0.05 * W, med(feet.map(p => Math.abs(p.x))));
-  const toeMax = Math.max(...feet.map(p => p.z));
-  const zh = fit.zQuadril ?? zf - 0.03 * L;
+  const QUAD = cfg.tipo === 'quadrupede';
+  // quadrúpede: separa pés de trás e da frente (2 grupos ao longo do comprimento)
+  let zBack = 0, zFront = 0, xfB = 0, xfF = 0, toeB = 0, toeF = 0;
+  if (QUAD) {
+    const zs2 = feet.map(p => p.z); let c1 = Math.min(...zs2), c2 = Math.max(...zs2);
+    for (let it = 0; it < 12; it++) { const a = [], b2 = []; zs2.forEach(z => (Math.abs(z - c1) < Math.abs(z - c2) ? a : b2).push(z)); c1 = a.reduce((u, v) => u + v, 0) / a.length; c2 = b2.reduce((u, v) => u + v, 0) / b2.length; }
+    zBack = fit.zPeTras ?? Math.min(c1, c2); zFront = fit.zPeFrente ?? Math.max(c1, c2);
+    const mid = (zBack + zFront) / 2, fb = feet.filter(p => p.z < mid), ff = feet.filter(p => p.z >= mid);
+    xfB = fit.xPeTras ?? Math.max(0.05 * W, med(fb.map(p => Math.abs(p.x)))); xfF = fit.xPeFrente ?? Math.max(0.05 * W, med(ff.map(p => Math.abs(p.x))));
+    toeB = Math.max(...fb.map(p => p.z)); toeF = Math.max(...ff.map(p => p.z));
+  }
+  const zf = fit.zPe ?? (QUAD ? zBack : med(feet.map(p => p.z))), xf = fit.xPe ?? (QUAD ? xfB : Math.max(0.05 * W, med(feet.map(p => Math.abs(p.x)))));
+  const toeMax = QUAD ? toeB : Math.max(...feet.map(p => p.z));
+  const zh = fit.zQuadril ?? (QUAD ? zBack : zf - 0.03 * L);
+  const zSh = fit.zOmbro ?? zFront;
+  const legZones = QUAD ? [zBack, zFront] : [zf];
   // linha do meio do corpo (só o tronco, sem as pernas)
   const centerY = (z, halfwin = 0.025 * L, minY = 0.45 * H) => {
     const sl = P.filter(p => Math.abs(p.z - z) < halfwin && Math.abs(p.x) < 0.3 * W && p.y > minY);
@@ -788,25 +901,27 @@ async function buildImported(buf, cfg) {
     const ys = sl.map(p => p.y); return { c: (Math.max(...ys) + Math.min(...ys)) / 2, top: Math.max(...ys), bot: Math.min(...ys) };
   };
   const hipS = centerY(zh) || { c: 0.75 * H, top: H, bot: 0.5 * H };
-  const hipY = fit.yQuadril ?? hipS.c;
-  // pescoço = parte mais fina entre o peito e a cabeça
-  const zEnd = bb.max.z, zTail = bb.min.z;
-  let zNeck = zh + 0.6 * (zEnd - zh), thin = 1e9;
-  for (let z = zh + 0.42 * (zEnd - zh); z < zEnd - 0.1 * L; z += 0.01 * L) {
-    const s2 = centerY(z, 0.012 * L, 0.3 * H); if (s2 && s2.top - s2.bot < thin) { thin = s2.top - s2.bot; zNeck = z; }
-  }
-  zNeck = fit.zPescoco ?? zNeck;
-  const skullZ = fit.zCranio ?? Math.max(zNeck + 0.02 * L, zEnd - (cfg.cabeca ?? 0.13) * L);
+  let hipY = fit.yQuadril ?? hipS.c;
   // centro do corpo em qualquer ponto (perto das pernas ignora a parte de baixo)
   const cyRaw = z => {
-    const legZone = Math.abs(z - zf) < 0.14 * L;
+    const legZone = legZones.some(zz => Math.abs(z - zz) < 0.12 * L);
     const sl = P.filter(p => Math.abs(p.z - z) < 0.02 * L && Math.abs(p.x) < 0.3 * W && (!legZone || p.y > 0.5 * hipY));
     if (sl.length < 3) return null;
     const ys = sl.map(p => p.y); return (Math.max(...ys) + Math.min(...ys)) / 2;
   };
   const cy = z => { for (let d = 0; d < 0.2 * L; d += 0.01 * L) { const v = cyRaw(z + d) ?? cyRaw(z - d); if (v != null) return v; } return hipY; };
-  const headS = centerY((skullZ + zEnd) / 2, 0.03 * L, 0.3 * H) || { c: hipY, top: hipY + 0.1, bot: hipY - 0.1 };
-  const neckBase = zh + 0.62 * (zNeck - zh);
+  if (QUAD && fit.yQuadril == null) hipY = cy(zh);
+  // pescoço = parte mais fina entre o peito e a cabeça
+  const zEnd = bb.max.z, zTail = bb.min.z;
+  const z0 = QUAD ? zSh + 0.02 * L : zh + 0.42 * (zEnd - zh);
+  let zNeck = QUAD ? lerp(zSh, zEnd, 0.4) : zh + 0.6 * (zEnd - zh), thin = 1e9;
+  for (let z = z0; z < zEnd - 0.1 * L; z += 0.01 * L) {
+    const s2 = centerY(z, 0.012 * L, 0.3 * H); if (s2 && s2.top - s2.bot < thin) { thin = s2.top - s2.bot; zNeck = z; }
+  }
+  zNeck = fit.zPescoco ?? zNeck;
+  const skullZ = fit.zCranio ?? Math.max(zNeck + 0.02 * L, zEnd - (cfg.cabeca ?? 0.13) * L);
+  const headS = centerY((skullZ + zEnd) / 2, 0.03 * L, 0.15 * H) || { c: hipY, top: hipY + 0.1, bot: hipY - 0.1 };
+  const neckBase = QUAD ? zSh : zh + 0.62 * (zNeck - zh);
   // ----- esqueleto (mesmos nomes dos outros bichos)
   const rig = new Rig(), k = hipY / 0.92;
   const sp = t => { const z = lerp(zh, neckBase, t); return [0, cy(z), z]; };
@@ -822,7 +937,22 @@ async function buildImported(buf, cfg) {
   for (let i = 0; i < 8; i++) rig.bone(`cauda_${i + 1}`, i ? `cauda_${i}` : 'quadril', [0, cy(tz(i)), tz(i)], [0, cy(tz(i + 1)), tz(i + 1)]);
   const chestBot = (centerY(neckBase - 0.04 * L) || { bot: hipY * 0.8 }).bot;
   const armL = (cfg.braco ?? 0.06) * L;
+  const shH = QUAD ? cy(zSh) : 0;
   for (const [s, x] of [['E', 1], ['D', -1]]) {
+    if (QUAD) {
+      // pata da frente: ombro → cotovelo (dobra para trás) → pulso → mão
+      const fx = xfF * x;
+      rig.bone(`ombro_${s}`, 'coluna_3', [fx * 0.85, shH - 0.12 * shH, zSh], [fx, 0.55 * shH, zSh - 0.08 * shH])
+         .bone(`antebraco_${s}`, `ombro_${s}`, [fx, 0.55 * shH, zSh - 0.08 * shH], [fx, 0.2 * shH, zSh + 0.02 * shH])
+         .bone(`mao_${s}`, `antebraco_${s}`, [fx, 0.2 * shH, zSh + 0.02 * shH], [fx, 0.05 * shH, zFront + 0.01 * L])
+         .bone(`dedos_mao_${s}`, `mao_${s}`, [fx, 0.05 * shH, zFront + 0.01 * L], [fx, 0.02 * shH, toeF]);
+      const bx = xfB * x;
+      rig.bone(`coxa_${s}`, 'quadril', [bx * 0.85, hipY - 0.12 * hipY, zh], [bx, 0.55 * hipY, zh + 0.1 * hipY])
+         .bone(`canela_${s}`, `coxa_${s}`, [bx, 0.55 * hipY, zh + 0.1 * hipY], [bx, 0.22 * hipY, zh - 0.05 * hipY])
+         .bone(`pe_${s}`, `canela_${s}`, [bx, 0.22 * hipY, zh - 0.05 * hipY], [bx, 0.05 * hipY, zBack + 0.02 * L])
+         .bone(`dedos_${s}`, `pe_${s}`, [bx, 0.05 * hipY, zBack + 0.02 * L], [bx, 0.02 * hipY, toeB]);
+      continue;
+    }
     const shZ = neckBase - 0.03 * L, shY = lerp(cy(shZ), chestBot, 0.55), ax = 0.6 * xf * x;
     rig.bone(`ombro_${s}`, 'coluna_3', [ax, shY, shZ], [ax * 1.15, shY - armL * 0.45, shZ - armL * 0.05])
        .bone(`antebraco_${s}`, `ombro_${s}`, [ax * 1.15, shY - armL * 0.45, shZ - armL * 0.05], [ax * 1.1, shY - armL * 0.65, shZ + armL * 0.35])
@@ -862,15 +992,23 @@ async function buildImported(buf, cfg) {
     group.add(m); m.bind(skeleton, new THREE.Matrix4());
     return m;
   });
-  const bellyMin = (centerY(lerp(zh, neckBase, 0.4), 0.03 * L, 0.2 * H) || { bot: hipY * 0.6 }).bot;
-  const clips = bipedClips(rig, Object.assign({
+  // altura da barriga: a parte de baixo do tronco no meio do corpo (ignora as pernas)
+  let bellyMin = 0;
+  for (let t = 0.3; t <= 0.7; t += 0.1) { const c = centerY(lerp(zh, neckBase, t), 0.02 * L, 0.3 * hipY); if (c) bellyMin = Math.max(bellyMin, c.bot); }
+  if (!bellyMin) bellyMin = hipY * 0.6;
+  const clips = QUAD ? quadClips(rig, Object.assign({
+    k, walk: [1.5 * Math.sqrt(k), 0.7, 0.5, 0.09, 0.012], run: [0.8 * Math.sqrt(k), 0.45, 0.95, 0.16, 0.035],
+    attack: cfg.ataque || 'chifrada', eat: 1, comerAlto: !!cfg.comerAlto,
+    sleepDrop: Math.max(0.1, (bellyMin - 0.03 * H) / k), foldB: 0.17 * hipY, foldF: 0.15 * shH,
+    deathDrop: (hipY - 0.45 * W) / k,
+  }, cfg.anim || {})) : bipedClips(rig, Object.assign({
     k, walk: [1.1 * Math.sqrt(k), 0.62, 0.62, 0.1, 0.025, 0.04, 0.12], run: [0.6 * Math.sqrt(k), 0.4, 1.15, 0.2, 0.06, 0.2, 0.35],
     attack: cfg.ataque || 'mordida', roar: cfg.rugido || 'baixo', eat: 0.6,
     sleepDrop: Math.max(0.1, (bellyMin - 0.03 * H) / k), fold: { dz: -0.15 * k, dy: -0.18 * k, meta: 1.0, toe: 0.1 },
     deathDrop: (hipY - 0.45 * W) / k,
   }, cfg.anim || {}));
   return { group, mesh: meshes[0], meshes, clips, rig, tris, loops: { parado: 1, andar: 1, correr: 1, comer: 1, dormir: 1 },
-    medidas: { L, H, W, zf, xf, zh, hipY, zNeck, skullZ } };
+    medidas: { L, H, W, zf, xf, zh, hipY, zNeck, skullZ, zFront, xfF, shH } };
 }
 
 const BICHOS = {
@@ -887,7 +1025,7 @@ renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.outputColorSpace = THREE.SRGBColorSpace;
 const scene = new THREE.Scene();
-scene.background = C('#c4dbe0'); scene.fog = new THREE.Fog(0xc4dbe0, 18, 60);
+scene.background = C('#c4dbe0'); scene.fog = new THREE.Fog(0xc4dbe0, 40, 160);
 scene.add(new THREE.HemisphereLight(0xcfe4ff, 0x4d5a2c, 1.1));
 const sun = new THREE.DirectionalLight(0xffe0b0, 2.6);
 sun.position.set(6, 9, 5); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
@@ -906,7 +1044,7 @@ const cache = {};
 function get(name) { return cache[name] ||= BICHOS[name].build(); }
 function frame(obj) {
   const box = new THREE.Box3().setFromObject(obj), size = box.getSize(V(0, 0, 0)), c = box.getCenter(V(0, 0, 0));
-  const r = Math.max(size.x, size.y, size.z) * 0.36 + 0.15;
+  const r = size.length() * 0.42 + 0.15;
   const dist = r / Math.sin(camera.fov * PI / 360) * (camera.aspect < 1 ? 1.6 : 1.0);
   camera.position.copy(c).add(V(1.0, 0.45, 0.75).normalize().multiplyScalar(dist));
   controls.target.copy(c); controls.update();

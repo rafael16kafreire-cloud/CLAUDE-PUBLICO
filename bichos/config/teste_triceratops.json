@@ -1,0 +1,2 @@
+{ "nome": "teste_triceratops", "titulo": "Teste quadrúpede (Triceratops CC0)", "modelo": "../teste/triceratops_parado.glb",
+  "comprimento": 8.5, "rot": [0, 0, 0], "tipo": "quadrupede", "ataque": "chifrada", "cabeca": 0.25 }
