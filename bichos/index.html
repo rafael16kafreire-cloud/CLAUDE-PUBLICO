@@ -1,0 +1,623 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bichos de Isla</title>
+<style>
+  :root {
+    --panel: rgba(250, 247, 240, 0.94); --text: #2b2520; --muted: #6d6358; --line: #ddd3c4;
+    --btn: #ece4d6; --btn-hover: #e2d6c2; --accent: #8a5a2b; --accent-text: #fff8ee; --bg: #c4dbe0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --panel: rgba(28, 25, 21, 0.94); --text: #efe7da; --muted: #a89c8c; --line: #3a342c;
+      --btn: #2c2720; --btn-hover: #3a3329; --accent: #c98b4a; --accent-text: #1a140d; --bg: #15130f;
+    }
+  }
+  :root[data-theme="dark"] {
+    --panel: rgba(28, 25, 21, 0.94); --text: #efe7da; --muted: #a89c8c; --line: #3a342c;
+    --btn: #2c2720; --btn-hover: #3a3329; --accent: #c98b4a; --accent-text: #1a140d; --bg: #15130f;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--text);
+    font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  #c { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+  #painel { position: fixed; top: 12px; right: 12px; bottom: 12px; width: 290px; background: var(--panel);
+    border: 1px solid var(--line); border-radius: 12px; padding: 14px; overflow-y: auto; }
+  h1 { font-size: 17px; margin: 0 0 2px; }
+  .sub { color: var(--muted); font-size: 12px; margin: 0 0 10px; }
+  h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 14px 0 6px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  button { font: inherit; color: var(--text); background: var(--btn); border: 1px solid var(--line);
+    border-radius: 8px; padding: 7px 9px; cursor: pointer; text-align: left; min-height: 34px; }
+  button:hover { background: var(--btn-hover); }
+  button.ativo, button.principal { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  button.principal { width: 100%; text-align: center; margin-top: 8px; }
+  #info { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 13px; color: var(--muted); }
+  #info b { color: var(--text); display: block; font-size: 14px; }
+  @media (max-width: 720px) {
+    #painel { top: auto; left: 8px; right: 8px; bottom: 8px; width: auto; max-height: 44vh; }
+  }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<canvas id="c"></canvas>
+<aside id="painel">
+  <h1>Bichos de Isla</h1>
+  <p class="sub">Low-poly, com esqueleto e animações</p>
+  <h2>Bicho</h2>
+  <div class="grid" id="listaBichos"></div>
+  <h2>Animação</h2>
+  <div class="grid" id="listaAnim"></div>
+  <h2>Detalhes</h2>
+  <div id="info"></div>
+  <button class="principal" id="baixar">Baixar .glb</button>
+</aside>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+
+/* ================================================================== */
+/* Utilidades                                                          */
+/* ================================================================== */
+const PI = Math.PI, V = (x, y, z) => new THREE.Vector3(x, y, z), C = s => new THREE.Color(s);
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, t) => a + (b - a) * t;
+const ss = (e0, e1, x) => { const t = clamp((x - e0) / (e1 - e0), 0, 1); return t * t * (3 - 2 * t); };
+// envelope: sobe de a→b, fica em 1, desce de c→d
+const env = (u, a, b, c, d) => ss(a, b, u) * (1 - ss(c, d, u));
+function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function distSeg(p, a, b) {
+  const ab = b.clone().sub(a), t = clamp(p.clone().sub(a).dot(ab) / ab.lengthSq(), 0, 1);
+  return p.distanceTo(a.clone().addScaledVector(ab, t));
+}
+
+/* ================================================================== */
+/* Textura de escamas (neutra; a cor vem da cor por vértice)           */
+/* ================================================================== */
+function scaleTexture() {
+  const N = 64, c = document.createElement('canvas'); c.width = c.height = N;
+  const g = c.getContext('2d'), img = g.createImageData(N, N), r = mulberry32(3);
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const row = Math.floor(y / 8), cx = (x + (row % 2) * 4) % 8, cy = y % 8;
+    const edge = Math.min(cx, 7 - cx, cy, 7 - cy) / 3.5;
+    const v = 255 * clamp(0.74 + 0.26 * Math.min(1, edge) + (r() - 0.5) * 0.06, 0, 1), i = (y * N + x) * 4;
+    img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  const t = new THREE.CanvasTexture(c);
+  t.name = 'escamas'; t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.magFilter = THREE.NearestFilter; t.minFilter = THREE.NearestMipmapLinearFilter;
+  return t;
+}
+const TEX = scaleTexture();
+
+/* ================================================================== */
+/* Esqueleto                                                           */
+/* ================================================================== */
+class Rig {
+  constructor() { this.spec = {}; this.order = []; }
+  bone(name, parent, head, tail) { this.spec[name] = { name, parent, head: V(...head), tail: V(...tail) }; this.order.push(name); return this; }
+  build() {
+    this.idx = {}; this.list = [];
+    this.order.forEach((n, i) => {
+      const s = this.spec[n], b = new THREE.Bone(); b.name = n; s.obj = b; this.idx[n] = i; this.list.push(b);
+      const ph = s.parent ? this.spec[s.parent].head : V(0, 0, 0);
+      b.position.copy(s.head).sub(ph);
+      if (s.parent) this.spec[s.parent].obj.add(b);
+    });
+    this.root = this.list[0];
+    return this;
+  }
+}
+
+/* ================================================================== */
+/* Malha: tubos (loft) e peças pequenas, com pesos de pele             */
+/* ================================================================== */
+class Mesher {
+  constructor(rig, seed = 7) { this.rig = rig; this.P = []; this.N = []; this.Col = []; this.UV = []; this.SI = []; this.SW = []; this.r = mulberry32(seed); }
+  weights(p, chain) {
+    if (chain.length === 1) return [[this.rig.idx[chain[0]], 1]];
+    const ds = chain.map(n => { const s = this.rig.spec[n]; return [this.rig.idx[n], distSeg(p, s.head, s.tail) + 0.006]; }).sort((a, b) => a[1] - b[1]);
+    const [a, b] = ds, wa = b[1] ** 2 / (a[1] ** 2 + b[1] ** 2);
+    return [[a[0], wa], [b[0], 1 - wa]];
+  }
+  tri(a, b, c, hint, color) {
+    // a,b,c = {p, uv, w}; hint = direção "para fora"
+    const n = b.p.clone().sub(a.p).cross(c.p.clone().sub(a.p));
+    if (hint && n.dot(hint) < 0) [b, c] = [c, b];
+    const k = 1 + (this.r() - 0.5) * 0.09, col = color.clone().multiplyScalar(k);
+    for (const v of [a, b, c]) {
+      this.P.push(v.p.x, v.p.y, v.p.z); this.UV.push(...v.uv); this.Col.push(col.r, col.g, col.b);
+      const w = v.w.slice(0, 4); while (w.length < 4) w.push([0, 0]);
+      this.SI.push(...w.map(q => q[0])); this.SW.push(...w.map(q => q[1]));
+    }
+  }
+  // tubo ao longo de uma curva; pts: [{p:[x,y,z], w, h, dy}]
+  loft({ pts, K = 20, sides = 10, chain, color, info = {}, capStart = true, capEnd = true, flatBottom = null, flatTop = null }) {
+    const curve = new THREE.CatmullRomCurve3(pts.map(q => V(...q.p)), false, 'centripetal');
+    const rings = [], centers = [], tangents = [];
+    let arc = 0, prevC = null;
+    for (let i = 0; i <= K; i++) {
+      const t = i / K, c = curve.getPoint(t), T = curve.getTangent(t).normalize();
+      const f = t * (pts.length - 1), k = Math.min(Math.floor(f), pts.length - 2), u = f - k;
+      const w = lerp(pts[k].w, pts[k + 1].w, u), h = lerp(pts[k].h, pts[k + 1].h, u), dy = lerp(pts[k].dy || 0, pts[k + 1].dy || 0, u);
+      const ref = Math.abs(T.y) > 0.8 ? V(0, 0, 1) : V(0, 1, 0);
+      const S = T.clone().cross(ref).normalize(), U = S.clone().cross(T).normalize();
+      if (prevC) arc += c.distanceTo(prevC); prevC = c;
+      const wts = this.weights(c, chain), ring = [];
+      for (let j = 0; j < sides; j++) {
+        const a = 2 * PI * j / sides;
+        let x = Math.cos(a) * w, y = Math.sin(a) * h;
+        if (flatBottom != null) y = Math.max(y, -h * flatBottom);
+        if (flatTop != null) y = Math.min(y, h * flatTop);
+        y += dy;
+        ring.push({ p: c.clone().addScaledVector(S, x).addScaledVector(U, y), uv: [j / sides * 3, arc * 5], w: wts });
+      }
+      rings.push(ring); centers.push(c.clone().addScaledVector(U, dy)); tangents.push(T);
+    }
+    const col = (vs, hint) => {
+      const ctr = vs.reduce((s, v) => s.add(v.p), V(0, 0, 0)).multiplyScalar(1 / vs.length);
+      const n = vs[1].p.clone().sub(vs[0].p).cross(vs[2].p.clone().sub(vs[0].p)).normalize();
+      if (n.dot(hint) < 0) n.negate();
+      return color(ctr, n, info);
+    };
+    for (let i = 0; i < K; i++) for (let j = 0; j < sides; j++) {
+      const a = rings[i][j], b = rings[i][(j + 1) % sides], c = rings[i + 1][j], d = rings[i + 1][(j + 1) % sides];
+      const mid = centers[i].clone().add(centers[i + 1]).multiplyScalar(0.5);
+      const h1 = a.p.clone().add(b.p).add(c.p).multiplyScalar(1 / 3).sub(mid);
+      this.tri(a, b, c, h1, col([a, b, c], h1));
+      const h2 = b.p.clone().add(d.p).add(c.p).multiplyScalar(1 / 3).sub(mid);
+      this.tri(b, d, c, h2, col([b, d, c], h2));
+    }
+    const cap = (ring, ctr, hint) => {
+      const cv = { p: ctr, uv: [0.5, 0.5], w: ring[0].w };
+      for (let j = 0; j < sides; j++) { const a = ring[j], b = ring[(j + 1) % sides]; this.tri(cv, a, b, hint, col([cv, a, b], hint)); }
+    };
+    if (capStart) cap(rings[0], centers[0], tangents[0].clone().negate());
+    if (capEnd) cap(rings[K], centers[K], tangents[K]);
+    return curve;
+  }
+  // peça pequena a partir de uma geometria do three (já no lugar)
+  geom(g, bone, color, info = {}) {
+    g = g.index ? g.toNonIndexed() : g;
+    const p = g.attributes.position, w = Array.isArray(bone) ? null : [[this.rig.idx[bone], 1]];
+    for (let i = 0; i < p.count; i += 3) {
+      const vs = [0, 1, 2].map(k => {
+        const q = V(p.getX(i + k), p.getY(i + k), p.getZ(i + k));
+        return { p: q, uv: [0.5, 0.5], w: w || this.weights(q, bone) };
+      });
+      const n = vs[1].p.clone().sub(vs[0].p).cross(vs[2].p.clone().sub(vs[0].p)).normalize();
+      const ctr = vs[0].p.clone().add(vs[1].p).add(vs[2].p).multiplyScalar(1 / 3);
+      this.tri(vs[0], vs[1], vs[2], null, typeof color === 'function' ? color(ctr, n, info) : color);
+    }
+  }
+  // cone da base até a ponta (garras, dentes, chifres, penas)
+  cone(base, tip, r, bone, color, sides = 5, flat = 1) {
+    base = V(...base); tip = V(...tip);
+    const dir = tip.clone().sub(base), len = dir.length();
+    const g = new THREE.CylinderGeometry(0, r, len, sides, 1);
+    g.translate(0, len / 2, 0); g.scale(1, 1, flat);
+    g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(V(0, 1, 0), dir.normalize()));
+    g.translate(base.x, base.y, base.z);
+    const fc = typeof color === 'function' ? (ctr, n) => color(ctr.distanceTo(base) / len) : color;
+    this.geom(g, bone, fc);
+  }
+  // tubo reto afinando (dedos)
+  tube(a, b, ra, rb, bone, color, sides = 6) {
+    a = V(...a); b = V(...b);
+    const dir = b.clone().sub(a), len = dir.length();
+    const g = new THREE.CylinderGeometry(rb, ra, len, sides, 1);
+    g.translate(0, len / 2, 0);
+    g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(V(0, 1, 0), dir.normalize()));
+    g.translate(a.x, a.y, a.z);
+    this.geom(g, bone, color);
+  }
+  ball(c, r, bone, color, detail = 0) {
+    const g = new THREE.IcosahedronGeometry(r, detail); g.translate(...c);
+    this.geom(g, bone, color);
+  }
+  build(name, material) {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(this.P, 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(this.UV, 2));
+    g.setAttribute('color', new THREE.Float32BufferAttribute(this.Col, 3));
+    g.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(this.SI, 4));
+    g.setAttribute('skinWeight', new THREE.Float32BufferAttribute(this.SW, 4));
+    g.computeVertexNormals();
+    const mesh = new THREE.SkinnedMesh(g, material);
+    mesh.name = name + '_malha'; mesh.castShadow = mesh.receiveShadow = true;
+    mesh.add(this.rig.root);
+    this.rig.root.updateMatrixWorld(true);
+    mesh.bind(new THREE.Skeleton(this.rig.list));
+    mesh.frustumCulled = false;
+    return mesh;
+  }
+}
+
+/* ================================================================== */
+/* IK de perna (plano lateral Z/Y): pé no chão sem escorregar          */
+/* ================================================================== */
+const ang = (a, b) => Math.atan2(b.y - a.y, b.z - a.z);
+function legIK(rig, side, target, metaDelta, toeDelta, rp) {
+  const g = n => rig.spec[`${n}_${side}`];
+  const S = g('coxa').head, K0 = g('canela').head, A0 = g('pe').head, T0 = g('dedos').head, TT = g('dedos').tail;
+  const L1 = Math.hypot(K0.y - S.y, K0.z - S.z), L2 = Math.hypot(A0.y - K0.y, A0.z - K0.z);
+  const dz = target.z - S.z, dy = target.y - S.y;
+  const d = clamp(Math.hypot(dz, dy), Math.abs(L1 - L2) + 1e-3, L1 + L2 - 1e-3);
+  const beta = Math.atan2(dy, dz);
+  const gamma = Math.acos(clamp((L1 * L1 + d * d - L2 * L2) / (2 * L1 * d), -1, 1));
+  const a1 = beta + gamma;                          // joelho para frente
+  const K = { z: S.z + L1 * Math.cos(a1), y: S.y + L1 * Math.sin(a1) };
+  const A = { z: S.z + d * Math.cos(beta), y: S.y + d * Math.sin(beta) };
+  const a2 = Math.atan2(A.y - K.y, A.z - K.z);
+  const r1 = ang(S, K0), r2 = ang(K0, A0), r3 = ang(A0, T0), r4 = ang(T0, TT);
+  const f1 = r1 - a1, f2 = (r2 - a2) - f1;
+  const f3 = r3 - (r3 + metaDelta) - f1 - f2 - rp;
+  const f4 = r4 - (r4 + toeDelta) - f1 - f2 - f3 - rp;
+  return { [`coxa_${side}`]: f1, [`canela_${side}`]: f2, [`pe_${side}`]: f3, [`dedos_${side}`]: f4 };
+}
+// alvo do tornozelo num ciclo de passo
+function gait(phase, stance, stride, lift) {
+  phase = ((phase % 1) + 1) % 1;
+  if (phase < stance) { const s = phase / stance; return { dz: stride * (0.5 - s), dy: 0, meta: 0, toe: 0 }; }
+  const s = (phase - stance) / (1 - stance), up = Math.sin(PI * s);
+  return { dz: stride * (-0.5 + s), dy: lift * up, meta: -0.55 * up, toe: -0.7 * up };
+}
+
+/* ================================================================== */
+/* "Assar" uma animação em keyframes                                   */
+/* ================================================================== */
+const ROOT = 'quadril';
+function bake(rig, name, dur, poseFn, fps = 30) {
+  const n = Math.round(dur * fps), times = [], Q = {}, pos = [];
+  rig.order.forEach(b => Q[b] = []);
+  const rest = rig.spec[ROOT].head, q = new THREE.Quaternion(), e = new THREE.Euler();
+  for (let i = 0; i <= n; i++) {
+    const t = i / fps * (dur * fps / n), u = t / dur, P = poseFn(t, u);
+    const rot = { ...(P.rot || {}) }, rr = P.rootRot || [0, 0, 0], ro = P.root || [0, 0, 0];
+    if (P.legs) for (const [side, L] of Object.entries(P.legs)) {
+      const A0 = rig.spec[`pe_${side}`].head;
+      const world = V(A0.x, A0.y + L.dy, A0.z + L.dz);
+      // alvo no sistema do quadril (desfaz posição e inclinação do corpo)
+      const hipW = rest.clone().add(V(...ro));
+      const inv = new THREE.Quaternion().setFromEuler(new THREE.Euler(rr[0], rr[1], rr[2], 'XYZ')).invert();
+      const local = world.sub(hipW).applyQuaternion(inv).add(rest);
+      const ik = legIK(rig, side, local, L.meta || 0, L.toe || 0, rr[0]);
+      const blend = L.blend ?? 1;
+      for (const [bn, v] of Object.entries(ik)) { const cur = rot[bn] || [0, 0, 0]; rot[bn] = [cur[0] + v * blend, cur[1], cur[2]]; }
+    }
+    times.push(t);
+    for (const b of rig.order) {
+      let r = rot[b] || [0, 0, 0];
+      if (b === ROOT) r = [r[0] + rr[0], r[1] + rr[1], r[2] + rr[2]];
+      q.setFromEuler(e.set(r[0], r[1], r[2], 'XYZ'));
+      Q[b].push(q.x, q.y, q.z, q.w);
+    }
+    pos.push(rest.x + ro[0], rest.y + ro[1], rest.z + ro[2]);
+  }
+  const tracks = rig.order.map(b => new THREE.QuaternionKeyframeTrack(`${b}.quaternion`, times, Q[b]));
+  tracks.push(new THREE.VectorKeyframeTrack(`${ROOT}.position`, times, pos));
+  return new THREE.AnimationClip(name, dur, tracks);
+}
+// soma rotações em várias partes de uma cadeia
+function chainRot(rot, names, r) { for (const n of names) { const c = rot[n] || [0, 0, 0]; rot[n] = [c[0] + r[0], c[1] + r[1], c[2] + r[2]]; } }
+
+/* ================================================================== */
+/* RAPTOR                                                              */
+/* ================================================================== */
+function buildRaptor() {
+  const rig = new Rig();
+  const tailZ = [-0.12, -0.35, -0.58, -0.8, -1.02, -1.24, -1.45, -1.64, -1.84];
+  const tailY = z => 0.925 + 0.035 * (z / 1.84);
+  rig.bone('quadril', null, [0, 0.92, 0], [0, 0.93, 0.18])
+     .bone('coluna_1', 'quadril', [0, 0.93, 0.18], [0, 0.92, 0.36])
+     .bone('coluna_2', 'coluna_1', [0, 0.92, 0.36], [0, 0.9, 0.54])
+     .bone('coluna_3', 'coluna_2', [0, 0.9, 0.54], [0, 0.95, 0.70])
+     .bone('pescoco_1', 'coluna_3', [0, 0.95, 0.70], [0, 1.07, 0.80])
+     .bone('pescoco_2', 'pescoco_1', [0, 1.07, 0.80], [0, 1.2, 0.87])
+     .bone('pescoco_3', 'pescoco_2', [0, 1.2, 0.87], [0, 1.31, 0.98])
+     .bone('cabeca', 'pescoco_3', [0, 1.31, 0.98], [0, 1.27, 1.41])
+     .bone('mandibula', 'cabeca', [0, 1.285, 1.02], [0, 1.25, 1.38]);
+  for (let i = 0; i < 8; i++)
+    rig.bone(`cauda_${i + 1}`, i ? `cauda_${i}` : 'quadril', [0, tailY(tailZ[i]), tailZ[i]], [0, tailY(tailZ[i + 1]), tailZ[i + 1]]);
+  for (const [s, x] of [['E', 1], ['D', -1]]) {
+    rig.bone(`ombro_${s}`, 'coluna_3', [0.11 * x, 0.86, 0.56], [0.15 * x, 0.70, 0.50])
+       .bone(`antebraco_${s}`, `ombro_${s}`, [0.15 * x, 0.70, 0.50], [0.16 * x, 0.64, 0.68])
+       .bone(`mao_${s}`, `antebraco_${s}`, [0.16 * x, 0.64, 0.68], [0.15 * x, 0.56, 0.78])
+       .bone(`coxa_${s}`, 'quadril', [0.13 * x, 0.88, 0.0], [0.15 * x, 0.58, 0.16])
+       .bone(`canela_${s}`, `coxa_${s}`, [0.15 * x, 0.58, 0.16], [0.14 * x, 0.24, -0.06])
+       .bone(`pe_${s}`, `canela_${s}`, [0.14 * x, 0.24, -0.06], [0.13 * x, 0.05, 0.04])
+       .bone(`dedos_${s}`, `pe_${s}`, [0.13 * x, 0.05, 0.04], [0.13 * x, 0.03, 0.22]);
+  }
+  rig.build();
+
+  const pal = { back: C('#7a3a1d'), side: C('#a5653a'), belly: C('#e9d7aa'), stripe: C('#2a1911'),
+    claw: C('#2b241c'), tooth: C('#f1e9cf'), eye: C('#e8bf1e'), pupil: C('#111111'), feather: C('#6e3519'), tip: C('#e8801f'), mouth: C('#7a2a24') };
+  const skin = (c, n, info) => {
+    let col = pal.back.clone().lerp(pal.side, ss(0.7, 0.0, n.y) * 0.55).lerp(pal.belly, ss(-0.05, -0.6, n.y));
+    if (info.stripes && n.y > -0.2 && c.z < 0.72 && c.z > -1.6 && Math.sin(c.z * 15) > 0.45) col.lerp(pal.stripe, 0.85);
+    return col;
+  };
+  const feather = f => pal.feather.clone().lerp(pal.tip, ss(0.45, 0.85, f));
+  const m = new Mesher(rig);
+
+  // corpo inteiro: ponta da cauda → base do crânio
+  const tailChain = [...Array(8)].map((_, i) => `cauda_${8 - i}`);
+  const bodyChain = [...tailChain, 'quadril', 'coluna_1', 'coluna_2', 'coluna_3', 'pescoco_1', 'pescoco_2', 'pescoco_3', 'cabeca'];
+  m.loft({
+    pts: [
+      { p: [0, 0.89, -1.86], w: 0.012, h: 0.012 }, { p: [0, 0.893, -1.6], w: 0.03, h: 0.035 },
+      { p: [0, 0.902, -1.3], w: 0.045, h: 0.055 }, { p: [0, 0.91, -0.95], w: 0.065, h: 0.08 },
+      { p: [0, 0.918, -0.6], w: 0.09, h: 0.11 }, { p: [0, 0.925, -0.3], w: 0.12, h: 0.14 },
+      { p: [0, 0.93, 0.0], w: 0.15, h: 0.17, dy: -0.02 }, { p: [0, 0.92, 0.25], w: 0.155, h: 0.2, dy: -0.05 },
+      { p: [0, 0.9, 0.48], w: 0.13, h: 0.18, dy: -0.04 }, { p: [0, 0.94, 0.66], w: 0.095, h: 0.11 },
+      { p: [0, 1.06, 0.79], w: 0.07, h: 0.075 }, { p: [0, 1.19, 0.87], w: 0.062, h: 0.068 },
+      { p: [0, 1.30, 0.97], w: 0.066, h: 0.074 }, { p: [0, 1.325, 1.03], w: 0.07, h: 0.076 },
+    ], K: 72, sides: 14, chain: bodyChain, color: skin, info: { stripes: true }, capEnd: false,
+  });
+  // crânio (parte de cima) e mandíbula
+  m.loft({ pts: [{ p: [0, 1.315, 0.99], w: 0.072, h: 0.08 }, { p: [0, 1.335, 1.08], w: 0.068, h: 0.07 }, { p: [0, 1.315, 1.22], w: 0.05, h: 0.05 },
+    { p: [0, 1.295, 1.34], w: 0.034, h: 0.034 }, { p: [0, 1.28, 1.42], w: 0.012, h: 0.012 }],
+    K: 16, sides: 10, chain: ['cabeca'], color: skin, flatBottom: 0.15 });
+  m.loft({ pts: [{ p: [0, 1.272, 1.0], w: 0.06, h: 0.045 }, { p: [0, 1.272, 1.12], w: 0.052, h: 0.035 }, { p: [0, 1.267, 1.26], w: 0.038, h: 0.025 },
+    { p: [0, 1.258, 1.385], w: 0.013, h: 0.01 }], K: 12, sides: 9, chain: ['mandibula'], color: (c, n) => n.y > 0.5 ? pal.mouth : skin(c, n, {}), flatTop: 0.25 });
+  // dentes
+  for (let i = 0; i < 7; i++) {
+    const z = 1.12 + i * 0.04, wz = lerp(0.05, 0.02, (z - 1.12) / 0.28);
+    for (const s of [1, -1]) {
+      m.cone([s * wz * 0.85, 1.302, z], [s * wz * 0.85, 1.274, z + 0.006], 0.008, 'cabeca', pal.tooth, 3);
+      m.cone([s * wz * 0.75, 1.268, z + 0.02], [s * wz * 0.75, 1.29, z + 0.014], 0.006, 'mandibula', pal.tooth, 3);
+    }
+  }
+  // olhos amarelos com pupila em fenda
+  for (const s of [1, -1]) {
+    m.ball([s * 0.056, 1.352, 1.11], 0.02, 'cabeca', pal.eye);
+    m.geom(new THREE.BoxGeometry(0.004, 0.026, 0.007).translate(s * 0.075, 1.352, 1.112), 'cabeca', pal.pupil);
+    // sobrancelha
+    m.cone([s * 0.05, 1.38, 1.07], [s * 0.05, 1.37, 1.16], 0.02, 'cabeca', pal.back, 4, 0.6);
+  }
+  // penas da nuca (crista curta)
+  for (let i = 0; i < 9; i++) {
+    const t = i / 8, z = lerp(1.0, 0.68, t), y = lerp(1.38, 1.02, t);
+    m.cone([0, y, z], [0, y + 0.06, z - 0.07], 0.02, bodyChain.slice(-5), feather, 3, 0.4);
+  }
+  for (const [s, x] of [['E', 1], ['D', -1]]) {
+    // braço
+    m.loft({ pts: [{ p: [0.10 * x, 0.87, 0.55], w: 0.05, h: 0.06 }, { p: [0.15 * x, 0.70, 0.50], w: 0.034, h: 0.04 },
+      { p: [0.16 * x, 0.64, 0.68], w: 0.027, h: 0.03 }, { p: [0.15 * x, 0.56, 0.78], w: 0.02, h: 0.02 }],
+      K: 12, sides: 7, chain: [`ombro_${s}`, `antebraco_${s}`, `mao_${s}`], color: skin, info: {} });
+    for (let f = -1; f <= 1; f++) m.cone([(0.15 + f * 0.012) * x, 0.565, 0.775], [(0.15 + f * 0.02) * x, 0.5, 0.82], 0.01, `mao_${s}`, pal.claw, 4);
+    for (let i = 0; i < 5; i++) {      // penas do braço
+      const t = i / 4, p = [lerp(0.15, 0.16, t) * x, lerp(0.70, 0.64, t), lerp(0.50, 0.68, t)];
+      m.cone(p, [p[0] + 0.02 * x, p[1] - 0.06, p[2] - 0.1], 0.022, `antebraco_${s}`, feather, 3, 0.3);
+    }
+    // perna
+    m.loft({ pts: [{ p: [0.12 * x, 0.92, -0.02], w: 0.1, h: 0.15 }, { p: [0.14 * x, 0.74, 0.08], w: 0.085, h: 0.12 },
+      { p: [0.15 * x, 0.58, 0.16], w: 0.06, h: 0.07 }, { p: [0.145 * x, 0.41, 0.05], w: 0.045, h: 0.05 },
+      { p: [0.14 * x, 0.24, -0.06], w: 0.032, h: 0.035 }, { p: [0.135 * x, 0.14, -0.01], w: 0.028, h: 0.03 },
+      { p: [0.13 * x, 0.05, 0.04], w: 0.03, h: 0.03 }],
+      K: 22, sides: 9, chain: [`coxa_${s}`, `canela_${s}`, `pe_${s}`], color: skin, info: {} });
+    // dedos: 3º e 4º no chão, 2º levantado com a garra em foice
+    const D = `dedos_${s}`;
+    m.tube([0.13 * x, 0.04, 0.03], [0.13 * x, 0.028, 0.2], 0.027, 0.016, D, pal.side);
+    m.cone([0.13 * x, 0.028, 0.195], [0.13 * x, 0.012, 0.25], 0.013, D, pal.claw, 4);
+    m.tube([0.155 * x, 0.04, 0.03], [0.185 * x, 0.028, 0.17], 0.024, 0.014, D, pal.side);
+    m.cone([0.185 * x, 0.028, 0.165], [0.192 * x, 0.012, 0.21], 0.012, D, pal.claw, 4);
+    m.tube([0.105 * x, 0.05, 0.04], [0.1 * x, 0.1, 0.11], 0.022, 0.016, D, pal.side);
+    m.cone([0.1 * x, 0.1, 0.105], [0.1 * x, 0.17, 0.13], 0.017, D, pal.claw, 4);   // foice subindo
+    m.cone([0.1 * x, 0.165, 0.128], [0.1 * x, 0.15, 0.19], 0.011, D, pal.claw, 4); // ponta curvada
+  }
+  // penas da ponta da cauda
+  for (let i = 0; i < 7; i++) {
+    const z = lerp(-1.25, -1.82, i / 6), w = lerp(0.045, 0.012, i / 6);
+    for (const s of [1, -1]) m.cone([s * w * 0.6, 0.905, z], [s * (w + 0.12), 0.91, z - 0.09], 0.02, tailChain, feather, 3, 0.25);
+  }
+  m.cone([0, 0.892, -1.84], [0, 0.89, -2.0], 0.025, ['cauda_8'], feather, 3, 0.3);
+
+  const mat = new THREE.MeshStandardMaterial({ name: 'raptor_pele', map: TEX, vertexColors: true, roughness: 0.78, metalness: 0 });
+  const mesh = m.build('raptor', mat);
+
+  // ------------------------- animações -------------------------
+  const neck = ['pescoco_1', 'pescoco_2', 'pescoco_3'], spine = ['coluna_1', 'coluna_2', 'coluna_3'];
+  const tails = [...Array(8)].map((_, i) => `cauda_${i + 1}`);
+  const arms = s => [`ombro_${s}`, `antebraco_${s}`];
+  const stand = () => ({ E: { dz: 0, dy: 0 }, D: { dz: 0, dy: 0 } });
+  const clips = [];
+
+  clips.push(bake(rig, 'parado', 3, (t, u) => {
+    const rot = {}, w = 2 * PI * u;
+    chainRot(rot, spine, [0.015 * Math.sin(w * 2), 0, 0]);
+    chainRot(rot, neck, [0.02 * Math.sin(w * 2 + 1), 0.06 * Math.sin(w), 0]);
+    rot.cabeca = [-0.05 + 0.05 * Math.sin(w * 2), 0.32 * Math.sin(w) * Math.abs(Math.sin(w)), 0.05 * Math.sin(w)];
+    rot.mandibula = [0.03 + 0.03 * Math.sin(w * 2), 0, 0];
+    tails.forEach((b, i) => rot[b] = [0.01 * Math.sin(w * 2 - i * 0.4), 0.035 * Math.sin(w - i * 0.35), 0]);
+    for (const s of ['E', 'D']) rot[`ombro_${s}`] = [0.05 * Math.sin(w * 2), 0, 0];
+    return { rot, root: [0, -0.008 * (1 - Math.cos(w * 2)), 0], legs: stand() };
+  }));
+
+  const cycle = (name, dur, stance, stride, lift, bob, lean, armTuck) => clips.push(bake(rig, name, dur, (t, u) => {
+    const rot = {}, w = 2 * PI * u;
+    const gE = gait(u, stance, stride, lift), gD = gait(u + 0.5, stance, stride, lift);
+    chainRot(rot, spine, [0, -0.04 * Math.sin(w), 0.02 * Math.sin(w)]);
+    chainRot(rot, neck, [-lean * 0.35 + 0.03 * Math.sin(w * 2), 0.03 * Math.sin(w), 0]);
+    rot.cabeca = [-lean * 0.3 - 0.04 * Math.sin(w * 2 + 0.5), -0.05 * Math.sin(w), 0];
+    tails.forEach((b, i) => rot[b] = [lean * 0.06 + 0.015 * Math.sin(w * 2 - i * 0.5), 0.05 * Math.sin(w - 0.6 - i * 0.3), 0]);
+    for (const s of ['E', 'D']) { rot[`ombro_${s}`] = [armTuck, 0, 0]; rot[`antebraco_${s}`] = [-armTuck * 0.6, 0, 0]; }
+    return { rot, root: [0.012 * Math.sin(w), -bob * (0.5 + 0.5 * Math.cos(w * 2)), 0], rootRot: [lean, 0.03 * Math.sin(w), 0.03 * Math.sin(w)],
+      legs: { E: gE, D: gD } };
+  }));
+  cycle('andar', 1.1, 0.62, 0.62, 0.11, 0.03, 0.04, 0.15);
+  cycle('correr', 0.56, 0.38, 1.25, 0.24, 0.07, 0.22, 0.45);
+
+  clips.push(bake(rig, 'atacar', 1.3, (t, u) => {
+    const rot = {}, crouch = env(u, 0.0, 0.25, 0.32, 0.4), air = env(u, 0.3, 0.45, 0.7, 0.85), bite = env(u, 0.55, 0.62, 0.72, 0.8);
+    const h = Math.sin(PI * clamp((u - 0.3) / 0.55, 0, 1));
+    chainRot(rot, neck, [0.12 * air - 0.1 * crouch, 0, 0]);
+    rot.cabeca = [0.15 * air - 0.1 * crouch, 0, 0];
+    rot.mandibula = [0.75 * bite, 0, 0];
+    tails.forEach(b => rot[b] = [0.05 * air - 0.03 * crouch, 0, 0]);
+    for (const s of ['E', 'D']) { rot[`ombro_${s}`] = [-1.1 * air, 0, 0]; rot[`antebraco_${s}`] = [-0.5 * air, 0, 0]; }
+    const kick = { dz: 0.42 * air, dy: 0.32 * air - 0.0, meta: 0.9 * air, toe: 0.7 * air };
+    return { rot, root: [0, -0.22 * crouch + 0.55 * h, 0.5 * h], rootRot: [-0.15 * air + 0.12 * crouch, 0, 0], legs: { E: kick, D: { ...kick, dz: kick.dz * 0.9 } } };
+  }));
+
+  clips.push(bake(rig, 'rugir', 2.2, (t, u) => {
+    const rot = {}, up = env(u, 0.0, 0.18, 0.78, 0.95), roar = env(u, 0.15, 0.25, 0.72, 0.85);
+    chainRot(rot, neck, [-0.13 * up, 0.05 * roar * Math.sin(t * 22), 0]);
+    rot.cabeca = [-0.2 * up, 0.12 * roar * Math.sin(t * 18), 0.08 * roar * Math.sin(t * 13)];
+    rot.mandibula = [0.85 * roar, 0, 0];
+    chainRot(rot, spine, [-0.03 * up, 0, 0]);
+    tails.forEach((b, i) => rot[b] = [0.05 * up, 0.04 * roar * Math.sin(t * 9 - i * 0.5), 0]);
+    for (const s of ['E', 'D']) { rot[`ombro_${s}`] = [-0.6 * up, 0, (s === 'E' ? -0.3 : 0.3) * up]; rot[`antebraco_${s}`] = [-0.4 * up, 0, 0]; }
+    return { rot, root: [0, -0.06 * roar, 0], rootRot: [-0.08 * up, 0, 0], legs: stand() };
+  }));
+
+  clips.push(bake(rig, 'comer', 2, (t, u) => {
+    const rot = {}, w = 2 * PI * u, tug = Math.max(0, Math.sin(w * 2));
+    chainRot(rot, spine, [0.12, 0, 0]);
+    rot.pescoco_1 = [0.55, 0, 0]; rot.pescoco_2 = [0.5 - 0.15 * tug, 0.05 * Math.sin(w), 0]; rot.pescoco_3 = [0.35 - 0.15 * tug, 0, 0];
+    rot.cabeca = [0.35 - 0.2 * tug, 0.15 * tug * Math.sin(w * 4), 0];
+    rot.mandibula = [0.5 * Math.max(0, Math.sin(w * 2 + 1.2)), 0, 0];
+    tails.forEach((b, i) => rot[b] = [0.06, 0.03 * Math.sin(w - i * 0.4), 0]);
+    return { rot, root: [0, -0.1, -0.05 * tug], rootRot: [0.22, 0, 0], legs: stand() };
+  }));
+
+  clips.push(bake(rig, 'dormir', 4, (t, u) => {
+    const rot = {}, w = 2 * PI * u, br = Math.sin(w);
+    chainRot(rot, spine, [0.02 * br, 0, 0]);
+    rot.pescoco_1 = [0.3, 0.25, 0]; rot.pescoco_2 = [0.25, 0.35, 0]; rot.pescoco_3 = [0.15, 0.3, 0]; rot.cabeca = [-0.1 + 0.02 * br, 0.2, 0];
+    tails.forEach((b, i) => rot[b] = [-0.07, -0.12, 0]);
+    for (const s of ['E', 'D']) { rot[`ombro_${s}`] = [0.4, 0, 0]; rot[`antebraco_${s}`] = [-0.9, 0, 0]; }
+    const fold = { dz: -0.14, dy: -0.17, meta: 1.0, toe: 0.1 };
+    return { rot, root: [0, -0.6 + 0.01 * br, 0], rootRot: [0.05, 0, 0], legs: { E: fold, D: fold } };
+  }));
+
+  clips.push(bake(rig, 'morrer', 2.4, (t, u) => {
+    const rot = {}, stag = env(u, 0.0, 0.1, 0.35, 0.45), fall = ss(0.35, 0.68, u), settle = Math.sin(PI * clamp((u - 0.68) / 0.15, 0, 1)) * 0.04;
+    chainRot(rot, neck, [0.25 * stag + 0.3 * fall, 0.1 * stag * Math.sin(t * 7), -0.3 * fall]);
+    rot.cabeca = [0.2 * stag + 0.2 * fall, 0, -0.3 * fall];
+    rot.mandibula = [0.3 * fall, 0, 0];
+    tails.forEach(b => rot[b] = [-0.04 * fall - 0.04 * stag, 0.08 * fall, 0]);
+    for (const s of ['E', 'D']) { rot[`ombro_${s}`] = [0.4 * fall, 0, 0]; rot[`antebraco_${s}`] = [0.5 * fall, 0, 0]; }
+    const wob = { dz: 0.06 * stag * Math.sin(t * 9), dy: 0, blend: 1 - fall };
+    for (const s of ['E', 'D']) { rot[`coxa_${s}`] = [-0.5 * fall, 0, 0]; rot[`canela_${s}`] = [0.6 * fall, 0, 0]; rot[`pe_${s}`] = [-0.4 * fall, 0, 0]; }
+    return { rot, root: [0.04 * stag * Math.sin(t * 6) - 0.05 * fall, -0.12 * stag - 0.7 * fall + settle, 0],
+      rootRot: [0.15 * stag, 0, 0.12 * stag * Math.sin(t * 5) + (PI / 2 - 0.08) * fall], legs: { E: wob, D: { ...wob, dz: -wob.dz } } };
+  }));
+
+  const group = new THREE.Group(); group.name = 'raptor'; group.add(mesh);
+  return { group, mesh, clips, loops: { parado: 1, andar: 1, correr: 1, comer: 1, dormir: 1 } };
+}
+
+const BICHOS = {
+  raptor: { nome: 'Raptor', arquivo: 'raptor.glb', build: buildRaptor },
+};
+
+/* ================================================================== */
+/* Cena                                                                */
+/* ================================================================== */
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene();
+scene.background = C('#c4dbe0'); scene.fog = new THREE.Fog(0xc4dbe0, 18, 60);
+scene.add(new THREE.HemisphereLight(0xcfe4ff, 0x4d5a2c, 1.1));
+const sun = new THREE.DirectionalLight(0xffe0b0, 2.6);
+sun.position.set(6, 9, 5); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -8, right: 8, top: 8, bottom: -8, near: 0.5, far: 40 });
+sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02;
+scene.add(sun);
+const ground = new THREE.Mesh(new THREE.CircleGeometry(60, 48), new THREE.MeshStandardMaterial({ color: 0x4f7a34, roughness: 1 }));
+ground.rotation.x = -PI / 2; ground.receiveShadow = true; scene.add(ground);
+const camera = new THREE.PerspectiveCamera(42, 1, 0.05, 300);
+const controls = new OrbitControls(camera, canvas); controls.enableDamping = true; controls.maxPolarAngle = PI * 0.495;
+function resize() { renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); }
+addEventListener('resize', resize); resize();
+
+let cur = null, mixer = null, curName = null, curClip = null;
+const cache = {};
+function get(name) { return cache[name] ||= BICHOS[name].build(); }
+function frame(obj) {
+  const box = new THREE.Box3().setFromObject(obj), size = box.getSize(V(0, 0, 0)), c = box.getCenter(V(0, 0, 0));
+  const r = Math.max(size.x, size.y, size.z) * 0.36 + 0.15;
+  const dist = r / Math.sin(camera.fov * PI / 360) * (camera.aspect < 1 ? 1.6 : 1.0);
+  camera.position.copy(c).add(V(1.0, 0.45, 0.75).normalize().multiplyScalar(dist));
+  controls.target.copy(c); controls.update();
+}
+function show(name) {
+  if (cur) scene.remove(cur.group);
+  cur = get(name); curName = name; scene.add(cur.group);
+  mixer = new THREE.AnimationMixer(cur.group);
+  frame(cur.group);
+  const tris = cur.mesh.geometry.attributes.position.count / 3;
+  document.getElementById('info').innerHTML = `<b>${BICHOS[name].nome}</b>${tris.toLocaleString('pt-BR')} triângulos · ${cur.mesh.skeleton.bones.length} ossos · ${cur.clips.length} animações<br>arquivo: ${BICHOS[name].arquivo}`;
+  document.querySelectorAll('[data-bicho]').forEach(b => b.classList.toggle('ativo', b.dataset.bicho === name));
+  const la = document.getElementById('listaAnim'); la.innerHTML = '';
+  for (const c of cur.clips) {
+    const b = document.createElement('button'); b.textContent = c.name; b.dataset.anim = c.name;
+    b.onclick = () => play(c.name); la.appendChild(b);
+  }
+  play('parado');
+}
+function play(clipName, time = null) {
+  mixer.stopAllAction();
+  const clip = cur.clips.find(c => c.name === clipName), a = mixer.clipAction(clip);
+  if (cur.loops[clipName]) a.setLoop(THREE.LoopRepeat); else { a.setLoop(THREE.LoopOnce); a.clampWhenFinished = true; }
+  a.reset().play(); curClip = clipName;
+  if (time != null) mixer.setTime(time);
+  document.querySelectorAll('[data-anim]').forEach(b => b.classList.toggle('ativo', b.dataset.anim === clipName));
+}
+const lb = document.getElementById('listaBichos');
+for (const [k, b] of Object.entries(BICHOS)) {
+  const bt = document.createElement('button'); bt.textContent = b.nome; bt.dataset.bicho = k; bt.onclick = () => show(k); lb.appendChild(bt);
+}
+
+const exporter = new GLTFExporter();
+async function toGLB(name) {
+  const c = get(name), was = c.group.parent;
+  if (was) was.remove(c.group);
+  // exporta na pose de descanso
+  if (mixer) mixer.stopAllAction();
+  c.mesh.skeleton.pose();
+  const data = await exporter.parseAsync(c.group, { binary: true, animations: c.clips });
+  if (was) { was.add(c.group); if (curClip && name === curName) play(curClip); }
+  return data;
+}
+document.getElementById('baixar').onclick = async () => {
+  const url = URL.createObjectURL(new Blob([await toGLB(curName)], { type: 'model/gltf-binary' }));
+  const a = document.createElement('a'); a.href = url; a.download = BICHOS[curName].arquivo; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+};
+
+const b64 = buf => { const u = new Uint8Array(buf); let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode(...u.subarray(i, i + 0x8000)); return btoa(s); };
+window.__api = {
+  names: Object.keys(BICHOS),
+  info: n => { const c = get(n); return { arquivo: BICHOS[n].arquivo, tris: c.mesh.geometry.attributes.position.count / 3, ossos: c.mesh.skeleton.bones.map(b => b.name), anims: c.clips.map(x => [x.name, x.duration]) }; },
+  show, play, frame: () => frame(cur.group),
+  setCam: (p, t) => { camera.position.set(...p); controls.target.set(...t); controls.update(); },
+  export: async n => b64(await toGLB(n)),
+};
+
+const clock = new THREE.Clock();
+renderer.setAnimationLoop(() => {
+  const dt = clock.getDelta();
+  if (mixer && !window.__frozen) mixer.update(dt);
+  controls.update(); renderer.render(scene, camera);
+});
+show('raptor');
+window.__ready = true;
+</script>
+</body>
+</html>
