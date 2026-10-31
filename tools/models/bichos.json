@@ -465,5 +465,24 @@
   "giro": "y180",
   "triangulos": 24000,
   "sela_embutida": "Saddle"
+ },
+ "compsognato": {
+  "arquivo": "Compy",
+  "giro": "y180",
+  "inclui": [
+   "LOD_0"
+  ],
+  "triangulos": 3000
+ },
+ "iguanodonte": {
+  "arquivo": "Iguanodon",
+  "giro": "y180",
+  "inclui": [
+   "Object_0",
+   "Object_1",
+   "Object_3",
+   "Object_4"
+  ],
+  "triangulos": 20000
  }
 }

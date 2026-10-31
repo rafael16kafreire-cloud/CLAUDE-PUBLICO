@@ -37,13 +37,15 @@ import dimetrodonte from './imported/dimetrodonte.js';
 import paquirrinossauro from './imported/paquirrinossauro.js';
 import diplodoco from './imported/diplodoco.js';
 import terizinossauro from './imported/terizinossauro.js';
+import compsognato from './imported/compsognato.js';
+import iguanodonte from './imported/iguanodonte.js';
 
 export const IMPORTED = {
   espinossauro, trex, braquiossauro, titanoboa, deinosuchus, estegossauro,
   anquilossauro, parassauro, raptor, quetzalcoatlus, mamute, argentavis, reidodo,
   // com animação do próprio modelo
   sauropelta, argentinossauro, mosassauro, pterodactilo, carnotauro, triceratops, galimimo, dodo, paquicefalossauro, piranha,
-  moschops, dimetrodonte, paquirrinossauro, diplodoco, terizinossauro,
+  moschops, dimetrodonte, paquirrinossauro, diplodoco, terizinossauro, compsognato, iguanodonte,
 };
 
 function bytes(b64) {
@@ -77,6 +79,8 @@ const TINTAS = {
   anquilossauro: { costas: '#75603c', barriga: '#bba67a', listra: '#2e2414', freq: 1.4, forca: 0.35, brilho: 1.9 },
   titanoboa: { costas: '#55612f', barriga: '#d3c48c', listra: '#1b2210', freq: 1.0, forca: 0.55, brilho: 1.8 },
   // modelos com textura cinza ("Colorize"): pintamos os vértices e a textura dá o relevo
+  // Compy (modelo sem textura): costas verde-oliva, barriga clara e listras escuras
+  compsognato: { costas: '#68733a', barriga: '#d2c590', listra: '#2c3318', freq: 7, forca: 0.5, brilho: 1.0 },
   moschops: { costas: '#8a7650', barriga: '#cdbf98', listra: '#3d3220', freq: 1.6, forca: 0.4, brilho: 1.8 },
   diplodoco: { costas: '#6f7d58', barriga: '#cfc8a4', listra: '#2b3320', freq: 0.8, forca: 0.35, brilho: 1.8 },
   terizinossauro: { costas: '#7a6a48', barriga: '#d6c9a0', listra: '#352a18', freq: 1.0, forca: 0.4, brilho: 1.8 },
@@ -195,8 +199,8 @@ export function buildImportedModel(d, id) {
     const material = d.materiais.map((m, mi) => {
       // qualidade alta: luz "de verdade" (brilho e relevo mais bonitos)
       const mat = hdTextures()
-        ? new THREE.MeshStandardMaterial({ map: texture(m.map, true), roughness: 0.82, metalness: 0 })
-        : new THREE.MeshLambertMaterial({ map: texture(m.map, true) });
+        ? new THREE.MeshStandardMaterial({ map: m.map ? texture(m.map, true) : null, roughness: 0.82, metalness: 0 })
+        : new THREE.MeshLambertMaterial({ map: m.map ? texture(m.map, true) : null });
       mat.color.setScalar((d.brilho ?? 1) * (tinta?.brilho ?? 1)); // textura muito escura: clareia
       if (tinta && (tinta.materiais ?? [mi]).includes(mi)) mat.vertexColors = true;
       if (m.normalMap) mat.normalMap = texture(m.normalMap, false);
