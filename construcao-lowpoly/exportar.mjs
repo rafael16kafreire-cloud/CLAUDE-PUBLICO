@@ -37,15 +37,17 @@ for (const n of process.env.SEM_MODELOS ? [] : names) {
 }
 if (!process.env.SEM_MODELOS) {
 save(join(outModels, 'kit_construcao.glb'), await page.evaluate(() => window.__api.exportKit()));
-save(join(outModels, 'casa_exemplo.glb'), await page.evaluate(() => window.__api.exportHouse()));
-console.log('kit_construcao.glb, casa_exemplo.glb');
+const scenes = await page.evaluate(() => window.__api.scenes);
+for (const [k, file] of Object.entries(scenes)) save(join(outModels, file + '.glb'), await page.evaluate(k => window.__api.exportScene(k), k));
+console.log('kit_construcao.glb,', Object.values(scenes).map(f => f + '.glb').join(', '));
 }
 
 if (!process.env.SEM_PREVIAS) {
   await page.evaluate(() => document.getElementById('painel').style.display = 'none');
   const shot = async (file) => { await page.waitForTimeout(1200); await page.screenshot({ path: join(outPrev, file), type: 'jpeg', quality: 82 }); };
   const want = process.env.PREVIAS ? process.env.PREVIAS.split(',') : null, ok = n => !want || want.includes(n);
-  if (ok('casa_exemplo')) { await page.evaluate(() => window.__api.showHouse()); await shot('casa_exemplo.jpg'); }
+  const scenes = await page.evaluate(() => window.__api.scenes);
+  for (const [k, file] of Object.entries(scenes)) if (ok(file)) { await page.evaluate(k => window.__api.showScene(k), k); await shot(file + '.jpg'); }
   for (const n of names.filter(ok)) { await page.evaluate(n => window.__api.showPiece(n), n); await shot(n + '.jpg'); }
 }
 await browser.close();
