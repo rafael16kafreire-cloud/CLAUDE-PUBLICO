@@ -1041,7 +1041,11 @@ async function buildImported(buf, cfg) {
     sleepDrop: Math.max(0.1, (bellyMin - 0.03 * H) / k), fold: { dz: -0.15 * k, dy: -0.18 * k, meta: 1.0, toe: 0.1 },
     deathDrop: (hipY - 0.45 * W) / k,
   }, cfg.anim || {}));
-  return { group, mesh: meshes[0], meshes, clips, rig, tris, loops: { parado: 1, andar: 1, correr: 1, comer: 1, dormir: 1 },
+  // "copias": { "andar": "nadar" } → cria 'andar' igual a 'nadar' (ex.: cobra rasteja com a onda do nado)
+  for (const [novo, de] of Object.entries(cfg.copias || {})) {
+    const c = clips.find(x => x.name === de); if (c) { const k2 = c.clone(); k2.name = novo; clips.push(k2); }
+  }
+  return { group, mesh: meshes[0], meshes, clips, rig, tris, loops: { parado: 1, andar: 1, correr: 1, comer: 1, dormir: 1, nadar: 1, nadar_rapido: 1 },
     medidas: { L, H, W, zf, xf, zh, hipY, zNeck, skullZ, zFront, xfF, shH } };
 }
 

@@ -1,0 +1,17 @@
+{
+ "nome": "dimetrodonte",
+ "titulo": "Dimetrodonte",
+ "modelo": "../teste/dimetrodonte_parado.glb",
+ "comprimento": 3.5,
+ "tipo": "quadrupede",
+ "ataque": "investida",
+ "cabeca": 0.12,
+ "fonte": "Dimetrodon — cp4096 — CC BY 4.0 — https://sketchfab.com/3d-models/dimetrodon-3ac7c6aada5e4c03849f9544bbc1afed",
+ "ajuste": {
+  "zPeTras": -0.45,
+  "zPeFrente": 0.65,
+  "xPeTras": 0.24,
+  "xPeFrente": 0.24,
+  "yQuadril": 0.55
+ }
+}
