@@ -804,6 +804,8 @@ export class Creature {
     if (this.state !== CSTATE.CHASE && this.state !== CSTATE.ATTACK) {
       this._setState(CSTATE.CHASE);
       if (this.species.temperamento === 'agressivo' || this.species.revida) sound.creature(this, 'rugido');
+      // bicho grande avisa antes de investir: para, levanta a cabeça e ruge (dá tempo de reagir)
+      if (this.species.temperamento === 'agressivo' && !(target instanceof Creature) && this.radius >= 0.9 && !this.tamed) this.roarT = clamp(0.5 + this.radius * 0.4, 0.8, 1.6);
       // a presa percebe quem vem atrás dela: briga ou foge
       if (target instanceof Creature && target.alive && !target.netControlled) target._noticeAttacker(this);
     }
@@ -902,6 +904,13 @@ export class Creature {
       case CSTATE.CHASE: {
         const t = this.target;
         if (!t) break;
+        if ((this.roarT ?? 0) > 0) {
+          // ruge no lugar, de frente para o alvo, antes de correr
+          this.roarT -= dt;
+          this._brake(dt);
+          this._face(dt, t.position.x, t.position.z);
+          break;
+        }
         if (this._dist2D(t.position) < this._reach(t)) {
           this._setState(CSTATE.ATTACK);
           break;
@@ -1271,7 +1280,8 @@ export class Creature {
     let want = null;
     let rate = 1;
     const inWater = this.swims && !this.aquatic && !!this.world.waterAt(this.pos.x, this.pos.z);
-    if (!down && !inWater) {
+    const agindo = this.attackAnim > 0.05 || (this.roarT ?? 0) > 0; // mordendo ou rugindo: o clipe parado não pode apagar isso
+    if (!down && !inWater && !agindo) {
       if (this.flies && !this.landed) {
         want = 'voar';
         rate = this.climb > 0.5 || this.state === CSTATE.FLEE ? 1.4 : 1;
@@ -1294,7 +1304,7 @@ export class Creature {
 
   _footfall(camDist, step) {
     const size = (this.bodyFront + this.bodyBack) * this.scale;
-    if (size < 7) return;
+    if (size < 3.5) return;
     const side = step % 2 ? 1 : -1;
     const w = this.radius * 0.5 * side;
     const x = this.pos.x + Math.cos(this.yaw) * w;
@@ -1303,7 +1313,7 @@ export class Creature {
     this.world.effects?.burst(fx, 'poeira', Math.min(10, Math.round(size / 2)), 1.6 + size * 0.05);
     const near = Math.max(0, 1 - camDist / (12 + size * 2.5));
     if (near > 0) {
-      sound.play('pisada', fx, { volume: Math.min(1, size / 16) });
+      sound.play('pisada', fx, { volume: Math.min(1, size / 9) });
       if (size >= 10) this.manager.localPlayer?.onImpact?.(Math.min(0.7, size / 35) * near);
     }
   }
@@ -1562,6 +1572,7 @@ export class Creature {
       b.hips.rotation.x = -A.run * 0.06 * (spec.body === 'biped' ? 1 : 0.4) + (dead ? 0 : Math.sin(this.phase * TAU * 2) * amp * 0.02); // cabeceio do passo
     }
     if (b.chest) b.chest.rotation.y = A.turn * 0.12;
+    if (b.chest && (this.roarT ?? 0) > 0) b.chest.rotation.x -= Math.min(1, this.roarT * 3, (1.6 - this.roarT) * 6) * 0.14; // peito para cima ao rugir
 
     // ---------- cauda (segue as curvas com atraso) ----------
     const tailIdle = inWater ? 0.35 : 0.09 * (1 - A.run * 0.6);
@@ -1606,20 +1617,21 @@ export class Creature {
     // (o corpo acompanha o bote sem tranco, mesmo com poucos quadros por segundo)
     this._lunge += ((this.attackAnim > 0 ? atkLunge(at) : 0) - this._lunge) * Math.min(1, adt * 26);
     const lunge = this._lunge;
+    const roar = (this.roarT ?? 0) > 0 ? Math.min(1, this.roarT * 3, (1.6 - this.roarT) * 6) : 0; // rugido: sobe rápido, segura, desce
     if (b.neck) {
       // cabeça sobe e desce um pouco a cada passo
       const nod = Math.sin(this.phase * TAU * 2) * amp * 0.08;
-      b.neck.rotation.x = dead ? -0.35 : A.neck + lunge + A.headPitch * 0.5 + this.hurtAnim * 0.25 + nod - (croc ? 0.16 : 0);
+      b.neck.rotation.x = dead ? -0.35 : A.neck + lunge + A.headPitch * 0.5 + this.hurtAnim * 0.25 + nod - (croc ? 0.16 : 0) - roar * 0.55;
       b.neck.rotation.y = A.headYaw * 0.5;
     }
     if (b.neck2) b.neck2.rotation.x = eating ? -0.35 : A.headPitch * 0.3;
     if (b.head) {
       // mastigando: a cabeça puxa e solta
-      b.head.rotation.x = eating ? -0.3 + Math.sin(t * 5.5) * 0.12 : A.headPitch * 0.5 + lunge * 0.4 - (croc ? 0.1 : 0);
+      b.head.rotation.x = eating ? -0.3 + Math.sin(t * 5.5) * 0.12 : A.headPitch * 0.5 + lunge * 0.4 - (croc ? 0.1 : 0) - roar * 0.3;
       b.head.rotation.y = A.headYaw * 0.5;
     }
     if (b.jaw && eating) b.jaw.rotation.x = -Math.max(0, Math.sin(t * 5.5)) * 0.3;
-    else if (b.jaw) b.jaw.rotation.x = this.attackAnim > 0 ? -atkJaw(at) * 0.65 : 0.02; // parado: boca fechada (só abre ao comer, rugir ou atacar)
+    else if (b.jaw) b.jaw.rotation.x = this.attackAnim > 0 ? -atkJaw(at) * 0.65 : 0.02 - roar * 0.6; // parado: boca fechada (só abre ao comer, rugir ou atacar)
     if (b.hips) b.hips.position.z = (b.hips.userData.rest.z) - lunge * 0.15 * legLen / this.scale;
   }
 

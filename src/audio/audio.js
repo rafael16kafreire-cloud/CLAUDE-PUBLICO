@@ -658,8 +658,9 @@ class Sound {
     if (!v || v.kind === 'nenhum') return;
     const pos = c.pos;
     const big = Math.min(2.2, Math.max(0.6, c.scale ?? 1));
-    const ref = 6 * big;
-    const max = 45 + 60 * Math.min(1, v.d);
+    const grande = kind === 'rugido' && (v.kind === 'rugido' || v.kind === 'rosnado');
+    const ref = 6 * big * (grande ? 1.9 : 1); // rugido de bicho grande se ouve de longe
+    const max = (45 + 60 * Math.min(1, v.d)) * (grande ? 1.3 : 1);
     if (pos.distanceTo(this._listenerPos) > max) return;
     const t = this.ctx.currentTime + 0.01;
     const R = (a, b) => a + Math.random() * (b - a);
@@ -671,7 +672,7 @@ class Sound {
     // som gravado (assets/sons): bicho_<espécie>_<tipo> ou bicho_<espécie>
     const sg = kind === 'chamado' ? 0.5 : 0.85;
     if (this._sample(`bicho_${c.species.id}_${kind}`, pos, sg, ref, max) || this._sample(`bicho_${c.species.id}`, pos, sg, ref, max)) return;
-    const out = this._dest(pos, (kind === 'chamado' ? 0.45 : 0.75), ref, max);
+    const out = this._dest(pos, (kind === 'chamado' ? 0.45 : grande ? 1.0 : 0.75), ref, max);
     if (!out) return;
     if (kind === 'ataque' && v.kind !== 'ave' && v.kind !== 'pio') {
       // estalo de mandíbula
@@ -690,6 +691,9 @@ class Sound {
           grit: rough ? 6 : 4.5, breath: rough ? 0.9 : 0.6, trem: rough ? R(22, 32) : R(8, 13), peak: 0.85, attack: d * 0.12, sub: 0.5,
         });
         this._noise(t, d * 0.9, out, { f: f * 7, q: 0.9, peak: 0.25, attack: d * 0.2, brown: true });
+        // o alto-falante do celular não toca grave (85 Hz some): camada de rosnado no médio, que se ouve de verdade
+        this._noise(t, d * 0.85, out, { f: 520, q: 0.7, peak: grande ? 0.6 : 0.3, attack: d * 0.1 });
+        this._noise(t + d * 0.1, d * 0.7, out, { f: 1100, q: 0.8, peak: grande ? 0.35 : 0.18, attack: d * 0.15 });
         break;
       }
       case 'mugido':
