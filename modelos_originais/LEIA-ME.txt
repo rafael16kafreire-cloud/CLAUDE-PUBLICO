@@ -1,0 +1,4 @@
+Modelos 3D originais enviados pelo Rafael para o jogo ISLA (guardados como vieram).
+Os bichos convertidos para o jogo ficam em src/creatures/imported/*.js.
+Desde a v0.98.0 (estilo low-poly) o jogo usa o gerador de bichos por código;
+estes arquivos ficam aqui para serem reaproveitados (ex.: novos modelos do Blender).
