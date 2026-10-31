@@ -267,15 +267,20 @@ function meshVolume(g) {
 
 /* ------------------------------------------------------------------ */
 /* Materiais de construção (receita de cada peça)                      */
-/* O custo sai do volume real de cada material na peça:                */
-/*   1 Madeira ≈ 0,04 m³ · 1 Pedra ≈ 0,15 m³ · 1 Palha ≈ 0,25 m³ ·      */
-/*   1 Ferro ≈ 0,0025 m³ — mude RECURSOS[x].m3 para balancear o jogo.   */
+/* O custo sai do volume real de cada parte da peça:                  */
+/*   madeira/tronco → Madeira · palha → Palha + Graveto + Fibra ·      */
+/*   pedras → Pedra · argamassa (miolo) → Pasta de Cimento ·            */
+/*   ferragens → Lingote de Metal.                                      */
+/* m3 = quantos m³ da peça custam 1 unidade. Mude para balancear.       */
 /* ------------------------------------------------------------------ */
 const RECURSOS = {
   madeira: { nome: 'Madeira', icone: '🪵', mats: ['madeira', 'madeira_escura', 'tronco'], m3: 0.04 },
-  pedra: { nome: 'Pedra', icone: '🪨', mats: ['pedra'], m3: 0.15 },
   palha: { nome: 'Palha', icone: '🌾', mats: ['palha'], m3: 0.25 },
-  ferro: { nome: 'Ferro', icone: '⛓️', mats: ['ferro'], m3: 0.0025 },
+  graveto: { nome: 'Graveto', icone: '🥢', mats: ['palha'], m3: 0.5 },
+  fibra: { nome: 'Fibra', icone: '🧵', mats: ['palha'], m3: 0.5 },
+  pedra: { nome: 'Pedra', icone: '🪨', mats: ['pedra'], m3: 0.15 },
+  cimento: { nome: 'Pasta de Cimento', icone: '🧱', mats: ['argamassa'], m3: 1.0 },
+  lingote: { nome: 'Lingote de Metal', icone: '🔩', mats: ['ferro'], m3: 0.0025 },
 };
 function recipe(vol) {
   const out = {};
@@ -298,7 +303,7 @@ class Builder {
   constructor(seed) { this.r = mulberry32(seed); this.parts = {}; this.vol = {}; this.frame = new THREE.Matrix4(); }
   rnd(a, b) { return a + (b - a) * this.r(); }
   withFrame(m, fn) { const old = this.frame; this.frame = old.clone().multiply(m); fn(); this.frame = old; }
-  add(geom, matKey, { p = [0, 0, 0], rot = [0, 0, 0], tint = 1, jit = 0, uvs = 0.5 } = {}) {
+  add(geom, matKey, { p = [0, 0, 0], rot = [0, 0, 0], tint = 1, jit = 0, uvs = 0.5, res = matKey } = {}) {
     geom.deleteAttribute('normal'); geom.deleteAttribute('uv');
     let g = mergeVertices(geom);
     if (jit > 0) {
@@ -307,7 +312,7 @@ class Builder {
         a.setXYZ(i, a.getX(i) + (this.r() - .5) * 2 * jit, a.getY(i) + (this.r() - .5) * 2 * jit, a.getZ(i) + (this.r() - .5) * 2 * jit);
     }
     g = g.toNonIndexed();
-    this.vol[matKey] = (this.vol[matKey] || 0) + meshVolume(g);
+    this.vol[res] = (this.vol[res] || 0) + meshVolume(g);
     boxUV(g, uvs, this.r(), this.r());
     const m = new THREE.Matrix4().compose(new THREE.Vector3(...p),
       new THREE.Quaternion().setFromEuler(new THREE.Euler(...rot)), new THREE.Vector3(1, 1, 1));
@@ -428,7 +433,7 @@ const PIECES = {
   fundacao_pedra: {
     cat: 'Fundações', label: 'Fundação de pedra', size: '3 × 3 m (1 m de altura)', pivot: 'centro do topo (o chão fica em y = 0)',
     build(b) {
-      b.box(S - 0.06, 1.0, S - 0.06, 'pedra', { p: [0, -0.53, 0], tint: 0.5 });
+      b.box(S - 0.06, 1.0, S - 0.06, 'pedra', { p: [0, -0.53, 0], tint: 0.5, res: 'argamassa' });
       // pedras das laterais
       for (let side = 0; side < 4; side++) {
         b.withFrame(new THREE.Matrix4().makeRotationY(side * PI / 2), () => {
@@ -718,7 +723,7 @@ function stoneRamp(b, W, L, R) {
   const slope = x => R * (x + L / 2) / L, ang = Math.atan2(R, L), Ls = Math.hypot(L, R);
   b.withFrame(RUN_FRAME(), () => {
     const core = new THREE.BoxGeometry(L, R, W - 0.3, 4, 1, 1); core.translate(0, R / 2, 0);
-    b.add(clampTop(core, x => slope(x) - 0.08, 0), 'pedra', { tint: 0.42 });
+    b.add(clampTop(core, x => slope(x) - 0.08, 0), 'pedra', { tint: 0.42, res: 'argamassa' });
     slopeSides(b, W, L, x => slope(x) - 0.04);
     b.withFrame(new THREE.Matrix4().makeTranslation(L / 2, 0, 0).multiply(new THREE.Matrix4().makeRotationY(PI / 2)),
       () => stoneFace(b, W - 0.4, R - 0.1, 0, { rowH: 0.4, minL: 0.4, maxL: 0.8, depth: 0.2 }));
@@ -741,7 +746,7 @@ function stoneStairs(b, W, R, L) {
   const n = Math.round(R / 0.25), rs = R / n, run = L / n, slope = x => R * (x + L / 2) / L;
   b.withFrame(RUN_FRAME(), () => {
     const core = new THREE.BoxGeometry(L, R, W - 0.3, 4, 1, 1); core.translate(0, R / 2, 0);
-    b.add(clampTop(core, x => slope(x) - 0.02, 0), 'pedra', { tint: 0.42 });
+    b.add(clampTop(core, x => slope(x) - 0.02, 0), 'pedra', { tint: 0.42, res: 'argamassa' });
     for (let i = 0; i < n; i++) {
       let z = -W / 2 + 0.25;
       while (z < W / 2 - 0.3) {
@@ -815,7 +820,7 @@ function stoneFace(b, w, h, y0, { rowH = 0.5, minL = 0.55, maxL = 1.05, depth = 
 // bloco de pedra (miolo + faces): f = frente (+Z), b = trás, l/r = lados
 function stoneBlock(b, { x = 0, z = 0, w, d, h, y0 = 0, faces = 'fblr', ...o }) {
   const dep = o.depth ?? 0.24;
-  b.box(w - 0.2, h, d - 0.2, 'pedra', { p: [x, y0 + h / 2, z], tint: 0.42 });
+  b.box(w - 0.2, h, d - 0.2, 'pedra', { p: [x, y0 + h / 2, z], tint: 0.42, res: 'argamassa' });
   const T = (tx, tz, ry) => new THREE.Matrix4().makeTranslation(tx, 0, tz).multiply(new THREE.Matrix4().makeRotationY(ry));
   if (faces.includes('f')) b.withFrame(T(x, z + d / 2, 0), () => stoneFace(b, w, h, y0, o));
   if (faces.includes('b')) b.withFrame(T(x, z - d / 2, PI), () => stoneFace(b, w, h, y0, o));
@@ -1215,7 +1220,7 @@ window.__api = {
   exportKit: async () => b64(await toGLB(kitObject())),
   exportHouse: async () => b64(await toGLB(buildHouse())),
   tris: n => triCount(getPiece(n)),
-  recursos: Object.fromEntries(Object.entries(RECURSOS).map(([k, r]) => [k, { nome: r.nome, m3: r.m3 }])),
+  recursos: Object.fromEntries(Object.entries(RECURSOS).map(([k, r]) => [k, { nome: r.nome, vem_de: r.mats, m3: r.m3 }])),
   custos: () => ({
     pecas: Object.fromEntries(Object.entries(PIECES).map(([n, d]) => [n, { nome: d.label, categoria: d.cat, tamanho: d.size, custo: getPiece(n).userData.custo }])),
     cenas: Object.fromEntries(Object.entries(SCENES).map(([k, sc]) => [sc.file, { nome: sc.label, custo: sumCost(sc.build()) }])),

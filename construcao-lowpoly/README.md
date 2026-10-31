@@ -59,9 +59,18 @@ Os pilares das pontes descem 4,4 m abaixo do piso (para rio ou vale).
 
 ## Materiais
 
-Cada peça custa **Madeira**, **Pedra**, **Palha** e/ou **Ferro**. O custo é calculado pelo volume real de cada
-material na peça (1 Madeira ≈ 0,04 m³, 1 Pedra ≈ 0,15 m³, 1 Palha ≈ 0,25 m³, 1 Ferro ≈ 0,0025 m³), então peça maior
-custa mais. Para balancear o jogo, mude `m3` em `RECURSOS` no `index.html` e rode `node exportar.mjs` de novo.
+O custo de cada peça usa os recursos do jogo e sai do volume real de cada parte do modelo
+(peça maior custa mais):
+
+| Parte do modelo | Recurso | 1 unidade vale |
+|---|---|---|
+| tábuas, vigas e troncos | Madeira | 0,04 m³ |
+| palha do telhado | Palha + Graveto + Fibra | 0,25 / 0,5 / 0,5 m³ |
+| pedras aparentes | Pedra | 0,15 m³ |
+| argamassa (miolo das peças de pedra) | Pasta de Cimento | 1 m³ |
+| ferragens (faixas, argolas, pinos) | Lingote de Metal | 0,0025 m³ |
+
+Para balancear, mude `m3` em `RECURSOS` no `index.html` e rode `node exportar.mjs` de novo.
 Tabela completa em [`CUSTOS.md`](CUSTOS.md).
 
 ## Importar na engine
