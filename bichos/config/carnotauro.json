@@ -1,0 +1,13 @@
+{
+ "nome": "carnotauro",
+ "titulo": "Carnotauro",
+ "modelo": "../teste/carnotauro_parado.glb",
+ "comprimento": 7.8,
+ "tipo": "bipede",
+ "ataque": "mordida",
+ "rugido": "baixo",
+ "cabeca": 0.1,
+ "braco": 0.03,
+ "fonte": "Rigid Carnotaurus-Sastrei — Wormhole (olahamieholahamieh) — CC BY 4.0 — https://sketchfab.com/3d-models/rigid-carnotaurus-sastrei-232b60653c1740fa8570b6c90b377871",
+ "preparo": "REMOVER=\"object_82,object_11,icosphere\""
+}

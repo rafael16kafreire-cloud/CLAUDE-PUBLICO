@@ -481,6 +481,39 @@ function buildRaptor() {
   return { group, mesh, clips, loops: { parado: 1, andar: 1, correr: 1, comer: 1, dormir: 1 } };
 }
 
+/* Animações de nadador (mosassauro, peixes…): onda do corpo da cabeça até a cauda */
+function swimClips(rig, o) {
+  const k = o.k, clips = [];
+  const front = ['coluna_3', 'coluna_2', 'coluna_1', 'pescoco_1', 'pescoco_2', 'pescoco_3'].filter(n => rig.spec[n]);
+  const tails = [...Array(8)].map((_, i) => `cauda_${i + 1}`).filter(n => rig.spec[n]);
+  const wave = (rot, w, A) => {
+    rot.quadril = [0, A * 0.15 * Math.sin(w + 0.6), 0];
+    front.forEach((b, j) => rot[b] = [0, -A * 0.12 * Math.sin(w + 0.9 + j * 0.3), 0]);
+    tails.forEach((b, i) => rot[b] = [0, A * (0.25 + 0.1 * i) * Math.sin(w - 0.7 - i * 0.55), 0]);
+    rot.cabeca = [0, -A * 0.25 * Math.sin(w + 1.4), 0];
+  };
+  const swim = (name, dur, A, bob) => clips.push(bake(rig, name, dur, (t, u) => {
+    const rot = {}, w = 2 * PI * u; wave(rot, w, A);
+    rot.mandibula = [0.04 + 0.03 * Math.sin(w), 0, 0];
+    return { rot, root: [0, bob * k * Math.sin(w * 2), 0], rootRot: [0.02 * Math.sin(w), 0, 0.03 * Math.sin(w)] };
+  }));
+  swim('parado', 4, 0.12, 0.03);
+  swim('nadar', 2, 0.3, 0.02);
+  swim('nadar_rapido', 1, 0.45, 0.02);
+  clips.push(bake(rig, 'atacar', 1.3, (t, u) => {
+    const rot = {}, wind = env(u, 0, 0.25, 0.3, 0.4), lunge = env(u, 0.3, 0.45, 0.6, 0.9), bite = env(u, 0.3, 0.42, 0.5, 0.58);
+    wave(rot, 2 * PI * u * 2, 0.25 * lunge + 0.1);
+    rot.cabeca = [-0.25 * bite - 0.1 * wind, 0, 0]; rot.mandibula = [1.0 * bite + 0.2 * wind, 0, 0];
+    return { rot, root: [0, 0, (0.5 * lunge - 0.15 * wind) * k] };
+  }));
+  clips.push(bake(rig, 'morrer', 3, (t, u) => {
+    const rot = {}, f = ss(0.05, 0.7, u); wave(rot, 2 * PI * u * 2, 0.25 * (1 - f));
+    rot.mandibula = [0.3 * f, 0, 0];
+    return { rot, root: [0, -0.1 * k * f, 0], rootRot: [0, 0, PI * f] };
+  }));
+  return clips;
+}
+
 /* Animações de quadrúpede (triceratops, estegossauro, mamute…) — k = altura do quadril / 0,92 m */
 function quadClips(rig, o) {
   const k = o.k, clips = [];
@@ -878,7 +911,7 @@ async function buildImported(buf, cfg) {
   const fit = cfg.ajuste || {};
   // pés: pontos perto do chão
   const feet = P.filter(p => p.y < 0.07 * H);
-  const QUAD = cfg.tipo === 'quadrupede';
+  const QUAD = cfg.tipo === 'quadrupede', SWIM = cfg.tipo === 'nadador';
   // quadrúpede: separa pés de trás e da frente (2 grupos ao longo do comprimento)
   let zBack = 0, zFront = 0, xfB = 0, xfF = 0, toeB = 0, toeF = 0;
   if (QUAD) {
@@ -891,9 +924,9 @@ async function buildImported(buf, cfg) {
   }
   const zf = fit.zPe ?? (QUAD ? zBack : med(feet.map(p => p.z))), xf = fit.xPe ?? (QUAD ? xfB : Math.max(0.05 * W, med(feet.map(p => Math.abs(p.x)))));
   const toeMax = QUAD ? toeB : Math.max(...feet.map(p => p.z));
-  const zh = fit.zQuadril ?? (QUAD ? zBack : zf - 0.03 * L);
+  const zh = fit.zQuadril ?? (SWIM ? bb.max.z - 0.45 * L : QUAD ? zBack : zf - 0.03 * L);
   const zSh = fit.zOmbro ?? zFront;
-  const legZones = QUAD ? [zBack, zFront] : [zf];
+  const legZones = SWIM ? [] : QUAD ? [zBack, zFront] : [zf];
   // linha do meio do corpo (só o tronco, sem as pernas)
   const centerY = (z, halfwin = 0.025 * L, minY = 0.45 * H) => {
     const sl = P.filter(p => Math.abs(p.z - z) < halfwin && Math.abs(p.x) < 0.3 * W && p.y > minY);
@@ -910,10 +943,10 @@ async function buildImported(buf, cfg) {
     const ys = sl.map(p => p.y); return (Math.max(...ys) + Math.min(...ys)) / 2;
   };
   const cy = z => { for (let d = 0; d < 0.2 * L; d += 0.01 * L) { const v = cyRaw(z + d) ?? cyRaw(z - d); if (v != null) return v; } return hipY; };
-  if (QUAD && fit.yQuadril == null) hipY = cy(zh);
+  if ((QUAD || SWIM) && fit.yQuadril == null) hipY = cy(zh);
   // pescoço = parte mais fina entre o peito e a cabeça
   const zEnd = bb.max.z, zTail = bb.min.z;
-  const z0 = QUAD ? zSh + 0.02 * L : zh + 0.42 * (zEnd - zh);
+  const z0 = SWIM ? zh + 0.15 * L : QUAD ? zSh + 0.02 * L : zh + 0.42 * (zEnd - zh);
   let zNeck = QUAD ? lerp(zSh, zEnd, 0.4) : zh + 0.6 * (zEnd - zh), thin = 1e9;
   for (let z = z0; z < zEnd - 0.1 * L; z += 0.01 * L) {
     const s2 = centerY(z, 0.012 * L, 0.3 * H); if (s2 && s2.top - s2.bot < thin) { thin = s2.top - s2.bot; zNeck = z; }
@@ -921,7 +954,7 @@ async function buildImported(buf, cfg) {
   zNeck = fit.zPescoco ?? zNeck;
   const skullZ = fit.zCranio ?? Math.max(zNeck + 0.02 * L, zEnd - (cfg.cabeca ?? 0.13) * L);
   const headS = centerY((skullZ + zEnd) / 2, 0.03 * L, 0.15 * H) || { c: hipY, top: hipY + 0.1, bot: hipY - 0.1 };
-  const neckBase = QUAD ? zSh : zh + 0.62 * (zNeck - zh);
+  const neckBase = SWIM ? zEnd - 0.24 * L : QUAD ? zSh : zh + 0.62 * (zNeck - zh);
   // ----- esqueleto (mesmos nomes dos outros bichos)
   const rig = new Rig(), k = hipY / 0.92;
   const sp = t => { const z = lerp(zh, neckBase, t); return [0, cy(z), z]; };
@@ -939,6 +972,7 @@ async function buildImported(buf, cfg) {
   const armL = (cfg.braco ?? 0.06) * L;
   const shH = QUAD ? cy(zSh) : 0;
   for (const [s, x] of [['E', 1], ['D', -1]]) {
+    if (SWIM) continue;                       // nadador: sem pernas (nadadeiras seguem o corpo)
     if (QUAD) {
       // pata da frente: ombro → cotovelo (dobra para trás) → pulso → mão
       const fx = xfF * x;
@@ -996,7 +1030,7 @@ async function buildImported(buf, cfg) {
   let bellyMin = 0;
   for (let t = 0.3; t <= 0.7; t += 0.1) { const c = centerY(lerp(zh, neckBase, t), 0.02 * L, 0.3 * hipY); if (c) bellyMin = Math.max(bellyMin, c.bot); }
   if (!bellyMin) bellyMin = hipY * 0.6;
-  const clips = QUAD ? quadClips(rig, Object.assign({
+  const clips = SWIM ? swimClips(rig, Object.assign({ k: L / 10 }, cfg.anim || {})) : QUAD ? quadClips(rig, Object.assign({
     k, walk: [1.5 * Math.sqrt(k), 0.7, 0.5, 0.09, 0.012], run: [0.8 * Math.sqrt(k), 0.45, 0.95, 0.16, 0.035],
     attack: cfg.ataque || 'chifrada', eat: 1, comerAlto: !!cfg.comerAlto,
     sleepDrop: Math.max(0.1, (bellyMin - 0.03 * H) / k), foldB: 0.17 * hipY, foldF: 0.15 * shH,

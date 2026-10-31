@@ -4,6 +4,7 @@
 #  - junta tudo, aplica transformações e (opcional) reduz triângulos
 #  - exporta .glb parado
 # Uso: blender -b -P preparar.py -- entrada saida.glb [max_triangulos]
+#      (opcional) REMOVER="nome1,nome2" para tirar peças extras
 import bpy, sys, os
 a = sys.argv[sys.argv.index('--') + 1:]
 src, out = a[0], a[1]
@@ -28,6 +29,10 @@ for o in bpy.data.objects:
             bpy.context.scene.frame_set(int(o.animation_data.action.frame_range[0]))
 bpy.context.view_layer.update()
 meshes = [o for o in bpy.data.objects if o.type == 'MESH' and o.visible_get()]
+# REMOVER="parte1,parte2": tira peças cujo nome contém esses textos (ex.: filhotes, pedras, base)
+rem = [r.strip().lower() for r in os.environ.get('REMOVER', '').split(',') if r.strip()]
+if rem:
+    meshes = [o for o in meshes if not any(r in o.name.lower() or r in o.data.name.lower() for r in rem)]
 # aplica modificadores (inclusive o de esqueleto em pose de descanso) e solta do pai
 deps = bpy.context.evaluated_depsgraph_get()
 new = []
