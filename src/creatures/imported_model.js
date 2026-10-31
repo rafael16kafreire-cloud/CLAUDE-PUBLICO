@@ -209,7 +209,7 @@ export function buildImportedModel(d, id) {
       return mat;
     });
     const bones = boneDefs.map((b) => ({ name: b.name, parent: b.parent, pos: new THREE.Vector3(...b.pos) }));
-    return { geometry: g, bones, material, imported: true, clipes: parseClips(d.clipes) };
+    return { geometry: g, bones, material, imported: true, clipes: parseClips(d.clipes), sela: d.sela ?? -1 };
   }
 
   // textura cinza (escamas e relevo) × cor pintada por região

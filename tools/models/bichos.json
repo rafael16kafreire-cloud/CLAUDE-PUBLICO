@@ -463,9 +463,7 @@
  "terizinossauro": {
   "arquivo": "Therizinosaurus",
   "giro": "y180",
-  "exclui": [
-   "Saddle"
-  ],
-  "triangulos": 20000
+  "triangulos": 24000,
+  "sela_embutida": "Saddle"
  }
 }

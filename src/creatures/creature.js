@@ -261,7 +261,11 @@ export class Creature {
     this._sadAnchor = null;
     this.saddled = !!kind;
     this.saddleKind = kind || null;
-    if (kind) {
+    const embutida = this.mesh.userData.selaIdx;
+    if (embutida !== undefined) {
+      // a sela já faz parte do modelo: só liga ou desliga (não põe a sela genérica por cima)
+      this.mesh.material[embutida].visible = !!kind;
+    } else if (kind) {
       this.mesh.updateMatrixWorld(true);
       this._saddleMesh = buildSaddle(this, kind);
     }
@@ -598,7 +602,7 @@ export class Creature {
         this.goal = new THREE.Vector2(c.pos.x, c.pos.z);
       }
     }
-    if (temp === 'agressivo' && hungry && !sp.ambiente && (this.state === CSTATE.WANDER || this.state === CSTATE.IDLE)
+    if (temp === 'agressivo' && sp.dieta === 'carnivoro' && hungry && !sp.ambiente && (this.state === CSTATE.WANDER || this.state === CSTATE.IDLE)
       && this.rand() < BALANCE.brigas.chance_caca_seg * 0.25) {
       const prey = this.manager.findPrey(this, ctx);
       if (prey) {

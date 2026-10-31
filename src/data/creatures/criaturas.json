@@ -2533,7 +2533,7 @@
    ],
    "nome": "Terizinossauro",
    "dieta": "herbivoro",
-   "temperamento": "passivo",
+   "temperamento": "agressivo",
    "vida": 1100,
    "dano": 120,
    "vel_andar": 1.7,
@@ -2609,7 +2609,8 @@
    },
    "revida": true,
    "alcance_ataque": 3.2,
-   "intervalo_ataque": 1.4
+   "intervalo_ataque": 1.4,
+   "alcance_agro": 30
   }
  ]
 }

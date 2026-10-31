@@ -297,7 +297,7 @@ def main(folder, bones_path, cfg_path, out):
     mats = []
     for i, mm in enumerate(meta['malhas']):
         mats.append({'cor': mm.get('diffuseColor') or mm.get('emissiveColor'), 'relevo': mm.get('normal'),
-                     'alfa': bool(mm.get('opacity'))})
+                     'alfa': bool(mm.get('opacity')), 'nome': mm['nome']})
     json.dump({
         'info': meta['info'],
         'body': body,

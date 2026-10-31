@@ -74,6 +74,12 @@ export class CreatureManager {
     const model = this._model(id);
     const { mesh, bones } = createSkinnedMesh(model, model.material ?? this.material);
     mesh.name = species.nome;
+    // modelo com sela embutida: um material próprio para este bicho, que só aparece quando ele está selado
+    if (model.sela >= 0 && Array.isArray(mesh.material)) {
+      mesh.material = mesh.material.map((m, i) => (i === model.sela ? m.clone() : m));
+      mesh.material[model.sela].visible = false;
+      mesh.userData.selaIdx = model.sela;
+    }
     const lvl = level ?? 1 + Math.floor(Math.pow(this.rand(), 1.7) * 29);
     const c = new Creature({
       species, spec: MODELS[id], mesh, bones, level: lvl, x, z,
