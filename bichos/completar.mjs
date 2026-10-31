@@ -4,7 +4,7 @@
 // Uso:
 //   node completar.mjs modelos/trex.glb --ossos          lista os ossos (nome, pai, posição em metros)
 //   node completar.mjs completar/trex.mjs                  gera as animações descritas no arquivo
-// O arquivo de descrição exporta: { modelo, vars? (constantes usadas dentro de f), saida, clipes: [{ nome, base, baseVel?, dur, loop?, f(t, d, u) }], material?(THREE, mat) }
+// O arquivo de descrição exporta: { modelo, vars? (constantes usadas dentro de f), saida, clipes: [{ nome, base, baseVel?, dur, fixo?: {osso: [clipe, tempo]}, f(t, d, u) }], material?(THREE, mat) }
 //   f devolve { 'osso': [graus X, graus Y, graus Z] ou quatérnio [x, y, z, w], ..., $pos: { 'osso': [dx, dy, dz] metros } }
 //   u = utilidades: u.s(x) suaviza 0..1, u.e(t, a, b) rampa suave entre os tempos a e b, u.sin(t, período)
 import { createRequire } from 'node:module'; import { readFileSync, writeFileSync } from 'node:fs';
@@ -45,6 +45,10 @@ window.gerar = async (clipes, matSrc, V = {}) => {
     const baseClip = gl.animations.find(a => a.name === c.base); if (!baseClip) throw new Error('base não encontrada: ' + c.base);
     const amostras = baseClip.tracks.map(tr => { const i = tr.name.lastIndexOf('.'), o = sc.getObjectByName(tr.name.slice(0, i));
       const pr = tr.name.slice(i + 1); return o && ['quaternion', 'position', 'scale'].includes(pr) && [o, pr, tr.createInterpolant()]; }).filter(Boolean);
+    // fixo: { osso: [clipe, tempo] } copia a pose desse osso de outro clipe (ex.: manter a boca fechada)
+    const fixos = Object.entries(c.fixo || {}).flatMap(([n, [cn, tf]]) => { const cl = gl.animations.find(a => a.name === cn);
+      return cl.tracks.filter(tr => tr.name.startsWith(n + '.')).map(tr => { const pr = tr.name.slice(n.length + 1); return [sc.getObjectByName(n), pr, tr.createInterpolant(), tf]; })
+        .filter(x => ['quaternion', 'position', 'scale'].includes(x[1])); });
     const f = new Function('V', 'const {' + Object.keys(V).join(',') + '} = V; return (' + c.f + ')')(V);
     const base = gl.animations.find(a => a.name === c.base); if (!base) throw new Error('base não encontrada: ' + c.base);
     const n = Math.round(c.dur * fps) + 1, times = [], Q = new Map(), P = new Map(), Sx = new Map();
@@ -58,6 +62,7 @@ window.gerar = async (clipes, matSrc, V = {}) => {
       let tb = c.baseT != null ? c.baseT : t * (c.baseVel || 1); tb = c.baseFixo ? Math.min(tb, base.duration - 1e-3) : tb % base.duration;
       for (const [o, [rp, rq, rs]] of rest) { o.position.copy(rp); o.quaternion.copy(rq); o.scale.copy(rs); }
       for (const [o, prop, it] of amostras) { const val = it.evaluate(tb); if (prop === 'quaternion') o.quaternion.fromArray(val).normalize(); else o[prop].fromArray(val); }
+      for (const [o, prop, it, tf] of fixos) { const val = it.evaluate(tf); if (prop === 'quaternion') o.quaternion.fromArray(val).normalize(); else o[prop].fromArray(val); }
       sc.updateMatrixWorld(true);
       const pw = new Map(); for (const o of lista) pw.set(o, o.parent.getWorldQuaternion(new THREE.Quaternion()));
       const pm = new Map(); for (const o of lista) pm.set(o, o.parent.matrixWorld.clone());

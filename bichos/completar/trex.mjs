@@ -1,9 +1,14 @@
 // T-Rex: comer, dormir, morrer (feitas por cima da pose 'parado' do modelo da LasquetiSpice)
 // Eixos do mundo: X = esquerda do bicho (+X abaixa o focinho), Y = cima (+Y vira p/ esquerda), Z = frente (+Z tomba p/ direita)
+const BOCA = Object.fromEntries(['bn_Jaw11_11', 'bn_Tongue112_12', 'bn_Tongue213_13', 'bn_Tongue314_14', 'bn_LeftOuterLip23_23', 'bn_LeftInnerLip24_24',
+  'bn_RightOuterLip25_25', 'bn_RightInnerLip26_26'].map(n => [n, ['parado', 0]]));
 const L = 'bn_LeftUpLeg45_45', R = 'bn_RightUpLeg56_56';
 export default {
   modelo: '../modelos/trex.glb', saida: process.env.SAIDA || '../modelos/trex.glb', vars: { L, R },
   clipes: [
+    // a corrida original abre a boca o tempo todo: andar e correr ficam com a boca (e língua/lábios) do 'parado'
+    { nome: 'correr', base: 'correr', dur: 9.27, fixo: BOCA, f: (t, d, u) => ({}) },
+    { nome: 'andar', base: 'correr', baseVel: 0.5, dur: 18.53, fixo: BOCA, f: (t, d, u) => ({}) },
     { nome: 'comer', base: 'parado', dur: 4, f: (t, d, u) => {
       const k = u.e(t, 0, 0.6) * (1 - u.e(t, 3.4, 4)), m = Math.max(0, u.sin(t, 1)) * k, puxa = Math.max(0, u.sin(t, 1, 0.5)) * k;
       return {
