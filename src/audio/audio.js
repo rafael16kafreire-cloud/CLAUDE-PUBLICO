@@ -23,6 +23,7 @@
 // =============================================================
 import * as THREE from 'three';
 import SONS_GRAVADOS from 'virtual:sons';
+import { settings } from '../core/settings.js';
 
 const MAX_VOICES = 32;
 
@@ -90,7 +91,14 @@ class Sound {
       if (!this.ctx) {
         const AC = window.AudioContext || window.webkitAudioContext;
         if (!AC) return;
-        this.ctx = new AC();
+        // estalos na música = o som engasga porque o aparelho não dá conta: pede um "colchão" de áudio maior
+        // (latencyHint 'playback') e, no modo som leve (padrão na qualidade Baixa), menos carga: taxa menor e sem eco
+        this.leve = settings.get('somLeve') === true || (settings.get('somLeve') !== false && settings.get('quality') === 'baixa');
+        try {
+          this.ctx = new AC({ latencyHint: 'playback', ...(this.leve ? { sampleRate: 32000 } : {}) });
+        } catch {
+          this.ctx = new AC();
+        }
         const c = this.ctx;
         this.master = c.createGain();
         this.master.gain.value = this.volume;
@@ -110,11 +118,17 @@ class Sound {
         this.musicBus.gain.value = this.musicVolume;
         this.musicBus.connect(this.master);
         // eco de floresta (reverberação gerada aqui)
-        this.verb = c.createConvolver();
-        this.verb.buffer = this._makeIR(2.6, 3.2);
         this.verbIn = c.createGain();
         this.verbIn.gain.value = 0.32;
-        this.verbIn.connect(this.verb).connect(this.lowpass);
+        if (this.leve) {
+          // som leve: sem convolução (é o que mais pesa); só um pouquinho do som direto
+          this.verbIn.gain.value = 0.08;
+          this.verbIn.connect(this.lowpass);
+        } else {
+          this.verb = c.createConvolver();
+          this.verb.buffer = this._makeIR(1.7, 3.2);
+          this.verbIn.connect(this.verb).connect(this.lowpass);
+        }
         const ambSend = c.createGain();
         ambSend.gain.value = 0.35;
         this.ambBus.connect(ambSend).connect(this.verbIn);
@@ -956,19 +970,23 @@ class Sound {
       const o = c.createOscillator();
       o.type = 'sine';
       o.frequency.value = hz(n);
-      const o2 = c.createOscillator();
-      o2.type = 'sine';
-      o2.frequency.value = hz(n) * 4; // brilho de marimba
+      const o2 = this.leve ? null : c.createOscillator();
+      if (o2) {
+        o2.type = 'sine';
+        o2.frequency.value = hz(n) * 4; // brilho de marimba
+      }
       const g = c.createGain();
       this._env(g.gain, ti, 0.07, 0.005, 0.9);
-      const g2 = c.createGain();
-      this._env(g2.gain, ti, 0.015, 0.002, 0.15);
       o.connect(g).connect(this.musicBus);
-      o2.connect(g2).connect(this.musicBus);
       o.start(ti);
-      o2.start(ti);
       o.stop(ti + 1);
-      o2.stop(ti + 0.2);
+      if (o2) {
+        const g2 = c.createGain();
+        this._env(g2.gain, ti, 0.015, 0.002, 0.15);
+        o2.connect(g2).connect(this.musicBus);
+        o2.start(ti);
+        o2.stop(ti + 0.2);
+      }
     }
     M.next = t0 + barLen;
     M.bar++;

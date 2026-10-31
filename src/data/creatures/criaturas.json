@@ -160,11 +160,11 @@
    ],
    "nome": "Galimimo",
    "dieta": "herbivoro",
-   "temperamento": "medroso",
+   "temperamento": "passivo",
    "vida": 150,
    "dano": 0,
    "vel_andar": 3.0,
-   "vel_correr": 23.1,
+   "vel_correr": 10.5,
    "tamanho": 1,
    "raio": 0.6,
    "altura": 2.2,
@@ -226,7 +226,8 @@
     "peso": 0.02,
     "forca": 0.05,
     "torpor": 0.06
-   }
+   },
+   "revida": false
   },
   {
    "id": "paquicefalossauro",

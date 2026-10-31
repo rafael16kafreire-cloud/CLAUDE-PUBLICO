@@ -69,6 +69,12 @@ export class PauseMenu {
               <h3>ÁUDIO</h3>
               <label for="opt-vol">Volume do som <output id="opt-vol-out"></output></label>
               <input type="range" id="opt-vol" min="0" max="1" step="0.05">
+              <label for="opt-somleve">Som leve (menos estalos; vale ao reabrir o jogo)</label>
+              <select id="opt-somleve">
+                <option value="auto">Automático</option>
+                <option value="sim">Ligado</option>
+                <option value="nao">Desligado</option>
+              </select>
               <label for="opt-music">Música <output id="opt-music-out"></output></label>
               <input type="range" id="opt-music" min="0" max="1" step="0.05">
             </div>
@@ -170,6 +176,7 @@ export class PauseMenu {
       bright: $('opt-bright'),
       vol: $('opt-vol'),
       music: $('opt-music'),
+      somleve: $('opt-somleve'),
       sens: $('opt-sens'),
       opacity: $('opt-opacity'),
       size: $('opt-size'),
@@ -251,6 +258,7 @@ export class PauseMenu {
       this.refresh();
     });
     f.touch.addEventListener('change', () => settings.set('touchControls', f.touch.value));
+    f.somleve.addEventListener('change', () => settings.set('somLeve', f.somleve.value === 'sim' ? true : f.somleve.value === 'nao' ? false : null));
     f.flick.addEventListener('change', () => settings.set('flickJump', f.flick.checked));
     f.scheme.addEventListener('change', () => settings.set('touchScheme', f.scheme.value));
     f.camera.addEventListener('change', () => settings.set('cameraMode', f.camera.value));
@@ -281,6 +289,7 @@ export class PauseMenu {
     f.touch.value = v.touchControls;
     f.scheme.value = v.touchScheme;
     f.flick.checked = v.flickJump !== false;
+    f.somleve.value = v.somLeve === true ? 'sim' : v.somLeve === false ? 'nao' : 'auto';
     f.camera.value = v.cameraMode;
     f.camera2.value = v.cameraMode;
     f.camdist.value = String(v.cameraDist ?? 1);
