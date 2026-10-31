@@ -1,0 +1,4 @@
+{ "nome": "argentavis", "entrada": "../originais/argentavis_gremory.glb", "saida": "../modelos/argentavis.glb", "comprimento": 6,
+  "osso_cabeca": "Bip01_Head_08", "osso_cauda": "Bip01_Pelvis_02",
+  "animacoes": { "voar": "CINEMA_4D_Principal", "planar": { "de": "CINEMA_4D_Principal", "velocidade": 0.4 } },
+  "fonte": "White Eagle Animation Fast Fly — GremorySaiyan — CC BY 4.0 — https://sketchfab.com/3d-models/white-eagle-animation-fast-fly-30203bf39e5145f19c79e83c550139d3" }

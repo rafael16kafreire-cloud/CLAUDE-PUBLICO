@@ -5,9 +5,11 @@ Modelos de terceiros usados no jogo (obrigatório manter estes créditos no jogo
 | Bicho | Modelo — autor — licença — link |
 |---|---|
 | anquilossauro | Dino - Ankylosaurus — pikabobalex — CC BY 4.0 — https://sketchfab.com/3d-models/dino-ankylosaurus-55b9adcbcf7846e8a833bfc77eaf3d3f |
+| argentavis | White Eagle Animation Fast Fly — GremorySaiyan — CC BY 4.0 — https://sketchfab.com/3d-models/white-eagle-animation-fast-fly-30203bf39e5145f19c79e83c550139d3 |
 | argentinossauro | Argentinosaurus Huinculensis — Nobilis 2 (nobilishornet2) — CC BY 4.0 — https://sketchfab.com/3d-models/argentinosaurus-huinculensis-0709f00fbe75454686e56eb5391eec44 |
 | braquiossauro | Brachiosaurus Altithorax — paleo.parallax — CC BY 4.0 — https://sketchfab.com/3d-models/brachiosaurus-altithorax-224f71d98b7e4128a137c42368b286f6 |
 | carnotauro | Rigid Carnotaurus-Sastrei — Wormhole (olahamieholahamieh) — CC BY 4.0 — https://sketchfab.com/3d-models/rigid-carnotaurus-sastrei-232b60653c1740fa8570b6c90b377871 |
+| chefe_vulcao | European Dragon — Regina Cachoa — CC BY 4.0 — https://sketchfab.com/3d-models/european-dragon-82f393a2e6c048ad80c171ce3b3a7b87 |
 | deinosuchus | crocodile high quality — Beerus (beerusu798) — CC BY 4.0 — https://sketchfab.com/3d-models/crocodile-high-quality-a242e4634a234d3fb909c54b2c39d7b8 |
 | dimetrodonte | Dimetrodon — cp4096 — CC BY 4.0 — https://sketchfab.com/3d-models/dimetrodon-3ac7c6aada5e4c03849f9544bbc1afed |
 | dodo | Dodo [ Extinct Bird ] — BlueMesh — CC BY 4.0 — https://sketchfab.com/3d-models/dodo-extinct-bird-68f873e9f9144fc4b99a8f7475bf336d |
@@ -23,8 +25,5 @@ Modelos de terceiros usados no jogo (obrigatório manter estes créditos no jogo
 | reidodo | Dodo [ Extinct Bird ] — BlueMesh — CC BY 4.0 — https://sketchfab.com/3d-models/dodo-extinct-bird-68f873e9f9144fc4b99a8f7475bf336d |
 | sauropelta | Animated Sauropelta (Free) — Anees Animates — CC BY 4.0 — https://sketchfab.com/3d-models/animated-sauropelta-free-c6373f12f3954facb8d5fe48055c9161 |
 | terizinossauro | Therizinosaurus — Julian Johnson-Mortimer (FreddyFoxFreddy) — CC BY 4.0 — https://sketchfab.com/3d-models/therizinosaurus-1fa8b9e2dd4b40c9b8ffcaead0bd8e66 |
-| titanoboa | Snake attack Animations (Multiple) — Imagigoo — CC BY 4.0 — https://sketchfab.com/3d-models/snake-attack-animations-multiple-83c4290cd4b648fd942d4bbc2280a3f6 |
 | trex | Animated Tyrannosaurus Rex Dinosaur Running Loop — LasquetiSpice — CC BY 4.0 — https://sketchfab.com/3d-models/animated-tyrannosaurus-rex-dinosaur-running-loop-38007d947ae74dea83988cb0b08ee053 |
 | triceratops | Triceratops — John Haverkamp — CC BY 4.0 — https://sketchfab.com/3d-models/triceratops-829912188d2445ae8034d46ed75e3c68 |
-
-Testes do sistema de animação: "Animated LowPoly Dinosaurs" de Quaternius (CC0).
