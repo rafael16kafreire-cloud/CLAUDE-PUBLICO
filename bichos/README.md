@@ -46,3 +46,21 @@ Para espécies sem modelo realista livre, `variante.mjs` cria uma variante de um
 Variantes atuais: diplodoco (argentinossauro), kentrossauro (estegossauro), paquirrinossauro (triceratops),
 quetzalcoatlus (pteranodonte), compsognato (raptor), dilofossauro (carnotauro), iguanodonte (parassauro).
 A titanoboa é procedural (`buildTitanoboa` no index.html; exporte com `node exportar.mjs titanoboa`).
+
+## Completar animações que faltam (`completar.mjs`)
+
+Para modelos que já têm esqueleto mas não têm todas as animações do prompt, `completar.mjs` cria animações novas
+girando ossos por cima de uma pose existente (eixos do mundo: X = esquerda do bicho, Y = cima, Z = frente).
+
+    node completar.mjs modelos/trex.glb --ossos     # lista os ossos e onde estão
+    node completar.mjs completar/trex.mjs           # gera as animações descritas no arquivo
+
+| bicho | animações criadas |
+|---|---|
+| trex | comer, dormir, morrer |
+| pteranodonte (e quetzalcoatlus) | correr, atacar, rugir, comer, dormir, morrer |
+| chefe_vulcao | atacar, rugir, cuspir_fogo, pisar_chao, comer, dormir, morrer + pele de lava (refaça antes com `adaptar.mjs`) |
+| argentavis | parado, andar, correr, atacar, rugir, comer, dormir, morrer (poses no chão calculadas) |
+| titanoboa | parado, andar, correr, nadar, nadar_rapido, atacar, rugir, comer, dormir, morrer (depois `adaptar.mjs config/titanoboa.json`) |
+
+`previa_glb.mjs` aceita `QUADROS=n OUT=pasta` (folha com n quadros de cada animação) e `ALVO=osso,tamanho` (câmera de perto).
