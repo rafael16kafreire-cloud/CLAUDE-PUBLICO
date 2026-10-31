@@ -84,22 +84,25 @@ function distSeg(p, a, b) {
 /* ================================================================== */
 /* Textura de escamas (neutra; a cor vem da cor por vértice)           */
 /* ================================================================== */
-function scaleTexture() {
-  const N = 64, c = document.createElement('canvas'); c.width = c.height = N;
-  const g = c.getContext('2d'), img = g.createImageData(N, N), r = mulberry32(3);
+function scaleTexture(N = 256) {
+  // escamas arredondadas e suaves (sem "pixel"), em tons de cinza: a cor vem da cor por vértice
+  const c = document.createElement('canvas'); c.width = c.height = N;
+  const g = c.getContext('2d'), img = g.createImageData(N, N), r = mulberry32(3), cell = N / 16;
+  const jit = [...Array(16 * 17)].map(() => [(r() - 0.5) * 0.35, (r() - 0.5) * 0.35, 0.92 + r() * 0.08]);
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
-    const row = Math.floor(y / 8), cx = (x + (row % 2) * 4) % 8, cy = y % 8;
-    const edge = Math.min(cx, 7 - cx, cy, 7 - cy) / 3.5;
-    const v = 255 * clamp(0.74 + 0.26 * Math.min(1, edge) + (r() - 0.5) * 0.06, 0, 1), i = (y * N + x) * 4;
+    const row = Math.floor(y / cell), xo = (row % 2) * cell / 2, col = Math.floor(((x + xo) % N) / cell);
+    const j = jit[row * 17 + col], fx = (((x + xo) % N) % cell) / cell - 0.5 - j[0] * 0.3, fy = (y % cell) / cell - 0.5 - j[1] * 0.3;
+    const d = Math.min(1, Math.sqrt(fx * fx + fy * fy) * 1.9);
+    const v = 255 * clamp((0.97 - 0.2 * d * d - 0.06 * fy) * j[2] + (r() - 0.5) * 0.025, 0, 1), i = (y * N + x) * 4;
     img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 255;
   }
   g.putImageData(img, 0, 0);
   const t = new THREE.CanvasTexture(c);
   t.name = 'escamas'; t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping;
-  t.magFilter = THREE.NearestFilter; t.minFilter = THREE.NearestMipmapLinearFilter;
+  t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearMipmapLinearFilter; t.anisotropy = 4;
   return t;
 }
-const TEX = scaleTexture();
+const TEX = scaleTexture(256);
 
 /* ================================================================== */
 /* Esqueleto                                                           */
@@ -124,7 +127,7 @@ class Rig {
 /* Malha: tubos (loft) e peças pequenas, com pesos de pele             */
 /* ================================================================== */
 class Mesher {
-  constructor(rig, seed = 7) { this.rig = rig; this.P = []; this.N = []; this.Col = []; this.UV = []; this.SI = []; this.SW = []; this.r = mulberry32(seed); }
+  constructor(rig, seed = 7, uvK = 3) { this.uvK = uvK; this.rig = rig; this.P = []; this.N = []; this.Col = []; this.UV = []; this.SI = []; this.SW = []; this.r = mulberry32(seed); }
   weights(p, chain) {
     if (chain.length === 1) return [[this.rig.idx[chain[0]], 1]];
     const ds = chain.map(n => { const s = this.rig.spec[n]; return [this.rig.idx[n], distSeg(p, s.head, s.tail) + 0.006]; }).sort((a, b) => a[1] - b[1]);
@@ -154,14 +157,14 @@ class Mesher {
       const ref = Math.abs(T.y) > 0.8 ? V(0, 0, 1) : V(0, 1, 0);
       const S = T.clone().cross(ref).normalize(), U = S.clone().cross(T).normalize();
       if (prevC) arc += c.distanceTo(prevC); prevC = c;
-      const wts = this.weights(c, chain), ring = [];
+      const wts = this.weights(c, chain), ring = [], circ = 2 * PI * Math.sqrt((w * w + h * h) / 2);
       for (let j = 0; j < sides; j++) {
         const a = 2 * PI * j / sides;
         let x = Math.cos(a) * w, y = Math.sin(a) * h;
         if (flatBottom != null) y = Math.max(y, -h * flatBottom);
         if (flatTop != null) y = Math.min(y, h * flatTop);
         y += dy;
-        ring.push({ p: c.clone().addScaledVector(S, x).addScaledVector(U, y), uv: [j / sides * 3, arc * 5], w: wts });
+        ring.push({ p: c.clone().addScaledVector(S, x).addScaledVector(U, y), uv: [j / sides * circ * this.uvK, arc * this.uvK], w: wts });
       }
       rings.push(ring); centers.push(c.clone().addScaledVector(U, dy)); tangents.push(T);
     }
@@ -349,7 +352,7 @@ function buildRaptor() {
     return col;
   };
   const feather = f => pal.feather.clone().lerp(pal.tip, ss(0.45, 0.85, f));
-  const m = new Mesher(rig);
+  const m = new Mesher(rig, 7, 3);
 
   // corpo inteiro: ponta da cauda → base do crânio
   const tailChain = [...Array(8)].map((_, i) => `cauda_${8 - i}`);
@@ -427,12 +430,22 @@ function buildRaptor() {
   const mat = new THREE.MeshStandardMaterial({ name: 'raptor_pele', map: TEX, vertexColors: true, roughness: 0.78, metalness: 0 });
   const mesh = m.build('raptor', mat);
 
-  // ------------------------- animações -------------------------
+  const clips = bipedClips(rig, {
+    k: 1, walk: [1.1, 0.62, 0.62, 0.11, 0.03, 0.04, 0.15], run: [0.56, 0.38, 1.25, 0.24, 0.07, 0.22, 0.45],
+    attack: 'salto', roar: 'cima', sleepDrop: 0.6, fold: { dz: -0.14, dy: -0.17, meta: 1.0, toe: 0.1 }, deathDrop: 0.7,
+  });
+
+  const group = new THREE.Group(); group.name = 'raptor'; group.add(mesh);
+  return { group, mesh, clips, loops: { parado: 1, andar: 1, correr: 1, comer: 1, dormir: 1 } };
+}
+
+/* Animações de bípede (raptor, T-Rex, carnotauro…) — k = escala (altura do quadril / 0,92 m) */
+function bipedClips(rig, o) {
   const neck = ['pescoco_1', 'pescoco_2', 'pescoco_3'], spine = ['coluna_1', 'coluna_2', 'coluna_3'];
   const tails = [...Array(8)].map((_, i) => `cauda_${i + 1}`);
   const arms = s => [`ombro_${s}`, `antebraco_${s}`];
   const stand = () => ({ E: { dz: 0, dy: 0 }, D: { dz: 0, dy: 0 } });
-  const clips = [];
+  const clips = [], k = o.k;
 
   clips.push(bake(rig, 'parado', 3, (t, u) => {
     const rot = {}, w = 2 * PI * u;
@@ -442,24 +455,24 @@ function buildRaptor() {
     rot.mandibula = [0.03 + 0.03 * Math.sin(w * 2), 0, 0];
     tails.forEach((b, i) => rot[b] = [0.01 * Math.sin(w * 2 - i * 0.4), 0.035 * Math.sin(w - i * 0.35), 0]);
     for (const s of ['E', 'D']) rot[`ombro_${s}`] = [0.05 * Math.sin(w * 2), 0, 0];
-    return { rot, root: [0, -0.008 * (1 - Math.cos(w * 2)), 0], legs: stand() };
+    return { rot, root: [0, -0.008 * k * (1 - Math.cos(w * 2)), 0], legs: stand() };
   }));
 
   const cycle = (name, dur, stance, stride, lift, bob, lean, armTuck) => clips.push(bake(rig, name, dur, (t, u) => {
     const rot = {}, w = 2 * PI * u;
-    const gE = gait(u, stance, stride, lift), gD = gait(u + 0.5, stance, stride, lift);
+    const gE = gait(u, stance, stride * k, lift * k), gD = gait(u + 0.5, stance, stride * k, lift * k);
     chainRot(rot, spine, [0, -0.04 * Math.sin(w), 0.02 * Math.sin(w)]);
     chainRot(rot, neck, [-lean * 0.35 + 0.03 * Math.sin(w * 2), 0.03 * Math.sin(w), 0]);
     rot.cabeca = [-lean * 0.3 - 0.04 * Math.sin(w * 2 + 0.5), -0.05 * Math.sin(w), 0];
     tails.forEach((b, i) => rot[b] = [lean * 0.06 + 0.015 * Math.sin(w * 2 - i * 0.5), 0.05 * Math.sin(w - 0.6 - i * 0.3), 0]);
     for (const s of ['E', 'D']) { rot[`ombro_${s}`] = [armTuck, 0, 0]; rot[`antebraco_${s}`] = [-armTuck * 0.6, 0, 0]; }
-    return { rot, root: [0.012 * Math.sin(w), -bob * (0.5 + 0.5 * Math.cos(w * 2)), 0], rootRot: [lean, 0.03 * Math.sin(w), 0.03 * Math.sin(w)],
+    return { rot, root: [0.012 * k * Math.sin(w), -bob * k * (0.5 + 0.5 * Math.cos(w * 2)), 0], rootRot: [lean, 0.03 * Math.sin(w), 0.03 * Math.sin(w)],
       legs: { E: gE, D: gD } };
   }));
-  cycle('andar', 1.1, 0.62, 0.62, 0.11, 0.03, 0.04, 0.15);
-  cycle('correr', 0.56, 0.38, 1.25, 0.24, 0.07, 0.22, 0.45);
+  cycle('andar', ...o.walk);
+  cycle('correr', ...o.run);
 
-  clips.push(bake(rig, 'atacar', 1.3, (t, u) => {
+  if (o.attack === 'salto') clips.push(bake(rig, 'atacar', 1.3, (t, u) => {
     const rot = {}, crouch = env(u, 0.0, 0.25, 0.32, 0.4), air = env(u, 0.3, 0.45, 0.7, 0.85), bite = env(u, 0.55, 0.62, 0.72, 0.8);
     const h = Math.sin(PI * clamp((u - 0.3) / 0.55, 0, 1));
     chainRot(rot, neck, [0.12 * air - 0.1 * crouch, 0, 0]);
@@ -467,11 +480,23 @@ function buildRaptor() {
     rot.mandibula = [0.75 * bite, 0, 0];
     tails.forEach(b => rot[b] = [0.05 * air - 0.03 * crouch, 0, 0]);
     for (const s of ['E', 'D']) { rot[`ombro_${s}`] = [-1.1 * air, 0, 0]; rot[`antebraco_${s}`] = [-0.5 * air, 0, 0]; }
-    const kick = { dz: 0.42 * air, dy: 0.32 * air - 0.0, meta: 0.9 * air, toe: 0.7 * air };
-    return { rot, root: [0, -0.22 * crouch + 0.55 * h, 0.5 * h], rootRot: [-0.15 * air + 0.12 * crouch, 0, 0], legs: { E: kick, D: { ...kick, dz: kick.dz * 0.9 } } };
+    const kick = { dz: 0.42 * k * air, dy: 0.32 * k * air, meta: 0.9 * air, toe: 0.7 * air };
+    return { rot, root: [0, (-0.22 * crouch + 0.55 * h) * k, 0.5 * h * k], rootRot: [-0.15 * air + 0.12 * crouch, 0, 0], legs: { E: kick, D: { ...kick, dz: kick.dz * 0.9 } } };
   }));
 
-  clips.push(bake(rig, 'rugir', 2.2, (t, u) => {
+  if (o.attack === 'mordida') clips.push(bake(rig, 'atacar', 1.6, (t, u) => {
+    // mordida forte de lado, baixando a cabeça
+    const rot = {}, wind = env(u, 0.0, 0.25, 0.3, 0.45), strike = env(u, 0.32, 0.48, 0.62, 0.9), bite = env(u, 0.25, 0.4, 0.5, 0.56);
+    const sweep = lerp(0.35, -0.45, ss(0.32, 0.6, u));
+    chainRot(rot, neck, [-0.12 * wind + 0.22 * strike, sweep * 0.25 * (wind + strike), 0]);
+    rot.cabeca = [-0.15 * wind + 0.3 * strike, sweep * 0.3 * (wind + strike), -0.25 * strike * Math.sign(sweep)];
+    rot.mandibula = [0.8 * bite + 0.15 * wind, 0, 0];
+    chainRot(rot, spine, [0.04 * strike, -sweep * 0.06 * strike, 0]);
+    tails.forEach((b, i) => rot[b] = [0.03 * strike, -sweep * 0.08 * strike, 0]);
+    return { rot, root: [0, -0.04 * k * strike, 0.18 * k * strike - 0.05 * k * wind], rootRot: [0.14 * strike - 0.05 * wind, -sweep * 0.12 * strike, 0], legs: stand() };
+  }));
+
+  if (o.roar === 'cima') clips.push(bake(rig, 'rugir', 2.2, (t, u) => {
     const rot = {}, up = env(u, 0.0, 0.18, 0.78, 0.95), roar = env(u, 0.15, 0.25, 0.72, 0.85);
     chainRot(rot, neck, [-0.13 * up, 0.05 * roar * Math.sin(t * 22), 0]);
     rot.cabeca = [-0.2 * up, 0.12 * roar * Math.sin(t * 18), 0.08 * roar * Math.sin(t * 13)];
@@ -479,17 +504,29 @@ function buildRaptor() {
     chainRot(rot, spine, [-0.03 * up, 0, 0]);
     tails.forEach((b, i) => rot[b] = [0.05 * up, 0.04 * roar * Math.sin(t * 9 - i * 0.5), 0]);
     for (const s of ['E', 'D']) { rot[`ombro_${s}`] = [-0.6 * up, 0, (s === 'E' ? -0.3 : 0.3) * up]; rot[`antebraco_${s}`] = [-0.4 * up, 0, 0]; }
-    return { rot, root: [0, -0.06 * roar, 0], rootRot: [-0.08 * up, 0, 0], legs: stand() };
+    return { rot, root: [0, -0.06 * k * roar, 0], rootRot: [-0.08 * up, 0, 0], legs: stand() };
+  }));
+
+  if (o.roar === 'baixo') clips.push(bake(rig, 'rugir', 2.8, (t, u) => {
+    // abaixa o corpo, abre a boca inteira e balança a cabeça
+    const rot = {}, low = env(u, 0.0, 0.2, 0.8, 0.95), roar = env(u, 0.18, 0.28, 0.75, 0.88), shake = roar * Math.sin(t * 13);
+    chainRot(rot, spine, [0.05 * low, 0, 0]);
+    chainRot(rot, neck, [0.05 * low - 0.05 * roar, 0.07 * shake, 0.03 * shake]);
+    rot.cabeca = [-0.12 * roar, 0.16 * shake, 0.12 * shake];
+    rot.mandibula = [0.95 * roar + 0.1 * low, 0, 0];
+    tails.forEach((b, i) => rot[b] = [0.05 * low, 0.05 * roar * Math.sin(t * 6 - i * 0.5), 0]);
+    for (const s of ['E', 'D']) { rot[`ombro_${s}`] = [-0.4 * roar, 0, 0]; rot[`antebraco_${s}`] = [-0.3 * roar, 0, 0]; }
+    return { rot, root: [0, -0.07 * k * low, 0], rootRot: [0.13 * low, 0, 0], legs: stand() };
   }));
 
   clips.push(bake(rig, 'comer', 2, (t, u) => {
-    const rot = {}, w = 2 * PI * u, tug = Math.max(0, Math.sin(w * 2));
-    chainRot(rot, spine, [0.12, 0, 0]);
-    rot.pescoco_1 = [0.55, 0, 0]; rot.pescoco_2 = [0.5 - 0.15 * tug, 0.05 * Math.sin(w), 0]; rot.pescoco_3 = [0.35 - 0.15 * tug, 0, 0];
-    rot.cabeca = [0.35 - 0.2 * tug, 0.15 * tug * Math.sin(w * 4), 0];
+    const rot = {}, w = 2 * PI * u, tug = Math.max(0, Math.sin(w * 2)), e = o.eat ?? 1;
+    chainRot(rot, spine, [0.12 * e, 0, 0]);
+    rot.pescoco_1 = [0.55 * e, 0, 0]; rot.pescoco_2 = [(0.5 - 0.15 * tug) * e, 0.05 * Math.sin(w), 0]; rot.pescoco_3 = [(0.35 - 0.15 * tug) * e, 0, 0];
+    rot.cabeca = [(0.35 - 0.2 * tug) * e, 0.15 * tug * Math.sin(w * 4), 0];
     rot.mandibula = [0.5 * Math.max(0, Math.sin(w * 2 + 1.2)), 0, 0];
     tails.forEach((b, i) => rot[b] = [0.06, 0.03 * Math.sin(w - i * 0.4), 0]);
-    return { rot, root: [0, -0.1, -0.05 * tug], rootRot: [0.22, 0, 0], legs: stand() };
+    return { rot, root: [0, -0.1 * k, -0.05 * k * tug], rootRot: [0.22 * e, 0, 0], legs: stand() };
   }));
 
   clips.push(bake(rig, 'dormir', 4, (t, u) => {
@@ -498,8 +535,8 @@ function buildRaptor() {
     rot.pescoco_1 = [0.3, 0.25, 0]; rot.pescoco_2 = [0.25, 0.35, 0]; rot.pescoco_3 = [0.15, 0.3, 0]; rot.cabeca = [-0.1 + 0.02 * br, 0.2, 0];
     tails.forEach((b, i) => rot[b] = [-0.07, -0.12, 0]);
     for (const s of ['E', 'D']) { rot[`ombro_${s}`] = [0.4, 0, 0]; rot[`antebraco_${s}`] = [-0.9, 0, 0]; }
-    const fold = { dz: -0.14, dy: -0.17, meta: 1.0, toe: 0.1 };
-    return { rot, root: [0, -0.6 + 0.01 * br, 0], rootRot: [0.05, 0, 0], legs: { E: fold, D: fold } };
+    const fold = o.fold;
+    return { rot, root: [0, (-o.sleepDrop + 0.01 * br) * k, 0], rootRot: [0.05, 0, 0], legs: { E: fold, D: fold } };
   }));
 
   clips.push(bake(rig, 'morrer', 2.4, (t, u) => {
@@ -509,17 +546,119 @@ function buildRaptor() {
     rot.mandibula = [0.3 * fall, 0, 0];
     tails.forEach(b => rot[b] = [-0.04 * fall - 0.04 * stag, 0.08 * fall, 0]);
     for (const s of ['E', 'D']) { rot[`ombro_${s}`] = [0.4 * fall, 0, 0]; rot[`antebraco_${s}`] = [0.5 * fall, 0, 0]; }
-    const wob = { dz: 0.06 * stag * Math.sin(t * 9), dy: 0, blend: 1 - fall };
+    const wob = { dz: 0.06 * k * stag * Math.sin(t * 9), dy: 0, blend: 1 - fall };
     for (const s of ['E', 'D']) { rot[`coxa_${s}`] = [-0.5 * fall, 0, 0]; rot[`canela_${s}`] = [0.6 * fall, 0, 0]; rot[`pe_${s}`] = [-0.4 * fall, 0, 0]; }
-    return { rot, root: [0.04 * stag * Math.sin(t * 6) - 0.05 * fall, -0.12 * stag - 0.7 * fall + settle, 0],
+    return { rot, root: [(0.04 * stag * Math.sin(t * 6) - 0.05 * fall) * k, (-0.12 * stag - o.deathDrop * fall + settle) * k, 0],
       rootRot: [0.15 * stag, 0, 0.12 * stag * Math.sin(t * 5) + (PI / 2 - 0.08) * fall], legs: { E: wob, D: { ...wob, dz: -wob.dz } } };
   }));
+  return clips;
+}
 
-  const group = new THREE.Group(); group.name = 'raptor'; group.add(mesh);
+/* ================================================================== */
+/* T-REX                                                               */
+/* ================================================================== */
+function buildTRex() {
+  const rig = new Rig();
+  const tailZ = [-0.6, -1.5, -2.4, -3.3, -4.2, -5.0, -5.8, -6.5, -7.15];
+  const tailY = z => 3.95 + 0.42 * (z / 7.15);
+  rig.bone('quadril', null, [0, 3.9, 0], [0, 3.95, 0.8])
+     .bone('coluna_1', 'quadril', [0, 3.95, 0.8], [0, 3.95, 1.6])
+     .bone('coluna_2', 'coluna_1', [0, 3.95, 1.6], [0, 3.85, 2.3])
+     .bone('coluna_3', 'coluna_2', [0, 3.85, 2.3], [0, 3.9, 2.85])
+     .bone('pescoco_1', 'coluna_3', [0, 3.9, 2.85], [0, 4.15, 3.15])
+     .bone('pescoco_2', 'pescoco_1', [0, 4.15, 3.15], [0, 4.4, 3.35])
+     .bone('pescoco_3', 'pescoco_2', [0, 4.4, 3.35], [0, 4.55, 3.55])
+     .bone('cabeca', 'pescoco_3', [0, 4.55, 3.55], [0, 4.3, 5.0])
+     .bone('mandibula', 'cabeca', [0, 4.42, 3.75], [0, 4.2, 4.95]);
+  for (let i = 0; i < 8; i++)
+    rig.bone(`cauda_${i + 1}`, i ? `cauda_${i}` : 'quadril', [0, tailY(tailZ[i]), tailZ[i]], [0, tailY(tailZ[i + 1]), tailZ[i + 1]]);
+  for (const [s, x] of [['E', 1], ['D', -1]]) {
+    rig.bone(`ombro_${s}`, 'coluna_3', [0.55 * x, 3.3, 2.35], [0.65 * x, 2.95, 2.4])
+       .bone(`antebraco_${s}`, `ombro_${s}`, [0.65 * x, 2.95, 2.4], [0.62 * x, 2.75, 2.75])
+       .bone(`mao_${s}`, `antebraco_${s}`, [0.62 * x, 2.75, 2.75], [0.6 * x, 2.62, 2.95])
+       .bone(`coxa_${s}`, 'quadril', [0.6 * x, 3.75, 0.0], [0.7 * x, 2.4, 0.55])
+       .bone(`canela_${s}`, `coxa_${s}`, [0.7 * x, 2.4, 0.55], [0.68 * x, 1.0, -0.25])
+       .bone(`pe_${s}`, `canela_${s}`, [0.68 * x, 1.0, -0.25], [0.66 * x, 0.18, 0.15])
+       .bone(`dedos_${s}`, `pe_${s}`, [0.66 * x, 0.18, 0.15], [0.66 * x, 0.1, 0.95]);
+  }
+  rig.build();
+
+  const pal = { back: C('#3d4724'), band: C('#5b3f24'), side: C('#6f7c46'), belly: C('#d8c89c'),
+    claw: C('#2a241d'), tooth: C('#e6d9a3'), eye: C('#d9a21b'), pupil: C('#111111'), mouth: C('#6e2622'), plate: C('#2f3720') };
+  const skin = (c, n, info) => {
+    let col = pal.back.clone().lerp(pal.side, ss(0.65, 0.0, n.y) * 0.6).lerp(pal.belly, ss(-0.05, -0.6, n.y));
+    if (info.stripes && n.y > -0.25 && c.z < 2.9 && c.z > -6.6 && Math.sin(c.z * 2.3 + 0.8) > 0.35) col.lerp(pal.band, 0.75);
+    return col;
+  };
+  const m = new Mesher(rig, 11, 0.9);
+  const tailChain = [...Array(8)].map((_, i) => `cauda_${8 - i}`);
+  const bodyChain = [...tailChain, 'quadril', 'coluna_1', 'coluna_2', 'coluna_3', 'pescoco_1', 'pescoco_2', 'pescoco_3', 'cabeca'];
+  m.loft({
+    pts: [
+      { p: [0, 3.5, -7.25], w: 0.05, h: 0.05 }, { p: [0, 3.6, -6.3], w: 0.15, h: 0.18 },
+      { p: [0, 3.7, -5.0], w: 0.28, h: 0.33 }, { p: [0, 3.8, -3.6], w: 0.42, h: 0.5 },
+      { p: [0, 3.87, -2.2], w: 0.58, h: 0.68 }, { p: [0, 3.92, -1.0], w: 0.72, h: 0.84 },
+      { p: [0, 3.92, 0.0], w: 0.82, h: 0.96, dy: -0.1 }, { p: [0, 3.82, 1.0], w: 0.9, h: 1.15, dy: -0.25 },
+      { p: [0, 3.77, 1.9], w: 0.85, h: 1.1, dy: -0.25 }, { p: [0, 3.86, 2.6], w: 0.64, h: 0.78, dy: -0.12 },
+      { p: [0, 4.1, 3.05], w: 0.52, h: 0.62 }, { p: [0, 4.35, 3.3], w: 0.5, h: 0.58 },
+      { p: [0, 4.5, 3.5], w: 0.52, h: 0.6 }, { p: [0, 4.56, 3.66], w: 0.54, h: 0.62 },
+    ], K: 80, sides: 16, chain: bodyChain, color: skin, info: { stripes: true }, capEnd: false,
+  });
+  // crânio grande e mandíbula
+  m.loft({ pts: [{ p: [0, 4.56, 3.56], w: 0.56, h: 0.62 }, { p: [0, 4.62, 3.92], w: 0.53, h: 0.56 }, { p: [0, 4.52, 4.32], w: 0.43, h: 0.44 },
+    { p: [0, 4.4, 4.72], w: 0.33, h: 0.31 }, { p: [0, 4.32, 5.04], w: 0.12, h: 0.12 }],
+    K: 18, sides: 14, chain: ['cabeca'], color: skin, flatBottom: 0.12 });
+  m.loft({ pts: [{ p: [0, 4.36, 3.62], w: 0.48, h: 0.33 }, { p: [0, 4.33, 4.0], w: 0.43, h: 0.26 }, { p: [0, 4.28, 4.5], w: 0.31, h: 0.19 },
+    { p: [0, 4.22, 4.97], w: 0.11, h: 0.08 }], K: 14, sides: 12, chain: ['mandibula'], color: (c, n) => n.y > 0.5 ? pal.mouth : skin(c, n, {}), flatTop: 0.3 });
+  // dentes grossos (banana)
+  for (let i = 0; i < 8; i++) {
+    const z = 4.0 + i * 0.12, f = (z - 4.0) / 1.0, wz = lerp(0.46, 0.18, f);
+    for (const s of [1, -1]) {
+      m.cone([s * wz * 0.86, lerp(4.53, 4.4, f), z], [s * wz * 0.86, lerp(4.53, 4.4, f) - 0.15, z + 0.03], 0.035, 'cabeca', pal.tooth, 4);
+      m.cone([s * wz * 0.78, lerp(4.36, 4.26, f), z + 0.06], [s * wz * 0.78, lerp(4.36, 4.26, f) + 0.11, z + 0.04], 0.028, 'mandibula', pal.tooth, 4);
+    }
+  }
+  for (const s of [1, -1]) {
+    m.ball([s * 0.42, 4.78, 3.98], 0.075, 'cabeca', pal.eye);
+    m.ball([s * 0.47, 4.78, 3.99], 0.035, 'cabeca', pal.pupil);
+    m.cone([s * 0.36, 4.96, 3.78], [s * 0.38, 4.92, 4.15], 0.11, 'cabeca', pal.back, 5, 0.55);   // sobrancelha óssea
+    m.cone([s * 0.3, 4.95, 3.86], [s * 0.34, 5.08, 3.92], 0.06, 'cabeca', pal.plate, 4);        // chifrinho
+  }
+  // placas nas costas
+  for (let i = 0; i < 26; i++) {
+    const z = lerp(3.2, -5.6, i / 25), top = z > 2.6 ? 4.4 + (z - 2.6) * 0.5 : z > -1 ? 4.85 - Math.max(0, z - 1.5) * 0.25 : 4.75 + z * 0.13;
+    m.cone([0, top - 0.06, z], [0, top + lerp(0.2, 0.08, i / 25), z - 0.1], lerp(0.12, 0.06, i / 25), bodyChain, pal.plate, 4, 0.5);
+  }
+  for (const [s, x] of [['E', 1], ['D', -1]]) {
+    // bracinho de 2 dedos
+    m.loft({ pts: [{ p: [0.5 * x, 3.35, 2.32], w: 0.17, h: 0.19 }, { p: [0.65 * x, 2.95, 2.4], w: 0.12, h: 0.12 },
+      { p: [0.62 * x, 2.75, 2.75], w: 0.09, h: 0.09 }, { p: [0.6 * x, 2.62, 2.95], w: 0.07, h: 0.06 }],
+      K: 10, sides: 8, chain: [`ombro_${s}`, `antebraco_${s}`, `mao_${s}`], color: skin, info: {} });
+    for (const f of [-1, 1]) m.cone([(0.6 + f * 0.035) * x, 2.62, 2.94], [(0.6 + f * 0.05) * x, 2.48, 3.08], 0.03, `mao_${s}`, pal.claw, 4);
+    // perna enorme
+    m.loft({ pts: [{ p: [0.55 * x, 3.95, -0.1], w: 0.45, h: 0.72 }, { p: [0.68 * x, 3.1, 0.28], w: 0.42, h: 0.62 },
+      { p: [0.7 * x, 2.4, 0.55], w: 0.28, h: 0.33 }, { p: [0.69 * x, 1.7, 0.15], w: 0.22, h: 0.25 },
+      { p: [0.68 * x, 1.0, -0.25], w: 0.16, h: 0.17 }, { p: [0.67 * x, 0.6, -0.05], w: 0.14, h: 0.14 },
+      { p: [0.66 * x, 0.18, 0.15], w: 0.16, h: 0.14 }],
+      K: 24, sides: 12, chain: [`coxa_${s}`, `canela_${s}`, `pe_${s}`], color: skin, info: {} });
+    const D = `dedos_${s}`;
+    for (const [dx, ex, ez] of [[0, 0, 0.95], [-0.17, -0.25, 0.78], [0.17, 0.25, 0.78]]) {
+      m.tube([(0.66 + dx) * x, 0.15, 0.15], [(0.66 + ex) * x, 0.1, ez], 0.13, 0.075, D, pal.side, 7);
+      m.cone([(0.66 + ex) * x, 0.1, ez - 0.03], [(0.66 + ex * 1.08) * x, 0.03, ez + 0.2], 0.07, D, pal.claw, 5);
+    }
+  }
+  const mat = new THREE.MeshStandardMaterial({ name: 'trex_pele', map: TEX, vertexColors: true, roughness: 0.8, metalness: 0 });
+  const mesh = m.build('trex', mat);
+  const clips = bipedClips(rig, {
+    k: 3.9 / 0.92, walk: [1.7, 0.64, 0.62, 0.1, 0.025, 0.03, 0.08], run: [1.0, 0.42, 1.05, 0.17, 0.05, 0.16, 0.25],
+    attack: 'mordida', roar: 'baixo', eat: 0.55, sleepDrop: 0.6, fold: { dz: -0.55, dy: -0.78, meta: 1.0, toe: 0.05 }, deathDrop: 0.74,
+  });
+  const group = new THREE.Group(); group.name = 'trex'; group.add(mesh);
   return { group, mesh, clips, loops: { parado: 1, andar: 1, correr: 1, comer: 1, dormir: 1 } };
 }
 
 const BICHOS = {
+  trex: { nome: 'T-Rex', arquivo: 'trex.glb', build: buildTRex },
   raptor: { nome: 'Raptor', arquivo: 'raptor.glb', build: buildRaptor },
 };
 
@@ -555,6 +694,11 @@ function frame(obj) {
   const dist = r / Math.sin(camera.fov * PI / 360) * (camera.aspect < 1 ? 1.6 : 1.0);
   camera.position.copy(c).add(V(1.0, 0.45, 0.75).normalize().multiplyScalar(dist));
   controls.target.copy(c); controls.update();
+  // sombra do tamanho do bicho
+  const R = Math.max(size.x, size.y, size.z) * 0.8 + 1;
+  Object.assign(sun.shadow.camera, { left: -R, right: R, top: R, bottom: -R, far: R * 6 });
+  sun.position.copy(c).add(V(0.6, 0.9, 0.5).multiplyScalar(R * 2)); sun.target.position.copy(c);
+  sun.shadow.camera.updateProjectionMatrix(); scene.add(sun.target);
 }
 function show(name) {
   if (cur) scene.remove(cur.group);
@@ -616,7 +760,7 @@ renderer.setAnimationLoop(() => {
   if (mixer && !window.__frozen) mixer.update(dt);
   controls.update(); renderer.render(scene, camera);
 });
-show('raptor');
+show('trex');
 window.__ready = true;
 </script>
 </body>
