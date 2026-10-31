@@ -29,7 +29,7 @@ window.anims = gl.animations.map(a => [a.name, a.duration]);
 window.pose = (name, t) => { mx.stopAllAction(); const c = gl.animations.find(a => a.name === name); if (c) { mx.clipAction(c).play(); mx.setTime(t); }
   gl.scene.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(gl.scene), s = box.getSize(new THREE.Vector3()), ctr = box.getCenter(new THREE.Vector3()), R = Math.max(s.x, s.y, s.z);
-  cam.position.copy(ctr).add(new THREE.Vector3(1, 0.45, 0.8).normalize().multiplyScalar(R * 1.55)); cam.lookAt(ctr);
+  cam.position.copy(ctr).add(new THREE.Vector3(1, 0.45, 0.8).normalize().multiplyScalar(R * 1.55)); cam.lookAt(ctr); window.dbg = [ctr.toArray().map(x=>+x.toFixed(1)), R.toFixed(1)];
   d.position.copy(ctr).add(new THREE.Vector3(R, R * 1.6, R * 0.8)); d.target.position.copy(ctr);
   Object.assign(d.shadow.camera, { left: -R, right: R, top: R, bottom: -R, far: R * 6 }); d.shadow.camera.updateProjectionMatrix();
   r.render(sc, cam); };
@@ -39,7 +39,7 @@ await p.waitForFunction(() => window.ready);
 const anims = await p.evaluate(() => window.anims);
 const want = process.argv[3] ? process.argv[3].split(',') : anims.map(a => a[0]);
 for (const [a, dur] of anims.filter(x => want.includes(x[0]))) {
-  const t = { parado: 0.3, andar: 0.3, correr: 0.2, morrer: dur * 0.97, dormir: dur * 0.5 }[a] ?? dur * 0.45;
+  const t = { parado: 0.3, andar: 0.3, correr: 0.2, morrer: dur * 0.97, dormir: dur * 0.5, voar: 1.5, planar: 2 }[a] ?? dur * 0.45;
   await p.evaluate(([a, t]) => window.pose(a, t), [a, Math.min(t, dur)]);
   await p.screenshot({ path: join(here, 'previas', `${nome}_${a}.jpg`), type: 'jpeg', quality: 85 });
 }

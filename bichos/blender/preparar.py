@@ -1,6 +1,6 @@
 # Prepara um modelo qualquer para ser animado:
 #  - abre .glb/.gltf/.fbx/.obj/.blend/.usdz/.stl
-#  - tira esqueleto/animações antigas (fica só a malha na pose de descanso)
+#  - tira esqueleto/animações antigas (fica só a malha, na pose em que foi montada)
 #  - junta tudo, aplica transformações e (opcional) reduz triângulos
 #  - exporta .glb parado
 # Uso: blender -b -P preparar.py -- entrada saida.glb [max_triangulos]
@@ -19,10 +19,13 @@ else:
            '.usdc': lambda: bpy.ops.wm.usd_import(filepath=src), '.stl': lambda: bpy.ops.wm.stl_import(filepath=src)}
     imp[ext]()
 # pose de descanso e sem animação
+# usa a pose em que o modelo está montado (alguns têm a pose de descanso torta);
+# passe REPOUSO=1 no ambiente para usar a pose de descanso
 for o in bpy.data.objects:
     if o.type == 'ARMATURE':
-        o.data.pose_position = 'REST'
-        if o.animation_data: o.animation_data_clear()
+        o.data.pose_position = 'REST' if os.environ.get('REPOUSO') else 'POSE'
+        if o.animation_data and o.animation_data.action and not os.environ.get('REPOUSO'):
+            bpy.context.scene.frame_set(int(o.animation_data.action.frame_range[0]))
 bpy.context.view_layer.update()
 meshes = [o for o in bpy.data.objects if o.type == 'MESH' and o.visible_get()]
 # aplica modificadores (inclusive o de esqueleto em pose de descanso) e solta do pai
