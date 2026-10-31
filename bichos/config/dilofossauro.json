@@ -1,0 +1,12 @@
+{
+ "nome": "dilofossauro",
+ "base": "../modelos/carnotauro.glb",
+ "saida": "../modelos/dilofossauro.glb",
+ "escala": 0.42,
+ "cor": [
+  1.25,
+  1.35,
+  0.55
+ ],
+ "variante_de": "carnotauro"
+}

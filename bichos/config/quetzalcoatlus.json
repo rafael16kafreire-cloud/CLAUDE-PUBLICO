@@ -1,0 +1,12 @@
+{
+ "nome": "quetzalcoatlus",
+ "base": "../modelos/pteranodonte.glb",
+ "saida": "../modelos/quetzalcoatlus.glb",
+ "escala": 1.57,
+ "cor": [
+  1.35,
+  1.3,
+  1.25
+ ],
+ "variante_de": "pteranodonte"
+}

@@ -1049,7 +1049,62 @@ async function buildImported(buf, cfg) {
     medidas: { L, H, W, zf, xf, zh, hipY, zNeck, skullZ, zFront, xfF, shH } };
 }
 
+
+/* ================================================================== */
+/* TITANOBOA (feita do zero): cobra de 13 m, rasteja com a onda do nado */
+/* ================================================================== */
+function buildTitanoboa() {
+  const rig = new Rig(), R = 0.45;
+  const sp = [[0, 0], [1.2, 0], [2.4, 0], [3.6, 0], [4.4, 0], [5.0, 0], [5.6, 0.02], [5.9, 0.05]];
+  const y = z => R * 0.92 + (z > 5 ? (z - 5) * 0.12 : 0);
+  rig.bone('quadril', null, [0, y(0), 0], [0, y(1.2), 1.2])
+     .bone('coluna_1', 'quadril', [0, y(1.2), 1.2], [0, y(2.4), 2.4])
+     .bone('coluna_2', 'coluna_1', [0, y(2.4), 2.4], [0, y(3.6), 3.6])
+     .bone('coluna_3', 'coluna_2', [0, y(3.6), 3.6], [0, y(4.4), 4.4])
+     .bone('pescoco_1', 'coluna_3', [0, y(4.4), 4.4], [0, y(5.0), 5.0])
+     .bone('pescoco_2', 'pescoco_1', [0, y(5.0), 5.0], [0, y(5.5), 5.5])
+     .bone('pescoco_3', 'pescoco_2', [0, y(5.5), 5.5], [0, y(5.85), 5.85])
+     .bone('cabeca', 'pescoco_3', [0, y(5.85), 5.85], [0, y(6.6), 6.6])
+     .bone('mandibula', 'cabeca', [0, y(5.9) - 0.06, 5.95], [0, y(6.5) - 0.1, 6.5]);
+  const tz = [-0.8, -1.6, -2.4, -3.2, -4.0, -4.8, -5.5, -6.1, -6.65];
+  for (let i = 0; i < 8; i++) rig.bone(`cauda_${i + 1}`, i ? `cauda_${i}` : 'quadril', [0, y(0) * (1 - i * 0.08), tz[i]], [0, y(0) * (1 - (i + 1) * 0.08), tz[i + 1]]);
+  rig.build();
+  const pal = { back: C('#4b5226'), side: C('#6b7036'), belly: C('#c9b56a'), blotch: C('#16150f'), eye: C('#d8b51c'), pupil: C('#0b0b0b'), mouth: C('#6d2a28') };
+  const skin = (c, n, info) => {
+    let col = pal.back.clone().lerp(pal.side, ss(0.6, 0.0, n.y) * 0.6).lerp(pal.belly, ss(-0.2, -0.7, n.y));
+    // manchas pretas grandes ao longo do corpo (alternando nas costas e nos lados)
+    const ph = c.z * 2.1, side = Math.atan2(n.x, n.y);
+    const blot = Math.sin(ph) * Math.cos(side * 1.6 + Math.sin(c.z * 0.9)) ;
+    if (n.y > -0.3 && blot > 0.55) col.lerp(pal.blotch, ss(0.55, 0.75, blot) * 0.85);
+    return col;
+  };
+  const m = new Mesher(rig, 21, 1.6); m.smooth = true;
+  const chain = rig.order.filter(n => n !== 'mandibula');
+  const body = [[-6.68, 0.02], [-6.3, 0.07], [-5.5, 0.14], [-4.3, 0.25], [-2.8, 0.36], [-1.2, 0.44], [0.5, 0.47], [2.2, 0.46], [3.7, 0.41], [4.7, 0.33], [5.3, 0.27], [5.8, 0.27]];
+  m.loft({ pts: body.map(([z, r]) => ({ p: [0, y(z) - (R - r) * 0.92, z], w: r * 1.08, top: r * 0.95, bot: r * 0.82, n: 2.2 })),
+    K: 140, sides: 22, chain, color: skin, info: {}, capEnd: false });
+  // cabeça triangular (larga atrás) e mandíbula
+  m.loft({ pts: [{ p: [0, y(5.75) + 0.02, 5.75], w: 0.3, top: 0.22, bot: 0.06, n: 2.4 }, { p: [0, y(5.95) + 0.03, 5.95], w: 0.34, top: 0.2, bot: 0.06, n: 2.6 },
+    { p: [0, y(6.25), 6.25], w: 0.24, top: 0.14, bot: 0.05, n: 2.6 }, { p: [0, y(6.5) - 0.02, 6.5], w: 0.13, top: 0.08, bot: 0.04, n: 2.3 }, { p: [0, y(6.62) - 0.03, 6.62], w: 0.05, top: 0.04, bot: 0.03 }],
+    K: 22, sides: 20, chain: ['cabeca'], color: skin, info: {} });
+  m.loft({ pts: [{ p: [0, y(5.8) - 0.07, 5.8], w: 0.27, top: 0.03, bot: 0.13, n: 2.4 }, { p: [0, y(6.1) - 0.08, 6.1], w: 0.24, top: 0.03, bot: 0.1, n: 2.4 },
+    { p: [0, y(6.45) - 0.09, 6.45], w: 0.12, top: 0.025, bot: 0.06 }, { p: [0, y(6.58) - 0.1, 6.58], w: 0.04, top: 0.02, bot: 0.03 }],
+    K: 16, sides: 16, chain: ['mandibula'], color: (c, n) => n.y > 0.6 ? pal.mouth.clone() : skin(c, n, {}), info: {} });
+  for (const s of [1, -1]) {
+    m.ball([s * 0.2, y(6.15) + 0.12, 6.12], 0.045, 'cabeca', pal.eye, 1);
+    m.geom(new THREE.BoxGeometry(0.012, 0.06, 0.02).translate(s * 0.238, y(6.15) + 0.12, 6.14), 'cabeca', pal.pupil);
+    m.ball([s * 0.06, y(6.55) + 0.04, 6.56], 0.015, 'cabeca', pal.blotch);   // narina
+  }
+  const mat = new THREE.MeshStandardMaterial({ name: 'titanoboa_pele', map: TEX, vertexColors: true, roughness: 0.55, metalness: 0 });
+  const mesh = m.build('titanoboa', mat);
+  const clips = swimClips(rig, { k: 1.3 });
+  for (const [novo, de] of [['andar', 'nadar'], ['correr', 'nadar_rapido'], ['dormir', 'parado']]) { const c = clips.find(x => x.name === de).clone(); c.name = novo; clips.push(c); }
+  const group = new THREE.Group(); group.name = 'titanoboa'; group.add(mesh);
+  return { group, mesh, clips, loops: { parado: 1, andar: 1, correr: 1, nadar: 1, nadar_rapido: 1, dormir: 1 } };
+}
+
 const BICHOS = {
+  titanoboa: { nome: 'Titanoboa', arquivo: 'titanoboa.glb', build: buildTitanoboa },
   trex: { nome: 'T-Rex', arquivo: 'trex.glb', build: buildTRex },
   raptor: { nome: 'Raptor', arquivo: 'raptor.glb', build: buildRaptor },
 };

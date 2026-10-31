@@ -35,3 +35,14 @@ Para refazer um bicho: baixe o original pelo link em `CREDITOS.md`, salve em `or
 
 **Licença dos modelos:** use só modelos feitos por você/sua IA ou com licença CC0/CC-BY do próprio autor.
 Modelos extraídos de jogos (ex.: ARK, Jurassic World Evolution) não podem ir para o jogo, mesmo que o site diga "grátis".
+
+## Variantes e criaturas feitas do zero
+
+Para espécies sem modelo realista livre, `variante.mjs` cria uma variante de um modelo parecido
+(mesmo esqueleto e animações, escala e cor diferentes):
+
+    node variante.mjs config/diplodoco.json   # {nome, base, saida, escala, cor:[r,g,b]}
+
+Variantes atuais: diplodoco (argentinossauro), kentrossauro (estegossauro), paquirrinossauro (triceratops),
+quetzalcoatlus (pteranodonte), compsognato (raptor), dilofossauro (carnotauro), iguanodonte (parassauro).
+A titanoboa é procedural (`buildTitanoboa` no index.html; exporte com `node exportar.mjs titanoboa`).

@@ -27,3 +27,21 @@ Modelos de terceiros usados no jogo (obrigatório manter estes créditos no jogo
 | terizinossauro | Therizinosaurus — Julian Johnson-Mortimer (FreddyFoxFreddy) — CC BY 4.0 — https://sketchfab.com/3d-models/therizinosaurus-1fa8b9e2dd4b40c9b8ffcaead0bd8e66 |
 | trex | Animated Tyrannosaurus Rex Dinosaur Running Loop — LasquetiSpice — CC BY 4.0 — https://sketchfab.com/3d-models/animated-tyrannosaurus-rex-dinosaur-running-loop-38007d947ae74dea83988cb0b08ee053 |
 | triceratops | Triceratops — John Haverkamp — CC BY 4.0 — https://sketchfab.com/3d-models/triceratops-829912188d2445ae8034d46ed75e3c68 |
+
+## Variantes (escala + cor diferentes de um modelo acima — mesmo crédito do modelo base)
+
+| arquivo | baseado em | crédito |
+|---|---|---|
+| diplodoco | argentinossauro | Argentinosaurus Huinculensis — Nobilis 2 (nobilishornet2) — CC BY 4.0 — https://sketchfab.com/3d-models/argentinosaurus-huinculensis-0709f00fbe75454686e56eb5391eec44 |
+| kentrossauro | estegossauro | Stegosaurus — PusztaiAndras (PAndras) — CC BY 4.0 — https://sketchfab.com/3d-models/stegosaurus-b2545ed6031e49939b823b1c8435989e |
+| paquirrinossauro | triceratops | Triceratops — John Haverkamp — CC BY 4.0 — https://sketchfab.com/3d-models/triceratops-829912188d2445ae8034d46ed75e3c68 |
+| quetzalcoatlus | pteranodonte | Pteranodon (Animated) — oscar.lopez.riviello (Chistodrako) — CC BY 4.0 — https://sketchfab.com/3d-models/pteranodon-animated-7d7683df41d1405283f160e81a5dff1b |
+| compsognato | raptor | PBR Velociraptor (Animated) — Ferocious Industries — CC BY 4.0 — https://sketchfab.com/3d-models/pbr-velociraptor-animated-8f1744af7b0847a2aabe3df90be802f0 |
+| dilofossauro | carnotauro | Rigid Carnotaurus-Sastrei — Wormhole (olahamieholahamieh) — CC BY 4.0 — https://sketchfab.com/3d-models/rigid-carnotaurus-sastrei-232b60653c1740fa8570b6c90b377871 |
+| iguanodonte | parassauro | Parasaurolophus — htqj — CC BY 4.0 — https://sketchfab.com/3d-models/parasaurolophus-0f25fa4a55ba48c88adef066161f5e83 |
+
+## Feito do zero neste projeto
+
+| arquivo | observação |
+|---|---|
+| titanoboa | modelo procedural (index.html → buildTitanoboa), sem modelo de terceiros |
