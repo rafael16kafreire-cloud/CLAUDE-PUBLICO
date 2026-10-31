@@ -276,6 +276,7 @@ function boot(hotData = {}) {
     ctx.touch.setVisible((game.isTouch && inGame && !ctx.invScreen.visible && !ctx.creatureMenu.visible && !ctx.whistle.visible && !ctx.actionWheel.visible) || ctx.touch.editing);
     ctx.touch.applySettings(settings.get('buttonOpacity'), settings.get('buttonSize'));
     ctx.touch.setScheme(settings.get('touchScheme'));
+    ctx.touch.flickJump = settings.get('flickJump') !== false;
     if (!ctx.touch.editing) ctx.touch.applyLayout(settings.get('buttonLayout'));
     ctx.debug.setVisible(settings.get('showDebug'));
     ctx.camCtl.setMode(settings.get('cameraMode'));

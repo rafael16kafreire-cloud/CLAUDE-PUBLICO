@@ -72,6 +72,7 @@ export class TouchControls {
     this.editBar.querySelector('[data-act="lock"]').addEventListener('click', () => this.stopEdit());
 
     this.scheme = 'gestos';
+    this.flickJump = true; // pular com o gesto de arrastar para cima (opção nas Configurações)
     // tempos dos gestos em ms (padrão de dedo no celular; os testes automáticos alargam)
     this.timing = { flick: 280, double: 330, hold: 480, tap: 260, edge: 600, early: 45 };
     this.onEdge = null;   // (lado 'L' | 'R') chamado quando arrasta a partir da borda
@@ -239,13 +240,24 @@ export class TouchControls {
             st.fired = true;
             clearTimeout(st.timer);
             this._tap('attack');
+            // segurando o dedo na tela: continua batendo até soltar (como o ARK Mobile)
+            st.holdAttack = true;
+            st.repeat = setInterval(() => this._tapAction(), 260);
           }
         }, this.timing.early);
         // segurar parado: inventário / montar
         st.timer = setTimeout(() => {
           if (!st.moved && !st.cancelled && P.has(e.pointerId)) {
             st.held = true;
-            this._holdAction();
+            const txt = document.querySelector('.hud .prompt:not([hidden])')?.textContent ?? '';
+            if (this._mounted || /botão Montar/.test(txt)) this._holdAction(); // montar / desmontar
+            else if (!st.repeat) {
+              // segurar sem mexer: ataca ou colhe sem parar enquanto o dedo estiver na tela
+              navigator.vibrate?.(10);
+              st.holdAttack = true;
+              this._tapAction();
+              st.repeat = setInterval(() => this._tapAction(), 260);
+            }
           }
         }, this.timing.hold);
       }
@@ -274,7 +286,7 @@ export class TouchControls {
       }
       if (st.left) {
         this._moveKnob(x, y);
-        if (!st.jumped && now - st.t0 < this.timing.flick && dy < -52 && Math.abs(dx) < -dy * 0.75) {
+        if (this.flickJump && !st.jumped && now - st.t0 < this.timing.flick * 0.65 && dy < -95 && Math.abs(dx) < -dy * 0.6) {
           st.jumped = true;
           st.lastJump = now;
           this._tap('jump');
@@ -285,7 +297,9 @@ export class TouchControls {
         h.push({ t: now, x, y });
         while (h.length > 1 && now - h[1].t > 220) h.shift(); // h[0] = onde o dedo estava ao começar a janela
         const dyw = y - h[0].y;
-        if (dyw < -60 && Math.abs(x - h[0].x) < -dyw * 0.75 && now - (st.lastJump ?? -1e9) > 450) {
+        // só vale se o dedo JÁ estava esticado para frente (correndo): sair do parado empurrando o analógico não pula
+        const esticado = h[0].y < st.y0 - STICK_RADIUS * this.scale * 0.6;
+        if (this.flickJump && esticado && dyw < -80 && Math.abs(x - h[0].x) < -dyw * 0.6 && now - (st.lastJump ?? -1e9) > 600) {
           st.lastJump = now;
           st.hist = [{ t: now, x, y }];
           this._tap('jump');

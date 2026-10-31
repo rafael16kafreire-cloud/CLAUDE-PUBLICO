@@ -42,6 +42,7 @@ const DEFAULTS = {
   cameraMode: 'primeira',  // primeira | terceira
   cameraDist: 1.0,         // distância da câmera na 3ª pessoa (0,55 a 2): roda do mouse também muda
   personagem: 'quadradinho', // quadradinho | realista (vale ao abrir o jogo de novo)
+  flickJump: true,         // toque: pular arrastando o dedo para cima (gesto)
   lowPoly: 'auto',         // grama e árvores low poly: auto (só se ficar lento) | ligado | desligado
   autoQuality: true,       // baixa a qualidade sozinho se ficar lento
   playerName: '',          // nome no co-op

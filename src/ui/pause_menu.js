@@ -119,6 +119,8 @@ export class PauseMenu {
                 <option value="gestos">Gestos (como no ARK)</option>
                 <option value="botoes">Botões na tela</option>
               </select>
+              <label for="opt-flick">Pular arrastando o dedo para cima</label>
+              <input type="checkbox" id="opt-flick">
               <button type="button" class="btn btn-small touch-only" id="pause-buttons">Ajustar posição dos botões (esquema Botões)</button>
             </div>
             <div class="po-page" data-page="jogo">
@@ -173,6 +175,7 @@ export class PauseMenu {
       size: $('opt-size'),
       touch: $('opt-touch'),
       scheme: $('opt-scheme'),
+      flick: $('opt-flick'),
       camera: $('opt-camera'),
       camera2: $('opt-camera2'),
       camdist: $('opt-camdist'),
@@ -248,6 +251,7 @@ export class PauseMenu {
       this.refresh();
     });
     f.touch.addEventListener('change', () => settings.set('touchControls', f.touch.value));
+    f.flick.addEventListener('change', () => settings.set('flickJump', f.flick.checked));
     f.scheme.addEventListener('change', () => settings.set('touchScheme', f.scheme.value));
     f.camera.addEventListener('change', () => settings.set('cameraMode', f.camera.value));
     f.camera2.addEventListener('change', () => settings.set('cameraMode', f.camera2.value));
@@ -276,6 +280,7 @@ export class PauseMenu {
     f.size.value = String(v.buttonSize);
     f.touch.value = v.touchControls;
     f.scheme.value = v.touchScheme;
+    f.flick.checked = v.flickJump !== false;
     f.camera.value = v.cameraMode;
     f.camera2.value = v.cameraMode;
     f.camdist.value = String(v.cameraDist ?? 1);
