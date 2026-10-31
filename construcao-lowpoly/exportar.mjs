@@ -13,6 +13,7 @@ mkdirSync(outModels, { recursive: true }); mkdirSync(outPrev, { recursive: true 
 
 const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
 const page = await browser.newPage({ viewport: { width: 1400, height: 820 } });
+page.setDefaultTimeout(600000);
 page.on('pageerror', e => console.error('ERRO NA PÁGINA:', e.message));
 page.on('console', m => { if (m.type() === 'error') console.error('console:', m.text()); });
 

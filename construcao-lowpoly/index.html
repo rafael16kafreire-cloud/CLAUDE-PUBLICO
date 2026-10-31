@@ -90,6 +90,7 @@
   <div class="grid">
     <button id="btnCasa" class="ativo">🏠 Casa de exemplo</button>
     <button id="btnMuralha">🏰 Fortaleza de exemplo</button>
+    <button id="btnNiveis" class="full">🛡️ Muralhas: pedra, metal e obsidiana</button>
     <button id="btnMostruario" class="full">📏 Mostruário P / M / G</button>
     <button id="btnVariar" class="full">🎲 Nova variação</button>
   </div>
@@ -208,6 +209,26 @@ const texPedra = makeTex('pedra', (x, y, r) => {
   return [150 * k, 147 * k, 138 * k];
 });
 const texFerro = makeTex('ferro', (x, y, r) => mul([70, 68, 66], 0.85 + r() * 0.3));
+const nMetal = noise2(61, 2, 32), nMetal2 = noise2(62, 16, 16);
+const texMetal = makeTex('metal', (x, y, r) => {
+  const v = 0.7 * nMetal(x / 32, y / 2) + 0.3 * nMetal2(x / 4, y / 4);
+  let c = mul([122, 128, 134], 0.78 + 0.32 * v + (r() - 0.5) * 0.06);
+  if (r() < 0.012) c = mul([150, 154, 158], 1.1);            // risco claro
+  if (nMetal2(x / 4 + 9, y / 4 + 3) > 0.82) c = [c[0] * 1.05, c[1] * 0.8, c[2] * 0.62]; // ferrugem
+  return c;
+});
+const nObs = noise2(71, 8, 8), nObs2 = noise2(72, 32, 32);
+const texObsidiana = makeTex('obsidiana', (x, y, r) => {
+  const v = 0.6 * nObs(x / 8, y / 8) + 0.4 * nObs2(x / 2, y / 2);
+  let c = [34 + 30 * v, 26 + 18 * v, 44 + 46 * v];
+  if (v > 0.72) c = [70 + 60 * v, 56 + 40 * v, 110 + 80 * v];   // brilho vítreo roxo
+  if (r() < 0.02) c = [150, 140, 190];
+  return c;
+});
+const texCristal = makeTex('cristal', (x, y, r) => {
+  const k = 0.75 + 0.35 * r();
+  return [120 * k, 230 * k, 255 * k];
+});
 const nGrass = noise2(51, 16, 16);
 const texGrama = makeTex('grama', (x, y, r) => {
   const v = nGrass(x / 4, y / 4);
@@ -226,7 +247,13 @@ const MATS = {
   palha: mat('palha', texPalha),
   pedra: mat('pedra', texPedra),
   ferro: mat('ferro', texFerro),
+  metal: mat('metal', texMetal),
+  obsidiana: mat('obsidiana', texObsidiana),
+  cristal: mat('cristal', texCristal),
 };
+MATS.metal.roughness = 0.5; MATS.metal.metalness = 0.3;
+MATS.obsidiana.roughness = 0.22; MATS.obsidiana.metalness = 0.1;
+MATS.cristal.roughness = 0.3; MATS.cristal.emissive = new THREE.Color(0x2fc8ff); MATS.cristal.emissiveIntensity = 1.4;
 MATS.ferro.roughness = 0.6; MATS.ferro.metalness = 0.4;
 const TONS = {
   media: 0xffffff, clara: 0xffe9cf, escura: 0x9a8676, velha: 0xbdb8b0,
@@ -267,27 +294,26 @@ function meshVolume(g) {
 
 /* ------------------------------------------------------------------ */
 /* Materiais de construção (receita de cada peça)                      */
-/* O custo sai do volume real de cada parte da peça:                  */
-/*   madeira/tronco → Madeira · palha → Palha + Graveto + Fibra ·      */
-/*   pedras → Pedra · argamassa (miolo) → Pasta de Cimento ·            */
-/*   ferragens → Lingote de Metal.                                      */
-/* m3 = quantos m³ da peça custam 1 unidade. Mude para balancear.       */
+/* O custo sai do volume real de cada parte da peça.                  */
+/* fontes: { parte do modelo: m³ que valem 1 unidade }                 */
+/* Mude esses números para balancear o jogo.                           */
 /* ------------------------------------------------------------------ */
 const RECURSOS = {
-  madeira: { nome: 'Madeira', icone: '🪵', mats: ['madeira', 'madeira_escura', 'tronco'], m3: 0.04 },
-  palha: { nome: 'Palha', icone: '🌾', mats: ['palha'], m3: 0.25 },
-  graveto: { nome: 'Graveto', icone: '🥢', mats: ['palha'], m3: 0.5 },
-  fibra: { nome: 'Fibra', icone: '🧵', mats: ['palha'], m3: 0.5 },
-  pedra: { nome: 'Pedra', icone: '🪨', mats: ['pedra'], m3: 0.15 },
-  cimento: { nome: 'Pasta de Cimento', icone: '🧱', mats: ['argamassa'], m3: 1.0 },
-  lingote: { nome: 'Lingote de Metal', icone: '🔩', mats: ['ferro'], m3: 0.0025 },
+  madeira: { nome: 'Madeira', icone: '🪵', fontes: { madeira: 0.04, madeira_escura: 0.04, tronco: 0.04 } },
+  palha: { nome: 'Palha', icone: '🌾', fontes: { palha: 0.25 } },
+  graveto: { nome: 'Graveto', icone: '🥢', fontes: { palha: 0.5 } },
+  fibra: { nome: 'Fibra', icone: '🧵', fontes: { palha: 0.5 } },
+  pedra: { nome: 'Pedra', icone: '🪨', fontes: { pedra: 0.15 } },
+  cimento: { nome: 'Pasta de Cimento', icone: '🧱', fontes: { argamassa: 1.0 } },
+  lingote: { nome: 'Lingote de Metal', icone: '🔩', fontes: { ferro: 0.0025, metal: 0.02 } },
+  obsidiana: { nome: 'Obsidiana', icone: '🟣', fontes: { obsidiana: 0.12 } },
+  cristal: { nome: 'Cristal', icone: '💎', fontes: { cristal: 0.002 } },
 };
 function recipe(vol) {
   const out = {};
   for (const [k, r] of Object.entries(RECURSOS)) {
-    const v = r.mats.reduce((s, m) => s + (vol[m] || 0), 0);
-    if (v <= 0) continue;
-    const n = v / r.m3;
+    const n = Object.entries(r.fontes).reduce((s, [m, m3]) => s + (vol[m] || 0) / m3, 0);
+    if (n <= 0) continue;
     out[k] = n < 20 ? Math.max(1, Math.round(n)) : Math.round(n / 5) * 5;
   }
   return out;
@@ -428,6 +454,18 @@ function lattice(b, x0, x1, y0, y1) {
 /* ------------------------------------------------------------------ */
 const DOOR = [-0.75, 0.75, 0, rowY(8)];
 const WIN = [-0.5, 0.5, rowY(4), rowY(8)];
+
+const NIVEIS = {
+  pedra: { nome: 'pedra', cat: 'Muros de pedra' },
+  metal: { nome: 'metal', cat: 'Muros de metal' },
+  obsidiana: { nome: 'obsidiana', cat: 'Muros de obsidiana' },
+};
+const MURO_TAM = {
+  normal: { w: 3, h: 3, d: 0.9, rot: 'normal', txt: '3 × 3 m (0,9 m)' },
+  grande: { w: 6, h: 6, d: 1.2, rot: 'grande', txt: '6 × 6 m (1,2 m)' },
+  gigante: { w: 9, h: 9, d: 1.8, rot: 'gigante', txt: '9 × 9 m (1,8 m)' },
+};
+const GIANT = { w: 6.6, h: 7.5, pw: 1.2, total: 9, d: 2.0 };   // portal gigante: vão 6,6 × 7,5 m
 
 const PIECES = {
   fundacao_pedra: {
@@ -695,7 +733,26 @@ const PIECES = {
   ponte_p: stonePiece('Pontes', 'Ponte P', '6 m de vão × 3 m de largura', 'centro do piso da ponte (y = 0 é onde se pisa); comprimento em X', b => bridge(b, 6, [])),
   ponte_m: stonePiece('Pontes', 'Ponte M', '9 m × 3 m, 1 pilar de pedra (4 m de altura)', 'centro do piso da ponte (y = 0 é onde se pisa); comprimento em X', b => bridge(b, 9, [0])),
   ponte_g: stonePiece('Pontes', 'Ponte G', '15 m × 3 m, 2 pilares de pedra (4 m de altura)', 'centro do piso da ponte (y = 0 é onde se pisa); comprimento em X', b => bridge(b, 15, [-2.5, 2.5])),
+
+  // --- Muros por nível: pedra → metal → obsidiana (normal / grande / gigante) + portal gigante
+  ...tierPieces(),
 };
+
+function tierPieces() {
+  const out = {};
+  for (const [t, nv] of Object.entries(NIVEIS)) {
+    for (const [sz, m] of Object.entries(MURO_TAM)) {
+      if (t === 'pedra' && sz === 'normal') continue;           // já existe: muro_pedra
+      const name = sz === 'normal' ? `muro_${t}` : `muro_${t}_${sz}`;
+      out[name] = { cat: nv.cat, label: `Muro de ${nv.nome} ${sz === 'normal' ? '' : sz}`.trim(), size: m.txt, pivot: 'centro da base', build: b => tierWall(b, t, m.w, m.h, m.d) };
+    }
+    out[`portal_${t}_gigante`] = { cat: nv.cat, label: `Portal gigante de ${nv.nome}`, size: `9 × 9 m (vão de 6,6 × 7,5 m, para dinossauros grandes)`, pivot: 'centro da base, no meio do vão', build: b => giantPortal(b, t) };
+    for (const [side, lado] of [[1, 'esq'], [-1, 'dir']])
+      out[`portao_${t}_gigante_${lado}`] = { cat: nv.cat, label: `Portão gigante de ${nv.nome} (${lado === 'esq' ? 'esquerda' : 'direita'})`, size: '3,28 × 7,46 m (uma folha)', pivot: `dobradiça (canto de baixo); a folha vai para ${side > 0 ? '+X' : '−X'}`, build: b => giantLeaf(b, t, side) };
+  }
+  return out;
+}
+
 
 function stonePiece(cat, label, size, pivot, build) { return { cat, label, size, pivot, build }; }
 
@@ -797,7 +854,7 @@ function clampTop(g, fn, floor = -Infinity) {
   for (let v = 0; v < pa.count; v++) { const t = fn(pa.getX(v)); if (pa.getY(v) > t) pa.setY(v, Math.max(t, floor)); }
   return g;
 }
-function stoneFace(b, w, h, y0, { rowH = 0.5, minL = 0.55, maxL = 1.05, depth = 0.24, top = null } = {}) {
+function stoneFace(b, w, h, y0, { rowH = 0.5, minL = 0.55, maxL = 1.05, depth = 0.24, top = null, mat = 'pedra', jitMul = 1, gap = 0.045, tint = () => b.stone() } = {}) {
   const rows = Math.max(1, Math.round(h / rowH)), rh = h / rows;
   for (let r = 0; r < rows; r++) {
     const yc = y0 + rh * (r + .5);
@@ -805,12 +862,12 @@ function stoneFace(b, w, h, y0, { rowH = 0.5, minL = 0.55, maxL = 1.05, depth = 
     while (x < w / 2) {
       const len = b.rnd(minL, maxL), xa = Math.max(x, -w / 2), xb = Math.min(x + len, w / 2);
       if (xb - xa > 0.1) {
-        const dd = depth + b.rnd(0, 0.06), bw = xb - xa - 0.045, bh = rh - 0.045, cx = (xa + xb) / 2, jit = Math.min(0.03, rh * 0.06);
-        if (!top) b.box(bw, bh, dd, 'pedra', { p: [cx, yc, dd / 2 - depth], tint: b.stone(), jit });
+        const dd = depth + b.rnd(0, 0.06), bw = xb - xa - gap, bh = rh - gap, cx = (xa + xb) / 2, jit = Math.min(0.03, rh * 0.06) * jitMul;
+        if (!top) b.box(bw, bh, dd, mat, { p: [cx, yc, dd / 2 - depth], tint: tint(), jit });
         else if (Math.max(top(xa), top(xb)) > yc - bh / 2 + 0.06) {
           const g = new THREE.BoxGeometry(bw, bh, dd, 2, 1, 1);
           g.translate(cx, yc, dd / 2 - depth);
-          b.add(clampTop(g, top, yc - bh / 2), 'pedra', { tint: b.stone(), jit: jit * 0.5 });
+          b.add(clampTop(g, top, yc - bh / 2), mat, { tint: tint(), jit: jit * 0.5 });
         }
       }
       x += len;
@@ -818,15 +875,178 @@ function stoneFace(b, w, h, y0, { rowH = 0.5, minL = 0.55, maxL = 1.05, depth = 
   }
 }
 // bloco de pedra (miolo + faces): f = frente (+Z), b = trás, l/r = lados
-function stoneBlock(b, { x = 0, z = 0, w, d, h, y0 = 0, faces = 'fblr', ...o }) {
+function stoneBlock(b, { x = 0, z = 0, w, d, h, y0 = 0, faces = 'fblr', core = 'pedra', coreTint = 0.42, ...o }) {
   const dep = o.depth ?? 0.24;
-  b.box(w - 0.2, h, d - 0.2, 'pedra', { p: [x, y0 + h / 2, z], tint: 0.42, res: 'argamassa' });
+  b.box(w - 0.2, h, d - 0.2, core, { p: [x, y0 + h / 2, z], tint: coreTint, res: 'argamassa' });
   const T = (tx, tz, ry) => new THREE.Matrix4().makeTranslation(tx, 0, tz).multiply(new THREE.Matrix4().makeRotationY(ry));
   if (faces.includes('f')) b.withFrame(T(x, z + d / 2, 0), () => stoneFace(b, w, h, y0, o));
   if (faces.includes('b')) b.withFrame(T(x, z - d / 2, PI), () => stoneFace(b, w, h, y0, o));
   if (faces.includes('r')) b.withFrame(T(x + w / 2, z, PI / 2), () => stoneFace(b, d - 2 * dep, h, y0, o));
   if (faces.includes('l')) b.withFrame(T(x - w / 2, z, -PI / 2), () => stoneFace(b, d - 2 * dep, h, y0, o));
 }
+/* ------------------------------------------------------------------ */
+/* Muros por nível                                                     */
+/* ------------------------------------------------------------------ */
+// preenche um bloco retangular com o visual do nível
+function tierFill(b, t, { x = 0, z = 0, w, d, h, y0 = 0, faces = 'fblr', scale = 1 }) {
+  if (t === 'pedra') {
+    const k = Math.min(scale, 1.5);
+    stoneBlock(b, { x, z, w, d, h, y0, faces, rowH: 0.5 * k, minL: 0.55 * k, maxL: 1.05 * k, depth: 0.24 * Math.min(k, 1.4) });
+  } else if (t === 'obsidiana') {
+    stoneBlock(b, { x, z, w, d, h, y0, faces, core: 'obsidiana', coreTint: 0.35, mat: 'obsidiana', rowH: 0.75 * scale, minL: 0.7 * scale, maxL: 1.5 * scale,
+      depth: 0.3, jitMul: 2.2, gap: 0.06, tint: () => b.rnd(0.75, 1.1) });
+  } else {
+    metalBlock(b, { x, z, w, d, h, y0, faces, scale });
+  }
+}
+
+// chapas de metal rebitadas sobre uma estrutura
+function metalBlock(b, { x = 0, z = 0, w, d, h, y0 = 0, faces = 'fblr', scale = 1 }) {
+  b.box(w - 0.16, h, d - 0.16, 'metal', { p: [x, y0 + h / 2, z], tint: 0.4, res: 'oco' });
+  const T = (tx, tz, ry) => new THREE.Matrix4().makeTranslation(tx, 0, tz).multiply(new THREE.Matrix4().makeRotationY(ry));
+  const face = (fw) => {
+    const cols = Math.max(1, Math.round(fw / (1.5 * scale))), rows = Math.max(1, Math.round(h / (1.0 * scale)));
+    const pw = fw / cols, ph = h / rows;
+    for (let i = 0; i < cols; i++) for (let j = 0; j < rows; j++) {
+      const cx = -fw / 2 + pw * (i + .5), cy = y0 + ph * (j + .5);
+      b.box(pw - 0.05, ph - 0.05, 0.07, 'metal', { p: [cx, cy, -0.035 + b.rnd(0, 0.012)], tint: b.rnd(0.82, 1.06), jit: 0.004 });
+      for (const sx of [-1, 1]) for (const sy of [-1, 1])
+        b.box(0.07, 0.07, 0.04, 'ferro', { p: [cx + sx * (pw / 2 - 0.12), cy + sy * (ph / 2 - 0.12), 0.012] });
+    }
+    for (let i = 0; i <= cols; i++)   // colunas (perfil I)
+      b.box(0.16 * Math.min(scale, 1.5), h, 0.1, 'ferro', { p: [-fw / 2 + pw * i, y0 + h / 2, 0.03], tint: 1.2 });
+    for (const yy of [y0 + 0.08, y0 + h - 0.08])
+      b.box(fw, 0.16, 0.1, 'ferro', { p: [0, yy, 0.03], tint: 1.2 });
+  };
+  if (faces.includes('f')) b.withFrame(T(x, z + d / 2, 0), () => face(w));
+  if (faces.includes('b')) b.withFrame(T(x, z - d / 2, PI), () => face(w));
+  if (faces.includes('r')) b.withFrame(T(x + w / 2, z, PI / 2), () => face(d - 0.2));
+  if (faces.includes('l')) b.withFrame(T(x - w / 2, z, -PI / 2), () => face(d - 0.2));
+}
+
+// cristais brilhantes cravados (obsidiana)
+function crystals(b, x, y, z, n, s = 1) {
+  for (let i = 0; i < n; i++) {
+    const hh = b.rnd(0.25, 0.55) * s;
+    b.add(new THREE.CylinderGeometry(0, b.rnd(0.06, 0.11) * s, hh, 5), 'cristal', {
+      p: [x + b.rnd(-.15, .15) * s, y + hh / 2 - 0.05, z + b.rnd(-.06, .06)], rot: [b.rnd(-.5, .5), b.r() * PI, b.rnd(-.5, .5)], tint: b.rnd(0.85, 1.1) });
+  }
+}
+
+// coroa (topo) de cada nível
+function tierCrown(b, t, w, d, y, scale) {
+  if (t === 'pedra') {
+    coping(b, w + 0.1, d, y);
+    const n = Math.max(2, Math.round(w / 1.5)), sp = w / n;
+    for (let i = 0; i < n; i++) {
+      const x = -w / 2 + sp * (i + .5);
+      stoneBlock(b, { x, w: sp * 0.55, d: d * 0.85, h: 0.8 * Math.min(scale, 1.5), y0: y + 0.25, rowH: 0.4 * Math.min(scale, 1.5), minL: 0.3, maxL: 0.6 });
+    }
+  } else if (t === 'metal') {
+    b.box(w + 0.08, 0.25, d + 0.15, 'ferro', { p: [0, y + 0.125, 0], tint: 1.15 }, [Math.ceil(w), 1, 1]);
+    const n = Math.max(3, Math.round(w / 0.6)), sp = w / n;
+    for (let i = 0; i < n; i++)   // pontas afiadas
+      b.add(new THREE.CylinderGeometry(0, 0.13, 0.7 * Math.min(scale, 1.4), 4), 'metal', { p: [-w / 2 + sp * (i + .5), y + 0.25 + 0.35 * Math.min(scale, 1.4), 0], rot: [0, PI / 4, 0], tint: b.rnd(0.9, 1.1) });
+  } else {
+    b.box(w + 0.1, 0.3, d + 0.1, 'obsidiana', { p: [0, y + 0.15, 0], tint: 0.8, jit: 0.04 }, [Math.ceil(w), 1, 2]);
+    const n = Math.max(3, Math.round(w / 0.75)), sp = w / n;
+    for (let i = 0; i < n; i++) {   // lascas pontudas
+      const hh = b.rnd(0.6, 1.2) * Math.min(scale, 1.6);
+      b.add(new THREE.CylinderGeometry(0, b.rnd(0.18, 0.28), hh, 5), 'obsidiana', { p: [-w / 2 + sp * (i + .5) + b.rnd(-.1, .1), y + 0.3 + hh / 2 - 0.05, b.rnd(-.15, .15)], rot: [b.rnd(-.2, .2), b.r() * PI, b.rnd(-.2, .2)], tint: b.rnd(0.85, 1.1), jit: 0.02 });
+    }
+  }
+}
+
+function tierWall(b, t, w, h, d) {
+  const scale = h / 3, crownH = t === 'pedra' ? 0.25 : t === 'metal' ? 0.25 : 0.3, body = h - crownH;
+  tierFill(b, t, { w, d, h: body, faces: 'fblr', scale });
+  // contrafortes (pilastras) nos muros grandes
+  if (w >= 6) {
+    const xs = w >= 9 ? [-w / 2 + 0.55, 0, w / 2 - 0.55] : [-w / 2 + 0.5, w / 2 - 0.5];
+    for (const x of xs) tierFill(b, t, { x, w: 0.9, d: d + 0.5, h: body, faces: 'fblr', scale: 0.8 });
+    // cinta no meio da altura
+    const yb = body * 0.5;
+    if (t === 'pedra') b.box(w, 0.3, d + 0.18, 'pedra', { p: [0, yb, 0], tint: b.stone(), jit: 0.02 }, [Math.ceil(w), 1, 1]);
+    else b.box(w, 0.25, d + 0.14, 'ferro', { p: [0, yb, 0], tint: 1.15 }, [Math.ceil(w), 1, 1]);
+  }
+  if (t === 'obsidiana') {
+    // faixas de metal e cristais
+    for (const yy of [body * 0.3, body * 0.7]) b.box(w + 0.04, 0.16, d + 0.1, 'ferro', { p: [0, yy, 0], tint: 1.1 }, [Math.ceil(w), 1, 1]);
+    const n = Math.round(w / 3);
+    for (let i = 0; i < n; i++) for (const s of [1, -1]) crystals(b, -w / 2 + (w / n) * (i + .5) + b.rnd(-.4, .4), body * b.rnd(0.4, 0.6), s * (d / 2 + 0.02), 3, scale * 0.9);
+  }
+  tierCrown(b, t, w, d, body, scale);
+}
+
+function giantPortal(b, t) {
+  const { w: OW, h: OH, pw: PW, total: TOT, d: D } = GIANT;
+  const scale = 2.2;
+  for (const s of [-1, 1]) {
+    const cx = s * (OW / 2 + PW / 2);
+    tierFill(b, t, { x: cx, w: PW, d: D, h: OH, faces: 'fblr', scale: 1.1 });
+    for (const y of [1.2, 3.75, 6.3])   // pinos das dobradiças
+      b.box(0.18, 0.32, 0.2, 'ferro', { p: [s * (OW / 2 - 0.08), y, -0.28], tint: 1.1 });
+  }
+  // verga
+  if (t === 'pedra') {
+    const n = 7, bw = TOT / n;
+    for (let i = 0; i < n; i++) {
+      const key = i === 3;
+      b.box(bw - 0.06, key ? 1.6 : 1.3, D + (key ? 0.2 : 0), 'pedra', { p: [-TOT / 2 + bw * (i + .5), OH + 0.65, 0], tint: b.stone(), jit: 0.04 }, [2, 1, 2]);
+    }
+  } else tierFill(b, t, { w: TOT, d: D, h: 1.3, y0: OH, faces: 'fblr', scale: 1.1 });
+  if (t === 'obsidiana') { for (const s of [1, -1]) crystals(b, 0, OH + 0.4, s * (D / 2 + 0.05), 6, 1.6); }
+  tierCrown(b, t, TOT, D, OH + 1.3, scale);
+  // torres do portal (mais altas que o muro gigante)
+  for (const s of [-1, 1]) {
+    const cx = s * (TOT / 2 - PW / 2);
+    tierFill(b, t, { x: cx, w: PW + 0.4, d: D + 0.4, h: 1.6, y0: OH + 1.6, faces: 'fblr', scale: 0.9 });
+    const top = OH + 3.2;
+    if (t === 'metal') b.add(new THREE.CylinderGeometry(0, 1.05, 1.2, 4), 'metal', { p: [cx, top + 0.6, 0], rot: [0, PI / 4, 0], tint: 1 });
+    else if (t === 'obsidiana') { b.add(new THREE.CylinderGeometry(0, 0.9, 1.8, 5), 'obsidiana', { p: [cx, top + 0.9, 0], rot: [0, 0.3, 0], tint: 1, jit: 0.04 }); crystals(b, cx, top, 0, 5, 1.4); }
+    else b.add(new THREE.CylinderGeometry(0, 1.1, 1.1, 4), 'pedra', { p: [cx, top + 0.55, 0], rot: [0, PI / 4, 0], tint: b.stone(), jit: 0.03 });
+  }
+}
+
+// folha do portão gigante (side = 1 → vai da dobradiça para +X)
+function giantLeaf(b, t, side) {
+  const W = GIANT.w / 2 - 0.02, Hh = GIANT.h - 0.04, X = v => v * side;
+  const beams = [0.6, Hh / 2, Hh - 0.6];
+  if (t === 'pedra') {
+    // troncos em pé com treliça cruzada (estilo das portas gigantes)
+    const n = 9, lw = W / n;
+    for (let i = 0; i < n; i++)
+      b.logY(Hh - b.rnd(0, 0.06), lw * 0.52, lw * 0.55, 'tronco', { p: [X(lw * (i + .5)), Hh / 2, 0], tint: b.wood(), jit: 0.01 }, 7, 4);
+    for (const y of beams) b.box(W - 0.1, 0.3, 0.16, 'madeira_escura', { p: [X(W / 2), y, 0.24], tint: b.wood(), jit: 0.01 }, [3, 1, 1]);
+    for (let k = 0; k < 2; k++) {
+      const ya = beams[k] + 0.15, yb = beams[k + 1] - 0.15, dx = W - 0.4, dy = yb - ya, L = Math.hypot(dx, dy), a = Math.atan2(dy, dx);
+      for (const sg of [1, -1]) b.box(L, 0.22, 0.12, 'madeira_escura', { p: [X(W / 2), (ya + yb) / 2, 0.24 + (sg > 0 ? 0 : 0.1)], rot: [0, 0, side * a * sg], tint: b.wood(), jit: 0.01 });
+    }
+    for (const y of beams) b.box(W - 0.1, 0.12, 0.03, 'ferro', { p: [X(W / 2), y, 0.34] });
+  } else if (t === 'metal') {
+    const rows = 6, ph = Hh / rows;
+    for (let j = 0; j < rows; j++) for (let i = 0; i < 2; i++)
+      b.box(W / 2 - 0.05, ph - 0.05, 0.12, 'metal', { p: [X(W / 4 * (2 * i + 1)), ph * (j + .5), 0], tint: b.rnd(0.82, 1.05), jit: 0.004 });
+    for (const y of beams) b.box(W, 0.28, 0.12, 'ferro', { p: [X(W / 2), y, 0.12], tint: 1.15 });
+    for (const x of [0.12, W / 2, W - 0.12]) b.box(0.22, Hh, 0.12, 'ferro', { p: [X(x), Hh / 2, 0.12], tint: 1.15 });
+    for (let j = 0; j <= rows; j++) for (let i = 0; i < 8; i++)
+      b.box(0.07, 0.07, 0.05, 'ferro', { p: [X(0.2 + (W - 0.4) * i / 7), Math.min(Hh - 0.1, Math.max(0.1, ph * j)), 0.08] });
+    const dx = W - 0.4, dy = beams[2] - beams[0] - 0.3;
+    b.box(Math.hypot(dx, dy), 0.22, 0.1, 'ferro', { p: [X(W / 2), Hh / 2, -0.12], rot: [0, 0, side * Math.atan2(dy, dx)], tint: 1.1 });
+  } else {
+    // moldura de metal com placas de obsidiana e emblema de cristal
+    const rows = 4, cols = 2, ph = (Hh - 0.3) / rows, pw = (W - 0.3) / cols;
+    for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++)
+      b.box(pw - 0.12, ph - 0.12, 0.16, 'obsidiana', { p: [X(0.15 + pw * (i + .5)), 0.15 + ph * (j + .5), 0], tint: b.rnd(0.85, 1.1), jit: 0.025 }, [2, 2, 1]);
+    for (let i = 0; i <= cols; i++) b.box(0.16, Hh, 0.2, 'ferro', { p: [X(0.075 + (W - 0.15) * i / cols), Hh / 2, 0], tint: 1.1 });
+    for (let j = 0; j <= rows; j++) b.box(W, 0.16, 0.2, 'ferro', { p: [X(W / 2), 0.075 + (Hh - 0.15) * j / rows, 0], tint: 1.1 });
+    crystals(b, X(W / 2), Hh * 0.52, 0.14, 7, 1.3);
+  }
+  // argola e tranca
+  for (const z of [0.4, -0.3]) b.add(new THREE.TorusGeometry(0.22, 0.04, 5, 10), 'ferro', { p: [X(W - 0.5), 3.0, z] });
+  b.box(0.3, 0.4, 0.2, 'ferro', { p: [X(W - 0.3), 4.2, -0.3] });
+}
+
 // fiada de lajes no topo (capa do muro)
 function coping(b, w, d, y) {
   let x = -w / 2;
@@ -933,6 +1153,24 @@ function buildFortress() {
   }
   place('escada', -7.5, 0, -2.0, PI);
   place('escada', 7.5, 0, -2.0, PI);
+  return g;
+}
+
+// muralhas: pedra, metal e obsidiana (portal gigante + muros gigante/grande/normal)
+function buildTiers() {
+  const g = new THREE.Group(); g.name = 'muralhas_niveis';
+  const place = placer(g);
+  ['pedra', 'metal', 'obsidiana'].forEach((t, i) => {
+    const z = -i * 16;
+    place(`portal_${t}_gigante`, 0, 0, z);
+    place(`portao_${t}_gigante_esq`, -GIANT.w / 2, 0, z, 1.15);
+    place(`portao_${t}_gigante_dir`, GIANT.w / 2, 0, z, -0.9);
+    for (const s of [-1, 1]) {
+      place(`muro_${t}_gigante`, s * 9, 0, z);
+      place(`muro_${t}_grande`, s * 16.5, 0, z);
+      place(t === 'pedra' ? 'muro_pedra' : `muro_${t}`, s * 21, 0, z);
+    }
+  });
   return g;
 }
 
@@ -1108,6 +1346,7 @@ function frameObject(obj, dir = new THREE.Vector3(1, 0.55, 1.2)) {
 }
 const SCENES = {
   casa: { label: 'Casa de exemplo', file: 'casa_exemplo', build: () => buildHouse(), cam: [14, 7, 16], target: [3.5, 2.6, 0] },
+  niveis: { label: 'Muralhas: pedra, metal e obsidiana', file: 'muralhas_niveis', build: () => buildTiers(), cam: [22, 15, 21], target: [-2, 4, -12] },
   mostruario: { label: 'Mostruário P / M / G', file: 'mostruario_pmg', build: () => buildShowcase(), cam: [20, 17, 24], target: [1, 0, -5], grass: false },
   muralha: { label: 'Fortaleza de exemplo', file: 'muralha_exemplo', build: () => buildFortress(), cam: [11, 6.5, 19], target: [0, 3, -1.5] },
 };
@@ -1151,11 +1390,13 @@ function markActive() {
   document.getElementById('btnCasa').classList.toggle('ativo', mode === 'casa');
   document.getElementById('btnMuralha').classList.toggle('ativo', mode === 'muralha');
   document.getElementById('btnMostruario').classList.toggle('ativo', mode === 'mostruario');
+  document.getElementById('btnNiveis').classList.toggle('ativo', mode === 'niveis');
 }
 
 document.getElementById('btnCasa').onclick = () => showScene('casa');
 document.getElementById('btnMuralha').onclick = () => showScene('muralha');
 document.getElementById('btnMostruario').onclick = () => showScene('mostruario');
+document.getElementById('btnNiveis').onclick = () => showScene('niveis');
 document.getElementById('btnVariar').onclick = () => {
   SEED = Math.floor(Math.random() * 1e6) + 1;
   mode === 'peca' ? showPiece(selected, false) : showScene(mode, false);
@@ -1220,7 +1461,7 @@ window.__api = {
   exportKit: async () => b64(await toGLB(kitObject())),
   exportHouse: async () => b64(await toGLB(buildHouse())),
   tris: n => triCount(getPiece(n)),
-  recursos: Object.fromEntries(Object.entries(RECURSOS).map(([k, r]) => [k, { nome: r.nome, vem_de: r.mats, m3: r.m3 }])),
+  recursos: Object.fromEntries(Object.entries(RECURSOS).map(([k, r]) => [k, { nome: r.nome, m3_por_unidade: r.fontes }])),
   custos: () => ({
     pecas: Object.fromEntries(Object.entries(PIECES).map(([n, d]) => [n, { nome: d.label, categoria: d.cat, tamanho: d.size, custo: getPiece(n).userData.custo }])),
     cenas: Object.fromEntries(Object.entries(SCENES).map(([k, sc]) => [sc.file, { nome: sc.label, custo: sumCost(sc.build()) }])),

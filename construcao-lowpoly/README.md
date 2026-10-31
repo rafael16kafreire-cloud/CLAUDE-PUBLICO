@@ -9,9 +9,11 @@ mas com visual low-poly nórdico, texturas pixeladas e madeira rústica.
 
 ![Mostruário P / M / G](previas/mostruario_pmg.jpg)
 
+![Muralhas por nível](previas/muralhas_niveis.jpg)
+
 ## Como usar
 
-- **Arquivos prontos:** pasta [`modelos/`](modelos) — um `.glb` por peça, mais `kit_construcao.glb` (todas juntas), `casa_exemplo.glb`, `muralha_exemplo.glb` e `mostruario_pmg.glb`.
+- **Arquivos prontos:** pasta [`modelos/`](modelos) — um `.glb` por peça, mais `kit_construcao.glb` (todas juntas), `casa_exemplo.glb`, `muralha_exemplo.glb`, `mostruario_pmg.glb` e `muralhas_niveis.glb`.
 - **Materiais de cada peça:** [`CUSTOS.md`](CUSTOS.md) (para ler) e [`custos.json`](custos.json) (para o jogo ler). O custo também vai dentro de cada `.glb`, em `extras.custo`.
 - **Editor no navegador:** abra `index.html` (precisa de internet para carregar o three.js). Dá para girar a câmera, ver cada peça,
   trocar o tom da madeira, gerar variações e baixar os `.glb`.
@@ -57,6 +59,19 @@ As folhas do portão giram em Y na dobradiça (abrir = girar até ~90°).
 
 Os pilares das pontes descem 4,4 m abaixo do piso (para rio ou vale).
 
+## Muros por nível (pedra → metal → obsidiana)
+
+Cada nível tem muro **normal (3 × 3 m)**, **grande (6 × 6 m)** e **gigante (9 × 9 m)**, mais um **portal gigante**
+(9 × 9 m, vão de 6,6 × 7,5 m para dinossauros grandes) com duas folhas de portão.
+
+| Nível | Muros | Portal e portão gigantes |
+|---|---|---|
+| Pedra | `muro_pedra`, `muro_pedra_grande`, `muro_pedra_gigante` | `portal_pedra_gigante`, `portao_pedra_gigante_esq/_dir` (troncos com treliça) |
+| Metal | `muro_metal`, `muro_metal_grande`, `muro_metal_gigante` | `portal_metal_gigante`, `portao_metal_gigante_esq/_dir` |
+| Obsidiana | `muro_obsidiana`, `muro_obsidiana_grande`, `muro_obsidiana_gigante` | `portal_obsidiana_gigante`, `portao_obsidiana_gigante_esq/_dir` |
+
+Muros: origem no centro da base. Portal: centro da base no meio do vão. Folhas: dobradiça em x = ∓3,3 m do portal.
+
 ## Materiais
 
 O custo de cada peça usa os recursos do jogo e sai do volume real de cada parte do modelo
@@ -69,8 +84,11 @@ O custo de cada peça usa os recursos do jogo e sai do volume real de cada parte
 | pedras aparentes | Pedra | 0,15 m³ |
 | argamassa (miolo das peças de pedra) | Pasta de Cimento | 1 m³ |
 | ferragens (faixas, argolas, pinos) | Lingote de Metal | 0,0025 m³ |
+| chapas de metal | Lingote de Metal | 0,02 m³ |
+| blocos de obsidiana | Obsidiana | 0,12 m³ |
+| cristais brilhantes | Cristal | 0,002 m³ |
 
-Para balancear, mude `m3` em `RECURSOS` no `index.html` e rode `node exportar.mjs` de novo.
+Para balancear, mude os números de `fontes` em `RECURSOS` no `index.html` e rode `node exportar.mjs` de novo.
 Tabela completa em [`CUSTOS.md`](CUSTOS.md).
 
 ## Importar na engine
