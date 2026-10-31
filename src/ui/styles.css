@@ -1192,6 +1192,7 @@ body.underwater-swamp .uw-overlay {
   text-shadow: 0 2px 0 #7a2a10, 0 0 8px rgba(0, 0, 0, 0.6); will-change: transform, opacity;
 }
 .dmg-num[hidden] { display: none; }
+.dmg-num[data-kind="zero"] { color: #aab3b8; text-shadow: 0 1px 2px #000; }
 body.level-flash::after {
   content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 7;
   background: radial-gradient(circle at 50% 60%, rgba(255, 214, 110, 0.35), rgba(255, 214, 110, 0) 60%);

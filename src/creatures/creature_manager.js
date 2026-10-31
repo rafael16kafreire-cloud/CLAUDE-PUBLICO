@@ -617,7 +617,7 @@ export class CreatureManager {
       const dy = pt.y - (p.y + 1.2);
       const d = Math.hypot(dx, dz);
       const r = Math.min(c.radius, 1.2); // grossura do corpo
-      if (d - r > reach + 0.4 || Math.abs(dy) > c.height * 0.8 + 1.5) continue;
+      if (d - r > reach + 0.15 || Math.abs(dy) > c.height * 0.8 + 1.5) continue;
       // precisa estar mais ou menos na frente
       const dot = (dx * forward.x + dz * forward.z) / (d || 1) / fl;
       if (d > r + 0.8 && dot < 0.3) continue;

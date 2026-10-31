@@ -175,6 +175,12 @@ export class TouchControls {
     this._tap(pr && !pr.classList.contains('prompt-attack') ? 'interact' : 'attack');
   }
 
+  // Um toque: só Interagir (colher, pegar, usar). Se o que está na mira é para bater, não faz nada.
+  _tapInteract() {
+    const pr = document.querySelector('.hud .prompt:not([hidden])');
+    if (pr && !pr.classList.contains('prompt-attack')) this._tap('interact');
+  }
+
   _holdAction() {
     const txt = document.querySelector('.hud .prompt:not([hidden])')?.textContent ?? '';
     navigator.vibrate?.(18);
@@ -234,32 +240,13 @@ export class TouchControls {
         this._tapAction();
         st.repeat = setInterval(() => this._tapAction(), 130);
       } else {
-        // mirando algo para bater (árvore, bicho, carcaça): bate já, sem esperar soltar o dedo
-        st.early = setTimeout(() => {
-          const pr = document.querySelector('.hud .prompt:not([hidden])');
-          if (!st.moved && !st.cancelled && P.has(e.pointerId) && pr?.classList.contains('prompt-attack')) {
-            st.fired = true;
-            clearTimeout(st.timer);
-            this._tap('attack');
-            // segurando o dedo na tela: continua batendo até soltar (como o ARK Mobile)
-            st.holdAttack = true;
-            st.repeat = setInterval(() => this._tapAction(), 260);
-          }
-        }, this.timing.early);
-        // segurar parado: inventário / montar
+        // Um toque só NÃO ataca (evita bater sem querer): bater = tocar duas vezes (o 2º toque bate; segurando o 2º, repete).
+        // Segurar parado: só monta / desce do bicho que você está mirando.
         st.timer = setTimeout(() => {
           if (!st.moved && !st.cancelled && P.has(e.pointerId)) {
             st.held = true;
             const txt = document.querySelector('.hud .prompt:not([hidden])')?.textContent ?? '';
-            // como no ARK: perto de um bicho domado (com ou sem sela) e segurando o dedo = montar / desmontar
             if (this._mounted || this.mountNear?.() || /Montar|montar/.test(txt)) this._holdAction();
-            else if (!st.repeat) {
-              // segurar sem mexer: ataca ou colhe sem parar enquanto o dedo estiver na tela
-              navigator.vibrate?.(10);
-              st.holdAttack = true;
-              this._tapAction();
-              st.repeat = setInterval(() => this._tapAction(), 260);
-            }
           }
         }, this.timing.hold);
       }
@@ -338,7 +325,7 @@ export class TouchControls {
       } else {
         if (st.holdAttack) clearInterval(st.repeat);
         else if (quick && !st.held) {
-          if (!st.fired) this._tapAction();
+          if (!st.fired) this._tapInteract(); // 1 toque: só usa/colhe (Interagir); bater precisa de 2 toques
           lastTapR = now;
         } else if (st.fired && !st.moved) lastTapR = now;
       }

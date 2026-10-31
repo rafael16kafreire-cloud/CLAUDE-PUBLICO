@@ -345,10 +345,8 @@ export class PlayerHands {
       const t = 1 - this._gather;
       // desce e vai para frente (0..0.5), fecha a mão e puxa de volta (0.5..1)
       const reach = Math.sin(Math.min(1, t / 0.5) * Math.PI * 0.5) * (t < 0.5 ? 1 : 1 - (t - 0.5) / 0.5);
-      this.right.position.y -= reach * 0.22;
-      this.right.position.z -= reach * 0.2;
-      this.right.position.x -= reach * 0.05;
-      this.right.rotation.x = this.restRotR.x - reach * 0.7;
+      this.right.position.z -= reach * 0.3; // pegar: o braço vai para frente e volta
+      this.right.rotation.x = this.restRotR.x - reach * 0.05;
     }
     if (this._swing > 0) {
       this._swing = Math.max(0, this._swing - dt * (this._kind === 'mao' ? 3.1 : 2.2));
@@ -357,11 +355,9 @@ export class PlayerHands {
         // soco: prepara (puxa para trás), acerta rápido e volta macio
         const k = swingCurve(t);
         const hand = this._side > 0 ? this.right : this.left;
-        hand.position.z -= k * 0.14;
-        hand.position.x -= k * 0.06 * this._side;
-        hand.position.y -= k * 0.05;
-        hand.rotation.x = this.restRotR.x - k * 1.15;
-        hand.rotation.y = this.restRotR.y + k * 0.35;
+        hand.position.z -= k * 0.26; // soco: o braço vai para frente e volta (sem subir nem descer)
+        hand.position.x -= k * 0.03 * this._side;
+        hand.rotation.x = this.restRotR.x - k * 0.1;
       } else if (this._kind === 'arco') {
         // tiro: recua um pouco (coice da corda)
         const k = Math.sin(t * Math.PI);
@@ -376,11 +372,10 @@ export class PlayerHands {
         this.right.position.z -= k * 0.35;
         this.right.position.x -= k * 0.08;
       } else {
-        // levanta (0..0.35) e desce com força (0.35..0.6), volta
+        // recua (0..0.35) e vai para frente com força (0.35..0.6), volta: só para trás e para frente, sem levantar
         const up = t < 0.35 ? t / 0.35 : t < 0.6 ? 1 - (t - 0.35) / 0.25 * 1.6 : -0.6 * (1 - (t - 0.6) / 0.4);
-        this.right.rotation.x = this.restRotR.x + up * 1.1;
-        this.right.position.y += up * 0.08;
-        this.right.position.z -= Math.max(0, -up) * 0.15;
+        this.right.position.z += up * 0.1 - Math.max(0, -up) * 0.22;
+        this.right.rotation.x = this.restRotR.x + up * 0.05;
       }
     }
   }

@@ -118,7 +118,7 @@ export class PlayerInteraction {
     if (water) return this._waterTarget(water);
 
     // 5) Dica do que sai batendo (árvore, pedra, tronco, carcaça)
-    const corpse = this.world.creatures?.findCorpse(p, f, 3);
+    const corpse = this.world.creatures?.findCorpse(p, f, 1.6);
     if (corpse) return { kind: 'hint', key: 'attack', text: `Bater: carne e couro (${corpse.species.nome})` };
     const tool = this.actions.tool;
     const hit = this.world.vegetation.findTarget(p.x, p.z, f.x, f.z, tool.alcance, false, p.y);

@@ -240,7 +240,7 @@ export default {
 
   combate: {
     soco_dano: 10,             // dano de um soco
-    soco_alcance_m: 1.7,       // distância do soco
+    soco_alcance_m: 1.1,       // distância do soco (o tamanho do braço, a partir do centro do corpo)
     soco_intervalo_seg: 0.36,  // tempo entre socos (360 ms)
     soco_stamina: 4,           // stamina gasta por soco
     soco_arvore_dura_vida: 0.05, // socar árvore dura tira 5% da vida máxima

@@ -29,12 +29,13 @@ export class PlayerActions {
   }
 
   // Ferramenta em uso (ou mãos vazias).
+  // alcance de ferramenta = braço + cabo (machado ~1,5 m, lança ~1,9 m); soco 1,1 m
   get tool() {
     const s = this.inv.equipped;
     const f = s && ITEMS[s.id]?.ferramenta;
     const C = BALANCE.combate;
     if (!f) return { ...FIST, dano: C.soco_dano, alcance: C.soco_alcance_m, intervalo: C.soco_intervalo_seg };
-    return { tipo: f.tipo, dano: f.dano, alcance: f.projetil ? f.alcance : f.alcance * 0.75, intervalo: INTERVAL[f.tipo] ?? 0.6, id: s.id, rende: f.rende ?? 1, projetil: !!f.projetil };
+    return { tipo: f.tipo, dano: f.dano, alcance: f.projetil ? f.alcance : f.alcance * 0.55, intervalo: INTERVAL[f.tipo] ?? 0.6, id: s.id, rende: f.rende ?? 1, projetil: !!f.projetil };
   }
 
   // Munições que a arma na mão usa (arco: flechas; pistola: balas).
@@ -126,7 +127,7 @@ export class PlayerActions {
       return;
     }
     // 2) carcaça: tirar carne, couro e ossos
-    const corpse = creatures?.findCorpse(p.position, forward, t.alcance + 0.5);
+    const corpse = creatures?.findCorpse(p.position, forward, t.alcance + 0.3);
     if (corpse) {
       p.onImpact?.(0.6);
       const got = creatures.harvestCorpse(corpse, t.tipo);
@@ -156,6 +157,13 @@ export class PlayerActions {
     if (rec.r) this.world.effects.gouge(rec.x, rec.z, rec.r * 0.8, pp.y + 1.25, pp);
   }
 
+  // Número de dano flutuando no ponto do golpe (árvore, pedra, planta).
+  _dmgNumber(rec, amount, kind) {
+    const pp = this.player.position;
+    const pos = new THREE.Vector3(pp.x + (rec.x - pp.x) * 0.8, pp.y + 1.5, pp.z + (rec.z - pp.z) * 0.8);
+    events.emit(EV.DAMAGE_NUMBER, { pos, amount, kind });
+  }
+
   // Coleta de uma planta/pedra com o modo dado (mao, machado, colher...).
   harvest(rec, mode) {
     const veg = this.world.vegetation;
@@ -163,6 +171,7 @@ export class PlayerActions {
     if (!res) return false;
     // árvore gigante: só com machado; com a mão (ou outra coisa) machuca
     if (res.so_machado && mode !== 'machado' && mode !== 'colher') {
+      this._dmgNumber(rec, 0, 'zero');
       if (mode === 'mao') {
         this._punchHurt(BALANCE.combate.soco_arvore_dura_vida, rec);
       }
@@ -175,6 +184,7 @@ export class PlayerActions {
     }
     // pedra grande: com a mão não sai nada (pedra vem das pedrinhas do chão)
     if (res.so_ferramenta && (mode === 'mao' || mode === 'colher')) {
+      if (mode === 'mao') this._dmgNumber(rec, 0, 'zero');
       if (mode === 'mao') events.emit(EV.MESSAGE, { text: `${res.nome}: precisa de picareta ou machado. Pegue pedrinhas no chão.`, kind: 'warn' });
       sound.play('pedra', new THREE.Vector3(rec.x, this.player.position.y + 1, rec.z), { volume: 0.5 });
       return false;
@@ -183,6 +193,8 @@ export class PlayerActions {
     if (res.soco_dano && mode === 'mao') this._punchHurt(res.soco_dano, rec);
     const table = res[mode] ?? res.mao;
     if (!table) return false;
+    // bateu (não é colher com Interagir): mostra o dano da ferramenta, como nos bichos
+    if (mode !== 'colher') this._dmgNumber(rec, this.tool.dano * (this.player.stats.damageMul ?? 1), '');
     const got = {};
     for (const [id, range] of Object.entries(table)) {
       let n = rnd(range);
@@ -227,7 +239,7 @@ export class PlayerActions {
   // Colher (botão Interagir) a planta mais perto na frente.
   findHarvestable(forward) {
     const p = this.player.position;
-    return this.world.vegetation.findTarget(p.x, p.z, forward.x, forward.z, 2.4, true, p.y);
+    return this.world.vegetation.findTarget(p.x, p.z, forward.x, forward.z, 1.5, true, p.y);
   }
 
   colher(rec) {
