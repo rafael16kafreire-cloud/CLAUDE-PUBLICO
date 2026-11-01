@@ -175,7 +175,6 @@ export class PlayerActions {
       if (mode === 'mao') {
         this._punchHurt(BALANCE.combate.soco_arvore_dura_vida, rec);
       }
-      events.emit(EV.MESSAGE, { text: `Ai! ${res.nome} é dura demais: precisa de um machado.`, kind: 'warn' });
       const pp = this.player.position;
       this.world.effects.burst(new THREE.Vector3(pp.x + (rec.x - pp.x) * 0.7, pp.y + 1.2, pp.z + (rec.z - pp.z) * 0.7), 'madeira', 3, 1.5);
       sound.play('madeira', new THREE.Vector3(rec.x, this.player.position.y + 1.2, rec.z), { volume: 0.6 });
@@ -185,7 +184,6 @@ export class PlayerActions {
     // pedra grande: com a mão não sai nada (pedra vem das pedrinhas do chão)
     if (res.so_ferramenta && (mode === 'mao' || mode === 'colher')) {
       if (mode === 'mao') this._dmgNumber(rec, 0, 'zero');
-      if (mode === 'mao') events.emit(EV.MESSAGE, { text: `${res.nome}: precisa de picareta ou machado. Pegue pedrinhas no chão.`, kind: 'warn' });
       sound.play('pedra', new THREE.Vector3(rec.x, this.player.position.y + 1, rec.z), { volume: 0.5 });
       return false;
     }

@@ -336,7 +336,8 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   await gameWait(page, 250);
   const treePrompt = await page.evaluate(() => document.querySelector('.prompt:not([hidden])')?.textContent ?? null);
   check('Coleta: achou uma árvore para testar', !!tree, JSON.stringify(tree));
-  check('Coleta: mirar numa árvore mostra o que sai dela', !!treePrompt && /Árvore/.test(treePrompt), treePrompt ?? 'nada');
+  // árvore só sai com machado: com a mão não aparece mais aviso ("precisa de machado" saiu)
+  check('Coleta: mirar numa árvore com a mão não mostra aviso de ferramenta', !treePrompt || !/precisa/.test(treePrompt), treePrompt ?? 'nada');
   await page.screenshot({ path: `${SHOTS}/07-pc-coleta-arvore.png` });
   for (let i = 0; i < 4; i++) {
     await page.evaluate(() => { window.__ilha.ctx.player.stats.stamina = 100; window.__ilha.ctx.player.stats.exhausted = false; });
