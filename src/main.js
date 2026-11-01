@@ -1300,11 +1300,13 @@ function boot(hotData = {}) {
     }
     if (hands.toolKind !== toolKind) hands.setTool(toolKind);
     player.model.setTool(toolKind);
-    if (toolKind === 'machado' && _axeId !== actions.tool.id) {
-      _axeId = actions.tool.id;
-      hands.setVariant(_axeId);
+    if (toolKind === 'machado' || toolKind === 'picareta' || toolKind === 'lanca') {
+      if (_axeId !== actions.tool.id) {
+        _axeId = actions.tool.id;
+        hands.setVariant(_axeId);
+      }
+      player.model.setVariant?.(actions.tool.id);
     }
-    if (toolKind === 'machado') player.model.setVariant?.(actions.tool.id);
     damageNumbers.update(dt, camera);
     // trilha de perseguição (como no ARK): toca quando um bicho selvagem está te caçando, mais forte quanto mais perto
     sound.setChuva(world.cameraUnderwater ? 0 : world.atmosfera?.clima.chuva ?? 0);

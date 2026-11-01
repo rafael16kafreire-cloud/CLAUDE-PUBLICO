@@ -9,6 +9,7 @@ import { PALETA } from '../core/paleta.js';
 import { ROUPA } from './roupa.js';
 import { settings } from '../core/settings.js';
 import { makeAxes } from './machado_modelo.js';
+import { makePicks, makeSpears } from './picareta_lanca_modelo.js';
 
 const WOOD = new THREE.MeshLambertMaterial({ color: PALETA.marrom.clone() });
 const STONE = new THREE.MeshLambertMaterial({ color: PALETA.pedra.clone() });
@@ -134,19 +135,9 @@ export function makeTool(kind) {
   if (kind === 'machado') {
     g.add(makeAxes());
   } else if (kind === 'picareta') {
-    g.add(handle(0.55));
-    const head = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.36, 5), FLINT);
-    head.rotation.x = Math.PI / 2;
-    head.position.set(0, 0.44, -0.08);
-    const back = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.18, 5), FLINT);
-    back.rotation.x = -Math.PI / 2;
-    back.position.set(0, 0.44, 0.1);
-    g.add(head, back);
+    g.add(makePicks());
   } else if (kind === 'lanca') {
-    g.add(handle(1.3, 0.016));
-    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.16, 4), FLINT);
-    tip.position.y = 1.2;
-    g.add(tip);
+    g.add(makeSpears());
   } else if (kind === 'tocha') {
     g.add(handle(0.5, 0.024));
     const wrap = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.032, 0.12, 7), ROPE);
@@ -251,7 +242,7 @@ export class PlayerHands {
   }
 
   setVariant(id) {
-    this.tools.machado?.children[0]?.userData?.setVariant?.(id);
+    this.tools[this.toolKind]?.children[0]?.userData?.setVariant?.(id);
   }
 
   setTool(kind) {

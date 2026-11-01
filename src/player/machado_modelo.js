@@ -267,7 +267,7 @@ function caboLathe(o) {
 
 // Extrusão de um perfil lateral (s = para a frente, y = altura) com espessura em X.
 // O fio fica na frente: a espessura vai a ~10% perto da borda do fio (edge(y) = s do fio nessa altura).
-function perfil(shape, { depth, bevel = 0.006, edge, w = 0.05, corFio = null, base = [1, 1, 1] }) {
+function perfil(shape, { depth, bevel = 0.006, edge, kf = null, w = 0.05, corFio = null, base = [1, 1, 1] }) {
   const geo = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel * 0.8, bevelSegments: 2, curveSegments: 10 });
   const p = geo.attributes.position;
   const col = new Float32Array(p.count * 3);
@@ -278,7 +278,10 @@ function perfil(shape, { depth, bevel = 0.006, edge, w = 0.05, corFio = null, ba
     const zd = p.getZ(i) - depth / 2;
     let k = 1;
     let d = 1;
-    if (edge) {
+    if (kf) {
+      d = kf(s, y); // fator de espessura 0..1 (pontas finas)
+      k = 0.12 + 0.88 * d;
+    } else if (edge) {
       const dist = edge(y) - s; // distância até o fio (≥ 0 dentro da lâmina)
       d = THREE.MathUtils.clamp(dist / w, 0, 1);
       k = 0.1 + 0.9 * d * d * (3 - 2 * d);
@@ -567,6 +570,8 @@ function machadoObsidiana() {
   g.add(esp);
   return g;
 }
+
+export { materiais, caboLathe, perfil, tuboFita, rng, canvasTex, madeiraTex };
 
 export function makeAxe(variante = 'machado_pedra') {
   const g = variante === 'machado_silex' ? machadoObsidiana() : variante === 'machado_metal' ? machadoMetal() : machadoPedra();
