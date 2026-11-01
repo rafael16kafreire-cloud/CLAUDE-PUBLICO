@@ -3,6 +3,9 @@
 export default {
   modelo: '../modelos/pteranodonte.glb', saida: process.env.SAIDA || '../modelos/pteranodonte.glb',
   clipes: [
+    // o voo original sobe ~4 m dentro da animação: nivela o corpo perto da altura de pé (o jogo controla a altitude)
+    { nome: 'voar', base: 'voar', dur: 10.7, nivelar: ['center5_5', 3.2], f: (t, d, u) => ({}) },
+    { nome: 'planar', base: 'voar', baseVel: 0.35, dur: 10.7 / 0.35, nivelar: ['center5_5', 3.2], f: (t, d, u) => ({}) },
     { nome: 'correr', base: 'andar', baseVel: 1.8, dur: 6.27 / 1.8, f: (t, d, u) => ({ chest9_9: [6, 0, 0] }) },
     { nome: 'atacar', base: 'parado', baseT: 0, dur: 1.3, f: (t, d, u) => {
       const arma = u.ida(t, 0, 0.35, 0.35, 0.5), bote = u.ida(t, 0.35, 0.5, 0.75, 1.25), boca = u.ida(t, 0.25, 0.42, 0.6, 0.8);

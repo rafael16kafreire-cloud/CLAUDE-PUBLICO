@@ -78,6 +78,9 @@ vars.VOO = VOO;
 export default {
   modelo: '../modelos/argentavis.glb', saida: process.env.SAIDA || '../modelos/argentavis.glb', vars,
   clipes: [
+    // planar: asas abertas paradas (quadro do voo com as asas na horizontal), balançando de leve
+    { nome: 'planar', base: 'voar', baseT: 0.1, dur: 4, f: `(t, d, u) => ({ Bip01_Pelvis_02: [3 * u.sin(t, 4, 0.25), 0, 7 * u.sin(t, 4)], Bip01_Head_08: [0, -6 * u.sin(t, 4), 0],
+      BN_Wing_L_01_00: [0, 0, 3 * u.sin(t, 2)], BN_Wing_R_01_016: [0, 0, -3 * u.sin(t, 2)], $pos: { Bip01_Pelvis_02: [0, 0.15 * u.sin(t, 4, 0.25), 0] } })` },
     { nome: 'parado', base: 'voar', baseT: 0, dur: 4, f: `(t, d, u) => { ${pre}
       return h.junta(POUSO, POUSO, 0, { Bip01_Spine1_04: [u.sin(t, 4) * 1.5, 0, 0], Bip01_Neck2_07: [0, 18 * u.sin(t, 4), 0], Bip01_Head_08: [3 * u.sin(t, 2), 0, 0] }); }` },
     { nome: 'andar', base: 'voar', baseT: 0, dur: 1.2, f: `(t, d, u) => { ${pre} const s = u.sin(t, 1.2), c = u.sin(t, 1.2, 0.25);

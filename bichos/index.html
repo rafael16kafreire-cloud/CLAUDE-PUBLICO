@@ -582,7 +582,7 @@ function quadClips(rig, o) {
   clips.push(bake(rig, 'comer', 2.4, (t, u) => {
     const rot = {}, w = 2 * PI * u, chew = Math.max(0, Math.sin(w * 3)), e = o.eat ?? 1;
     if (o.comerAlto) { chainRot(rot, neck, [-0.15 * e, 0.06 * Math.sin(w), 0]); rot.cabeca = [-0.1 * e, 0, 0]; }
-    else { chainRot(rot, neck, [0.3 * e, 0.05 * Math.sin(w), 0]); rot.cabeca = [(0.3 - 0.1 * Math.sin(w * 2)) * e, 0, 0]; }
+    else { chainRot(rot, neck, [0.2 * e, 0.05 * Math.sin(w), 0]); rot.cabeca = [(0.2 - 0.08 * Math.sin(w * 2)) * e, 0, 0]; }
     rot.mandibula = [0.3 * chew, 0, 0];
     tails.forEach((b, i) => rot[b] = [0.01, 0.03 * Math.sin(w - i * 0.4), 0]);
     return { rot, root: [0, -0.03 * k, 0], rootRot: [o.comerAlto ? -0.02 : 0.06 * e, 0, 0], legs: legs() };
@@ -591,7 +591,7 @@ function quadClips(rig, o) {
   clips.push(bake(rig, 'dormir', 4, (t, u) => {
     const rot = {}, w = 2 * PI * u, br = Math.sin(w);
     chainRot(rot, spine, [0.015 * br, 0, 0]);
-    chainRot(rot, neck, [0.18, 0.18, 0]); rot.cabeca = [0.1 + 0.02 * br, 0.15, 0];
+    chainRot(rot, neck, [0.09, 0.18, 0]); rot.cabeca = [0.03 + 0.02 * br, 0.15, 0];
     tails.forEach(b => rot[b] = [-0.03, -0.1, 0]);
     const fold = key => key[0] === 'F' ? { dz: 0.12 * k, dy: -o.foldF, meta: -1.0, toe: 0.3, blend: 1 } : { dz: -0.18 * k, dy: -o.foldB, meta: 1.0, toe: 0.1, blend: 1 };
     return { rot, root: [0, (-o.sleepDrop + 0.01 * br) * k, 0], rootRot: [0, 0, 0], legs: legs(fold) };
@@ -658,12 +658,12 @@ function bipedClips(rig, o) {
     // mordida forte de lado, baixando a cabeça
     const rot = {}, wind = env(u, 0.0, 0.25, 0.3, 0.45), strike = env(u, 0.32, 0.48, 0.62, 0.9), bite = env(u, 0.25, 0.4, 0.5, 0.56);
     const sweep = lerp(0.35, -0.45, ss(0.32, 0.6, u));
-    chainRot(rot, neck, [-0.12 * wind + 0.22 * strike, sweep * 0.25 * (wind + strike), 0]);
-    rot.cabeca = [-0.15 * wind + 0.3 * strike, sweep * 0.3 * (wind + strike), -0.25 * strike * Math.sign(sweep)];
+    chainRot(rot, neck, [-0.12 * wind + 0.13 * strike, sweep * 0.25 * (wind + strike), 0]);
+    rot.cabeca = [-0.15 * wind + 0.2 * strike, sweep * 0.3 * (wind + strike), -0.25 * strike * Math.sign(sweep)];
     rot.mandibula = [0.8 * bite + 0.15 * wind, 0, 0];
     chainRot(rot, spine, [0.04 * strike, -sweep * 0.06 * strike, 0]);
     tails.forEach((b, i) => rot[b] = [0.03 * strike, -sweep * 0.08 * strike, 0]);
-    return { rot, root: [0, -0.04 * k * strike, 0.18 * k * strike - 0.05 * k * wind], rootRot: [0.14 * strike - 0.05 * wind, -sweep * 0.12 * strike, 0], legs: stand() };
+    return { rot, root: [0, -0.04 * k * strike, 0.18 * k * strike - 0.05 * k * wind], rootRot: [0.07 * strike - 0.05 * wind, -sweep * 0.12 * strike, 0], legs: stand() };
   }));
 
   if (o.roar === 'cima') clips.push(bake(rig, 'rugir', 2.2, (t, u) => {
@@ -680,29 +680,29 @@ function bipedClips(rig, o) {
   if (o.roar === 'baixo') clips.push(bake(rig, 'rugir', 2.8, (t, u) => {
     // abaixa o corpo, abre a boca inteira e balança a cabeça
     const rot = {}, low = env(u, 0.0, 0.2, 0.8, 0.95), roar = env(u, 0.18, 0.28, 0.75, 0.88), shake = roar * Math.sin(t * 13);
-    chainRot(rot, spine, [0.05 * low, 0, 0]);
-    chainRot(rot, neck, [0.05 * low - 0.05 * roar, 0.07 * shake, 0.03 * shake]);
+    chainRot(rot, spine, [0.02 * low, 0, 0]);
+    chainRot(rot, neck, [0.03 * low - 0.06 * roar, 0.07 * shake, 0.03 * shake]);
     rot.cabeca = [-0.12 * roar, 0.16 * shake, 0.12 * shake];
     rot.mandibula = [0.95 * roar + 0.1 * low, 0, 0];
     tails.forEach((b, i) => rot[b] = [0.05 * low, 0.05 * roar * Math.sin(t * 6 - i * 0.5), 0]);
     for (const s of ['E', 'D']) { rot[`ombro_${s}`] = [-0.4 * roar, 0, 0]; rot[`antebraco_${s}`] = [-0.3 * roar, 0, 0]; }
-    return { rot, root: [0, -0.07 * k * low, 0], rootRot: [0.13 * low, 0, 0], legs: stand() };
+    return { rot, root: [0, -0.05 * k * low, 0], rootRot: [0.06 * low, 0, 0], legs: stand() };
   }));
 
   clips.push(bake(rig, 'comer', 2, (t, u) => {
     const rot = {}, w = 2 * PI * u, tug = Math.max(0, Math.sin(w * 2)), e = o.eat ?? 1;
-    chainRot(rot, spine, [0.12 * e, 0, 0]);
-    rot.pescoco_1 = [0.55 * e, 0, 0]; rot.pescoco_2 = [(0.5 - 0.15 * tug) * e, 0.05 * Math.sin(w), 0]; rot.pescoco_3 = [(0.35 - 0.15 * tug) * e, 0, 0];
-    rot.cabeca = [(0.35 - 0.2 * tug) * e, 0.15 * tug * Math.sin(w * 4), 0];
+    chainRot(rot, spine, [0.06 * e, 0, 0]);
+    rot.pescoco_1 = [0.42 * e, 0, 0]; rot.pescoco_2 = [(0.36 - 0.12 * tug) * e, 0.05 * Math.sin(w), 0]; rot.pescoco_3 = [(0.22 - 0.1 * tug) * e, 0, 0];
+    rot.cabeca = [(0.18 - 0.15 * tug) * e, 0.12 * tug * Math.sin(w * 4), 0];
     rot.mandibula = [0.5 * Math.max(0, Math.sin(w * 2 + 1.2)), 0, 0];
     tails.forEach((b, i) => rot[b] = [0.06, 0.03 * Math.sin(w - i * 0.4), 0]);
-    return { rot, root: [0, -0.1 * k, -0.05 * k * tug], rootRot: [0.22 * e, 0, 0], legs: stand() };
+    return { rot, root: [0, -0.07 * k, -0.05 * k * tug], rootRot: [0.13 * e, 0, 0], legs: stand() };
   }));
 
   clips.push(bake(rig, 'dormir', 4, (t, u) => {
     const rot = {}, w = 2 * PI * u, br = Math.sin(w);
     chainRot(rot, spine, [0.02 * br, 0, 0]);
-    rot.pescoco_1 = [0.3, 0.25, 0]; rot.pescoco_2 = [0.25, 0.35, 0]; rot.pescoco_3 = [0.15, 0.3, 0]; rot.cabeca = [-0.1 + 0.02 * br, 0.2, 0];
+    rot.pescoco_1 = [0.16, 0.28, 0]; rot.pescoco_2 = [0.06, 0.36, 0]; rot.pescoco_3 = [0.0, 0.3, 0]; rot.cabeca = [-0.12 + 0.02 * br, 0.2, 0];
     tails.forEach((b, i) => rot[b] = [-0.07, -0.12, 0]);
     for (const s of ['E', 'D']) { rot[`ombro_${s}`] = [0.4, 0, 0]; rot[`antebraco_${s}`] = [-0.9, 0, 0]; }
     const fold = o.fold;
@@ -1009,7 +1009,13 @@ async function buildImported(buf, cfg) {
     for (let i = 0; i < n; i++) {
       p.set(a.getX(i), a.getY(i), a.getZ(i));
       const c = [];
+      // à frente do crânio (presas, chifres, focinho) só segue cabeça/mandíbula/fim do pescoço
+      const naCabeca = p.z > skullZ - 0.01 * L;
+      // bem atrás do quadril (cauda, penas da cauda) só segue cauda/quadril — nunca as pernas
+      const naCauda = p.z < Math.min(zh, zf) - 0.06 * L;
       for (const sg of segs) {
+        if (naCabeca && !['cabeca', 'mandibula', 'pescoco_3'].includes(sg.n)) continue;
+        if (naCauda && !(sg.n.startsWith('cauda') || sg.n === 'quadril')) continue;
         if (sg.side && Math.sign(p.x) !== sg.side && Math.abs(p.x) > 0.04 * W) continue;
         c.push([sg.i, distSeg(p, sg.s.head, sg.s.tail)]);
       }

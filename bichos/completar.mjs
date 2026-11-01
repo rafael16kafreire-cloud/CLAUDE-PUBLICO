@@ -4,7 +4,7 @@
 // Uso:
 //   node completar.mjs modelos/trex.glb --ossos          lista os ossos (nome, pai, posição em metros)
 //   node completar.mjs completar/trex.mjs                  gera as animações descritas no arquivo
-// O arquivo de descrição exporta: { modelo, vars? (constantes usadas dentro de f), saida, clipes: [{ nome, base, baseVel?, dur, fixo?: {osso: [clipe, tempo]}, f(t, d, u) }], material?(THREE, mat) }
+// O arquivo de descrição exporta: { modelo, vars? (constantes usadas dentro de f), saida, clipes: [{ nome, base, baseVel?, dur, fixo?: {osso: [clipe, tempo]}, nivelar?: [osso, altura], f(t, d, u) }], material?(THREE, mat) }
 //   f devolve { 'osso': [graus X, graus Y, graus Z] ou quatérnio [x, y, z, w], ..., $pos: { 'osso': [dx, dy, dz] metros } }
 //   u = utilidades: u.s(x) suaviza 0..1, u.e(t, a, b) rampa suave entre os tempos a e b, u.sin(t, período)
 import { createRequire } from 'node:module'; import { readFileSync, writeFileSync } from 'node:fs';
@@ -29,7 +29,7 @@ u.sin = (t, per, fase = 0) => Math.sin((t / per + fase) * Math.PI * 2);
 u.ida = (t, a, b, c, d) => u.e(t, a, b) * (1 - u.e(t, c, d));     // sobe entre a-b, desce entre c-d
 window.carregar = async () => { window.gl = await new GLTFLoader().loadAsync('http://x/m.glb'); gl.scene.updateMatrixWorld(true); };
 window.ossos = () => { const out = [], v = new THREE.Vector3(), mx = new THREE.AnimationMixer(gl.scene);
-  const pc = gl.animations.find(a => a.name === 'parado') || gl.animations[0]; mx.clipAction(pc).play(); mx.setTime(0); gl.scene.updateMatrixWorld(true);
+  const pc = gl.animations.find(a => a.name === (window.CLIPE || 'parado')) || gl.animations[0]; mx.clipAction(pc).play(); mx.setTime(0); gl.scene.updateMatrixWorld(true);
   gl.scene.traverse(o => { if (o.isBone) { o.getWorldPosition(v); out.push([o.name, o.parent?.isBone ? o.parent.name : '-', v.toArray().map(x => +x.toFixed(2))]); } });
   return { ossos: out, anims: gl.animations.map(a => a.name + ' ' + a.duration.toFixed(2)) }; };
 window.gerar = async (clipes, matSrc, V = {}) => {
@@ -56,6 +56,12 @@ window.gerar = async (clipes, matSrc, V = {}) => {
     const lista = [...nodes.values()].sort((a, b) => depth(a) - depth(b));
     for (const o of lista) { Q.set(o, []); P.set(o, []); Sx.set(o, []); }
     const rest = new Map(lista.map(o => [o, rest0.get(o)]));
+    let nivel = null;
+    if (c.nivelar) { const [nb, alvo] = c.nivelar, ob = sc.getObjectByName(nb); let soma = 0, cnt = 0; const w = new THREE.Vector3();
+      for (let i = 0; i < n; i += 3) { let tb = (i / fps) * (c.baseVel || 1) % base.duration;
+        for (const [o, prop, it] of amostras) { const val = it.evaluate(tb); if (prop === 'quaternion') o.quaternion.fromArray(val).normalize(); else o[prop].fromArray(val); }
+        sc.updateMatrixWorld(true); ob.getWorldPosition(w); soma += w.y; cnt++; }
+      nivel = [nb, alvo - soma / cnt]; pega(nb); }
     const q = new THREE.Quaternion(), pq = new THREE.Quaternion(), R = new THREE.Quaternion(), e = new THREE.Euler(), m3 = new THREE.Matrix3(), v = new THREE.Vector3();
     for (let i = 0; i < n; i++) {
       const t = i / fps; times.push(t);
@@ -67,6 +73,7 @@ window.gerar = async (clipes, matSrc, V = {}) => {
       const pw = new Map(); for (const o of lista) pw.set(o, o.parent.getWorldQuaternion(new THREE.Quaternion()));
       const pm = new Map(); for (const o of lista) pm.set(o, o.parent.matrixWorld.clone());
       const off = f(t, c.dur, u);
+      if (nivel) { off.$pos = off.$pos || {}; const d0 = off.$pos[nivel[0]] || [0, 0, 0]; off.$pos[nivel[0]] = [d0[0], d0[1] + nivel[1], d0[2]]; }
       for (const o of lista) {
         const r = off[o.name];
         if (r) { if (r.length === 4) R.set(r[0], r[1], r[2], r[3]).normalize(); else { e.set(r[0] * Math.PI / 180, r[1] * Math.PI / 180, r[2] * Math.PI / 180, 'YXZ'); R.setFromEuler(e); }
@@ -95,6 +102,7 @@ window.gerar = async (clipes, matSrc, V = {}) => {
 window.ready = true;
 </script>`, { url: 'http://x/' });
 await p.waitForFunction(() => window.ready);
+if (process.env.CLIPE) await p.evaluate(c => { window.CLIPE = c; }, process.env.CLIPE);
 await p.evaluate(() => window.carregar());
 if (dump) {
   const r = await p.evaluate(() => window.ossos());

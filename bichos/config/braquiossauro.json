@@ -1,2 +1,20 @@
-{ "nome": "braquiossauro", "titulo": "Braquiossauro", "modelo": "../teste/braquiossauro_parado.glb", "comprimento": 21, "tipo": "quadrupede", "ataque": "pisar", "comerAlto": true, "cabeca": 0.05,
-  "fonte": "Brachiosaurus Altithorax — paleo.parallax — CC BY 4.0 — https://sketchfab.com/3d-models/brachiosaurus-altithorax-224f71d98b7e4128a137c42368b286f6" }
+{
+ "nome": "braquiossauro",
+ "titulo": "Braquiossauro",
+ "modelo": "../teste/braquiossauro_parado.glb",
+ "comprimento": 21,
+ "tipo": "quadrupede",
+ "ataque": "pisar",
+ "comerAlto": true,
+ "cabeca": 0.05,
+ "fonte": "Brachiosaurus Altithorax — paleo.parallax — CC BY 4.0 — https://sketchfab.com/3d-models/brachiosaurus-altithorax-224f71d98b7e4128a137c42368b286f6",
+ "anim": {
+  "run": [
+   1.7,
+   0.5,
+   0.6,
+   0.1,
+   0.02
+  ]
+ }
+}
