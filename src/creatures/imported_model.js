@@ -1,7 +1,7 @@
 // =============================================================
 // MODELOS IMPORTADOS (feitos por outras pessoas, com licença livre)
 // Os dados vêm de src/creatures/imported/<espécie>.js, gerados pelo
-// conversor em tools/models/. O esqueleto já vem com os mesmos nomes
+// conversor em tools/models/ (bichos_glb.sh a partir de bichos/modelos/*.glb). O esqueleto já vem com os mesmos nomes
 // de ossos que o jogo anima (hips, chest, neck, head, jaw, tail1-3,
 // pernaE/D, bracoE/D...), então as animações do jogo funcionam.
 // =============================================================
@@ -9,43 +9,35 @@ import * as THREE from 'three';
 import { hdTextures } from '../core/settings.js';
 import { parseClips } from './clip_player.js';
 import { BOCAS } from './bocas.js';
-import espinossauro from './imported/espinossauro.js';
-import trex from './imported/trex.js';
-import braquiossauro from './imported/braquiossauro.js';
-import titanoboa from './imported/titanoboa.js';
-import deinosuchus from './imported/deinosuchus.js';
-import estegossauro from './imported/estegossauro.js';
 import anquilossauro from './imported/anquilossauro.js';
-import parassauro from './imported/parassauro.js';
-import raptor from './imported/raptor.js';
-import quetzalcoatlus from './imported/quetzalcoatlus.js';
-import mamute from './imported/mamute.js';
 import argentavis from './imported/argentavis.js';
+import argentinossauro from './imported/argentinossauro.js';
+import braquiossauro from './imported/braquiossauro.js';
+import carnotauro from './imported/carnotauro.js';
+import deinosuchus from './imported/deinosuchus.js';
+import dilofossauro from './imported/dilofossauro.js';
+import dimetrodonte from './imported/dimetrodonte.js';
+import diplodoco from './imported/diplodoco.js';
+import dodo from './imported/dodo.js';
+import espinossauro from './imported/espinossauro.js';
+import estegossauro from './imported/estegossauro.js';
+import galimimo from './imported/galimimo.js';
+import iguanodonte from './imported/iguanodonte.js';
+import kentrossauro from './imported/kentrossauro.js';
+import mamute from './imported/mamute.js';
+import mosassauro from './imported/mosassauro.js';
+import moschops from './imported/moschops.js';
+import paquirrinossauro from './imported/paquirrinossauro.js';
+import parassauro from './imported/parassauro.js';
 import reidodo from './imported/reidodo.js';
 import sauropelta from './imported/sauropelta.js';
-import argentinossauro from './imported/argentinossauro.js';
-import mosassauro from './imported/mosassauro.js';
-import pterodactilo from './imported/pterodactilo.js';
-import carnotauro from './imported/carnotauro.js';
-import triceratops from './imported/triceratops.js';
-import galimimo from './imported/galimimo.js';
-import dodo from './imported/dodo.js';
-import paquicefalossauro from './imported/paquicefalossauro.js';
-import piranha from './imported/piranha.js';
-import moschops from './imported/moschops.js';
-import dimetrodonte from './imported/dimetrodonte.js';
-import paquirrinossauro from './imported/paquirrinossauro.js';
-import diplodoco from './imported/diplodoco.js';
 import terizinossauro from './imported/terizinossauro.js';
-import compsognato from './imported/compsognato.js';
-import iguanodonte from './imported/iguanodonte.js';
+import triceratops from './imported/triceratops.js';
 
+// bichos com modelo .glb (bichos/modelos, convertidos por tools/models/bichos_glb.sh);
+// os outros são feitos por código (creature_builder.js)
 export const IMPORTED = {
-  espinossauro, trex, braquiossauro, titanoboa, deinosuchus, estegossauro,
-  anquilossauro, parassauro, raptor, quetzalcoatlus, mamute, argentavis, reidodo,
-  // com animação do próprio modelo
-  sauropelta, argentinossauro, mosassauro, pterodactilo, carnotauro, triceratops, galimimo, dodo, paquicefalossauro, piranha,
-  moschops, dimetrodonte, paquirrinossauro, diplodoco, terizinossauro, compsognato, iguanodonte,
+  anquilossauro, argentavis, argentinossauro, braquiossauro, carnotauro, deinosuchus, dilofossauro, dimetrodonte, diplodoco, dodo, espinossauro, estegossauro, galimimo, iguanodonte, kentrossauro, mamute, mosassauro, moschops, paquirrinossauro, parassauro, reidodo, sauropelta, terizinossauro, triceratops,
 };
 
 function bytes(b64) {

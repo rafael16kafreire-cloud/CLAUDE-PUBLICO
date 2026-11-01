@@ -4,11 +4,21 @@
 // (Menu completo com Novo Jogo/Continuar/Opções/Créditos: Fase 12.)
 // =============================================================
 import { listSlots, slotLabel } from '../core/save.js';
+import { IMPORTED } from '../creatures/imported_model.js';
 
-// Créditos (o visual low-poly é todo feito por código: bichos, plantas, pedras, céu e água)
+const esc = (t) => String(t ?? '').replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[ch]);
+
+// Créditos: modelos 3D dos bichos (CC BY pede o nome do autor) e o resto feito por código
 function creditsHtml() {
   const rows = [];
-  rows.push('<li><b>Bichos, plantas, pedras, terreno, céu e água</b>: gerados por código no próprio jogo (estilo low-poly).</li>');
+  const vistos = new Set();
+  for (const d of Object.values(IMPORTED)) {
+    const c = d.credito;
+    if (!c || vistos.has(c.url)) continue;
+    vistos.add(c.url);
+    rows.push(`<li><b>${esc(c.title)}</b> – ${esc(c.author)} (${esc(c.copyright)}) – ${esc(c.url)}</li>`);
+  }
+  rows.push('<li><b>Os outros bichos, plantas, pedras, terreno, céu e água</b>: gerados por código no próprio jogo (estilo low-poly).</li>');
   rows.push('<li><b>Sons de passos, coleta e interface</b>: Kenney.nl (CC0).</li>');
   // bibliotecas de efeitos visuais (as licenças pedem manter o aviso)
   rows.push('<li><b>Motor 3D</b>: three.js (MIT), © os autores do three.js.</li>');

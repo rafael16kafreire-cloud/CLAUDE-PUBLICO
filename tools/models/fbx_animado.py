@@ -49,18 +49,35 @@ def main(src, out, opc):
     mesh = next(o for o in bpy.data.objects if o.type == 'MESH')
     if glb:  # texturas embutidas no .glb: salva a cor de cada material num arquivo
         tex = dict(opc.get('texturas') or {})
+        fatores = {}
+        if src.lower().endswith('.glb'):
+            raw = open(src, 'rb').read()
+            gj = json.loads(raw[20:20 + int.from_bytes(raw[12:16], 'little')])
+            fatores = {mt.get('name'): mt.get('pbrMetallicRoughness', {}).get('baseColorFactor') for mt in gj.get('materials', [])}
         for m in mesh.data.materials:
             if not m or m.name in tex or not m.use_nodes:
                 continue
             bsdf = next((n for n in m.node_tree.nodes if n.type == 'BSDF_PRINCIPLED'), None)
-            link = bsdf and bsdf.inputs['Base Color'].links
-            node = link[0].from_node if link else None
-            while node is not None and node.type != 'TEX_IMAGE' and node.inputs and node.inputs[0].links:
-                node = node.inputs[0].links[0].from_node
-            if node is None or node.type != 'TEX_IMAGE' or not node.image:
+            # imagem ligada (direto ou por nós de mistura) na cor base
+            node, fila = None, [bsdf.inputs['Base Color']] if bsdf else []
+            while fila and node is None:
+                sock = fila.pop(0)
+                for ln in sock.links:
+                    n = ln.from_node
+                    if n.type == 'TEX_IMAGE' and n.image:
+                        node = n
+                        break
+                    fila.extend(n.inputs)
+            if node is None:
                 continue
             path = os.path.join(out, f'cor_{len(tex)}.png')
             img = node.image
+            fator = fatores.get(m.name)
+            if fator and any(abs(c - 1) > 1e-3 for c in fator[:3]):  # variante: cor multiplicada (baseColorFactor do .glb)
+                px = np.array(img.pixels[:]).reshape(-1, 4)
+                px[:, :3] = np.clip(px[:, :3] * np.array(fator[:3]), 0, 1)
+                img = img.copy()
+                img.pixels[:] = px.ravel().tolist()
             img.filepath_raw = path
             img.file_format = 'PNG'
             img.save()
@@ -181,7 +198,8 @@ def main(src, out, opc):
     np.savez(os.path.join(out, 'cru.npz'), P=P, UV=UV, F=F, MID=MID, JI=JI, JW=JW,
              parents=parents, bind=bind, frames=frames)
     json.dump({'info': {'origem': os.path.basename(src)},
-               'malhas': ([{'nome': m.name if m else f'material{i}', 'diffuseColor': (opc.get('texturas') or {}).get(m.name if m else '', None), 'normal': None, 'opacity': None}
+               'malhas': ([{'nome': m.name if m else f'material{i}', 'diffuseColor': (opc.get('texturas') or {}).get(m.name if m else '', None), 'normal': None,
+                            'opacity': 'alfa' if (glb and m and getattr(m, 'surface_render_method', 'DITHERED') != 'DITHERED' or (m and m.name in (opc.get('alfa') or []))) else None}
                            for i, m in enumerate(d.materials)]
                           or [{'nome': 'cor', 'diffuseColor': (opc.get('texturas') or {}).get('*'), 'normal': None, 'opacity': None}]),
                'clip': 'Base Stack', 'fps': FPS, 'ossos': [b.name for b in bones], 'pais': parents.tolist(), 'quadros_de_para': [f0, f1], 'acoes': acoes},

@@ -13,6 +13,7 @@ import { events, EV } from '../core/event_bus.js';
 import { game } from '../core/game_manager.js';
 import { mulberry32 } from '../core/math.js';
 import { MODELS } from './creature_models.js';
+import { IMPORTED, buildImportedModel } from './imported_model.js';
 import { buildSpeciesModel, createSkinnedMesh } from './creature_builder.js';
 import { makeCreatureMaterial } from './creature_material.js';
 import { Creature, CSTATE } from './creature.js';
@@ -54,10 +55,9 @@ export class CreatureManager {
   }
 
   _model(id) {
-    // ETAPA 3 (low-poly): TODOS os bichos saem do gerador paramétrico (creature_builder.js):
-    // corpo, pescoço, cabeça, cauda em gomos, patas e cores vêm dos parâmetros de cada
-    // espécie (creature_models.js). Os modelos 3D importados (realistas, com textura) saíram.
-    if (!this.models[id]) this.models[id] = buildSpeciesModel(MODELS[id]);
+    // bichos com modelo .glb (bichos/modelos, com animações próprias) usam ele;
+    // os outros saem do gerador paramétrico low-poly (creature_builder.js)
+    if (!this.models[id]) this.models[id] = IMPORTED[id] ? buildImportedModel(IMPORTED[id], id) : buildSpeciesModel(MODELS[id]);
     return this.models[id];
   }
 

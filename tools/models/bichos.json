@@ -484,5 +484,201 @@
    "Object_4"
   ],
   "triangulos": 20000
+ },
+ "_glb": {
+  "anquilossauro": {
+   "credito": {
+    "title": "Dino - Ankylosaurus",
+    "author": "pikabobalex",
+    "copyright": "CC BY 4.0",
+    "url": "https://sketchfab.com/3d-models/dino-ankylosaurus-55b9adcbcf7846e8a833bfc77eaf3d3f"
+   }
+  },
+  "argentavis": {
+   "credito": {
+    "title": "Osprey – Flying Raptor Rigged Bird",
+    "author": "Pigcraft (s8819296)",
+    "copyright": "CC BY 4.0 (gerado com IA pelo autor)",
+    "url": "https://sketchfab.com/3d-models/osprey-flying-raptor-rigged-bird-9e65ce0542a24ea388e81e3e6e9c9054"
+   },
+   "dois_lados": true,
+   "triangulos": 20000
+  },
+  "argentinossauro": {
+   "credito": {
+    "title": "Argentinosaurus Huinculensis",
+    "author": "Nobilis 2 (nobilishornet2)",
+    "copyright": "CC BY 4.0",
+    "url": "https://sketchfab.com/3d-models/argentinosaurus-huinculensis-0709f00fbe75454686e56eb5391eec44"
+   }
+  },
+  "braquiossauro": {
+   "credito": {
+    "title": "Brachiosaurus Altithorax",
+    "author": "paleo.parallax",
+    "copyright": "CC BY 4.0",
+    "url": "https://sketchfab.com/3d-models/brachiosaurus-altithorax-224f71d98b7e4128a137c42368b286f6"
+   }
+  },
+  "carnotauro": {
+   "credito": {
+    "title": "CARNOTAURUS DİNOSAUR",
+    "author": "Cenker Turhan (cenkerturhan1)",
+    "copyright": "CC BY 4.0",
+    "url": "https://sketchfab.com/3d-models/carnotaurus-dinosaur-548c9a0575b14deaae1f12ca9a6c31ca"
+   }
+  },
+  "deinosuchus": {
+   "credito": {
+    "title": "crocodile high quality",
+    "author": "Beerus (beerusu798)",
+    "copyright": "CC BY 4.0",
+    "url": "https://sketchfab.com/3d-models/crocodile-high-quality-a242e4634a234d3fb909c54b2c39d7b8"
+   }
+  },
+  "dilofossauro": {
+   "credito": {
+    "title": "carnotauro | CARNOTAURUS DİNOSAUR",
+    "author": "Cenker Turhan (cenkerturhan1)",
+    "copyright": "CC BY 4.0",
+    "url": "https://sketchfab.com/3d-models/carnotaurus-dinosaur-548c9a0575b14deaae1f12ca9a6c31ca"
+   }
+  },
+  "dimetrodonte": {
+   "credito": {
+    "title": "Dimetrodon",
+    "author": "cp4096",
+    "copyright": "CC BY 4.0",
+    "url": "https://sketchfab.com/3d-models/dimetrodon-3ac7c6aada5e4c03849f9544bbc1afed"
+   }
+  },
+  "diplodoco": {
+   "credito": {
+    "title": "Argentinosaurus Huinculensis",
+    "author": "Nobilis 2 (nobilishornet2)",
+    "copyright": "CC BY 4.0",
+    "url": "https://sketchfab.com/3d-models/argentinosaurus-huinculensis-0709f00fbe75454686e56eb5391eec44"
+   }
+  },
+  "dodo": {
+   "credito": {
+    "title": "Dodo [ Extinct Bird ]",
+    "author": "BlueMesh",
+    "copyright": "CC BY 4.0",
+    "url": "https://sketchfab.com/3d-models/dodo-extinct-bird-68f873e9f9144fc4b99a8f7475bf336d"
+   }
+  },
+  "espinossauro": {
+   "credito": {
+    "title": "Spinosaurus",
+    "author": "Pedro B. Goulart (Pebegou)",
+    "copyright": "CC BY 4.0",
+    "url": "https://sketchfab.com/3d-models/spinosaurus-2a325726dd7b4a7c888277f262fd09bc"
+   }
+  },
+  "estegossauro": {
+   "credito": {
+    "title": "Stegosaurus",
+    "author": "PusztaiAndras (PAndras)",
+    "copyright": "CC BY 4.0",
+    "url": "https://sketchfab.com/3d-models/stegosaurus-b2545ed6031e49939b823b1c8435989e"
+   }
+  },
+  "galimimo": {
+   "credito": {
+    "title": "Blender | Gallimimus",
+    "author": "SkinnyDoesModels (Skinny)",
+    "copyright": "CC BY 4.0",
+    "url": "https://sketchfab.com/3d-models/blender-gallimimus-4993970ad48f41af813e65f202acaf41"
+   }
+  },
+  "iguanodonte": {
+   "credito": {
+    "title": "Parasaurolophus",
+    "author": "htqj",
+    "copyright": "CC BY 4.0",
+    "url": "https://sketchfab.com/3d-models/parasaurolophus-0f25fa4a55ba48c88adef066161f5e83"
+   }
+  },
+  "kentrossauro": {
+   "credito": {
+    "title": "Stegosaurus",
+    "author": "PusztaiAndras (PAndras)",
+    "copyright": "CC BY 4.0",
+    "url": "https://sketchfab.com/3d-models/stegosaurus-b2545ed6031e49939b823b1c8435989e"
+   }
+  },
+  "mamute": {
+   "credito": {
+    "title": "3D High-poly Baby Woolly Mammoth",
+    "author": "SDPM Esare (sdpm)",
+    "copyright": "CC BY 4.0",
+    "url": "https://sketchfab.com/3d-models/3d-high-poly-baby-woolly-mammoth-fce1c86ccedf47a5b9627098be6719d5"
+   }
+  },
+  "mosassauro": {
+   "credito": {
+    "title": "Tylosaurus",
+    "author": "Julian Johnson-Mortimer (FreddyFoxFreddy)",
+    "copyright": "CC BY 4.0",
+    "url": "https://sketchfab.com/3d-models/tylosaurus-17a0332ed82b4383ae9fda9fa32b1080"
+   }
+  },
+  "moschops": {
+   "credito": {
+    "title": "Remodelado a partir de: Dimetrodon",
+    "author": "cp4096",
+    "copyright": "CC BY 4.0",
+    "url": "https://sketchfab.com/3d-models/dimetrodon-3ac7c6aada5e4c03849f9544bbc1afed"
+   }
+  },
+  "paquirrinossauro": {
+   "credito": {
+    "title": "Triceratops",
+    "author": "John Haverkamp",
+    "copyright": "CC BY 4.0",
+    "url": "https://sketchfab.com/3d-models/triceratops-829912188d2445ae8034d46ed75e3c68"
+   }
+  },
+  "parassauro": {
+   "credito": {
+    "title": "Parasaurolophus",
+    "author": "htqj",
+    "copyright": "CC BY 4.0",
+    "url": "https://sketchfab.com/3d-models/parasaurolophus-0f25fa4a55ba48c88adef066161f5e83"
+   }
+  },
+  "reidodo": {
+   "credito": {
+    "title": "Dodo [ Extinct Bird ]",
+    "author": "BlueMesh",
+    "copyright": "CC BY 4.0",
+    "url": "https://sketchfab.com/3d-models/dodo-extinct-bird-68f873e9f9144fc4b99a8f7475bf336d"
+   }
+  },
+  "sauropelta": {
+   "credito": {
+    "title": "Animated Sauropelta (Free)",
+    "author": "Anees Animates",
+    "copyright": "CC BY 4.0",
+    "url": "https://sketchfab.com/3d-models/animated-sauropelta-free-c6373f12f3954facb8d5fe48055c9161"
+   }
+  },
+  "terizinossauro": {
+   "credito": {
+    "title": "Therizinosaurus",
+    "author": "Julian Johnson-Mortimer (FreddyFoxFreddy)",
+    "copyright": "CC BY 4.0",
+    "url": "https://sketchfab.com/3d-models/therizinosaurus-1fa8b9e2dd4b40c9b8ffcaead0bd8e66"
+   }
+  },
+  "triceratops": {
+   "credito": {
+    "title": "Triceratops",
+    "author": "John Haverkamp",
+    "copyright": "CC BY 4.0",
+    "url": "https://sketchfab.com/3d-models/triceratops-829912188d2445ae8034d46ed75e3c68"
+   }
+  }
  }
 }
