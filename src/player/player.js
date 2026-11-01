@@ -185,7 +185,16 @@ export class Player {
     c._setState('parado');
     this.crouching = false;
     this.swimming = false;
-    events.emit(EV.MESSAGE, { text: `Montado em ${c.name ?? c.species.nome} (Montar de novo para descer)`, kind: 'info' });
+    // o que este bicho sabe fazer montado (BALANCE.montaria)
+    const M = BALANCE.montaria;
+    const col = M.coleta[c.species.id];
+    const esp = M.especiais[c.species.id];
+    const NOMES = { plantas: 'plantas (bagas e fibra)', pedras: 'pedras e metal', arvores: 'árvores' };
+    const dicas = [];
+    if (col?.modo) dicas.push(`Atacar coleta ${col.alvos.map((a) => NOMES[a] ?? a).join(' e ')} (x${col.rende})`);
+    if (col?.carcaca) dicas.push(`Atacar carcaças rende x${col.carcaca}`);
+    if (esp) dicas.push(`Q: ${esp.tipo === 'bote' ? 'bote' : 'investida'}`);
+    events.emit(EV.MESSAGE, { text: `Montado em ${c.name ?? c.species.nome} (Montar de novo para descer)${dicas.length ? ` · ${dicas.join(' · ')}` : ''}`, kind: 'info' });
     return true;
   }
 
