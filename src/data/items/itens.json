@@ -501,7 +501,7 @@
   },
   {
    "id": "teto",
-   "nome": "Teto de Palha",
+   "nome": "Teto de Madeira",
    "tipo": "estrutura",
    "peso": 4.0,
    "pilha": 20,

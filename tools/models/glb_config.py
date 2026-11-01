@@ -80,6 +80,8 @@ def main(cru, molde_path, base_path, out):
     cfg['ossos'] = {k: v for k, v in m.items() if v is not None and k in want | {'jaw', 'neck2'}}
     acoes = meta.get('acoes', {})
     cfg['clipes'] = {papel: {'acao': a, 'loop': loop} for papel, (a, loop) in CLIPES.items() if a in acoes}
+    if 'andar' not in cfg['clipes'] and 'nadar' in acoes:  # peixe: anda = nada
+        cfg['clipes']['andar'] = {'acao': 'nadar', 'loop': True}
     cfg.setdefault('giro', 'y180')
     cfg.setdefault('repouso', 'ligacao')
     json.dump(cfg, open(out, 'w'), indent=1, ensure_ascii=False)
