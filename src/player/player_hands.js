@@ -8,7 +8,7 @@ import * as THREE from 'three';
 import { PALETA } from '../core/paleta.js';
 import { ROUPA } from './roupa.js';
 import { settings } from '../core/settings.js';
-import { makeAxe } from './machado_modelo.js';
+import { makeAxes } from './machado_modelo.js';
 
 const WOOD = new THREE.MeshLambertMaterial({ color: PALETA.marrom.clone() });
 const STONE = new THREE.MeshLambertMaterial({ color: PALETA.pedra.clone() });
@@ -132,7 +132,7 @@ export function makeTool(kind) {
     return m;
   };
   if (kind === 'machado') {
-    g.add(makeAxe());
+    g.add(makeAxes());
   } else if (kind === 'picareta') {
     g.add(handle(0.55));
     const head = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.36, 5), FLINT);
@@ -248,6 +248,10 @@ export class PlayerHands {
     this._land = 0;
     this._wasGround = true;
     this.toolKind = 'mao';
+  }
+
+  setVariant(id) {
+    this.tools.machado?.children[0]?.userData?.setVariant?.(id);
   }
 
   setTool(kind) {

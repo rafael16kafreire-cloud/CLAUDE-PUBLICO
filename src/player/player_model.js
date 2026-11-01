@@ -211,6 +211,11 @@ export class PlayerModel {
     return pivot;
   }
 
+  // Qual machado aparece na mão (pedra, sílex ou metal)
+  setVariant(id) {
+    this._toolMesh?.children[0]?.userData?.setVariant?.(id);
+  }
+
   // Ferramenta na mão direita (a mesma da primeira pessoa). kind: machado, picareta, lanca, clava, tocha, arco, pistola, luneta
   setTool(kind) {
     kind = kind ?? 'mao';

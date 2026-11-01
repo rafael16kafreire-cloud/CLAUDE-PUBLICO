@@ -151,6 +151,11 @@ export class BlockyModel {
   }
 
   // ferramenta na mão direita (na ponta do antebraço)
+  // Qual machado aparece na mão (pedra, sílex ou metal)
+  setVariant(id) {
+    this._toolMesh?.children[0]?.userData?.setVariant?.(id);
+  }
+
   setTool(kind) {
     kind = kind ?? 'mao';
     if (kind === this.toolKind) return;

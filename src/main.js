@@ -1024,6 +1024,7 @@ function boot(hotData = {}) {
   // Se o aparelho ficar lento (menos de 22 quadros por segundo por
   // alguns segundos), baixa um nível de qualidade e avisa.
   const perf = { time: 0, frames: 0, warmup: 6 };
+  let _axeId = null; // qual machado está na mão (muda o modelo)
   function autoQuality(dt) {
     if (!settings.get('autoQuality') || game.state !== STATE.PLAYING) return;
     if (perf.warmup > 0) {
@@ -1299,6 +1300,11 @@ function boot(hotData = {}) {
     }
     if (hands.toolKind !== toolKind) hands.setTool(toolKind);
     player.model.setTool(toolKind);
+    if (toolKind === 'machado' && _axeId !== actions.tool.id) {
+      _axeId = actions.tool.id;
+      hands.setVariant(_axeId);
+    }
+    if (toolKind === 'machado') player.model.setVariant?.(actions.tool.id);
     damageNumbers.update(dt, camera);
     // trilha de perseguição (como no ARK): toca quando um bicho selvagem está te caçando, mais forte quanto mais perto
     sound.setChuva(world.cameraUnderwater ? 0 : world.atmosfera?.clima.chuva ?? 0);

@@ -111,7 +111,79 @@ function materiais() {
       g.stroke();
     }
   }, [6, 1]);
+  // obsidiana: vidro vulcânico preto, liso e brilhante, com reflexo arroxeado e ondas de lasca
+  const obsid = canvasTex(256, (g, N) => {
+    const r = rng(9);
+    g.fillStyle = '#1b1a25';
+    g.fillRect(0, 0, N, N);
+    for (let i = 0; i < 70; i++) { // ondas de fratura concoidal
+      const x = r() * N;
+      const y = r() * N;
+      g.strokeStyle = `rgba(${120 + r() * 90},${100 + r() * 70},${170 + r() * 80},${0.07 + r() * 0.12})`;
+      g.lineWidth = 1 + r() * 1.5;
+      g.beginPath();
+      g.arc(x, y, 10 + r() * 50, r() * 6, r() * 6 + 1.4 + r() * 1.5);
+      g.stroke();
+    }
+    for (let i = 0; i < 400; i++) {
+      g.fillStyle = `rgba(200,190,230,${r() * 0.25})`;
+      g.fillRect(r() * N, r() * N, 1, 1);
+    }
+  }, [1, 1]);
+  // aço batido: martelado, com riscos de lima e manchas escuras de forja
+  const aco = canvasTex(256, (g, N) => {
+    const r = rng(17);
+    g.fillStyle = '#a9aeb6';
+    g.fillRect(0, 0, N, N);
+    for (let i = 0; i < 260; i++) { // marcas de martelo
+      const x = r() * N;
+      const y = r() * N;
+      const R = 3 + r() * 9;
+      const gr = g.createRadialGradient(x, y, 0, x, y, R);
+      const v = r() < 0.5 ? 0 : 255;
+      gr.addColorStop(0, `rgba(${v},${v},${v},0.16)`);
+      gr.addColorStop(1, 'rgba(0,0,0,0)');
+      g.fillStyle = gr;
+      g.fillRect(x - R, y - R, R * 2, R * 2);
+    }
+    for (let i = 0; i < 120; i++) { // riscos de lima
+      g.strokeStyle = `rgba(${r() < 0.5 ? '40,44,52' : '235,240,250'},${0.1 + r() * 0.15})`;
+      g.lineWidth = 1;
+      const x = r() * N;
+      const y = r() * N;
+      g.beginPath();
+      g.moveTo(x, y);
+      g.lineTo(x + 20 + r() * 40, y + (r() - 0.5) * 6);
+      g.stroke();
+    }
+    for (let i = 0; i < 8; i++) { // mancha de forja
+      const x = r() * N;
+      const y = r() * N;
+      const gr = g.createRadialGradient(x, y, 0, x, y, 30);
+      gr.addColorStop(0, 'rgba(60,50,40,0.28)');
+      gr.addColorStop(1, 'rgba(0,0,0,0)');
+      g.fillStyle = gr;
+      g.fillRect(x - 30, y - 30, 60, 60);
+    }
+  }, [1, 1]);
+  // couro: grão e costura
+  const couro = canvasTex(128, (g, N) => {
+    const r = rng(31);
+    g.fillStyle = '#4a2f1c';
+    g.fillRect(0, 0, N, N);
+    for (let i = 0; i < 900; i++) {
+      const v = 40 + r() * 50;
+      g.fillStyle = `rgba(${v + 20},${v},${v - 16},0.5)`;
+      g.fillRect(r() * N, r() * N, 1 + r() * 2, 1 + r());
+    }
+  }, [2, 1]);
   mats = {
+    obsidiana: new THREE.MeshStandardMaterial({ map: obsid, bumpMap: obsid, bumpScale: 0.8, roughness: 0.12, metalness: 0.35, flatShading: true, emissive: '#14101f', emissiveIntensity: 0.4 }),
+    aco: new THREE.MeshStandardMaterial({ map: aco, bumpMap: aco, bumpScale: 1.8, roughness: 0.38, metalness: 0.6 }),
+    acoEscuro: new THREE.MeshStandardMaterial({ color: '#5b5f66', roughness: 0.5, metalness: 0.6 }),
+    latao: new THREE.MeshStandardMaterial({ color: '#b08a3c', roughness: 0.35, metalness: 0.6 }),
+    couro: new THREE.MeshStandardMaterial({ map: couro, bumpMap: couro, bumpScale: 1.2, roughness: 0.8, metalness: 0 }),
+    madeiraEscura: new THREE.MeshStandardMaterial({ map: madeira, bumpMap: madeira, bumpScale: 1.2, roughness: 0.55, metalness: 0, color: '#9b6c44' }),
     madeira: new THREE.MeshStandardMaterial({ map: madeira, bumpMap: madeira, bumpScale: 1.4, roughness: 0.82, metalness: 0 }),
     pedra: new THREE.MeshStandardMaterial({ map: pedra, bumpMap: pedra, bumpScale: 2.6, roughness: 0.55, metalness: 0.02, flatShading: true }),
     fibra: new THREE.MeshStandardMaterial({ map: fibra, bumpMap: fibra, bumpScale: 2.2, roughness: 0.95, metalness: 0 }),
@@ -145,7 +217,12 @@ function cabo(altura, topo) {
 
 // Cabeça de sílex lascado: cunha de verdade. Grossa atrás (onde encosta no cabo), abre em leque
 // e termina num fio fino e curvo na frente. Faces facetadas pelas lascas, cada uma com sua luz.
-function lamina(yc) {
+function lamina(yc, o = {}) {
+  const L = o.L ?? 0.182;
+  const hhf = o.hh ?? ((u) => 0.032 + 0.058 * Math.pow(u, 0.85));
+  const T = o.T ?? 0.021;
+  const BU = o.bulge ?? 0.036;
+  const RIP = o.rip ?? 1;
   const NU = 13; // de trás para frente
   const NV = 11; // de baixo para cima
   const r = rng(21);
@@ -159,15 +236,15 @@ function lamina(yc) {
     const u = i / NU;
     const v = j / NV;
     const w = 2 * v - 1; // -1 (baixo) .. 1 (cima)
-    const hh = 0.032 + 0.058 * Math.pow(u, 0.85); // meia altura: abre em leque
-    const bulge = 0.036 * u * u * (1 - w * w); // o fio sai mais para a frente no meio (curvo)
-    const z = THREE.MathUtils.lerp(0.032, -0.15, u) - bulge + 0.012 * u * Math.abs(w) ** 3;
+    const hh = hhf(u); // meia altura: abre em leque
+    const bulge = BU * u * u * (1 - w * w); // o fio sai mais para a frente no meio (curvo)
+    const z = THREE.MathUtils.lerp(0.032, 0.032 - L, u) - bulge + 0.012 * u * Math.abs(w) ** 3;
     const y = yc + w * hh;
     // espessura: grossa atrás e no meio, some no fio e nas pontas de cima/baixo
-    const t = (0.021 * Math.pow(1 - u, 1.15) + 0.0025) * Math.pow(Math.max(0, 1 - w * w), 0.55);
+    const t = (T * Math.pow(1 - u, 1.15) + 0.0025) * Math.pow(Math.max(0, 1 - w * w), 0.55);
     // lascas: ondas cruzadas + sorteio por ponto (igual nos dois lados do mesmo ponto)
     const j3 = J(i, j, 0);
-    const fl = 0.0022 * Math.sin(u * 17 + w * 7 + 1.3) * (1 - u * 0.6) + 0.0016 * Math.sin(u * 9 - w * 13);
+    const fl = RIP * (0.0022 * Math.sin(u * 17 + w * 7 + 1.3) * (1 - u * 0.6) + 0.0016 * Math.sin(u * 9 - w * 13));
     const x = s * (t + fl * (t > 0.004 ? 1 : 0.2));
     return [x + j3[0] * 0.0014, y + j3[1] * 0.004, z + j3[2] * 0.004];
   };
@@ -238,7 +315,125 @@ function amarracao(yc) {
   return g;
 }
 
-export function makeAxe() {
+// ---------- Machado de Sílex/Obsidiana: lâmina longa e preta, presa por tiras de couro ----------
+function amarracaoCouro(yc) {
+  const g = new THREE.Group();
+  const M = materiais();
+  // três tiras de couro em volta do cabo e da raiz da lâmina
+  for (const [dy, r0] of [[-0.045, 0.03], [-0.012, 0.032], [0.02, 0.03]]) {
+    const pts = [];
+    for (let i = 0; i < 36; i++) {
+      const a = (i / 36) * Math.PI * 2;
+      pts.push(new THREE.Vector3(Math.cos(a) * r0, yc + dy, -0.004 + Math.sin(a) * (r0 + 0.006)));
+    }
+    const m = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, true), 48, 0.0065, 5, true), M.couro);
+    g.add(m);
+  }
+  // cordinha vermelha de enfeite e um dente de osso pendurado
+  const cord = new THREE.CatmullRomCurve3([new THREE.Vector3(0.036, yc - 0.05, 0.0), new THREE.Vector3(0.056, yc - 0.075, 0.014), new THREE.Vector3(0.058, yc - 0.1, 0.02)]);
+  g.add(new THREE.Mesh(new THREE.TubeGeometry(cord, 10, 0.003, 4, false), new THREE.MeshStandardMaterial({ color: '#8a2a22', roughness: 0.9 })));
+  const dente = new THREE.Mesh(new THREE.ConeGeometry(0.0085, 0.05, 6), new THREE.MeshStandardMaterial({ color: '#e6dcc4', roughness: 0.6 }));
+  dente.position.set(0.058, yc - 0.125, 0.02);
+  dente.rotation.x = Math.PI;
+  g.add(dente);
+  return g;
+}
+
+function machadoSilex() {
+  const M = materiais();
+  const g = new THREE.Group();
+  const altura = 0.74;
+  const topo = 0.52;
+  const haste = new THREE.Mesh(cabo(altura, topo + 0.03), M.madeiraEscura);
+  // lâmina de obsidiana: longa, mais estreita, larga no meio e com o fio bem fino e curvo
+  const head = new THREE.Mesh(
+    lamina(topo, { L: 0.25, hh: (u) => 0.016 + 0.046 * Math.sin(Math.min(1, u * 1.02) * Math.PI * 0.8) ** 0.8, T: 0.016, bulge: 0.065, rip: 2.2 }),
+    M.obsidiana,
+  );
+  g.add(haste, head, amarracaoCouro(topo));
+  // pegada de couro no cabo
+  const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.0235, 0.0235, 0.16, 14), M.couro);
+  grip.position.y = 0.06;
+  g.add(grip);
+  return g;
+}
+
+// ---------- Machado de Metal: cabeça forjada de aço com encaixe (olho), costas de martelo e barba ----------
+function cabecaMetal(yc) {
+  const M = materiais();
+  const g = new THREE.Group();
+  // perfil clássico de machado visto de lado (x = frente(-)/trás(+) em z do jogo, y = altura)
+  const sh = new THREE.Shape();
+  sh.moveTo(0.05, 0.035); // costas (martelo)
+  sh.lineTo(0.05, -0.035);
+  sh.lineTo(0.012, -0.04);
+  sh.lineTo(-0.02, -0.075);
+  sh.lineTo(-0.075, -0.135); // barba: desce
+  sh.lineTo(-0.1, -0.11);
+  sh.quadraticCurveTo(-0.132, -0.0, -0.1, 0.095); // fio curvo
+  sh.lineTo(-0.075, 0.115);
+  sh.lineTo(-0.02, 0.06);
+  sh.lineTo(0.012, 0.04);
+  sh.closePath();
+  const geo = new THREE.ExtrudeGeometry(sh, { depth: 0.022, bevelEnabled: true, bevelThickness: 0.009, bevelSize: 0.007, bevelSegments: 2, curveSegments: 8 });
+  geo.translate(0, 0, -0.011);
+  geo.rotateY(Math.PI / 2); // espessura em X; frente em -Z
+  const p = geo.attributes.position;
+  for (let i = 0; i < p.count; i++) { // chanfro do fio: afina para a frente
+    const z = p.getZ(i);
+    const k = THREE.MathUtils.clamp((-z - 0.03) / 0.09, 0, 1);
+    p.setX(i, p.getX(i) * (1 - 0.88 * k * k));
+  }
+  geo.computeVertexNormals();
+  geo.translate(0, yc, 0);
+  // UV por posição para a textura de aço não esticar
+  const uv = new Float32Array(p.count * 2);
+  for (let i = 0; i < p.count; i++) { uv[i * 2] = p.getZ(i) * 5 + p.getX(i) * 4; uv[i * 2 + 1] = p.getY(i) * 5; }
+  geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  g.add(new THREE.Mesh(geo, M.aco));
+  // encaixe (olho) em volta do cabo: bloco de aço mais escuro com cantos chanfrados
+  const olho = new THREE.Mesh(new THREE.BoxGeometry(0.062, 0.1, 0.078), M.acoEscuro);
+  olho.position.set(0, yc, 0.008);
+  g.add(olho);
+  // rebites de latão
+  for (const sx of [-1, 1]) for (const dy of [-0.032, 0.032]) {
+    const rb = new THREE.Mesh(new THREE.SphereGeometry(0.0085, 8, 6), M.latao);
+    rb.position.set(sx * 0.032, yc + dy, 0.012);
+    g.add(rb);
+  }
+  // colar de metal logo abaixo da cabeça
+  const colar = new THREE.Mesh(new THREE.CylinderGeometry(0.0285, 0.0255, 0.05, 16), M.acoEscuro);
+  colar.position.y = yc - 0.075;
+  g.add(colar);
+  return g;
+}
+
+function machadoMetal() {
+  const M = materiais();
+  const g = new THREE.Group();
+  const altura = 0.76;
+  const topo = 0.54;
+  const haste = new THREE.Mesh(cabo(altura, topo + 0.03), M.madeiraEscura);
+  g.add(haste, cabecaMetal(topo));
+  // pegada de couro enrolada com costura e tampa de metal no fim do cabo
+  const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.0238, 0.0238, 0.2, 16), M.couro);
+  grip.position.y = 0.04;
+  g.add(grip);
+  for (let i = 0; i < 6; i++) {
+    const cinta = new THREE.Mesh(new THREE.TorusGeometry(0.0243, 0.0027, 4, 16), M.couro);
+    cinta.rotation.x = Math.PI / 2;
+    cinta.position.y = -0.04 + i * 0.0325;
+    g.add(cinta);
+  }
+  const tampa = new THREE.Mesh(new THREE.CylinderGeometry(0.027, 0.03, 0.03, 16), M.acoEscuro);
+  tampa.position.y = -0.105;
+  g.add(tampa);
+  return g;
+}
+
+export function makeAxe(variante = 'machado_pedra') {
+  if (variante === 'machado_silex') return machadoSilex();
+  if (variante === 'machado_metal') return machadoMetal();
   const M = materiais();
   const g = new THREE.Group();
   g.name = 'MachadoPedra';
@@ -248,5 +443,20 @@ export function makeAxe() {
   const head = new THREE.Mesh(lamina(topo), M.pedra);
   g.add(haste, head, amarracao(topo));
   g.traverse((o) => { if (o.isMesh) o.castShadow = false; });
+  return g;
+}
+
+export const MACHADOS = ['machado_pedra', 'machado_silex', 'machado_metal'];
+
+// Os três machados juntos num grupo; só o do item na mão aparece.
+export function makeAxes() {
+  const g = new THREE.Group();
+  for (const id of MACHADOS) {
+    const a = makeAxe(id);
+    a.name = id;
+    a.visible = id === 'machado_pedra';
+    g.add(a);
+  }
+  g.userData.setVariant = (id) => g.children.forEach((c) => { c.visible = c.name === (MACHADOS.includes(id) ? id : 'machado_pedra'); });
   return g;
 }
