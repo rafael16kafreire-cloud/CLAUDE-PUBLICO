@@ -628,9 +628,11 @@ export function MODELOS_LOWPOLY(raizes) {
     arvore_morta_neve: par((x) => arvoreMorta(10, { seed: 48, neve: true, ...x })),
     arvore_seca: par((x) => arvoreMorta(5, { seed: 49, neve: true, ...x })),
     // arbustos (bagas: a cor de cada tipo)
-    arbusto_mejo: par((x) => arbusto({ seed: 50, bagas: mix('agua', 'ceuNoite', 0.35), ...x })),
-    arbusto_escura: par((x) => arbusto({ seed: 51, bagas: C('ceuNoite'), ...x })),
-    arbusto_frutas: par((x) => arbusto({ seed: 52, bagas: C('ferrugem'), ...x })),
+    // todos os arbustos são iguais (sem fruta à mostra); o que cada um dá ao colher
+    // fica em recursos.json (baga_mejo, baga_escura, frutas, arbusto...)
+    arbusto_mejo: par((x) => arbusto({ seed: 53, ...x })),
+    arbusto_escura: par((x) => arbusto({ seed: 53, ...x })),
+    arbusto_frutas: par((x) => arbusto({ seed: 53, ...x })),
     arbusto: par((x) => arbusto({ seed: 53, ...x })),
     arbusto_neve: par((x) => arbusto({ seed: 54, neve: true, folhas: ['musgoEscuro', 'pedraEscura'], raio: 0.6, ...x })),
     // capins, juncos e flores
@@ -654,9 +656,9 @@ export function MODELOS_LOWPOLY(raizes) {
     cristal: so(() => cristais({ seed: 76 })),
     // pedras (raio ~1 e altura ~1 antes da escala)
     rochedo: ped({ seed: 80 }),
-    rochedo_camadas: ped({ seed: 81, cores: ['pedra', 'pedraClara'], achata: 0.95 }, { collider: 0.95 }),
-    rochedo_camadas_b: ped({ seed: 82, cores: ['pedraEscura', 'pedra'], topo: 'musgo', achata: 0.85 }, { collider: 0.95 }),
-    rochedo_camadas_c: ped({ seed: 83, cores: ['pedra', 'pedraEscura'], achata: 1.0 }, { collider: 0.95 }),
+    rochedo_camadas: ped({ seed: 81, cores: ['pedra', 'pedraClara'], achata: 0.95 }, { collider: 1.2 }),
+    rochedo_camadas_b: ped({ seed: 82, cores: ['pedraEscura', 'pedra'], topo: 'musgo', achata: 0.85 }, { collider: 1.2 }),
+    rochedo_camadas_c: ped({ seed: 83, cores: ['pedra', 'pedraEscura'], achata: 1.0 }, { collider: 1.2 }),
     pedra_musgo: ped({ seed: 84, topo: 'musgo', achata: 0.7 }),
     rocha_metal: ped({ seed: 85, cores: ['pedraEscura', 'pedra'], veio: 'pedraClara' }),
     minerio_ferro: ped({ seed: 86, cores: ['pedra', 'pedraEscura'], veio: 'ferrugem' }),

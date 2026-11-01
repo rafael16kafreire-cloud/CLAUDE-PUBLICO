@@ -107,16 +107,16 @@ const TYPES = {
   rochedo_camadas: { foot: 0.8, hi: () => makeLayeredRock(0), lo: () => makeLayeredRock(0, true), mat: layeredRockMaterial, loMat: layeredRockMaterial, collider: 0.6, shadow: true, scale: [3, 9], res: 'rochedo', maxDist: 320, rock: true, textured: true, cluster: 0.6 },
   rochedo_camadas_b: { foot: 0.8, hi: () => makeLayeredRock(1), lo: () => makeLayeredRock(1, true), mat: layeredRockMaterial, loMat: layeredRockMaterial, collider: 0.6, shadow: true, scale: [2.5, 7], res: 'rochedo', maxDist: 320, rock: true, textured: true, cluster: 0.56 },
   rochedo_camadas_c: { foot: 0.8, hi: () => makeLayeredRock(2), lo: () => makeLayeredRock(2, true), mat: layeredRockMaterial, loMat: layeredRockMaterial, collider: 0.6, shadow: true, scale: [4, 12], res: 'rochedo', maxDist: 320, rock: true, textured: true, cluster: 0.64 },
-  rochedo: { foot: 1.6, hi: snowRockGeometry, mat: snowRockMaterial, lo: P.makeBoulderLow, collider: 1.0, shadow: true, scale: [1.8, 9], res: 'rochedo', maxDist: 320, rock: true, textured: true },
+  rochedo: { foot: 1.6, hi: snowRockGeometry, mat: snowRockMaterial, lo: P.makeBoulderLow, collider: 1.2, shadow: true, scale: [1.8, 9], res: 'rochedo', maxDist: 320, rock: true, textured: true },
   // recursos por região (como no ARK): metal e cristal na serra, obsidiana
   // e petróleo nas montanhas, conchas com pérolas no fundo do mar
-  rocha_metal: { foot: 0.8, hi: P.makeMetalRock, collider: 0.9, shadow: true, scale: [1.0, 1.8], res: 'metal', maxDist: 160, rock: true },
-  rocha_obsidiana: { foot: 0.7, hi: P.makeObsidianRock, collider: 0.8, shadow: true, scale: [0.8, 1.4], res: 'obsidiana', maxDist: 160, rock: true },
-  rocha_petroleo: { foot: 0.7, hi: P.makeOilRock, collider: 0.8, shadow: false, scale: [0.8, 1.4], res: 'petroleo', maxDist: 140, rock: true },
-  cristal: { foot: 0.5, hi: P.makeCrystal, collider: 0.5, shadow: false, scale: [0.8, 1.4], res: 'cristal', maxDist: 140, rock: true },
+  rocha_metal: { foot: 0.8, hi: P.makeMetalRock, collider: 1.2, shadow: true, scale: [1.0, 1.8], res: 'metal', maxDist: 160, rock: true },
+  rocha_obsidiana: { foot: 0.7, hi: P.makeObsidianRock, collider: 1.3, shadow: true, scale: [0.8, 1.4], res: 'obsidiana', maxDist: 160, rock: true },
+  rocha_petroleo: { foot: 0.7, hi: P.makeOilRock, collider: 1.2, shadow: false, scale: [0.8, 1.4], res: 'petroleo', maxDist: 140, rock: true },
+  cristal: { foot: 0.5, hi: P.makeCrystal, collider: 0.6, shadow: false, scale: [0.8, 1.4], res: 'cristal', maxDist: 140, rock: true },
   concha: { foot: 0.1, hi: P.makeShell, collider: 0, shadow: false, scale: [0.8, 1.5], res: 'concha', maxDist: 40 },
-  minerio_ferro: { foot: 0.8, hi: P.makeIronOre, collider: 0.9, shadow: false, scale: [0.9, 1.6], res: 'ferro', maxDist: 140, rock: true },
-  pedra_musgo: { foot: 0.85, hi: P.makeMossRock, lo: P.makeMossRockLow, collider: 1.0, shadow: false, scale: [0.6, 2.2], res: 'pedra', maxDist: 160 },
+  minerio_ferro: { foot: 0.8, hi: P.makeIronOre, collider: 1.2, shadow: false, scale: [0.9, 1.6], res: 'ferro', maxDist: 140, rock: true },
+  pedra_musgo: { foot: 0.85, hi: P.makeMossRock, lo: P.makeMossRockLow, collider: 1.2, shadow: false, scale: [0.6, 2.2], res: 'pedra', maxDist: 160 },
   mangue: { foot: 1.2, hi: P.makeMangrove, lo: P.makeMangroveLow, imp: true, collider: 0.6, shadow: true, scale: [0.8, 1.2], res: 'arvore', water: true },
   arvore_morta: { foot: 0.3, hi: P.makeDeadTree, collider: 0.3, shadow: true, scale: [0.8, 1.3], res: 'arvore_mole', water: true, maxDist: 200 },
   junco: { shore: true, hi: P.makeReeds, collider: 0, shadow: false, scale: [0.8, 1.3], res: 'junco', water: true, maxDist: 70 },
@@ -141,6 +141,12 @@ for (const [t, m] of Object.entries(MODELOS_LOWPOLY(ROOTS))) {
   d.textured = true; // cor já vem pintada: a instância só varia o brilho
   if (m.collider) d.collider = m.collider;
 }
+
+// altura do topo de cada modelo de pedra (unidades do modelo, antes da escala)
+const ROCK_TOP = {
+  rochedo_camadas: 1.56, rochedo_camadas_b: 1.53, rochedo_camadas_c: 1.74, rochedo: 1.38,
+  rocha_metal: 1.2, rocha_obsidiana: 1.45, rocha_petroleo: 1.1, cristal: 1.66, minerio_ferro: 1.35, pedra_musgo: 1.28,
+};
 
 const CHUNK = 48;
 
@@ -352,7 +358,9 @@ export class Vegetation {
           if (type === 'pedra_musgo' || def.rock) {
             // pedra esticada: o raio segue o lado mais largo; o topo, a altura de verdade
             rec.r = def.collider * Math.max(s.x, s.z) * (def.rock ? 1.0 : 1);
-            rec.top = y + s.y * (def.rock ? 0.95 : 1.0);
+            // altura de verdade do modelo (medida): antes a colisão usava ~0,95 do tamanho, e em
+            // encosta os pés ficavam acima disso e o jogador atravessava a pedra por dentro
+            rec.top = y + s.y * (ROCK_TOP[type] ?? 1.4) * 0.98;
           }
           this.maxCollider = Math.max(this.maxCollider ?? 0, rec.r);
         }

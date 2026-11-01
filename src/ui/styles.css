@@ -1328,6 +1328,9 @@ body.is-touch .hud-gauges { bottom: calc(var(--safe-b) + 72px); }
   position: absolute; inset: 0; height: 100%;
   background: var(--c);
   transform-origin: center bottom;
+  /* enche de baixo para cima conforme o valor (vida, stamina, XP do nível, peso) */
+  transform: scaleY(var(--v, 1));
+  transition: transform 0.25s;
 }
 .hud-gauges .stat .ico { display: none; }
 .hud-gauges .stat .num {
@@ -1775,7 +1778,6 @@ body:not(.is-touch) .hotbar,
 body.is-touch .hotbar { grid-auto-rows: calc(var(--hb) * 1.3); }
 body.is-touch.touch-botoes .hotbar { grid-auto-rows: calc(var(--hb) * 1.3); }
 .hotbar .hb-slot { height: 100%; width: 100%; }
-.hud-gauges .stat-xp .fill { transform: none !important; }
 
 /* ---- HUD igual ao do ARK Mobile (medido na foto de referência: cor, opacidade e tamanho em % da tela) ---- */
 body .hotbar, body.is-touch .hotbar, body:not(.is-touch) .hotbar {
@@ -1892,15 +1894,17 @@ html, body, button, input, select, textarea, .title { font-family: var(--font-ui
   padding: 0;
   gap: 1.2vh;
   height: 5.3vh;
+  font-family: "Rajdhani", system-ui, sans-serif;
   font-size: max(18px, 3.9vh);
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  word-spacing: 0.25em;
   color: #fff;
   text-shadow: 0 0 3px #000, 0 1px 3px #000, 1px 1px 2px rgba(0, 0, 0, 0.9);
   white-space: nowrap;
 }
 .msg.msg-item .msg-icon { width: 5.2vh; height: 5.2vh; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8)); }
-.msg.msg-item .msg-plus { color: var(--ark-cyan); font-size: 0.62em; margin-right: -0.3vh; text-shadow: 0 0 3px #000; }
+.msg.msg-item .msg-plus { color: #35e0ff; font-size: 0.7em; font-weight: 800; margin-right: -0.5vh; text-shadow: 0 0 4px #000, 0 0 2px #35e0ff; }
 .msg.msg-item.out { transform: none; }
 .msg.msg-item { animation: msg-in-l 0.2s ease-out; }
 @keyframes msg-in-l { from { opacity: 0; transform: translateX(-16px); } }
@@ -2324,7 +2328,7 @@ body.inv-open #ui > .hud, body.inv-open #ui > .hotbar, body.inv-open #ui > .hud-
    >>> AJUSTE: mude as variáveis --p-* e --font-nordica abaixo.
    ============================================================= */
 :root {
-  --font-nordica: "Palatino Linotype", "Book Antiqua", Palatino, "Noto Serif", "Droid Serif", Georgia, "Times New Roman", serif;
+  --font-nordica: "Rajdhani", "Barlow Semi Condensed", system-ui, sans-serif; /* a letra do ARK em todo o HUD (sem serifa) */
   --p-ferrugem: #94482f;
   --p-sol: #e3a456;
   --p-capim: #9c9258;
