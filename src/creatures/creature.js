@@ -637,6 +637,16 @@ export class Creature {
     const perceived = player.crouching ? dPlayer * 1.6 : dPlayer;
 
     this._olhaJogador = dPlayer < 14 + this.radius && !player.dead ? player : null;
+    // bicho grande percebe você chegando: vira, ruge e segue a vida (de novo só depois de um tempo)
+    const porte = (this.bodyFront + this.bodyBack) * this.scale;
+    this._ruge = Math.max(0, (this._ruge ?? 0) - 0.2);
+    if (porte > 5 && this._ruge <= 0 && this.state !== CSTATE.SLEEP && dPlayer < Math.max(25, porte * 2)
+      && (this.state === CSTATE.WANDER || this.state === CSTATE.IDLE || this.state === CSTATE.EAT)) {
+      this._ruge = 20; // ~25 s (o pensar roda 4 vezes por segundo, -0,2 cada)
+      this.clipPlayer?.play('rugido');
+      this.roarT = 1.2;
+      sound.creature(this, 'rugido');
+    }
 
     // DORMIR À NOITE: herbívoros (e alguns carnívoros) deitam e dormem. Acordam de manhã, se
     // alguém chegar perto fazendo barulho (correndo acorda de longe, agachado quase não acorda)
@@ -1394,6 +1404,24 @@ export class Creature {
     this._animateCode(dt, ctx, yawVel);
     aplicarTraco(this, this.bones, this.time, this.anim, CSTATE);
     if (active) cp.apply();
+    this._caudaBalanca();
+  }
+
+  // Cauda balançando devagar de um lado para o outro (sem querer, como bicho de verdade):
+  // mais forte parado, menor correndo; cada pedaço da cauda atrasa um pouco (onda).
+  _caudaBalanca() {
+    if (!this.alive || this.state === CSTATE.KO || this.state === CSTATE.SLEEP) return;
+    const b = this.bones;
+    const corre = clamp(this.speed / Math.max(0.5, this.runSpeed ?? 4), 0, 1);
+    const amp = 0.09 * (1 - corre * 0.6);
+    const t = this.time * 0.9 + (this.phase ?? 0) * 6.28;
+    let k = 0;
+    for (const nome of ['tail1', 'tail2', 'tail3']) {
+      const osso = b[nome];
+      if (!osso) continue;
+      osso.rotateY(Math.sin(t - k * 0.7) * amp * (1 + k * 0.4));
+      k++;
+    }
   }
 
   _footfall(camDist, step) {
@@ -1405,10 +1433,11 @@ export class Creature {
     const z = this.pos.z - Math.sin(this.yaw) * w;
     const fx = new THREE.Vector3(x, this.world.heightAt(x, z) + 0.15, z);
     this.world.effects?.burst(fx, 'poeira', Math.min(10, Math.round(size / 2)), 1.6 + size * 0.05);
-    const near = Math.max(0, 1 - camDist / (12 + size * 2.5));
+    const near = Math.max(0, 1 - camDist / (16 + size * 3.5));
     if (near > 0) {
-      sound.play('pisada', fx, { volume: Math.min(1, size / 9) });
-      if (size >= 10) this.manager.localPlayer?.onImpact?.(Math.min(0.7, size / 35) * near);
+      // gigantes: passo pesado e alto, o chão treme perto deles
+      sound.play('pisada', fx, { volume: Math.min(1, size / 7) });
+      if (size >= 7) this.manager.localPlayer?.onImpact?.(Math.min(0.85, size / 24) * near);
     }
   }
 

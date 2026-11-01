@@ -51,7 +51,7 @@ export function sortearCor(rand) {
   const albino = r > 0.995;
   const ca = albino ? 36 : viva ? pega(VIVA) : pega(COSTAS);
   const cb = albino ? 36 : pega(BARRIGA);
-  return { a: hexDe(ca), b: hexDe(cb), k: +(viva || albino ? 0.85 : 0.6 + rand() * 0.25).toFixed(2), ids: [ca, cb] };
+  return { a: hexDe(ca), b: hexDe(cb), k: +(viva || albino ? 0.6 : 0.3 + rand() * 0.2).toFixed(2), ids: [ca, cb] };
 }
 
 /** Nome das cores do bicho (ex.: "Marrom-Escuro Dino / Amarelo-Claro Dino"), ou null. */

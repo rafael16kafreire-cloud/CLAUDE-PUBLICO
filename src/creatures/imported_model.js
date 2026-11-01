@@ -210,9 +210,15 @@ export function buildImportedModel(d, id) {
     if (tinta) paintVertices(g, d, tinta);
     const material = d.materiais.map((m, mi) => {
       // qualidade alta: luz "de verdade" (brilho e relevo mais bonitos)
+      const map = m.map ? texture(m.map, true) : null;
       const mat = hdTextures()
-        ? new THREE.MeshStandardMaterial({ map: m.map ? texture(m.map, true) : null, roughness: 0.82, metalness: 0 })
-        : new THREE.MeshLambertMaterial({ map: m.map ? texture(m.map, true) : null });
+        ? new THREE.MeshStandardMaterial({ map, roughness: 0.72, metalness: 0 })
+        : new THREE.MeshLambertMaterial({ map });
+      // relevo da pele a partir da própria textura (escamas, rugas e placas ficam marcadas na luz)
+      if (map && !m.normalMap) {
+        mat.bumpMap = map;
+        mat.bumpScale = hdTextures() ? 2.2 : 1.6;
+      }
       mat.color.setScalar((d.brilho ?? 1) * (tinta?.brilho ?? 1)); // textura muito escura: clareia
       if (tinta && (tinta.materiais ?? [mi]).includes(mi)) mat.vertexColors = true;
       if (m.normalMap) mat.normalMap = texture(m.normalMap, false);
