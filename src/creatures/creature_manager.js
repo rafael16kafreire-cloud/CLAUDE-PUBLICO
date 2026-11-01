@@ -104,6 +104,7 @@ export class CreatureManager {
     for (const c of this.list) {
       c.update(dt, ctx);
       if (c.dash) this._updateDash(c, dt);
+      if (c.species.sopro_fogo && c.alive && !c.netControlled) this._updateFireBreath(c, dt, players);
       // Sombra só para as que estão perto.
       const dCam = c.pos.distanceTo(camera.position);
       c.mesh.castShadow = dCam < 32;
@@ -384,7 +385,8 @@ export class CreatureManager {
           if (!agua || agua.id !== 'mar' || agua.level - w.heightAt(x, z) < 10) continue;
           nota = -Math.hypot(x, z); // o mar fundo mais perto da ilha
         } else {
-          if (w.biomeKeyAt(x, z) !== 'neve' || w.waterAt(x, z)) continue;
+          // os outros: um ponto seco do bioma do chefe (gelo na neve, dragão na serra)
+          if (w.biomeKeyAt(x, z) !== (SPECIES[id]?.biomas?.[0] ?? 'neve') || w.waterAt(x, z)) continue;
           nota = r();
         }
         if (w.allRespawnPoints?.some((q) => Math.hypot(q.position.x - x, q.position.z - z) < 150)) continue;
@@ -890,6 +892,53 @@ export class CreatureManager {
       const cfg = BALANCE.montaria.coleta[c.species.id];
       if (cfg?.modo) this.mountHarvest(c, D.rider, head, c.radius + 1.5, 2);
       else this._breakInPath(c, head);
+    }
+  }
+
+  // Sopro de fogo (Dragão do Vulcão): de tempos em tempos, quando alguém está
+  // perto e na frente, cospe fogo num cone; quem fica no fogo perde vida.
+  _updateFireBreath(c, dt, players) {
+    const F = c.species.sopro_fogo;
+    c._soproEspera = (c._soproEspera ?? F.espera_seg * 0.5) - dt;
+    const boca = new THREE.Vector3(c.pos.x - Math.sin(c.yaw) * c.bodyFront * c.scale, c.pos.y + c.height * 0.6, c.pos.z - Math.cos(c.yaw) * c.bodyFront * c.scale);
+    if (!c._sopro) {
+      if (c._soproEspera > 0) return;
+      const alvo = players.find((p) => !p.dead && p.position.distanceTo(boca) < F.alcance_m);
+      if (!alvo) return;
+      c._sopro = { t: F.dura_seg };
+      c._soproEspera = F.espera_seg;
+      c.attackAnim = 1;
+      sound.creature(c, 'rugido');
+      if (alvo === game.player) events.emit(EV.MESSAGE, { text: `${c.species.nome} vai cuspir fogo!`, kind: 'warn' });
+    }
+    c._sopro.t -= dt;
+    if (c._sopro.t <= 0) {
+      c._sopro = null;
+      return;
+    }
+    const fx = -Math.sin(c.yaw);
+    const fz = -Math.cos(c.yaw);
+    // labaredas ao longo do cone
+    for (let k = 0; k < 2; k++) {
+      const d = Math.random() * F.alcance_m;
+      const at = boca.clone().add(new THREE.Vector3(fx * d + (Math.random() - 0.5) * d * 0.4, -d * 0.12, fz * d + (Math.random() - 0.5) * d * 0.4));
+      this.world.effects?.burst(at, 'fogo', 3, 2.2);
+    }
+    for (const p of players) {
+      if (p.dead) continue;
+      const dx = p.position.x - boca.x;
+      const dz = p.position.z - boca.z;
+      const dist = Math.hypot(dx, dz);
+      if (dist > F.alcance_m || (dx * fx + dz * fz) / (dist || 1) < 0.8) continue;
+      p.stats?.damage?.(F.dano_seg * dt, `fogo:${c.species.nome}`);
+    }
+    // o fogo também queima bichos domados no caminho
+    for (const o of this.list) {
+      if (o === c || !o.alive || !o.tamed) continue;
+      const dx = o.pos.x - boca.x;
+      const dz = o.pos.z - boca.z;
+      const dist = Math.hypot(dx, dz);
+      if (dist < F.alcance_m && (dx * fx + dz * fz) / (dist || 1) > 0.8) o.takeDamage(F.dano_seg * dt, c);
     }
   }
 

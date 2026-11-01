@@ -105,6 +105,7 @@ export const FX_COLORS = {
   ouro: ['#ffd25a', '#ffe9a0', '#f0a830'],
   cristal: ['#c8f0ff', '#8ad0f0', '#f0faff'],
   obsidiana: ['#2a2034', '#4a3a5a', '#16101e'],
+  fogo: ['#ffb02e', '#ff6a1a', '#ffe08a', '#d8361a'],
 };
 // lascas: casca escura de um lado, madeira clara do outro
 const CHIP_COLORS = ['#c9a46e', '#b58b55', '#d8b884', '#8a6238', '#a77d4a'];
@@ -183,7 +184,7 @@ export class Effects {
       pt.v.set((Math.random() - 0.5) * power, Math.random() * power * 0.9 + 1, (Math.random() - 0.5) * power);
       pt.r.set(Math.random() * 6, Math.random() * 6, Math.random() * 6);
       pt.s = (kind === 'folha' ? 1.6 : kind === 'madeira' ? 0.5 : kind === 'poeira' ? 2.4 : 1) * (0.6 + Math.random() * 0.9);
-      pt.gravity = kind === 'folha' ? 2.5 : kind === 'fumaca' ? -0.6 : kind === 'poeira' ? 1.2 : kind === 'ouro' ? -1.5 : 9.8;
+      pt.gravity = kind === 'folha' ? 2.5 : kind === 'fumaca' ? -0.6 : kind === 'fogo' ? -2.5 : kind === 'poeira' ? 1.2 : kind === 'ouro' ? -1.5 : 9.8;
       this.mesh.setColorAt(i, this._c.set(colors[k % colors.length]));
     }
     this.mesh.instanceColor.needsUpdate = true;

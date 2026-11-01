@@ -793,3 +793,4 @@ MODELS.paraceraterio = { ...MODELS.mamute };
 MODELS.chefe_gelo = { ...MODELS.mamute };
 MODELS.chefe_mar = { ...MODELS.mosassauro };
 MODELS.chefe_pantano = { ...MODELS.deinosuchus };
+MODELS.chefe_vulcao = { ...MODELS.argentavis }; // dragão: voa e anda (molde de ave com patas e asas)

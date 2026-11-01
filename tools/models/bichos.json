@@ -928,6 +928,33 @@
     "copyright": "CC BY 4.0",
     "url": "https://sketchfab.com/3d-models/sarcosuchus-imperator-949509fcbf104ac983ec0d61b07121e7"
    }
+  },
+  "chefe_vulcao": {
+   "credito": {
+    "title": "European Dragon",
+    "author": "Regina Cachoa",
+    "copyright": "CC BY 4.0",
+    "url": "https://sketchfab.com/3d-models/european-dragon-82f393a2e6c048ad80c171ce3b3a7b87"
+   },
+   "triangulos": 12000,
+   "mapa": {
+    "hips": "DEF-Spine_02",
+    "chest": "DEF-Spine004_06",
+    "neck": "DEF-neck_08",
+    "head": "DEF-neck004_012",
+    "tail1": "DEF-tail_0151",
+    "asaE": "DEF-Wing_BaseL_081",
+    "asaE_punho": "DEF-Wing_Fold_1L_082",
+    "asaD": "DEF-Wing_BaseR_097",
+    "asaD_punho": "DEF-Wing_Fold_1R_098",
+    "pernaE": "DEF-thighL_0112",
+    "pernaE_joelho": "DEF-shinL_0114",
+    "pernaE_pe": "DEF-footL_0116",
+    "pernaD": "DEF-thighR_0132",
+    "pernaD_joelho": "DEF-shinR_0134",
+    "pernaD_pe": "DEF-footR_0136"
+   },
+   "repouso": 483
   }
  }
 }

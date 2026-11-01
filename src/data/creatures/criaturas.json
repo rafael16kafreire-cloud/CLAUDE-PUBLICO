@@ -1895,6 +1895,67 @@
     "torpor": 0
    },
    "chefe": true
+  },
+  {
+   "id": "chefe_vulcao",
+   "nome": "Dragão do Vulcão (chefe)",
+   "pousa": true,
+   "vel_chao": [2.6, 3.9],
+   "dieta": "carnivoro",
+   "temperamento": "agressivo",
+   "vida": 50000,
+   "dano": 180,
+   "vel_andar": 6.0,
+   "vel_correr": 7.3,
+   "tamanho": 1,
+   "raio": 1.2,
+   "altura": 1.8,
+   "biomas": ["serra"],
+   "peso_spawn": 0,
+   "grupo": [1, 1],
+   "xp": 3000,
+   "loot": {
+    "carne_crua": [40, 70],
+    "couro": [60, 90],
+    "ossos": [20, 30],
+    "lingote_metal": [40, 60],
+    "cristal": [25, 40],
+    "obsidiana": [30, 50],
+    "perola_silica": [15, 25],
+    "petroleo": [20, 40]
+   },
+   "pode_domar": false,
+   "comida_preferida": "carne_crua",
+   "voa": true,
+   "altura_voo": [10, 24],
+   "alcance_agro": 60,
+   "alcance_ataque": 2.4,
+   "intervalo_ataque": 1.6,
+   "pode_montar": false,
+   "carga": 400,
+   "atributos": {
+    "vida": [50000, 50000],
+    "forca": [100, 100],
+    "peso": [400, 400],
+    "stamina": [3000, 3000],
+    "velocidade": [100, 100],
+    "torpor": [12000, 12000]
+   },
+   "ark_por_nivel": {
+    "vida": 0,
+    "stamina": 0,
+    "peso": 0,
+    "forca": 0,
+    "torpor": 0
+   },
+   "chefe": true,
+   "sopro_fogo": {
+    "alcance_m": 28,
+    "dano_seg": 45,
+    "dura_seg": 2.5,
+    "espera_seg": 9
+   },
+   "comprimento_m": [16, 18]
   }
  ]
 }
