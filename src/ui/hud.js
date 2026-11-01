@@ -104,6 +104,7 @@ export class Hud {
           <div class="tm-state" data-ref="tstate">Inconsciente</div>
           <div class="tm-label" data-ref="ttame"></div>
           <div class="tm-bar"><i data-ref="ttamefill"></i></div>
+          <div class="tm-hint">[Ponha comida no inventário dele para domar]</div>
         </div>
         <div class="target-sub" data-ref="tsub"></div>
       </div>
@@ -198,7 +199,7 @@ export class Hud {
     R.thp.textContent = c.alive ? `${Math.ceil(c.health)}/${c.maxHealth}` : 'Abatido';
     const ratio = Math.max(0, c.health / c.maxHealth);
     R.tfill.style.transform = `scaleX(${ratio.toFixed(3)})`;
-    R.tsex.textContent = `Gênero: ${c.sex ?? '?'}${c.isBaby ? ` · ${c.stage}` : ''}`;
+    R.tsex.textContent = `Gênero: ${c.sex ?? '?'}${c.mateBoosted ? ' (Par por perto)' : ''}${c.isBaby ? ` · ${c.stage}` : ''}`;
     const taming = c.knockedOut && !c.tamed;
     R.tmeter.hidden = !taming;
     R.teff.hidden = !taming;

@@ -194,7 +194,9 @@ export default {
     // num atributo (+2 níveis) e às vezes muda uma cor. Para quando o casal soma 20.
     mutacao: 0.025,
     mutacao_limite: 20,
-    acasalar_seg: 60,          // casal com "Permitir cruzar" perto: tempo para acasalar
+    acasalar_seg: 60,
+    par_distancia_m: 20,       // "par por perto" (Mate Boost): macho e fêmea domados a até X m
+    par_resistencia: 0.33,     // com o par por perto leva 33% menos dano (como no ARK)          // casal com "Permitir cruzar" perto: tempo para acasalar
     cuidado_min: 2,            // filhote domado pede carinho a cada X min
     impressao_por_cuidado: 0.2, // cada carinho dá 20% de impressão
     bonus_impressao: 0.3,      // 100% de impressão = +30% de vida e dano

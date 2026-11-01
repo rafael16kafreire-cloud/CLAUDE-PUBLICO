@@ -1305,6 +1305,8 @@ export class Creature {
   takeDamage(amount, attacker) {
     if (this.state === CSTATE.SLEEP) this._setState(CSTATE.IDLE); // acorda com o golpe
     if (!this.alive) return;
+    // como no ARK: domado com um par da espécie perto (Mate Boost) leva menos dano
+    if (this.mateBoosted) amount *= 1 - BALANCE.cria.par_resistencia;
     if (this.netControlled) {
       // co-op (convidado): quem decide o dano é o anfitrião
       this.hurtAnim = 1;

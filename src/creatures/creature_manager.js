@@ -223,6 +223,11 @@ export class CreatureManager {
   // e cresce até virar adulto (creature.setGrowth).
   tryBreed(players) {
     const C = this.cfg;
+    // par por perto (Mate Boost do ARK): domado adulto com outro do sexo oposto da mesma espécie a até 20 m
+    for (const c of this.list) {
+      c.mateBoosted = c.tamed && c.alive && !c.isBaby && this.list.some((o) => o !== c && o.tamed && o.alive && !o.isBaby
+        && o.species.id === c.species.id && o.sex !== c.sex && o.pos.distanceTo(c.pos) < BALANCE.cria.par_distancia_m);
+    }
     const calm = (c) => c.alive && !c.isBaby && !c.species.ambiente && !c.netControlled && !c.neutered
       && (c.state === CSTATE.WANDER || c.state === CSTATE.IDLE || c.state === CSTATE.EAT)
       && c.age > (c.nextBreed ?? 0);
