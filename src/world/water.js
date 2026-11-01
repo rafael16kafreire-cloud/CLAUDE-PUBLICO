@@ -1,5 +1,5 @@
 // =============================================================
-// ÁGUA – mar (salgado) e pântano (doce, dá para beber)
+// ÁGUA – mar, pântano e córregos (toda a água do jogo dá para beber)
 // Cada "corpo d'água" sabe seu nível (altura da superfície) e se
 // é doce. A física (nadar) e o "beber" perguntam aqui.
 // =============================================================
@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import { BALANCE } from '../core/balance.js';
 import { makeWaterMaterial } from './materials.js';
 import { SUN_DIR } from './sky.js';
+import { PALETA_HEX, misturaHex } from '../core/paleta.js';
 
 export class WaterBody {
   constructor({ id, name, fresh, level, rect = null }) {
@@ -30,20 +31,22 @@ export class WaterSystem {
     const s = map.swamp;
 
     this.swamp = new WaterBody({ id: 'pantano', name: 'Pântano', fresh: true, level: s.level, rect: s.rect });
-    this.sea = new WaterBody({ id: 'mar', name: 'Mar', fresh: false, level: 0 });
+    this.sea = new WaterBody({ id: 'mar', name: 'Mar', fresh: true, level: 0 });
     this.bodies = [this.swamp, this.sea];
     this.sea.wave = BALANCE.agua.altura_onda_mar_m / 2;
     this.swamp.wave = BALANCE.agua.altura_onda_pantano_m / 2;
     // cor embaixo d'água: mar azul e mais limpo; pântano turvo
-    this.sea.under = { color: '#1d5a66', density: 0.055, rays: true };
-    this.swamp.under = { color: '#3a3a22', density: 0.28, rays: false };
+    this.sea.under = { color: misturaHex('agua', 'ceuNoite', 0.35), density: 0.055, rays: true };
+    this.swamp.under = { color: misturaHex('musgoEscuro', 'terraEscura', 0.5), density: 0.28, rays: false };
 
     // ----- Mar -----
     // duas malhas: perto da câmera bem dividida (ondas de verdade) e o
     // resto do mar simples; o shader corta cada uma no raio NEAR
     const NEAR = 300;
     const seaOpts = {
-      shallow: '#3fb0aa', deep: '#0e4766', sky: '#a9c9d6', sunDir: SUN_DIR, map, level: 0,
+      // >>> cores da água (paleta): raso puxa para o verde, fundo para o azul da noite
+      shallow: misturaHex('agua', 'folhaClara', 0.35), deep: misturaHex('agua', 'ceuNoite', 0.55), foam: PALETA_HEX.neve,
+      sky: misturaHex('pedraClara', 'agua', 0.35), zenith: misturaHex('pedra', 'agua', 0.4), sunDir: SUN_DIR, map, level: 0,
       opacityShallow: 0.25, opacityDeep: 0.9, deepAt: 7, waveHeight: BALANCE.agua.altura_onda_mar_m / 2, reflect: 0.6,
     };
     this.NEAR = NEAR;
@@ -60,7 +63,7 @@ export class WaterSystem {
     this.seaNear.frustumCulled = false;
     scene.add(this.seaNear);
 
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(6000, 6000), new THREE.MeshBasicMaterial({ color: '#1d3f48' }));
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(6000, 6000), new THREE.MeshBasicMaterial({ color: misturaHex('agua', 'ceuNoite', 0.5) }));
     floor.rotation.x = -Math.PI / 2;
     floor.position.y = -map.L.profundidade_mar_m - 1;
     floor.name = 'FundoDoMar';
@@ -68,7 +71,8 @@ export class WaterSystem {
 
     // ----- Pântano: água escura e parada, quase sem espuma -----
     const swampMat = makeWaterMaterial({
-      shallow: '#5b5634', deep: '#1f2b1a', foam: '#b8b394', sky: '#8e9c86', sunDir: SUN_DIR, map, level: s.level,
+      shallow: misturaHex('musgoEscuro', 'capimSeco', 0.3), deep: misturaHex('terraEscura', 'musgoEscuro', 0.4), foam: misturaHex('capimSeco', 'neve', 0.4),
+      sky: misturaHex('pedra', 'musgo', 0.35), sunDir: SUN_DIR, map, level: s.level,
       opacityShallow: 0.55, opacityDeep: 0.96, deepAt: 2.2, waveHeight: BALANCE.agua.altura_onda_pantano_m / 2, reflect: 0.45, foamAmount: 0.35,
     });
     const r = s.rect;
@@ -94,7 +98,7 @@ export class WaterSystem {
     const streams = map.streams ?? [];
     if (!streams.length) return;
     const mat = makeWaterMaterial({
-      shallow: '#5f9a86', deep: '#24504a', foam: '#e8efe6', sky: '#a9c6c0', sunDir: SUN_DIR, map, level: -1000,
+      shallow: misturaHex('agua', 'folhaClara', 0.45), deep: misturaHex('agua', 'musgoEscuro', 0.4), foam: PALETA_HEX.neve, sky: misturaHex('pedraClara', 'agua', 0.3), sunDir: SUN_DIR, map, level: -1000,
       opacityShallow: 0.45, opacityDeep: 0.85, deepAt: 1.2, waveHeight: 0, reflect: 0.5, foamAmount: 0.6,
     });
     const pos = [];
@@ -107,11 +111,11 @@ export class WaterSystem {
         const b = P[k + 1];
         const body = new WaterBody({ id: 'corrego', name: 'Córrego', fresh: true, level: (a.level + b.level) / 2 });
         body.wave = 0;
-        body.under = { color: '#3d6a5e', density: 0.18, rays: false };
+        body.under = { color: misturaHex('agua', 'musgo', 0.4), density: 0.18, rays: false };
         body.seg = { ax: a.x, az: a.z, bx: b.x, bz: b.z, r: st.halfW };
         this.streamSegs.push(body);
         // grade de 20 m para achar o trecho rápido
-        for (const p of [a, b]) {
+        for (const p of [a, b, { x: (a.x + b.x) / 2, z: (a.z + b.z) / 2 }]) {
           const key = `${Math.floor(p.x / 20)},${Math.floor(p.z / 20)}`;
           if (!this.streamGrid.has(key)) this.streamGrid.set(key, []);
           this.streamGrid.get(key).push(body);
@@ -172,10 +176,14 @@ export class WaterSystem {
 
   bodyAt(x, z) {
     const ground = this.map.heightAt(x, z);
+    // o córrego vem antes do mar: perto da foz o leito desce abaixo do nível do
+    // mar e o riacho aparecia como "água salgada" (a água do córrego fica acima do mar)
+    const stream = this._streamAt(x, z, ground);
+    if (stream) return stream;
     for (const b of this.bodies) {
       if (b.contains(x, z) && ground < b.level) return b;
     }
-    return this._streamAt(x, z, ground);
+    return null;
   }
 
   // A malha de perto anda com a câmera (em passos da grade, sem tremer).

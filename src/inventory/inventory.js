@@ -288,9 +288,11 @@ export class Inventory {
 
   fromJSON(d) {
     if (!d?.slots) return;
-    this.slots = d.slots.slice(0, this.slots.length).concat(new Array(Math.max(0, this.slots.length - d.slots.length)).fill(null));
+    // item que não existe mais no jogo (ex.: saves antigos com quitina) some em vez de dar erro
+    const existe = (s) => (s && ITEMS[s.id] ? s : null);
+    this.slots = d.slots.slice(0, this.slots.length).map(existe).concat(new Array(Math.max(0, this.slots.length - d.slots.length)).fill(null));
     this.selected = d.selected ?? -1;
-    for (const k of EQUIP_SLOTS) this.equip[k] = d.equip?.[k] ?? null;
+    for (const k of EQUIP_SLOTS) this.equip[k] = existe(d.equip?.[k] ?? null);
     this._changed();
   }
 }

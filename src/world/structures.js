@@ -8,18 +8,19 @@
 // update(dt) e toJSON() (para o co-op e para salvar).
 // =============================================================
 import * as THREE from 'three';
+import { PALETA, mistura } from '../core/paleta.js';
 import { BALANCE } from '../core/balance.js';
 import { events, EV } from '../core/event_bus.js';
 import { Inventory } from '../inventory/inventory.js';
 import creatureData from '../data/creatures/criaturas.json';
 
-const STONE_MAT = new THREE.MeshLambertMaterial({ color: '#7d7a72' });
-const LOG_MAT = new THREE.MeshLambertMaterial({ color: '#5a3e26' });
-const ASH_MAT = new THREE.MeshLambertMaterial({ color: '#2e2a26' });
-const FLAME_MAT = new THREE.MeshBasicMaterial({ color: '#ff9a30', transparent: true, opacity: 0.85, depthWrite: false, blending: THREE.AdditiveBlending, fog: false });
-const FLAME_CORE = new THREE.MeshBasicMaterial({ color: '#ffe27a', transparent: true, opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending, fog: false });
-const BAG_MAT = new THREE.MeshLambertMaterial({ color: '#6a7a4a' });
-const PILLOW_MAT = new THREE.MeshLambertMaterial({ color: '#c8b88a' });
+const STONE_MAT = new THREE.MeshLambertMaterial({ color: PALETA.pedra.clone() });
+const LOG_MAT = new THREE.MeshLambertMaterial({ color: PALETA.marrom.clone() });
+const ASH_MAT = new THREE.MeshLambertMaterial({ color: PALETA.terraEscura.clone() });
+const FLAME_MAT = new THREE.MeshBasicMaterial({ color: PALETA.solLaranja.clone(), transparent: true, opacity: 0.85, depthWrite: false, blending: THREE.AdditiveBlending, fog: false });
+const FLAME_CORE = new THREE.MeshBasicMaterial({ color: mistura('solLaranja', 'neve', 0.5), transparent: true, opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending, fog: false });
+const BAG_MAT = new THREE.MeshLambertMaterial({ color: PALETA.musgo.clone() });
+const PILLOW_MAT = new THREE.MeshLambertMaterial({ color: PALETA.areia.clone() });
 
 let nextId = 1;
 function mmss(sec) {
@@ -243,9 +244,9 @@ export class SleepingBag extends Structure {
 // Bancada de trabalho: perto dela liberam receitas melhores.
 // Interagir abre direto a tela de crafting.
 // ------------------------------------------------------------
-const PLANK_MAT = new THREE.MeshLambertMaterial({ color: '#8a6438' });
-const PLANK_DARK = new THREE.MeshLambertMaterial({ color: '#5e4226' });
-const TOOL_MAT = new THREE.MeshLambertMaterial({ color: '#6c6e74' });
+const PLANK_MAT = new THREE.MeshLambertMaterial({ color: PALETA.madeira.clone() });
+const PLANK_DARK = new THREE.MeshLambertMaterial({ color: PALETA.marrom.clone() });
+const TOOL_MAT = new THREE.MeshLambertMaterial({ color: PALETA.pedra.clone() });
 
 export class Workbench extends Structure {
   constructor(world, position, rotY, id) {
@@ -300,8 +301,8 @@ export class Workbench extends Structure {
 // ------------------------------------------------------------
 // Pilão: perto dele dá para fazer Narcótico. Interagir abre o Criar.
 // ------------------------------------------------------------
-const MORTAR_MAT = new THREE.MeshLambertMaterial({ color: '#8f8a80' });
-const MORTAR_DARK = new THREE.MeshLambertMaterial({ color: '#5f5b54' });
+const MORTAR_MAT = new THREE.MeshLambertMaterial({ color: PALETA.pedraClara.clone() });
+const MORTAR_DARK = new THREE.MeshLambertMaterial({ color: PALETA.pedra.clone() });
 
 export class Mortar extends Structure {
   constructor(world, position, rotY, id) {
@@ -336,7 +337,7 @@ export class Mortar extends Structure {
 // Forja: perto dela, Minério de Ferro vira Lingote de Metal (no Criar).
 // Fica com fogo aceso enquanto você está perto.
 // ------------------------------------------------------------
-const FORGE_MAT = new THREE.MeshLambertMaterial({ color: '#6a6460' });
+const FORGE_MAT = new THREE.MeshLambertMaterial({ color: PALETA.pedraEscura.clone() });
 
 export class Forge extends Structure {
   constructor(world, position, rotY, id) {

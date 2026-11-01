@@ -11,12 +11,15 @@
 import * as THREE from 'three';
 import { ClipPlayer } from './clip_player.js';
 import { PASSOS } from './gait_profiles.js';
+import { PASSO_CAL } from './passo_cal.js';
+import { aplicarTraco } from './tracos.js';
 import { angleDelta, clamp } from '../core/math.js';
 import { BALANCE } from '../core/balance.js';
 import { sound } from '../audio/audio.js';
 import { mulberry32 } from '../core/math.js';
 import { shakeAt } from '../world/materials.js';
-import { backSpot, buildSaddle, saddleFor } from './saddle.js';
+import { aplicarFeridas } from './wounds.js';
+import { ajustarSela, backSpot, buildSaddle, saddleFor } from './saddle.js';
 import { events, EV } from '../core/event_bus.js';
 
 // O que cada herbívoro come (tipos de vegetação). Bicho alto (pescoço
@@ -27,8 +30,10 @@ const FOOD_LOW = new Set(['arbusto', 'arbusto_mejo', 'arbusto_escura', 'arbusto_
 // baixo = Sauropelta (quadrúpede de perna curta), alto = Argentinossauro
 // (perna reta de coluna). Quem não está aqui anda com a curva simples.
 const GAIT_OF = {
-  anquilossauro: 'baixo', estegossauro: 'baixo', triceratops: 'baixo', parassauro: 'baixo', capivara: 'baixo',
+  anquilossauro: 'baixo', estegossauro: 'baixo', triceratops: 'baixo', parassauro: 'baixo',
   sauropelta: 'baixo', braquiossauro: 'alto', mamute: 'alto', argentinossauro: 'alto',
+  // modelos novos (quadrúpedes)
+  moschops: 'baixo', paquirrinossauro: 'baixo', kentrossauro: 'baixo', diplodoco: 'alto',
 };
 // valor da curva (n pontos por passo) na fase p (0..1), com interpolação
 function gaitAt(c, p) {
@@ -37,6 +42,35 @@ function gaitAt(c, p) {
   const i = Math.floor(f);
   return c[i] + (c[(i + 1) % n] - c[i]) * (f - i);
 }
+
+// ---------------------------------------------------------
+// PERNAS COM CINEMÁTICA INVERSA (pé preso no chão)
+// Cada perna é coxa -> joelho -> pé. Em vez de balançar a coxa por uma curva, o jogo diz ONDE o pé
+// tem que estar (no chão, parado, enquanto o corpo passa; depois no ar até o próximo apoio) e
+// calcula o giro da coxa e do joelho para chegar lá. As rotações são em torno de X, então a conta
+// é no plano (y, z) da perna: ângulo medido de +y para +z (girar em X soma o ângulo).
+// ---------------------------------------------------------
+const wrapPi = (a) => Math.atan2(Math.sin(a), Math.cos(a));
+function solvePerna(u1, u2, T, prev) {
+  const a = Math.hypot(u1[0], u1[1]);
+  const b = Math.hypot(u2[0], u2[1]);
+  const d = clamp(Math.hypot(T[0], T[1]), Math.abs(a - b) + 0.002, a + b - 0.002);
+  const b0 = Math.acos(clamp((d * d - a * a - b * b) / (2 * a * b), -1, 1));
+  const phi1 = Math.atan2(u1[1], u1[0]);
+  const phi2 = Math.atan2(u2[1], u2[0]);
+  const aimT = Math.atan2(T[1], T[0]);
+  let best = null;
+  for (const sg of [1, -1]) {
+    const beta = sg * b0;
+    const A1 = aimT - Math.atan2(b * Math.sin(beta), a + b * Math.cos(beta));
+    const t1 = wrapPi(A1 - phi1);
+    const t2 = wrapPi(beta - (phi2 - phi1));
+    const cost = Math.abs(t2 - prev[1]) + Math.abs(t1 - prev[0]) * 0.5; // fica no mesmo dobrado (não vira o joelho)
+    if (!best || cost < best.cost) best = { t1, t2, cost };
+  }
+  return best;
+}
+const easeSwing = (w) => w * w * (3 - 2 * w);
 
 const FOOD_HIGH = new Set(['arvore_agar', 'arvore_dossel', 'arvore_media', 'acai', 'sumauma', 'pinheiro_neve', 'pinheiro', 'arvore_folhosa', 'arvore_folhosa2']);
 
@@ -51,6 +85,7 @@ export const CSTATE = {
   DEAD: 'morto',
   KO: 'desmaiado',   // torpor no máximo: dá para domar
   FOLLOW: 'seguir',  // domado indo atrás do dono
+  SLEEP: 'dormir',   // de noite: deitado, dormindo (acorda de manhã, com barulho ou se apanhar)
 };
 
 const TAU = Math.PI * 2;
@@ -59,6 +94,24 @@ let nextId = 1;
 // Opções do menu do bicho domado
 export const FOLLOW_DIST = { curto: 0.5, medio: 1, longo: 2.2 };   // x distância de seguir
 export const TARGET_RANGE = { curto: 12, medio: 25, longo: 45 }; // m (agressivo)
+
+// Curvas do bote (at = 0..1 do começo ao fim do ataque). Recuo para pegar impulso (0..0.2),
+// golpe rápido acelerando (0.2..0.38, é aqui que o dano acontece) e volta macia (0.38..1).
+const easeOut3 = (u) => 1 - (1 - u) ** 3;
+const easeIn3 = (u) => u * u * u;
+const easeInOut = (u) => (u < 0.5 ? 2 * u * u : 1 - 2 * (1 - u) * (1 - u));
+const smooth = (u) => u * u * (3 - 2 * u);
+function atkLunge(at) { // positivo = recuo, negativo = para a frente
+  if (at < 0.2) return 0.25 * easeOut3(at / 0.2);
+  if (at < 0.45) return 0.25 - 0.95 * smooth((at - 0.2) / 0.25);
+  return -0.7 * (1 - easeInOut((at - 0.45) / 0.55));
+}
+function atkJaw(at) { // 0 fechada .. 1 aberta: abre no recuo e fecha de estalo no golpe
+  if (at < 0.2) return easeOut3(at / 0.2);
+  if (at < 0.33) return 1;
+  if (at < 0.46) return 1 - smooth((at - 0.33) / 0.13);
+  return 0;
+}
 
 export class Creature {
   constructor({ species, spec, mesh, bones, level, x, z, world, manager, rand }) {
@@ -105,12 +158,14 @@ export class Creature {
     this.yaw = rand() * TAU;
     this.speed = 0;
     this.state = CSTATE.WANDER;
+    this.sleepy = rand() < 0.35; // carnívoro: só uns 35% dormem de noite (os outros caçam no escuro)
     this.stateTime = 0;
     this.target = null;
     this.threat = null;
     this.goal = null;
     this.attackCooldown = 0;
     this.attackAnim = 0;
+    this._lunge = 0;
     this.hurtAnim = 0;
     this.blockedTime = 0;
     this.thinkTimer = rand() * 0.3;
@@ -223,7 +278,7 @@ export class Creature {
   // Onde o jogador senta (altura e quanto para a frente/trás, em metros).
   get seat() {
     const sp = backSpot(this);
-    return { y: (sp.y + (this.saddled ? 0.15 / this.adultScale : 0)) * this.scale, z: sp.z * this.scale };
+    return { y: (sp.y + (this.saddled ? (this._seatLift ?? 0.15 / this.adultScale) : 0)) * this.scale, z: sp.z * this.scale };
   }
 
   // Sela que serve neste bicho (pelo porte).
@@ -235,9 +290,16 @@ export class Creature {
   setSaddle(kind) {
     if (this._saddleMesh) this._saddleMesh.parent?.remove(this._saddleMesh);
     this._saddleMesh = null;
+    for (const o of this._sadExtras ?? []) o.parent?.remove(o); // cordas e cabresto
+    this._sadExtras = [];
+    this._sadAnchor = null;
     this.saddled = !!kind;
     this.saddleKind = kind || null;
-    if (kind) {
+    const embutida = this.mesh.userData.selaIdx;
+    if (embutida !== undefined) {
+      // a sela já faz parte do modelo: só liga ou desliga (não põe a sela genérica por cima)
+      this.mesh.material[embutida].visible = !!kind;
+    } else if (kind) {
       this.mesh.updateMatrixWorld(true);
       this._saddleMesh = buildSaddle(this, kind);
     }
@@ -409,7 +471,7 @@ export class Creature {
     this.time += dt;
     this.stateTime += dt;
     this.attackCooldown -= dt;
-    this.attackAnim = Math.max(0, this.attackAnim - dt * 2.2);
+    this.attackAnim = Math.max(0, this.attackAnim - dt * 1.7);
     this.hurtAnim = Math.max(0, this.hurtAnim - dt * 3);
     const prevYaw = this.yaw;
 
@@ -422,6 +484,7 @@ export class Creature {
     }
     // desmaiado: deita e come o que tiver no prato
     this.koAnim = clamp((this.koAnim ?? 0) + (this.state === CSTATE.KO ? dt * 1.5 : -dt * 1.2), 0, 1);
+    this.sleepAnim = clamp((this.sleepAnim ?? 0) + (this.state === CSTATE.SLEEP ? dt * 0.5 : -dt * 1.5), 0, 1);
     if (this.state === CSTATE.KO) {
       this._updateKO(dt);
       this._animate(dt, ctx, 0);
@@ -479,7 +542,7 @@ export class Creature {
       this._think(ctx);
     }
 
-    if (this.landed) this._updateLanded(dt);
+    if (this.landed && !this.rider) this._updateLanded(dt);
     if (this.rider) this._updateRidden(dt);
     else if (this.flies && !this.landed) this._updateFlying(dt, ctx);
     else this._updateGround(dt, ctx);
@@ -514,6 +577,27 @@ export class Creature {
     const temp = sp.temperamento;
     const dPlayer = player.dead ? Infinity : this._dist2D(player.position);
     const perceived = player.crouching ? dPlayer * 1.6 : dPlayer;
+
+    this._olhaJogador = dPlayer < 14 + this.radius && !player.dead ? player : null;
+
+    // DORMIR À NOITE: herbívoros (e alguns carnívoros) deitam e dormem. Acordam de manhã, se
+    // alguém chegar perto fazendo barulho (correndo acorda de longe, agachado quase não acorda)
+    // ou se apanharem (takeDamage). Carnívoros com fome continuam caçando.
+    const noite = !!ctx.world.sky?.isNight;
+    if (this.state === CSTATE.SLEEP) {
+      const ouve = player.running ? 16 : player.crouching ? 3 : 7;
+      if (!noite || dPlayer < ouve + this.radius) {
+        this._setState(CSTATE.IDLE);
+        this.idleFor = 1 + this.rand() * 2;
+      } else {
+        return;
+      }
+    } else if (noite && !sp.ambiente && !this.flies && !this.aquatic && !this.isBaby
+      && (this.state === CSTATE.IDLE || this.state === CSTATE.WANDER) && dPlayer > 20
+      && (sp.dieta !== 'carnivoro' || this.sleepy) && this.rand() < 0.04) {
+      this._setState(CSTATE.SLEEP);
+      return;
+    }
 
     if (this.state === CSTATE.FLEE) {
       if (this.stateTime > 9 || (this.threat && this._dist2D(this.threat.position) > 45)) this._setState(CSTATE.WANDER);
@@ -574,7 +658,7 @@ export class Creature {
         this.goal = new THREE.Vector2(c.pos.x, c.pos.z);
       }
     }
-    if (temp === 'agressivo' && hungry && !sp.ambiente && (this.state === CSTATE.WANDER || this.state === CSTATE.IDLE)
+    if (temp === 'agressivo' && sp.dieta === 'carnivoro' && hungry && !sp.ambiente && (this.state === CSTATE.WANDER || this.state === CSTATE.IDLE)
       && this.rand() < BALANCE.brigas.chance_caca_seg * 0.25) {
       const prey = this.manager.findPrey(this, ctx);
       if (prey) {
@@ -645,6 +729,14 @@ export class Creature {
   // Montado: quem anda é o jogador (rideInput vem do Player).
   _updateRidden(dt) {
     const inp = this.rideInput ?? { x: 0, z: 0, mag: 0, run: false };
+    // voadores: no ar o jogador pilota (pular sobe, agachar desce); no chão anda como bicho de terra
+    if (this.flies) {
+      if (this.landed && inp.up) this._takeOff();
+      if (!this.landed) {
+        this._updateRiddenFlying(dt, inp);
+        return;
+      }
+    }
     if (inp.mag > 0.05) {
       const speed = (inp.run ? this.runSpeed : this.walkSpeed * 1.4) * inp.mag;
       this._steer(dt, this.pos.x + inp.x * 20, this.pos.z + inp.z * 20, speed);
@@ -653,6 +745,28 @@ export class Creature {
     }
     const g = this._groundY(this.pos.x, this.pos.z);
     this.pos.y += (g - this.pos.y) * Math.min(1, dt * 10);
+  }
+
+  // Voando com o jogador nas costas.
+  _updateRiddenFlying(dt, inp) {
+    const prevYaw = this.yaw;
+    const ground = Math.max(0, this.world.heightAt(this.pos.x, this.pos.z));
+    const speed = inp.run ? this.runSpeed : this.walkSpeed;
+    if (inp.mag > 0.05) this._steer(dt, this.pos.x + inp.x * 30, this.pos.z + inp.z * 30, speed * Math.max(0.45, inp.mag), true);
+    else this._brake(dt);
+    const vy = inp.up ? 9 : inp.down ? -9 : 0;
+    this.climb += (vy - this.climb) * Math.min(1, dt * 3);
+    this.pos.y = Math.min(ground + 160, this.pos.y + this.climb * dt);
+    const stand = ground + this.standHeight;
+    if (this.pos.y < ground + 1.2) this.pos.y = ground + 1.2;
+    // desceu até o chão: pousa (e anda no chão)
+    if (inp.down && this.pos.y - stand < 0.8 && this.species.pousa) {
+      this._land();
+      return;
+    }
+    const turning = angleDelta(prevYaw, this.yaw) / Math.max(dt, 1e-3);
+    this.roll += (clamp(-turning * 0.6, -0.7, 0.7) - this.roll) * Math.min(1, dt * 2);
+    this.pitch += (clamp(this.climb * 0.07, -0.45, 0.35) - this.pitch) * Math.min(1, dt * 2);
   }
 
   // Dá para alcançar? (bichos da água só pegam quem está na água/beira)
@@ -714,6 +828,8 @@ export class Creature {
     if (this.state !== CSTATE.CHASE && this.state !== CSTATE.ATTACK) {
       this._setState(CSTATE.CHASE);
       if (this.species.temperamento === 'agressivo' || this.species.revida) sound.creature(this, 'rugido');
+      // bicho grande avisa antes de investir: para, levanta a cabeça e ruge (dá tempo de reagir)
+      if (this.species.temperamento === 'agressivo' && !(target instanceof Creature) && this.radius >= 0.9 && !this.tamed) this.roarT = clamp(0.5 + this.radius * 0.4, 0.8, 1.6);
       // a presa percebe quem vem atrás dela: briga ou foge
       if (target instanceof Creature && target.alive && !target.netControlled) target._noticeAttacker(this);
     }
@@ -764,6 +880,9 @@ export class Creature {
         }
         break;
       }
+      case CSTATE.SLEEP:
+        this._brake(dt);
+        break;
       case CSTATE.IDLE:
       case CSTATE.EAT:
         this._brake(dt);
@@ -812,6 +931,13 @@ export class Creature {
       case CSTATE.CHASE: {
         const t = this.target;
         if (!t) break;
+        if ((this.roarT ?? 0) > 0) {
+          // ruge no lugar, de frente para o alvo, antes de correr
+          this.roarT -= dt;
+          this._brake(dt);
+          this._face(dt, t.position.x, t.position.z);
+          break;
+        }
         if (this._dist2D(t.position) < this._reach(t)) {
           this._setState(CSTATE.ATTACK);
           break;
@@ -832,6 +958,16 @@ export class Creature {
         if (!t) break;
         this._brake(dt);
         this._face(dt, t.position.x, t.position.z);
+        // no golpe o corpo dá um passo à frente (e volta a ficar parado): o bote ganha peso
+        const atp = 1 - this.attackAnim;
+        if (this.attackAnim > 0 && atp > 0.2 && atp < 0.45) {
+          const gap = this._dist2D(t.position) - this.radius * 0.9;
+          if (gap > 0) {
+            const step = Math.min(gap, this.radius * 2.2 * dt);
+            this.pos.x -= Math.sin(this.yaw) * step;
+            this.pos.z -= Math.cos(this.yaw) * step;
+          }
+        }
         if (this._dist2D(t.position) > this._reach(t) * 1.35) {
           this._setState(CSTATE.CHASE);
           break;
@@ -854,20 +990,23 @@ export class Creature {
       }
     }
 
-    const g = this._groundY(this.pos.x, this.pos.z);
-    this.pos.y += (g - this.pos.y) * Math.min(1, dt * 10);
+    let g = this._groundY(this.pos.x, this.pos.z);
 
-    // Inclina o corpo acompanhando o terreno.
+    // Inclina o corpo acompanhando o terreno. Mede o chão na frente e atrás
+    // (pelo comprimento do corpo) e deixa as pontas tocarem o chão: em cima
+    // de morro o bicho desce em vez de ficar flutuando com o corpo empinado.
     if (this.spec.body !== 'biped' && !this.aquatic) {
-      const len = Math.max(1, this.radius * 2.2);
+      const len = Math.max(1.6, this.radius * 2.8);
       const fx = -Math.sin(this.yaw);
       const fz = -Math.cos(this.yaw);
       const hf = this.world.heightAt(this.pos.x + fx * len * 0.5, this.pos.z + fz * len * 0.5);
       const hb = this.world.heightAt(this.pos.x - fx * len * 0.5, this.pos.z - fz * len * 0.5);
       const inWater = this.swims && this.world.waterAt(this.pos.x, this.pos.z);
-      const target = inWater ? 0 : clamp(Math.atan2(hf - hb, len), -0.5, 0.5);
+      const target = inWater ? 0 : clamp(Math.atan2(hf - hb, len), -0.3, 0.3);
       this.pitch += (target - this.pitch) * Math.min(1, dt * 4);
+      if (!inWater && !this.landed) g = Math.min(g, (hf + hb) * 0.5);
     }
+    this.pos.y += (g - this.pos.y) * Math.min(1, dt * 10);
   }
 
   // Voadores: planam em círculos; os caçadores mergulham para atacar.
@@ -1106,6 +1245,7 @@ export class Creature {
   // Dano e morte
   // ---------------------------------------------------------
   takeDamage(amount, attacker) {
+    if (this.state === CSTATE.SLEEP) this._setState(CSTATE.IDLE); // acorda com o golpe
     if (!this.alive) return;
     if (this.netControlled) {
       // co-op (convidado): quem decide o dano é o anfitrião
@@ -1115,6 +1255,7 @@ export class Creature {
     }
     this.health -= amount;
     this.hurtAnim = 1;
+    if (this.maxHealth > 0) aplicarFeridas(this, 1 - Math.max(0, this.health) / this.maxHealth);
     // apanhar desmaiado estraga a doma (efetividade cai)
     if (this.state === CSTATE.KO && !this.tamed) this.tameEff = Math.max(0, (this.tameEff ?? 1) - (amount / this.maxHealth) * BALANCE.domar.efetividade_por_dano);
     // número do dano flutuando (só o que o jogador daqui fez)
@@ -1149,6 +1290,8 @@ export class Creature {
     const cp = this.clipPlayer;
     if (!cp) {
       this._animateCode(dt, ctx, yawVel);
+      // jeito próprio de cada espécie (dodô bica, onça se agacha, triceratops investe...)
+      aplicarTraco(this, this.bones, this.time, this.anim, CSTATE);
       return;
     }
     // bicho com animação do próprio modelo: escolhe o clipe pelo que ele
@@ -1165,7 +1308,8 @@ export class Creature {
     let want = null;
     let rate = 1;
     const inWater = this.swims && !this.aquatic && !!this.world.waterAt(this.pos.x, this.pos.z);
-    if (!down && !inWater) {
+    const agindo = this.attackAnim > 0.05 || (this.roarT ?? 0) > 0; // mordendo ou rugindo: o clipe parado não pode apagar isso
+    if (!down && !inWater && !agindo) {
       if (this.flies && !this.landed) {
         want = 'voar';
         rate = this.climb > 0.5 || this.state === CSTATE.FLEE ? 1.4 : 1;
@@ -1174,17 +1318,21 @@ export class Creature {
         const c = cp.clips.andar;
         want = 'andar';
         rate = c.stride ? Math.min(3, (this.speed / (c.stride * this.scale)) * (c.duration / c.cycles)) : 1;
+        // calibragem medida do pé no chão (1 = parado): corrige o ritmo do clipe
+        const pc = PASSO_CAL[this.species.id];
+        if (pc) rate = Math.min(8, rate * Math.pow(clamp(1 / Math.max(0.1, pc.walk + (pc.run - pc.walk) * this.anim.run), 0.4, 6), 0.75));
       } else if (this.speed <= 0.15) want = 'parado';
     }
     const active = cp.update(dt, want, rate);
     if (active) cp.reset();
     this._animateCode(dt, ctx, yawVel);
+    aplicarTraco(this, this.bones, this.time, this.anim, CSTATE);
     if (active) cp.apply();
   }
 
   _footfall(camDist, step) {
     const size = (this.bodyFront + this.bodyBack) * this.scale;
-    if (size < 7) return;
+    if (size < 3.5) return;
     const side = step % 2 ? 1 : -1;
     const w = this.radius * 0.5 * side;
     const x = this.pos.x + Math.cos(this.yaw) * w;
@@ -1193,9 +1341,33 @@ export class Creature {
     this.world.effects?.burst(fx, 'poeira', Math.min(10, Math.round(size / 2)), 1.6 + size * 0.05);
     const near = Math.max(0, 1 - camDist / (12 + size * 2.5));
     if (near > 0) {
-      sound.play('pisada', fx, { volume: Math.min(1, size / 16) });
+      sound.play('pisada', fx, { volume: Math.min(1, size / 9) });
       if (size >= 10) this.manager.localPlayer?.onImpact?.(Math.min(0.7, size / 35) * near);
     }
+  }
+
+  // Monta os dados das pernas com IK: comprimento e posição de descanso de cada osso (medidos nos ossos de verdade).
+  _buildIK() {
+    const spec = this.spec;
+    if (!['quad', 'biped', 'croc'].includes(spec.body) || this.flies || this.aquatic) return null;
+    const legs = [];
+    const byName = {};
+    for (const leg of spec.legs ?? []) {
+      if (leg.name.startsWith('braco')) continue;
+      const thigh = this.bones[leg.name];
+      const knee = this.bones[`${leg.name}_joelho`];
+      const foot = this.bones[`${leg.name}_pe`];
+      if (!thigh || !knee || !foot) continue;
+      const u1 = [knee.position.y, knee.position.z];
+      const u2 = [foot.position.y, foot.position.z];
+      if (Math.hypot(...u1) < 1e-3 || Math.hypot(...u2) < 1e-3) continue;
+      const lk = { name: leg.name, u1, u2, R0y: u1[0] + u2[0], R0z: u1[1] + u2[1], offS: 0, liftS: 0, prev: [0, 0] };
+      legs.push(lk);
+      byName[leg.name] = lk;
+    }
+    if (!legs.length) return null;
+    const reach = legs.reduce((m, l) => m + Math.hypot(...l.u1) + Math.hypot(...l.u2), 0) / legs.length;
+    return { legs, byName, reach, bob: 0 };
   }
 
   _animateCode(dt, ctx, yawVel) {
@@ -1216,10 +1388,34 @@ export class Creature {
     const legLen = Math.max(0.25, this.height * 0.45);
     // passo de verdade: andando a perna abre ~0,35 rad, correndo até ~0,7;
     // o ritmo segue o tamanho do passo (o pé não escorrega no chão)
-    const moving = clamp(this.speed / Math.max(0.15, this.walkSpeed * 0.4), 0, 1);
-    const amp = moving * (0.34 + 0.36 * A.run);
-    const stride = spec.body === 'spider' ? legLen * 1.4 : Math.max(0.3, 4 * legLen * Math.sin(Math.max(0.2, amp)) * 0.85);
-    this.phase += (adt * this.speed) / stride;
+    // virando parado: o bicho dá passinhos no lugar em vez de girar com as patas congeladas
+    const turnStep = this.speed < 0.3 && !dead ? Math.abs(A.turn) * Math.max(0.5, this.radius) * 0.9 : 0;
+    const spd = Math.max(this.speed, turnStep);
+    const moving = clamp(spd / Math.max(0.15, this.walkSpeed * 0.4), 0, 1);
+    // calibragem medida: o pé varre o chão X vezes mais rápido que o corpo (X = r). Corrige o tamanho do passo
+    // (ampK) e o ritmo (freqK) em partes iguais para o pé ficar parado no chão (r = 1).
+    const cal = PASSO_CAL[this.species.id];
+    let ampK = 1;
+    let freqK = 1;
+    if (cal && !this.flies && !this.aquatic) {
+      const r = Math.max(0.1, cal.walk + (cal.run - cal.walk) * A.run);
+      const want = 1 / r;
+      ampK = clamp(Math.sqrt(want), 0.6, 2);
+      freqK = clamp(want / ampK, 0.45, 2.5);
+    }
+    if (this._ik === undefined) this._ik = this._buildIK();
+    const ik = this._ik && !dead ? this._ik : null;
+    const amp = moving * (0.34 + 0.36 * A.run) * (ik ? 1 : ampK);
+    let stride = (spec.body === 'spider' ? legLen * 1.4 : Math.max(0.3, 4 * legLen * Math.sin(Math.max(0.2, amp / ampK)) * 0.85)) / freqK;
+    // pernas com IK: o passo varre uma fração do alcance da perna; o pé fica parado no chão pelo tempo do apoio
+    let ikS = 0;
+    let ikDuty = 0.64;
+    if (ik) {
+      ikDuty = 0.66 - 0.26 * A.run;
+      ikS = ik.reach * (0.5 + 0.38 * A.run);
+      stride = (ikS * this.scale) / ikDuty; // distância que o corpo anda em um ciclo completo da perna
+    }
+    this.phase += (adt * spd) / stride;
     // pisada dos gigantes: poeira, barulho surdo e o chão treme
     const step = Math.floor(this.phase * 2);
     if (step !== this._lastStep) {
@@ -1311,6 +1507,12 @@ export class Creature {
     }
 
     // ---------- pernas ----------
+    if (ik) {
+      // o mesmo balanço vertical do corpo que o bloco "corpo" aplica abaixo (para o pé compensar e não sair do chão)
+      const bobY = Math.abs(Math.sin(this.phase * TAU)) * amp * legLen * 0.09;
+      const breatheY = Math.sin(t * 1.6) * 0.012 * legLen * (1 - A.run);
+      ik.bob = (bobY + breatheY) / this.scale;
+    }
     const inWater = this.swims && !!this.world.waterAt(this.pos.x, this.pos.z) && this.pos.y < this.world.waterAt(this.pos.x, this.pos.z).level - 0.2;
     for (const leg of spec.legs ?? []) {
       const thigh = b[leg.name];
@@ -1335,11 +1537,37 @@ export class Creature {
         thigh.rotation.x = 0.3 + Math.sin((this.phase + leg.phase) * TAU) * amp * 0.3 + reach;
         continue;
       }
+      // pé preso no chão (cinemática inversa)
+      const lk = ik?.byName[leg.name];
+      if (ik && lk) {
+        const u = (((this.phase + leg.phase) % 1) + 1) % 1;
+        let off;
+        let lift = 0;
+        if (u < ikDuty) off = -ikS / 2 + ikS * (u / ikDuty); // apoio: o pé fica parado e o corpo passa
+        else {
+          const w = (u - ikDuty) / (1 - ikDuty); // balanço: o pé volta ao ponto de apoio
+          off = ikS / 2 - ikS * easeSwing(w);
+          lift = Math.sin(w * Math.PI) * ik.reach * (0.14 + 0.1 * A.run);
+        }
+        // parado (ou quase): os pés voltam à posição de descanso
+        const wv = clamp(spd / 0.3, 0, 1);
+        lk.offS += (off * wv - lk.offS) * (wv < 1 ? Math.min(1, adt * 10) : 1);
+        lk.liftS += (lift * wv - lk.liftS) * (wv < 1 ? Math.min(1, adt * 10) : 1);
+        // o corpo sobe e desce (bob): o pé continua no chão, então o alvo desce junto, no referencial do osso pai
+        const T = [lk.R0y - ik.bob + lk.liftS, lk.R0z + lk.offS];
+        const sol = solvePerna(lk.u1, lk.u2, T, lk.prev);
+        lk.prev[0] = sol.t1;
+        lk.prev[1] = sol.t2;
+        thigh.rotation.x = sol.t1;
+        knee.rotation.x = sol.t2;
+        foot.rotation.x = -(sol.t1 + sol.t2); // pé sempre paralelo ao chão
+        continue;
+      }
       // curva de verdade (se o bicho tiver um jeito de andar)
       const gait = PASSOS[GAIT_OF[this.species.id]]?.pernas[leg.name.slice(0, -1)];
       if (gait && spec.body === 'quad') {
         const p = this.phase + gait.atraso + (leg.name.endsWith('D') ? gait.atraso_D : 0);
-        const g = moving * (1 + A.run * 0.8);
+        const g = moving * (1 + A.run * 0.8) * ampK;
         thigh.rotation.x = gaitAt(gait.coxa, p) * g;
         if (knee && gait.joelho) knee.rotation.x = gaitAt(gait.joelho, p) * g;
         if (foot && gait.pe) foot.rotation.x = gaitAt(gait.pe, p) * g;
@@ -1366,12 +1594,13 @@ export class Creature {
       const breathe = Math.sin(t * 1.6) * 0.012 * legLen * (1 - A.run);
       b.hips.position.y = rest.y + (bob + breathe) / this.scale;
       // balanço lateral de quem anda em 2 pernas + inclinação nas curvas
-      const sway = spec.body === 'biped' ? Math.sin(this.phase * TAU) * amp * 0.06 : 0;
+      const sway = Math.sin(this.phase * TAU) * amp * (spec.body === 'biped' ? 0.06 : spec.body === 'quad' ? 0.035 : 0.02);
       b.hips.rotation.z = sway - A.turn * 0.08 + this.hurtAnim * 0.15;
       // correndo, o corpo inclina para frente
-      b.hips.rotation.x = -A.run * 0.06 * (spec.body === 'biped' ? 1 : 0.4) + (dead ? 0 : 0);
+      b.hips.rotation.x = -A.run * 0.06 * (spec.body === 'biped' ? 1 : 0.4) + (dead ? 0 : Math.sin(this.phase * TAU * 2) * amp * 0.02); // cabeceio do passo
     }
     if (b.chest) b.chest.rotation.y = A.turn * 0.12;
+    if (b.chest && (this.roarT ?? 0) > 0) b.chest.rotation.x -= Math.min(1, this.roarT * 3, (1.6 - this.roarT) * 6) * 0.14; // peito para cima ao rugir
 
     // ---------- cauda (segue as curvas com atraso) ----------
     const tailIdle = inWater ? 0.35 : 0.09 * (1 - A.run * 0.6);
@@ -1397,10 +1626,20 @@ export class Creature {
       const dz = tgt.position.z - this.pos.z;
       wantYaw = clamp(angleDelta(this.yaw, Math.atan2(-dx, -dz)), -0.8, 0.8);
       wantPitch = clamp(((tgt.position.y + 1) - (this.pos.y + this.height)) / (Math.hypot(dx, dz) + 1), -0.4, 0.4);
+    } else if (this._olhaJogador && !dead && this.state !== CSTATE.SLEEP) {
+      // jogador perto: vira a cabeça para olhar (curiosidade/atenção)
+      const p = this._olhaJogador;
+      const dx = p.position.x - this.pos.x;
+      const dz = p.position.z - this.pos.z;
+      wantYaw = clamp(angleDelta(this.yaw, Math.atan2(-dx, -dz)), -0.9, 0.9);
+      wantPitch = clamp(((p.position.y + 1.2) - (this.pos.y + this.height)) / (Math.hypot(dx, dz) + 1), -0.35, 0.35);
     } else if (this.state === CSTATE.IDLE) {
       wantYaw = Math.sin(t * 0.5 + this.id) * 0.5;
       wantPitch = Math.sin(t * 0.3 + this.id * 2) * 0.12;
     }
+    // crocodilo deitado: cabeça sempre baixa, perto do chão (nunca levantada)
+    const croc = spec.body === 'croc' && !dead;
+    if (croc && !tgt) wantPitch = Math.min(wantPitch, 0) - 0.05;
     A.headYaw += (wantYaw - A.headYaw) * k(3);
     A.headPitch += (wantPitch - A.headPitch) * k(3);
     const eating = this.state === CSTATE.EAT;
@@ -1410,21 +1649,24 @@ export class Creature {
     A.neck += (neckDown - A.neck) * k(3);
     // bote: recua (0..0.3) e avança (0.3..0.7)
     const at = 1 - this.attackAnim;
-    const lunge = this.attackAnim > 0 ? (at < 0.3 ? at / 0.3 * 0.25 : -Math.sin(((at - 0.3) / 0.7) * Math.PI) * 0.6) : 0;
+    // (o corpo acompanha o bote sem tranco, mesmo com poucos quadros por segundo)
+    this._lunge += ((this.attackAnim > 0 ? atkLunge(at) : 0) - this._lunge) * Math.min(1, adt * 26);
+    const lunge = this._lunge;
+    const roar = (this.roarT ?? 0) > 0 ? Math.min(1, this.roarT * 3, (1.6 - this.roarT) * 6) : 0; // rugido: sobe rápido, segura, desce
     if (b.neck) {
       // cabeça sobe e desce um pouco a cada passo
       const nod = Math.sin(this.phase * TAU * 2) * amp * 0.08;
-      b.neck.rotation.x = dead ? -0.35 : A.neck + lunge + A.headPitch * 0.5 + this.hurtAnim * 0.25 + nod;
+      b.neck.rotation.x = dead ? -0.35 : A.neck + lunge + A.headPitch * 0.5 + this.hurtAnim * 0.25 + nod - (croc ? 0.16 : 0) - roar * 0.55;
       b.neck.rotation.y = A.headYaw * 0.5;
     }
     if (b.neck2) b.neck2.rotation.x = eating ? -0.35 : A.headPitch * 0.3;
     if (b.head) {
       // mastigando: a cabeça puxa e solta
-      b.head.rotation.x = eating ? -0.3 + Math.sin(t * 5.5) * 0.12 : A.headPitch * 0.5 + lunge * 0.4;
+      b.head.rotation.x = eating ? -0.3 + Math.sin(t * 5.5) * 0.12 : A.headPitch * 0.5 + lunge * 0.4 - (croc ? 0.1 : 0) - roar * 0.3;
       b.head.rotation.y = A.headYaw * 0.5;
     }
     if (b.jaw && eating) b.jaw.rotation.x = -Math.max(0, Math.sin(t * 5.5)) * 0.3;
-    else if (b.jaw) b.jaw.rotation.x = this.attackAnim > 0 ? -Math.sin(at * Math.PI) * 0.65 : -0.03 - Math.max(0, Math.sin(t * 0.7)) * 0.05;
+    else if (b.jaw) b.jaw.rotation.x = this.attackAnim > 0 ? -atkJaw(at) * 0.65 : 0.02 - roar * 0.6; // parado: boca fechada (só abre ao comer, rugir ou atacar)
     if (b.hips) b.hips.position.z = (b.hips.userData.rest.z) - lunge * 0.15 * legLen / this.scale;
   }
 
@@ -1463,7 +1705,7 @@ export class Creature {
 
   _netUpdate(dt, ctx) {
     this.time += dt;
-    this.attackAnim = Math.max(0, this.attackAnim - dt * 2.2);
+    this.attackAnim = Math.max(0, this.attackAnim - dt * 1.7);
     this.hurtAnim = Math.max(0, this.hurtAnim - dt * 3);
     this.netSeen = (this.netSeen ?? 0) + dt;
     const prevYaw = this.yaw;
@@ -1486,6 +1728,7 @@ export class Creature {
   // Copia posição e rotação para a malha 3D.
   _sync(dt) {
     const m = this.mesh;
+    if (this._saddleMesh) ajustarSela(this); // a sela acompanha o corpo (animações levantam e abaixam o dorso)
     if (this.state === CSTATE.DEAD) {
       // tomba de lado aos poucos (cobras e jacarés ficam de barriga para cima)
       const k = Math.min(1, this.deadTime * 1.6);
@@ -1510,6 +1753,15 @@ export class Creature {
       m.rotation.set(this.pitch, this.yaw, this.roll + side * ko * ko * (3 - 2 * ko), 'YXZ');
       return;
     }
-    m.rotation.set(this.pitch + this._standUp, this.yaw, this.roll, 'YXZ');
+    const zz = this.sleepAnim ?? 0;
+    if (zz > 0) {
+      // dormindo: deita de lado devagar (um pouco menos que desmaiado) e respira fundo
+      const side = ['snake', 'croc', 'fish', 'spider'].includes(this.spec.body) ? 0 : Math.PI * 0.4;
+      const e = zz * zz * (3 - 2 * zz);
+      m.rotation.set(this.pitch, this.yaw, this.roll + side * e + Math.sin(performance.now() * 0.0012 + this.id) * 0.015 * e, 'YXZ');
+      m.position.y -= this.height * 0.12 * e;
+      return;
+    }
+    m.rotation.set(this.pitch + this._standUp + this._lunge * 0.1, this.yaw, this.roll, 'YXZ');
   }
 }

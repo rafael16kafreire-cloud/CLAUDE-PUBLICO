@@ -11,7 +11,7 @@ export default {
   // ---------------------------------------------------------
   jogador: {
     vida_max: 100,
-    stamina_max: 200,    // (dobrada na v0.7)
+    stamina_max: 100,    // igual ao ARK (nível 1)
     fome_max: 100,       // barra de comida (cheia = sem fome)
     sede_max: 100,       // barra de água (cheia = sem sede)
     folego_max: 100,     // ar embaixo d'água
@@ -32,6 +32,7 @@ export default {
     regen_limite: 0.5,         // só regenera com fome E sede acima de 50%
     gole_agua: 12,             // quanto de sede cada "beber" recupera
     satisfeito: 0.6,           // só bebe se faltar pelo menos 60% de um gole
+    cura_por_fome: 0.5,        // comer recupera vida: metade da fome que o alimento dá (carne assada tem o seu valor próprio)
     vida_comer_cheio: 0.8,     // com a fome 100% só come se a vida estiver abaixo de 80%
   },
 
@@ -39,13 +40,16 @@ export default {
   // Stamina (energia para correr, pular e nadar)
   // ---------------------------------------------------------
   stamina: {
-    gasto_correr_seg: 9,       // por segundo correndo
-    gasto_pulo: 8,             // por pulo
-    gasto_nado_seg: 2.5,       // por segundo nadando
+    gasto_correr_seg: 6.7,     // por segundo correndo (100 de stamina = ~15 s). Andar não gasta nada
+    gasto_pulo: 10,            // por pulo (10 pulos)
+    gasto_nado_seg: 5,         // por segundo nadando (20 s)
     gasto_nado_rapido_seg: 8,  // por segundo nadando rápido
-    regen_seg: 28,             // recuperação por segundo (parado ou andando)
+    gasto_golpe_ferramenta: 6, // por golpe de ferramenta (coleta); o soco gasta 4 (combate.soco_stamina)
+    regen_parado_seg: 10,      // recuperação por segundo parado (enche em 10 s)
+    regen_andando_seg: 5,      // recuperação por segundo andando
     regen_na_agua: 0.3,        // boiando parado recupera só 30% disso
-    espera_regen_seg: 1.0,     // espera antes de começar a recuperar
+    espera_regen_seg: 1.5,     // espera antes de começar a recuperar
+    exausto_volta_em: 20,      // ao zerar, fica exausto (sem correr nem pular) até voltar a este valor
   },
 
   // ---------------------------------------------------------
@@ -68,7 +72,10 @@ export default {
     na_agua_rasa: 0.7,         // andando com água pela cintura: 70% da velocidade
     nadar: 3.0,
     nadar_rapido: 4.8,
-    pulo: 7.2,                 // força do pulo
+    pulo: 8.8,                 // força do pulo (altura ~1,75 m)
+    pulo_frente_parado: 2.6,   // m/s para frente ao pular parado
+    pulo_frente_andando: 1.4,  // extra ao pular andando
+    pulo_frente_correndo: 2.6, // extra ao pular correndo (vai bem mais longe)
     gravidade: 22,
     inclinacao_max_graus: 55,  // rampas mais íngremes que isso não dá para subir
   },
@@ -111,16 +118,17 @@ export default {
   // Habilidades). Quanto cada ponto aumenta:
   habilidades: {
     pontos_por_nivel: 1,
-    // cada ponto soma +20 (ex.: Vida 100 -> 120)
-    vida: 20,       // +20 de vida máxima
-    stamina: 20,    // +20 de stamina máxima
-    fome: 20,       // +20 na barra de comida (dura mais)
-    sede: 20,       // +20 na barra de água (dura mais)
-    folego: 20,     // +20 de fôlego embaixo d'água
-    peso: 20,       // +20 kg que carrega
+    // valores iguais aos do ARK
+    vida: 10,       // +10 de vida máxima
+    stamina: 10,    // +10 de stamina máxima
+    fome: 10,       // +10 na barra de comida (dura mais)
+    sede: 10,       // +10 na barra de água (dura mais)
+    folego: 20,     // +20 de fôlego (oxigênio) embaixo d'água
+    peso: 10,       // +10 kg que carrega
     forca: 5,       // +5% de dano corpo a corpo
-    velocidade: 2,  // +2% de velocidade de andar/correr
-    fortitude: 2,   // +2 °C de resistência ao frio
+    velocidade: 1.5,// +1,5% de velocidade de andar/correr
+    fortitude: 2,   // +2 °C de resistência ao frio e ao calor
+    criacao: 10,    // +10% de velocidade de criação (fila de fabricação)
   },
 
   // Engramas (como no ARK): ao subir de nível você ganha pontos para
@@ -153,7 +161,7 @@ export default {
     gravidade: 9.8,            // a flecha cai com a distância
     intervalo_seg: 0.9,        // tempo entre um tiro e outro
     alcance_m: 120,            // depois disso a flecha some
-    xp_acerto: 1,
+    xp_acerto: 0.1,
   },
 
   // Armadura (roupas de pele vestidas): cada peça tira X% do dano
@@ -180,7 +188,7 @@ export default {
     chocar_min: 4,             // ovo choca em X min (no calor certo)
     ovo_temp_c: [18, 38],      // temperatura boa para o ovo; fora dela choca 4x mais devagar
     gestacao_min: 5,           // mamífero: filhote nasce depois de X min
-    mamiferos: ['mamute', 'onca', 'capivara'],
+    mamiferos: ['mamute'],
     chance_maior: 0.55,        // cada atributo do filhote: chance de vir o MAIOR dos pais
     mutacao: 0.03,             // chance de um atributo vir 10% maior (mutação)
     cuidado_min: 2,            // filhote domado pede carinho a cada X min
@@ -232,10 +240,10 @@ export default {
 
   combate: {
     soco_dano: 10,             // dano de um soco
-    soco_alcance_m: 2.4,       // distância do soco
+    soco_alcance_m: 1.1,       // distância do soco (o tamanho do braço, a partir do centro do corpo)
     soco_intervalo_seg: 0.36,  // tempo entre socos (360 ms)
     soco_stamina: 4,           // stamina gasta por soco
-    soco_arvore_dura_vida: 0.1,  // socar árvore dura tira 10% da vida máxima
+    soco_arvore_dura_vida: 0.05, // socar árvore dura tira 5% da vida máxima
   },
 
   // ---------------------------------------------------------
@@ -249,13 +257,13 @@ export default {
     efetividade_por_dano: 1.5, // bater no bicho desmaiado: perde efetividade (dano/vida x 1,5)
     torpor_por_dano: { mao: 1.6, clava: 3.0, outro: 0.2 }, // torpor = dano × isto
     torpor_cai_seg: 0.03,      // acordado: torpor cai X do máximo por segundo
-    desmaio_cai_seg: 0.005,    // desmaiado: cai X do máximo por segundo (~3 min)
-    comer_a_cada_seg: 3,       // come uma comida a cada X s
-    comidas_base: 4,           // comidas preferidas para domar no nível 1
-    comidas_por_nivel: 0.2,    // + X por nível
-    comida_qualquer: 0.35,     // comida que não é a preferida vale isso
+    desmaio_cai_seg: 0.0065,   // desmaiado: cai X do máximo por segundo (~2,5 min)
+    comer_a_cada_seg: 7,       // come uma comida a cada X s (devagar, como no ARK)
+    comidas_base: 10,          // comidas preferidas para domar no nível 1
+    comidas_por_nivel: 0.5,    // + X por nível (nível 30 pede ~25 comidas = 3 min: precisa de narcótico)
+    comida_qualquer: 0.25,     // comida que não é a preferida vale isso
     baga_escura_torpor: 0.15,  // cada baga-escura dada põe +15% de torpor
-    narcotico_torpor: 0.4,     // cada Narcótico dado põe +40% de torpor
+    narcotico_torpor: 0.3,     // cada Narcótico dado põe +40% de torpor
     seguir_m: 4,               // distância que o bicho domado fica de você
   },
 

@@ -258,7 +258,7 @@ def main(folder, bones_path, cfg_path, out):
         mats.append({'cor': mm.get('diffuseColor') or mm.get('emissiveColor'), 'relevo': mm.get('normal'),
                      'alfa': bool(mm.get('opacity'))})
     json.dump({
-        'info': meta['info'],
+        'info': {**meta['info'], **cfg.get('credito', {})},
         'body': body,
         'doisLados': bool(two_sided or cfg.get('dois_lados')),
         'bones': [{'name': b['name'], 'parent': b['parent'], 'pos': np.round(b['pos'], 4).tolist()} for b in bones],

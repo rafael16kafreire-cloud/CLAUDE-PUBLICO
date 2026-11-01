@@ -29,9 +29,11 @@ export class PlayerStats {
     // engramas: pontos para aprender receitas e as já aprendidas
     this.engramPoints = 0;
     this.learned = new Set();
-    this.skills = { vida: 0, stamina: 0, fome: 0, sede: 0, folego: 0, peso: 0, forca: 0, velocidade: 0, fortitude: 0 };
+    this.skills = { vida: 0, stamina: 0, fome: 0, sede: 0, folego: 0, peso: 0, forca: 0, velocidade: 0, fortitude: 0, criacao: 0 };
 
     this.dead = false;
+    this.sick = null; // enjoo: { dps, left }
+    this.exhausted = false; // stamina zerada: sem correr nem pular até voltar a 20
     this.deathCause = null;
     this.onDeath = null; // função chamada ao morrer (o Player define)
     this._staminaDelay = 0;
@@ -63,9 +65,14 @@ export class PlayerStats {
     } else if (this._staminaDelay > 0) {
       this._staminaDelay -= dt;
     } else {
-      const regen = ctx.swimming ? St.regen_seg * St.regen_na_agua : St.regen_seg;
+      // parado enche rápido; andando, mais devagar (como no ARK)
+      const base = ctx.moving ? St.regen_andando_seg : St.regen_parado_seg;
+      const regen = ctx.swimming ? base * St.regen_na_agua : base;
       this.stamina = Math.min(this.max.stamina, this.stamina + regen * dt);
     }
+    // zerou: fica exausto (sem correr, pular nem bater) até voltar a 20
+    if (this.stamina <= 0.01) this.exhausted = true;
+    else if (this.exhausted && this.stamina >= St.exausto_volta_em) this.exhausted = false;
 
     // ---- Fôlego (só cai com a cabeça embaixo d'água)
     if (ctx.headUnderwater) {
@@ -77,6 +84,13 @@ export class PlayerStats {
     // ---- Vida: dano por fome/sede/afogamento ou regeneração
     let damage = 0;
     let cause = null;
+    // enjoo (carne crua): perde vida aos poucos por alguns segundos
+    if (this.sick) {
+      damage += this.sick.dps;
+      cause = 'comida';
+      this.sick.left -= dt;
+      if (this.sick.left <= 0) this.sick = null;
+    }
     if (this.oxygen <= 0 && ctx.headUnderwater) {
       damage += F.dano_afogando_seg;
       cause = 'afogamento';
@@ -115,8 +129,9 @@ export class PlayerStats {
 
   // Gasta stamina se tiver o suficiente. Devolve true se gastou.
   useStamina(amount) {
-    if (this.stamina < amount) return false;
+    if (this.exhausted || this.stamina < amount) return false;
     this.stamina -= amount;
+    if (this.stamina <= 0.01) this.exhausted = true;
     this._staminaDelay = BALANCE.stamina.espera_regen_seg;
     return true;
   }
@@ -169,8 +184,8 @@ export class PlayerStats {
 
   // Receita já sabida? (custo 0 = sabe desde o começo)
   knows(recipe) {
-    // engrama_id: receitas diferentes do mesmo item (ex.: Pasta de Cimento
-    // com quitina ou queratina) se aprendem juntas
+    // engrama_id: receitas diferentes do mesmo item (ex.: a mesma
+    // receita feita com materiais diferentes) se aprendem juntas
     return !recipe.engrama || this.learned.has(recipe.engrama_id ?? recipe.id);
   }
 
@@ -206,6 +221,11 @@ export class PlayerStats {
     return this.skills.fortitude * BALANCE.habilidades.fortitude;
   }
 
+  // Velocidade da fila de fabricação (habilidade Velocidade de criação).
+  get craftSpeed() {
+    return 1 + (this.skills.criacao * BALANCE.habilidades.criacao) / 100;
+  }
+
   // Multiplicador do dano corpo a corpo.
   get damageMul() {
     return 1 + (this.skills.forca * BALANCE.habilidades.forca) / 100;
@@ -224,6 +244,7 @@ export class PlayerStats {
       case 'forca': return 100 + this.skills.forca * H.forca;
       case 'velocidade': return 100 + this.skills.velocidade * H.velocidade;
       case 'fortitude': return this.skills.fortitude * H.fortitude;
+      case 'criacao': return 100 + this.skills.criacao * H.criacao;
       default: return 0;
     }
   }
@@ -265,6 +286,8 @@ export class PlayerStats {
     this.water = (this.max.water * M.renascer_sede) / 100;
     this.temperature = BALANCE.temperatura.base_c;
     this.dead = false;
+    this.sick = null;
+    this.exhausted = false;
     this.deathCause = null;
   }
 

@@ -13,8 +13,8 @@ import { ITEMS, itemName } from '../items/items.js';
 import { sound } from '../audio/audio.js';
 import { game } from '../core/game_manager.js';
 
-const REACH = 3.4;        // alcance para objetos (m)
-const WATER_REACH = 4.5;  // alcance para beber (m)
+const REACH = 2.4;        // alcance para objetos (m)
+const WATER_REACH = 3.2;  // alcance para beber (m)
 
 const SADDLES = ['sela', 'sela_media', 'sela_grande'];
 
@@ -83,7 +83,7 @@ export class PlayerInteraction {
     let water = null;
     let waterD = Infinity;
     const here = this.world.waterAt(p.x, p.z);
-    if (here && here.level > p.y + 0.15) {
+    if (here && (here.level > p.y + 0.15 || this.player.swimming)) {
       water = here;
       waterD = 0;
     } else {
@@ -118,7 +118,7 @@ export class PlayerInteraction {
     if (water) return this._waterTarget(water);
 
     // 5) Dica do que sai batendo (árvore, pedra, tronco, carcaça)
-    const corpse = this.world.creatures?.findCorpse(p, f, 3);
+    const corpse = this.world.creatures?.findCorpse(p, f, 1.6);
     if (corpse) return { kind: 'hint', key: 'attack', text: `Bater: carne e couro (${corpse.species.nome})` };
     const tool = this.actions.tool;
     const hit = this.world.vegetation.findTarget(p.x, p.z, f.x, f.z, tool.alcance, false, p.y);
@@ -175,7 +175,7 @@ export class PlayerInteraction {
       return { kind: 'tame-feed', c, food, text: `Dar ${itemName(food)} · domando ${pct}%${plate ? ` (no prato: ${plate})` : ''}` };
     }
     if (c.tamed && c.owner === this.player) {
-      const rideable = c.species.pode_montar && !c.flies && !c.isBaby;
+      const rideable = c.species.pode_montar && !c.isBaby;
       // filhote pedindo carinho (impressão)
       if (c.isBaby && c.wantsCare) {
         return { kind: 'care', c, text: `Cuidar do filhote de ${c.species.nome} (impressão ${Math.round((c.imprint ?? 0) * 100)}%)` };
@@ -187,7 +187,7 @@ export class PlayerInteraction {
         if (held !== need) return { kind: 'hint', key: 'interact', text: `${c.species.nome} precisa de ${itemName(need)}` };
         return { kind: 'saddle', c, item: held, text: `Pôr a ${itemName(held)} em ${c.name ?? c.species.nome}` };
       }
-      const ride = rideable ? (c.saddled || !BALANCE.sela.precisa ? (game.isTouch ? ' · botão Montar' : ' · F: montar') : ' · sem sela') : '';
+      const ride = rideable ? (c.saddled || !BALANCE.sela.precisa ? (game.isTouch ? ' · segure para montar' : ' · F: montar') : ' · sem sela') : '';
       return { kind: 'tame-menu', c, text: `${c.name ?? c.species.nome}: opções (${c.follow ? 'seguindo' : 'parado'})${ride}` };
     }
     return null;
@@ -205,7 +205,7 @@ export class PlayerInteraction {
   _waterTarget(body) {
     const held = this.inv.equipped;
     const filling = body.fresh && held && ITEMS[held.id]?.cantil;
-    return { kind: 'water', body, text: filling ? `Encher: ${ITEMS[held.id].nome}` : body.fresh ? 'Beber água' : 'Água do mar (salgada)' };
+    return { kind: 'water', body, text: filling ? `Encher: ${ITEMS[held.id].nome}` : 'Beber água' };
   }
 
   _interact(target) {
@@ -284,10 +284,6 @@ export class PlayerInteraction {
           sound.play('beber');
         }
         this._timer = 0;
-        return;
-      }
-      if (!target.body.fresh) {
-        events.emit(EV.MESSAGE, { text: 'Água salgada não mata a sede!', kind: 'warn' });
         return;
       }
       const st = this.player.stats;

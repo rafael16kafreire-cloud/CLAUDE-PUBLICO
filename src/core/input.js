@@ -53,6 +53,8 @@ class Input {
     this._canvas = null;
     this._mouseDragging = false;
     this.blocked = false; // true com o inventário aberto (personagem parado)
+    this.onWheel = null;
+    this.canLock = () => false; // o jogo diz quando um clique pode prender o mouse (PC, jogando)
   }
 
   attach(canvas) {
@@ -82,11 +84,18 @@ class Input {
         this.tap('attack');
       } else {
         this._mouseDragging = true;
+        // a ilha agora é gerada depois do clique em Jogar (a permissão do clique já passou):
+        // um clique no jogo prende o mouse, e a partir daí o clique ataca
+        if (this.canLock()) this.requestPointerLock();
       }
     });
     window.addEventListener('mouseup', () => {
       this._mouseDragging = false;
     });
+    // roda do mouse (com o mouse preso no jogo): aproxima/afasta a câmera de 3ª pessoa
+    window.addEventListener('wheel', (e) => {
+      if (this.pointerLocked && !this.blocked) this.onWheel?.(e.deltaY);
+    }, { passive: true });
     window.addEventListener('mousemove', (e) => {
       // Com o mouse "travado" no jogo: movimento gira a câmera.
       // Sem trava (navegador não deixou): arrastar com o botão gira.

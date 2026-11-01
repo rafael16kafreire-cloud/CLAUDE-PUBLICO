@@ -11,6 +11,7 @@
 // =============================================================
 import * as THREE from 'three';
 import { detailTexture } from '../world/materials.js';
+import { LOWPOLY } from './creature_builder.js';
 
 let scaleTex = null;
 
@@ -117,8 +118,10 @@ export function makeCreatureMaterial() {
           float skin = floor(vPat.w + 0.5);
           vec3 p = vObj;
           // variação suave da cor (o animal não fica "de plástico")
+          #ifndef PELE_LOWPOLY
           float big = triN(p * 0.09, w);
           diffuseColor.rgb *= 0.86 + 0.28 * big;
+          #endif
           // desenho do corpo
           if (type > 0.5 && strength > 0.0) {
             float m = 0.0;
@@ -143,7 +146,8 @@ export function makeCreatureMaterial() {
             float dorsal = type > 4.5 && type < 5.5 ? 1.0 : smoothstep(-0.35, 0.35, N.y);
             diffuseColor.rgb = mix(diffuseColor.rgb, vPatCol.rgb, clamp(m * strength * dorsal, 0.0, 1.0));
           }
-          // pele
+          // pele (low-poly: sem escamas/pelo, só a cor chapada e o desenho)
+          #ifndef PELE_LOWPOLY
           // a textura tem 8 escamas por lado
           float tiles = vPatCol.a / 8.0;
           if (skin < 0.5) {
@@ -158,8 +162,11 @@ export function makeCreatureMaterial() {
             vec2 sc = triS(p * tiles * 0.6, w);
             diffuseColor.rgb *= mix(0.8, 1.05, sc.r) * (0.94 + 0.1 * sc.g);
           }
+          #endif
         }`);
   };
-  mat.customProgramCacheKey = () => 'pele-v1';
+  // estilo low-poly (creature_builder.js LOWPOLY): desliga escamas, pelo e ruído
+  if (LOWPOLY) mat.defines = { ...(mat.defines ?? {}), PELE_LOWPOLY: '' };
+  mat.customProgramCacheKey = () => (LOWPOLY ? 'pele-v1-lowpoly' : 'pele-v1');
   return mat;
 }

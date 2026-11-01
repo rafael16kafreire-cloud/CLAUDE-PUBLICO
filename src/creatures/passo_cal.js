@@ -1,0 +1,8 @@
+// =============================================================
+// CALIBRAGEM DO PASSO (medida em tools/ → "pé sem escorregar").
+// Para cada espécie: quanto o pé varre o chão em relação ao corpo, andando e correndo,
+// medido na animação por código. 1,0 = o pé fica parado no chão. Acima de 1 o pé escorrega
+// para trás; abaixo de 1 o corpo desliza sem as pernas acompanharem.
+// O jogo divide o passo (tamanho e ritmo) por esse número.
+// =============================================================
+export const PASSO_CAL = {"dodo": {"walk": 1.54, "run": 2.48}, "parassauro": {"walk": 1.03, "run": 0.97}, "galimimo": {"walk": 1.59, "run": 2.09}, "paquicefalossauro": {"walk": 1.86, "run": 2.27}, "triceratops": {"walk": 1.54, "run": 1.52}, "estegossauro": {"walk": 0.71, "run": 0.68}, "anquilossauro": {"walk": 1.31, "run": 1.3}, "sauropelta": {"walk": 0.43, "run": 0.16}, "braquiossauro": {"walk": 0.84, "run": 0.86}, "argentinossauro": {"walk": 1.38, "run": 0.58}, "compsognato": {"walk": 1.8, "run": 2.3}, "raptor": {"walk": 1.53, "run": 1.51}, "carnotauro": {"walk": 2.27, "run": 3.01}, "trex": {"walk": 1.89, "run": 2.35}, "deinosuchus": {"walk": 1.65, "run": 2.05}, "espinossauro": {"walk": 1.61, "run": 2.09}, "mamute": {"walk": 0.64, "run": 0.42}, "reidodo": {"walk": 1.6, "run": 2.62}, "dilofossauro": {"walk": 1.72, "run": 2.2}, "iguanodonte": {"walk": 1.26, "run": 2.05}, "dimetrodonte": {"walk": 1.29, "run": 1.41}, "kentrossauro": {"walk": 2.94, "run": 2.9}, "paquirrinossauro": {"walk": 1.41, "run": 1.41}, "moschops": {"walk": 1.57, "run": 1.56}, "diplodoco": {"walk": 0.14, "run": 0.14}, "terizinossauro": {"walk": 2.35, "run": 2.94}};

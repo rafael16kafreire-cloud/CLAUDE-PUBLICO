@@ -6,16 +6,20 @@
 // =============================================================
 import layout from '../data/world/ilha.json';
 import { BALANCE } from '../core/balance.js';
-import { IslandMap, BIOME_KEYS } from './island_generator.js';
-import { buildTerrain } from './terrain.js';
+import { IslandMap, BIOME_KEYS, BIOME } from './island_generator.js';
+import { buildTerrain, updateTerrain } from './terrain.js';
 import { WaterSystem } from './water.js';
 import { Vegetation } from './vegetation.js';
 import { Grass } from './grass.js';
+import { LightShafts } from './light_shafts.js';
+import { Snowfall } from './snowfall.js';
+import { Atmosfera } from './atmosfera.js';
 import { Sky, NIGHT_START, NIGHT_END } from './sky.js';
 import { Effects } from './effects.js';
 import { Underwater } from './underwater.js';
 import { findRespawnPoints } from './respawn_points.js';
 import { DeathBag } from './death_bag.js';
+import { FallingTrees } from './falling_trees.js';
 import { sharedTime } from './materials.js';
 import { createStructure } from './structures.js';
 import { Projectiles } from './projectiles.js';
@@ -49,7 +53,14 @@ export class World {
     scene.add(this.vegetation.group);
     this.grass = new Grass(this.map, this.water, scene);
     this.sky = new Sky(scene);
+    this.shafts = new LightShafts(scene, this.map, this.water);
+    this.snowfall = new Snowfall(scene);
+    // fumaça/fagulhas das fogueiras, vaga-lumes, poeira, folhas e o clima (chuva, neblina)
+    this.atmosfera = new Atmosfera(scene);
     this.effects = new Effects(scene);
+    this._focus = null;
+    this.fallingTrees = new FallingTrees(scene, this.vegetation, this.effects, this.map);
+    this.vegetation.onFelled = (rec) => this.fallingTrees.spawn(rec, this._focus);
     this.projectiles = new Projectiles(this);
     this.effects.groundAt = (x, z) => this.heightAt(x, z);
     this.underwater = new Underwater(scene);
@@ -177,8 +188,10 @@ export class World {
   }
 
   // ---------- sacos de morte / itens largados ----------
-  spawnDeathBag(position, items = [], label) {
-    const bag = new DeathBag(this.scene, position, items, label);
+  // velocity: só para a caixa de itens largados (sai da mão com impulso)
+  spawnDeathBag(position, items = [], label, velocity = null) {
+    const opts = velocity ? { velocity, physics: { heightAt: (x, z) => this.heightAt(x, z), waterAt: (x, z) => this.waterAt(x, z) } } : {};
+    const bag = new DeathBag(this.scene, position, items, label, opts);
     this.deathBags.push(bag);
     return bag;
   }
@@ -212,9 +225,14 @@ export class World {
     // neblina leve nos morros da mata (chão alto, fora da neve)
     const ground = Math.max(this.heightAt(camera.position.x, camera.position.z), 0);
     const hill = Math.min(1, Math.max(0, (ground - 14) / 26));
-    const mist = hill * hill * (3 - 2 * hill) * (1 - cold);
+    const inForest = this.map.biomeAt(camera.position.x, camera.position.z);
+    const forest = inForest === BIOME.JUNGLE || inForest === BIOME.IGAPO ? 0.38 : 0; // neblina azulada fixa dentro da mata
+    // só nos morros da mata/campo (na serra a névoa forte deixava tudo branco)
+    const morroVerde = inForest === BIOME.JUNGLE || inForest === BIOME.IGAPO || inForest === BIOME.PLAINS ? 1 : 0;
+    const mist = Math.max(hill * hill * (3 - 2 * hill) * morroVerde, forest) * (1 - cold);
     this.sky.mist = (this.sky.mist ?? 0) + (mist - (this.sky.mist ?? 0)) * Math.min(1, dt * 0.5);
-    if (!this.sky.underwater) this.sky.scene.fog.density = (2.0 / this.viewDistance) * (1 + this.sky.mist * 1.6);
+    // >>> força da névoa na mata/morros (mist) e do clima (chuva/neblina densa: atmosfera.js)
+    if (!this.sky.underwater) this.sky.scene.fog.density = (2.0 / this.viewDistance) * (1 + this.sky.mist * 1.0) * (this.atmosfera?.fatorNevoa ?? 1);
   }
 
   setQuality(q) {
@@ -223,6 +241,20 @@ export class World {
     this.vegetation.setLod(q.lodHi, q.lodLo);
     this.grass.setQuality(q.grassRadius, q.grassDensity);
     this.grass.setEnabled(q.grassRadius > 0);
+    this.fallingTrees.setDetail(q.post === 'cinema' ? 2 : 1);
+    this.atmosfera.setQualidade(q.post === 'cinema' ? 'alta' : q.post === 'none' ? 'baixa' : 'media');
+    this._quality = q;
+    this.setLowPoly(this.lowPoly ?? false, true);
+  }
+
+  // Jogo lento: grama e árvores viram low poly bem mais perto (árvores viram "cartões" e a grama,
+  // tufos de 3 triângulos). Voltar ao normal: setLowPoly(false).
+  setLowPoly(on, force = false) {
+    if (!force && this.lowPoly === on) return;
+    this.lowPoly = on;
+    this.grass.setLowPoly(on);
+    const q = this._quality;
+    if (q) this.vegetation.setLod(on ? Math.min(q.lodHi, 12) : q.lodHi, on ? Math.min(q.lodLo, 34) : q.lodLo);
   }
 
   // ---------- atualização por quadro ----------
@@ -268,10 +300,17 @@ export class World {
       this.fireLight.intensity = 0;
     }
     this._updateAltitude(camera, dt);
+    // terreno: monta os pedaços perto e descarta os longe (até um pouco além da visão)
+    updateTerrain(this.terrain, camera.position.x, camera.position.z, this.viewDistance + 80, dt);
     this.sky.update(camera, focus);
     this.grass.update(focus);
+    this.shafts.update(camera, this.sky, focus, !this.cameraUnderwater);
+    this.snowfall.update(camera, dt, this.sky.cold ?? 0, this.sky.daylight ?? 1, this.cameraUnderwater);
+    this.atmosfera.update(dt, this, camera, this.cameraUnderwater);
     this.vegetation.update(dt, camera, this.viewDistance);
     this.effects.update(dt);
+    this._focus = focus;
+    this.fallingTrees.update(dt);
 
     this.water.update(camera);
     const body = this.water.bodyAt(camera.position.x, camera.position.z);

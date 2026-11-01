@@ -4,6 +4,7 @@
 // o vento. Cada modelo pode ter versão de perto (detalhada) e de
 // longe (simples); bem longe a árvore vira uma "foto" (impostor).
 // =============================================================
+import ATLAS from './imported/grama_atlas.js';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { WHITE_UV, LEAF_UV, TILE_UV } from './foliage_texture.js';
@@ -262,7 +263,7 @@ function trunk(rTop, rBase, h, flare, hex, radial = 9, hSeg = 6, seed = 1) {
 const BARK_LIGHT = '#8a8070';
 const BARK = '#5e4a35';
 const BARK_DARK = '#3f3326';
-const GREENS = ['#2c4f22', '#335a27', '#284a1f', '#3a632b', '#2f5524', '#3f6a2e'];
+const GREENS = ['#3b6a2a', '#44762e', '#35622a', '#4f8434', '#3f7228', '#5a8c36', '#6a9a3c'];
 
 // ------------------------------------------------------------
 // Cartões de folhas: vários retângulos com a foto de um tufo de
@@ -348,7 +349,7 @@ function leafCards(spots, { squash = [1.2, 0.6, 1.2], perSpot = 2.2, minCards = 
 }
 
 function crown(spots, segs = [7, 5], squash = [1.25, 0.5, 1.25], seed = 10) {
-  return leafCards(spots, { squash, seed, perSpot: segs[0] >= 7 ? 2.2 : 1.8 });
+  return leafCards(spots, { squash, seed, perSpot: segs[0] >= 7 ? 3.0 : 2.5 });
 }
 
 // Copa simples (de média distância): bolas sólidas com o tapete de
@@ -941,6 +942,25 @@ export function makePebbles() {
 }
 
 // Gravetos secos caídos (pega com Interagir)
+// Cogumelos do chão da mata (só enfeite): 5 cogumelos de tamanhos e cores diferentes
+export function makeMushrooms() {
+  const parts = [];
+  const caps = ['#8a4a2e', '#c9b48a', '#b0432f', '#a89070', '#7a5a3c'];
+  [[0, 0, 0.1, 0.16], [0.17, 0.08, 0.07, 0.11], [-0.14, 0.12, 0.06, 0.09], [0.05, -0.16, 0.08, 0.13], [-0.1, -0.1, 0.05, 0.08]].forEach(([x, z, r, h], i) => {
+    parts.push(paint(cyl(r * 0.28, r * 0.36, h, [x, h / 2, z], 6), '#e4dcc4', 0.1));
+    const cap = blob(r, [x, h, z], [1.25, 0.6, 1.25], [7, 4], 0.08, 90 + i);
+    cap.computeVertexNormals();
+    parts.push(paintFn(cap, (c, px, py, pz) => {
+      c.set(caps[i % caps.length]);
+      c.multiplyScalar(0.88 + hash3(px, py, pz, 5) * 0.24);
+    }));
+  });
+  const m = merge(parts);
+  const uv = m.attributes.uv;
+  for (let k = 0; k < uv.count; k++) uv.setXY(k, WHITE_UV[0], 0.55);
+  return m;
+}
+
 export function makeSticks() {
   return merge([
     paint(limb([-0.45, 0.04, -0.1], [0.5, 0.05, 0.12], 0.03, 0.018, 4), '#6e5236', 0.2),
@@ -1035,24 +1055,263 @@ export function makeGrassTuft() {
   const verts = [];
   const winds = [];
   const cols = [];
-  const base = new THREE.Color('#3f5a2a');
-  const tip = new THREE.Color('#8aa652');
+  const base = new THREE.Color('#38521f');
+  const mid = new THREE.Color('#6f9238');
+  const tip = new THREE.Color('#b0c862');
   const idx = [];
-  for (let i = 0; i < 7; i++) {
+  // 10 lâminas em dois anéis; cada uma é uma tira curva (3 triângulos, só a face da frente:
+  // o material do mato é "dos dois lados", com a luz sempre para cima)
+  for (let i = 0; i < 10; i++) {
     const a = i * 2.39;
-    const r = 0.08 + (i % 3) * 0.05;
+    const r = 0.05 + (i % 4) * 0.045;
     const x = Math.sin(a) * r;
     const z = Math.cos(a) * r;
-    const h = 0.32 + (i % 4) * 0.09;
-    const lean = 0.1 + (i % 2) * 0.08;
-    const w = 0.035;
+    const h = 0.5 + ((i * 7) % 5) * 0.12;
+    const lean = 0.12 + (i % 3) * 0.1;
+    const w = 0.04;
     const px = Math.cos(a) * w;
     const pz = -Math.sin(a) * w;
     const b = verts.length / 3;
+    verts.push(
+      x - px, 0, z - pz, x + px, 0, z + pz,
+      x - px * 0.6 + Math.sin(a) * lean * 0.35, h * 0.55, z - pz * 0.6 + Math.cos(a) * lean * 0.35,
+      x + px * 0.6 + Math.sin(a) * lean * 0.35, h * 0.55, z + pz * 0.6 + Math.cos(a) * lean * 0.35,
+      x + Math.sin(a) * lean, h, z + Math.cos(a) * lean,
+    );
+    winds.push(0, 0, 0.5, 0.5, 1);
+    cols.push(base.r, base.g, base.b, base.r, base.g, base.b, mid.r, mid.g, mid.b, mid.r, mid.g, mid.b, tip.r, tip.g, tip.b);
+    idx.push(b, b + 1, b + 3, b, b + 3, b + 2, b + 2, b + 3, b + 4);
+  }
+  const g = sheet(verts, idx, winds);
+  g.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
+  g.computeBoundingSphere();
+  return g;
+}
+
+// Tufo de grama de verdade: 5 lâminas tiradas do modelo "AnimatedGrass" (tools/models/grama_fbx.py).
+// Cada lâmina é uma tira curva de 3 triângulos (pé, meio e ponta); k = tamanho (1 = ~28 cm de altura).
+export function makeGramaTufo(variante = 0, k = 1) {
+  const tufo = GRAMA[variante % GRAMA.length];
+  const verts = [];
+  const winds = [];
+  const cols = [];
+  const idx = [];
+  const base = new THREE.Color('#2d4a1c');
+  const mid = new THREE.Color('#5d8a30');
+  const tip = new THREE.Color('#9dbb55');
+  for (const b of tufo) {
+    const dx = b.d[0];
+    const dz = b.d[1];
+    const LARG = 2.0; // lâminas mais largas: o chão fica coberto com poucos tufos
+    const at = (p, w0) => {
+      const w = w0 * LARG;
+      return [
+      [(p[0] - dx * w * 0.5) * k, p[1] * k, (p[2] - dz * w * 0.5) * k],
+      [(p[0] + dx * w * 0.5) * k, p[1] * k, (p[2] + dz * w * 0.5) * k],
+      ];
+    };
+    const [bl, br] = at(b.b, b.w[0]);
+    const [ml, mr] = at(b.m, b.w[1]);
+    const t = [b.t[0] * k, b.t[1] * k, b.t[2] * k];
+    const n = verts.length / 3;
+    verts.push(...bl, ...br, ...ml, ...mr, ...t);
+    winds.push(0, 0, 0.5, 0.5, 1);
+    cols.push(base.r, base.g, base.b, base.r, base.g, base.b, mid.r, mid.g, mid.b, mid.r, mid.g, mid.b, tip.r, tip.g, tip.b);
+    idx.push(n, n + 1, n + 3, n, n + 3, n + 2, n + 2, n + 3, n + 4);
+  }
+  const g = sheet(verts, idx, winds);
+  g.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
+  g.computeBoundingSphere();
+  return g;
+}
+
+// Tufo CHEIO de grama: dois retângulos cruzados em X (4 triângulos) com a figura de um tufo de
+// dezenas de lâminas (atlas feito do modelo "AnimatedGrass", tools/models/grama_atlas.py).
+// variante = qual tufo do atlas (0..3); k = tamanho (1 = ~46 cm de altura, 64 cm de largura).
+export function makeGramaCartao(variante = 0, k = 1) {
+  const W = (ATLAS.largura * k) / 2;
+  const H = ATLAS.altura * k;
+  const col = variante % ATLAS.cols;
+  const u0 = col / ATLAS.cols;
+  const u1 = (col + 1) / ATLAS.cols;
+  // a linha de cima da imagem (de frente) fica na metade de cima da textura; a de baixo (de lado), embaixo
+  const vF = [0.5, 1];
+  const vS = [0, 0.5];
+  const verts = [-W, 0, 0, W, 0, 0, W, H, 0, -W, H, 0, 0, 0, -W, 0, 0, W, 0, H, W, 0, H, -W];
+  const uvs = [u0, vF[0], u1, vF[0], u1, vF[1], u0, vF[1], u0, vS[0], u1, vS[0], u1, vS[1], u0, vS[1]];
+  const winds = [0, 0, 1, 1, 0, 0, 1, 1];
+  const g = sheet(verts, [0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7], winds);
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  g.computeBoundingSphere();
+  return g;
+}
+
+// Relva: tufo baixinho (altura de tornozelo, 11 a 20 cm) para cobrir o chão das pastagens.
+// 9 lâminas de 1 triângulo cada (só 9 triângulos por tufo): leve para desenhar milhares juntos.
+export function makeShortTurf() {
+  const verts = [];
+  const winds = [];
+  const cols = [];
+  const base = new THREE.Color('#2f4a1b');
+  const tip = new THREE.Color('#9fbf56');
+  const idx = [];
+  for (let i = 0; i < 9; i++) {
+    const a = i * 2.39;
+    const r = 0.02 + (i % 3) * 0.06;
+    const x = Math.sin(a) * r;
+    const z = Math.cos(a) * r;
+    const h = 0.11 + ((i * 5) % 7) * 0.014;
+    const lean = 0.06 + (i % 3) * 0.05;
+    const w = 0.04;
+    const px = Math.cos(a) * w;
+    const pz = -Math.sin(a) * w;
+    const b0 = verts.length / 3;
     verts.push(x - px, 0, z - pz, x + px, 0, z + pz, x + Math.sin(a) * lean, h, z + Math.cos(a) * lean);
     winds.push(0, 0, 1);
     cols.push(base.r, base.g, base.b, base.r, base.g, base.b, tip.r, tip.g, tip.b);
-    idx.push(b, b + 1, b + 2, b + 1, b, b + 2);
+    idx.push(b0, b0 + 1, b0 + 2);
+  }
+  const g = sheet(verts, idx, winds);
+  g.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
+  g.computeBoundingSphere();
+  return g;
+}
+
+// Tufo com flores (cor da flor vem da cor da instância)
+export function makeFlowerTuft() {
+  const verts = [];
+  const winds = [];
+  const cols = [];
+  const idx = [];
+  const stem = new THREE.Color('#3c5a22');
+  const leaf = new THREE.Color('#5f8a30');
+  const bloom = new THREE.Color('#ffffff');
+  for (let i = 0; i < 6; i++) {
+    const a = i * 2.39;
+    const r = 0.04 + (i % 3) * 0.05;
+    const x = Math.sin(a) * r;
+    const z = Math.cos(a) * r;
+    const h = 0.34 + (i % 3) * 0.1;
+    // folha estreita
+    let b = verts.length / 3;
+    const w = 0.03;
+    const px = Math.cos(a) * w;
+    const pz = -Math.sin(a) * w;
+    verts.push(x - px, 0, z - pz, x + px, 0, z + pz, x + Math.sin(a) * 0.12, h * 0.8, z + Math.cos(a) * 0.12);
+    winds.push(0, 0, 1);
+    cols.push(stem.r, stem.g, stem.b, stem.r, stem.g, stem.b, leaf.r, leaf.g, leaf.b);
+    idx.push(b, b + 1, b + 2, b + 2, b + 1, b);
+    // florzinha: pequeno leque de pétalas no topo
+    const cx = x + Math.sin(a) * 0.04;
+    const cz = z + Math.cos(a) * 0.04;
+    b = verts.length / 3;
+    const R = 0.042;
+    verts.push(cx, h, cz);
+    winds.push(1);
+    cols.push(bloom.r * 0.85, bloom.g * 0.85, bloom.b * 0.7);
+    for (let k = 0; k < 5; k++) {
+      const t = (k / 5) * Math.PI * 2 + a;
+      verts.push(cx + Math.cos(t) * R, h + 0.015, cz + Math.sin(t) * R);
+      winds.push(1);
+      cols.push(bloom.r, bloom.g, bloom.b);
+    }
+    for (let k = 0; k < 5; k++) {
+      const n1 = b + 1 + k;
+      const n2 = b + 1 + ((k + 1) % 5);
+      idx.push(b, n1, n2, b, n2, n1);
+    }
+  }
+  const g = sheet(verts, idx, winds);
+  g.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
+  g.computeBoundingSphere();
+  return g;
+}
+
+
+// Plantinhas miúdas do chão da mata (só enfeite, não dá para pegar): 0 = trevo/folhinhas redondas,
+// 1 = mudinha de folhas finas em roseta. Pequenas (~20 cm) e baratas (≈20 a 36 triângulos).
+export function makeMiniPlant(kind = 0) {
+  const verts = [];
+  const winds = [];
+  const cols = [];
+  const idx = [];
+  const dark = new THREE.Color('#2f5a22');
+  const light = new THREE.Color('#68a040');
+  const push = (x, y, z, w, c) => {
+    verts.push(x, y, z);
+    winds.push(w);
+    cols.push(c.r, c.g, c.b);
+  };
+  if (kind === 0) {
+    // 4 hastes, cada uma com 3 folhinhas redondas (trevo)
+    for (let i = 0; i < 3; i++) {
+      const a = i * 2.1 + 0.4;
+      const r = 0.05 + (i % 2) * 0.05;
+      const bx = Math.sin(a) * r;
+      const bz = Math.cos(a) * r;
+      const hh = 0.07 + (i % 3) * 0.03;
+      for (let k = 0; k < 3; k++) {
+        const t = a + (k - 1) * 1.2;
+        const cx = bx + Math.sin(t) * 0.05;
+        const cz = bz + Math.cos(t) * 0.05;
+        const b = verts.length / 3;
+        push(cx, hh, cz, 1, light);
+        for (let m = 0; m < 4; m++) {
+          const q = (m / 4) * Math.PI * 2;
+          push(cx + Math.cos(q) * 0.05, hh + 0.012 + (m % 2) * 0.008, cz + Math.sin(q) * 0.05, 1, m % 2 ? light : dark);
+        }
+        for (let m = 0; m < 4; m++) idx.push(b, b + 1 + m, b + 1 + ((m + 1) % 4)); // o material já é de dois lados
+      }
+    }
+  } else {
+    // roseta de 7 folhas finas e arqueadas
+    for (let i = 0; i < 7; i++) {
+      const a = (i / 7) * Math.PI * 2 + 0.3;
+      const L = 0.16 + (i % 3) * 0.04;
+      const sx = Math.sin(a);
+      const sz = Math.cos(a);
+      const px = -sz * 0.022;
+      const pz = sx * 0.022;
+      const b = verts.length / 3;
+      push(sx * 0.01 - px, 0, sz * 0.01 - pz, 0, dark);
+      push(sx * 0.01 + px, 0, sz * 0.01 + pz, 0, dark);
+      push(sx * L * 0.5 - px * 1.4, L * 0.55, sz * L * 0.5 - pz * 1.4, 0.5, dark.clone().lerp(light, 0.5));
+      push(sx * L * 0.5 + px * 1.4, L * 0.55, sz * L * 0.5 + pz * 1.4, 0.5, dark.clone().lerp(light, 0.5));
+      push(sx * L, L * 0.62, sz * L, 1, light);
+      idx.push(b, b + 1, b + 2, b + 1, b + 3, b + 2, b + 2, b + 3, b + 4);
+    }
+  }
+  const g = sheet(verts, idx, winds);
+  g.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
+  g.computeBoundingSphere();
+  return g;
+}
+
+
+// Tufo de longe (low poly): 7 lâminas finas = 7 triângulos. Cobre o terreno distante
+// e vira a única grama quando o aparelho está lento.
+export function makeLowTuft() {
+  const verts = [];
+  const winds = [];
+  const cols = [];
+  const idx = [];
+  const base = new THREE.Color('#33501e');
+  const tip = new THREE.Color('#7fa646');
+  // 7 lâminas finas saindo do centro, inclinadas para fora (7 triângulos)
+  for (let i = 0; i < 7; i++) {
+    const a = i * 2.39;
+    const r = 0.04 + (i % 3) * 0.05;
+    const h = 0.38 + (i % 4) * 0.12;
+    const sx = Math.sin(a);
+    const sz = Math.cos(a);
+    const w = 0.045;
+    const bx = sx * r;
+    const bz = sz * r;
+    const b = verts.length / 3;
+    verts.push(bx - sz * w, 0, bz + sx * w, bx + sz * w, 0, bz - sx * w, bx + sx * 0.14, h, bz + sz * 0.14);
+    winds.push(0, 0, 1);
+    cols.push(base.r, base.g, base.b, base.r, base.g, base.b, tip.r, tip.g, tip.b);
+    idx.push(b, b + 1, b + 2);
   }
   const g = sheet(verts, idx, winds);
   g.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));

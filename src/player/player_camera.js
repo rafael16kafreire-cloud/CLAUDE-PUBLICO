@@ -6,9 +6,10 @@
 import * as THREE from 'three';
 import { clamp } from '../core/math.js';
 
-const THIRD_DISTANCE = 4.6;
-const CROUCH_DISTANCE = 3.6;
-const SHOULDER = 0.45;
+const THIRD_DISTANCE = 2.3;
+const CROUCH_DISTANCE = 1.9;
+const SHOULDER = 0.22; // personagem um pouco à esquerda da mira, como no Valheim
+const LIFT = 0.4; // câmera acima do ombro: o personagem fica na parte de baixo da tela e a mira, à frente dele
 
 export class PlayerCamera {
   constructor(camera, world) {
@@ -19,6 +20,7 @@ export class PlayerCamera {
     this.pitch = -0.12;
     this.mode = 'terceira';
     this._dist = THIRD_DISTANCE;
+    this.zoom = 1; // 3ª pessoa: multiplica a distância (roda do mouse / opção Distância da câmera)
     this._target = new THREE.Vector3();
     this._forward = new THREE.Vector3();
     this._right = new THREE.Vector3();
@@ -54,8 +56,28 @@ export class PlayerCamera {
     this._shake = Math.max(this._shake ?? 0, amount);
   }
 
+  // Acordar no chão: a câmera começa baixa, olhando para cima e meio torta, e levanta.
+  acordar(seconds) {
+    this._wakeT = seconds;
+    this._wakeLen = seconds;
+  }
+
   // 2º passo: posiciona a câmera onde o jogador está agora.
   update(dt, player) {
+    this._update(dt, player);
+    if (this._wakeT > 0) {
+      this._wakeT = Math.max(0, this._wakeT - dt);
+      const k = 1 - this._wakeT / this._wakeLen;
+      const e = k * k * (3 - 2 * k);
+      const rest = 1 - e;
+      const floor = this.world.heightAt(this.camera.position.x, this.camera.position.z) + 0.2;
+      this.camera.position.y = Math.max(floor, this.camera.position.y - rest * 1.0);
+      this.camera.rotation.x += rest * 0.55;
+      this.camera.rotation.z += rest * 0.3;
+    }
+  }
+
+  _update(dt, player) {
     const firstPerson = player.firstPerson;
     const cp = Math.cos(this.pitch);
     this._forward.set(-Math.sin(this.yaw) * cp, Math.sin(this.pitch), -Math.cos(this.yaw) * cp);
@@ -93,7 +115,7 @@ export class PlayerCamera {
     // Terceira pessoa: um pouco acima e ao lado do ombro.
     t.addScaledVector(this._right, SHOULDER);
     // montado num bicho grande: câmera mais longe para ver o bicho todo
-    const wanted = player.riding ? THIRD_DISTANCE + player.riding.radius * 3.5 : player.crouching ? CROUCH_DISTANCE : THIRD_DISTANCE;
+    const wanted = (player.riding ? THIRD_DISTANCE + player.riding.radius * 3.5 : player.crouching ? CROUCH_DISTANCE : THIRD_DISTANCE) * this.zoom;
 
     // Procura o chão entre o jogador e a câmera.
     let allowed = wanted;
@@ -108,6 +130,7 @@ export class PlayerCamera {
     this._dist = allowed < this._dist ? allowed : this._dist + (allowed - this._dist) * Math.min(1, dt * 4);
 
     this.camera.position.copy(t).addScaledVector(this._forward, -this._dist);
+    this.camera.position.y += LIFT * Math.min(1, this._dist / 2);
     const floor = this.world.heightAt(this.camera.position.x, this.camera.position.z) + 0.25;
     if (this.camera.position.y < floor) this.camera.position.y = floor;
   }

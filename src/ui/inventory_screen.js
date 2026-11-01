@@ -13,20 +13,45 @@ import { HOTBAR, EQUIP_SLOTS } from '../inventory/inventory.js';
 
 const EQUIP_NAME = { cabeca: 'Cabeça', peito: 'Peito', maos: 'Mãos', pernas: 'Pernas', pes: 'Pés' };
 import { RECIPES, STATION_NAMES } from '../crafting/crafting.js';
+import * as THREE from 'three';
+import { makePlayerModel } from '../player/make_model.js';
 import { ICONS } from './icons.js';
 import { STAT_ICONS } from './inspect_panel.js';
 
+const sv = (d) => `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">${d}</svg>`;
+const SORT_ICON = sv('<path d="M3 4h14v2.6H3zM3 9.7h10v2.6H3zM3 15.4h6v2.6H3zM19 7v10m0 0-3-3m3 3 3-3" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>');
+const ITEM_ICON = sv('<path d="M12 2.5 20.5 7v10L12 21.5 3.5 17V7zM12 12 20 7.4M12 12v9.2M12 12 4 7.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>');
+const BOX_ICON = sv('<path d="M3 9h18v11H3zM2 5h20v4H2z M10 12.5h4v2h-4z"/>');
+const MAP_ICON = sv('<path d="M3.5 6.2l5.3-2 6.4 2.2 5.3-2v13.4l-5.3 2-6.4-2.2-5.3 2zM8.8 4.2v13.4M15.2 6.4v13.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>');
+const BOOK_ICON = sv('<path d="M4 4.5h6.8c.8 0 1.2.4 1.2 1.2V20c0-.8-.4-1.2-1.2-1.2H4zM20 4.5h-6.8c-.8 0-1.2.4-1.2 1.2V20c0-.8.4-1.2 1.2-1.2H20z"/>');
+const GEAR_ICON = sv('<path d="M10.6 2.5h2.8l.5 2.4 1.7.7 2-1.4 2 2-1.4 2 .7 1.7 2.4.5v2.8l-2.4.5-.7 1.7 1.4 2-2 2-2-1.4-1.7.7-.5 2.4h-2.8l-.5-2.4-1.7-.7-2 1.4-2-2 1.4-2-.7-1.7-2.4-.5v-2.8l2.4-.5.7-1.7-1.4-2 2-2 2 1.4 1.7-.7zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" fill-rule="evenodd"/>');
+const X_ICON = sv('<path d="M5 5l14 14M19 5L5 19" stroke="currentColor" stroke-width="3" stroke-linecap="round" fill="none"/>');
+
+// ícones brancos da lista de atributos (formas como na tela do ARK)
+const AI = {
+  vida: sv('<path d="M9 2.5h6V9h6.5v6H15v6.5H9V15H2.5V9H9z"/>'),
+  stamina: sv('<path d="M14.2 1.6 5 13.4h5.4l-1.6 9L19 9.8h-5.8z"/>'),
+  folego: sv('<path d="M16.4 2.3l5.3 5.3-1.8 1.8-1-1-9.2 9.2c-.5.5-1.2.8-1.9.8H5.2l-.9.9-2-2 .9-.9v-2.2c0-.7.3-1.4.8-1.9l9.2-9.2-1-1z"/><path d="M3.2 20.8 2 22" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>'),
+  fome: sv('<circle cx="15" cy="9" r="6.3"/><path d="M10.8 13.2 5 19M3.6 17.2a2.1 2.1 0 1 0 3.2 3.2M4.7 20.7a2.1 2.1 0 1 0 2.9-2.9" stroke="currentColor" stroke-width="2.3" fill="none" stroke-linecap="round"/>'),
+  sede: sv('<path d="M12 2S5 9.8 5 15a7 7 0 0 0 14 0C19 9.8 12 2 12 2z"/><path d="M8.6 15.2c0 1.9 1.4 3.4 3.2 3.6" stroke="#0b2431" stroke-width="1.4" fill="none" stroke-linecap="round"/>'),
+  velocidade: sv('<path d="M15.8 2.4a9.6 9.6 0 1 0 5.9 17A8.2 8.2 0 0 1 15.8 2.4z"/>'),
+  criacao: sv('<path d="M2.8 20.6 11 12.4l2.2 2.2-8.2 8.2z"/><path d="M12.2 3 19.6 6l-1.6 3.7-1.5-.6-1.2 3-1.6-.7-3.6-3.6z"/><path d="M21.5 19.2l-8-8 1.6-1.6 8 8z"/>'),
+  fortitude: sv('<path d="M12 3C8.6 3 6.6 5 6.6 7.5 4.6 8 3.5 9.7 3.5 11.5c0 1.3.6 2.3 1.5 3-.2 2.3 1.3 4 3.4 4.2.7 1.3 2 2.1 3.6 2.1s2.9-.8 3.6-2.1c2.1-.2 3.6-1.9 3.4-4.2.9-.7 1.5-1.7 1.5-3 0-1.8-1.1-3.5-3.1-4C17.4 5 15.4 3 12 3z"/><path d="M12 5v14.5" stroke="#0b2431" stroke-width="1.5" fill="none"/>'),
+  torpor: sv('<path d="M9 3l1.7 4.4L15 9l-4.3 1.6L9 15l-1.7-4.4L3 9l4.3-1.6zM18 10l1 2.8 2.8 1-2.8 1-1 2.8-1-2.8-2.8-1 2.8-1zM11 16l.9 2.4 2.4.9-2.4.9-.9 2.4-.9-2.4-2.4-.9 2.4-.9z"/>'),
+};
+
 // Habilidades (Inventário → Habilidades): gasta os pontos de nível.
 const SKILLS = [
-  { key: 'vida', nome: 'Saúde', icon: ICONS.health, cls: 'health' },
-  { key: 'stamina', nome: 'Estamina', icon: ICONS.stamina, cls: 'stamina' },
-  { key: 'folego', nome: 'Oxigênio', icon: ICONS.oxygen, cls: 'oxygen' },
-  { key: 'fome', nome: 'Comida', icon: ICONS.food, cls: 'food' },
-  { key: 'sede', nome: 'Água', icon: ICONS.water, cls: 'water' },
+  { key: 'vida', nome: 'Saúde', icon: AI.vida, cls: 'health' },
+  { key: 'stamina', nome: 'Estamina', icon: AI.stamina, cls: 'stamina' },
+  { key: 'folego', nome: 'Oxigênio', icon: AI.folego, cls: 'oxygen' },
+  { key: 'fome', nome: 'Comida', icon: AI.fome, cls: 'food' },
+  { key: 'sede', nome: 'Água', icon: AI.sede, cls: 'water' },
   { key: 'peso', nome: 'Peso', icon: STAT_ICONS.peso, cls: 'weight', unit: ' kg' },
   { key: 'forca', nome: 'Dano de combate', icon: STAT_ICONS.forca, cls: 'melee', unit: '%' },
-  { key: 'velocidade', nome: 'Velocidade de movimento', icon: STAT_ICONS.velocidade, cls: 'speed', unit: '%' },
-  { key: 'fortitude', nome: 'Fortaleza', icon: STAT_ICONS.fortitude, cls: 'fort', unit: ' °C' },
+  { key: 'velocidade', nome: 'Velocidade de movimento', icon: AI.velocidade, cls: 'speed', unit: '%' },
+  { key: 'criacao', nome: 'Habilidade de fabricação', icon: AI.criacao, cls: 'craft', unit: '%' },
+  { key: 'fortitude', nome: 'Fortaleza', icon: AI.fortitude, cls: 'fort', unit: ' °C' },
 ];
 
 // valor atual de cada barra do corpo (ficha "Você")
@@ -44,7 +69,7 @@ const STATION_NAME = STATION_NAMES;
 const TYPE_LABEL = { recurso: 'Recurso', comida: 'Comida', ferramenta: 'Ferramenta', consumivel: 'Uso', estrutura: 'Estrutura', equipamento: 'Roupa', municao: 'Munição' };
 
 export class InventoryScreen {
-  constructor(root, { inventory, crafting, actions, stats, onDrop, onClose, world, tamedCount }) {
+  constructor(root, { inventory, crafting, actions, stats, onDrop, onClose, onHelp, onPause, onMap, world, tamedCount }) {
     this.youWorld = world;
     this.youTamed = tamedCount;
     this.inv = inventory;
@@ -53,6 +78,11 @@ export class InventoryScreen {
     this.actions = actions;
     this.onDrop = onDrop;
     this.onClose = onClose;
+    this.onHelp = onHelp;
+    this.onPause = onPause;
+    this.onMap = onMap;
+    this.leftTab = 'inv';
+    this.rightMode = null; // null = personagem; 'item' | 'engrams' | 'box'
     this.selSlot = -1;
     this.selRecipe = RECIPES[0];
     this.cat = 'Tudo';
@@ -60,31 +90,26 @@ export class InventoryScreen {
     const el = document.createElement('div');
     el.className = 'overlay inv';
     el.hidden = true;
+    el.classList.add('ark-inv');
     el.innerHTML = `
       <div class="inv-panel" role="dialog" aria-label="Inventário">
-        <section class="inv-left">
-          <header class="inv-head">
-            <h2>Inventário</h2>
-            <div class="inv-wbar" title="Peso"><i data-ref="wfill"></i><span class="inv-weight" data-ref="weight"></span></div>
-            <button type="button" class="btn btn-small" id="inv-sort">Organizar</button>
+        <!-- esquerda: INVENTÁRIO / FABRICAÇÃO (como na tela do ARK Mobile) -->
+        <section class="inv-left ai-left">
+          <header class="ai-tabs">
+            <button type="button" class="tab ai-tab" data-tab="inv">INVENTÁRIO</button>
+            <button type="button" class="tab ai-tab" data-tab="craft">FABRICAÇÃO</button>
           </header>
-          <p class="inv-label">Roupa vestida <span class="armor-info" data-ref="armor"></span></p>
-          <div class="inv-grid inv-equip" data-ref="equip">${EQUIP_SLOTS.map((k) => `<button type="button" class="inv-slot eq-slot" data-part="${k}" title="${EQUIP_NAME[k]}"><span class="is-icon"></span><span class="eq-name">${EQUIP_NAME[k]}</span><i class="is-dur"></i></button>`).join('')}</div>
-          <p class="inv-label">Barra rápida</p>
-          <div class="inv-grid inv-hot" data-ref="hot"></div>
-          <p class="inv-label">Mochila</p>
-          <div class="inv-grid" data-ref="bag"></div>
-        </section>
-        <section class="inv-right">
-          <div class="inv-tabs">
-            <button type="button" class="tab" data-tab="craft">Fabricação</button>
-            <button type="button" class="tab" data-tab="item">Item</button>
-            <button type="button" class="tab" data-tab="skills" id="tab-skills">Você<b class="tab-dot" data-ref="sdot" hidden></b></button>
-            <button type="button" class="tab" data-tab="engrams" id="tab-engrams">Engramas</button>
-            <button type="button" class="tab" data-tab="box" id="tab-box" hidden>Baú</button>
-            <button type="button" class="btn btn-small inv-close" id="inv-close" aria-label="Fechar">Fechar</button>
+          <div class="tab-body ai-body" data-tab-body="inv">
+            <div class="ai-tools">
+              <button type="button" class="ai-tool" id="inv-search" aria-label="Buscar">${ICONS.lupa ?? STAT_ICONS.lupa}</button>
+              <input type="text" class="ai-filter" data-ref="filter" placeholder="Buscar" autocomplete="off" hidden>
+              <span class="ai-spacer"></span>
+              <div class="inv-wbar" title="Peso"><i data-ref="wfill"></i><span class="inv-weight" data-ref="weight"></span></div>
+              <button type="button" class="ai-tool" id="inv-sort" aria-label="Organizar" title="Organizar">${SORT_ICON}</button>
+            </div>
+            <div class="inv-grid ai-bag" data-ref="bag"></div>
           </div>
-          <div class="tab-body" data-tab-body="craft">
+          <div class="tab-body ai-body" data-tab-body="craft" hidden>
             <div class="craft-top">
               <div class="cat-row" data-ref="cats">${CATS.map((c) => `<button type="button" class="cat" data-cat="${c}">${c}</button>`).join('')}</div>
               <span class="station" data-ref="station"></span>
@@ -94,36 +119,66 @@ export class InventoryScreen {
             <div class="recipe-detail" data-ref="rdetail"></div>
             <div class="craft-queue" data-ref="queue"></div>
           </div>
-          <div class="tab-body" data-tab-body="item" hidden>
+        </section>
+
+        <!-- meio: VOCÊ (roupas, ficha e atributos com o botão +) -->
+        <section class="ai-mid" id="tab-skills-body">
+          <h2 class="ai-title">VOCÊ</h2>
+          <div class="ai-you">
+            <div class="inv-grid inv-equip ai-equip" data-ref="equip">${EQUIP_SLOTS.map((k) => `<button type="button" class="inv-slot eq-slot" data-part="${k}" title="${EQUIP_NAME[k]}"><span class="is-icon"></span><span class="eq-name">${EQUIP_NAME[k]}</span><i class="is-dur"></i></button>`).join('')}</div>
+            <div class="you-info ai-info" data-ref="youinfo"></div>
+          </div>
+          <p class="armor-info ai-armor" data-ref="armor"></p>
+          <p class="skill-points you-xp ai-xp"><span data-ref="youxp"></span><span>PONTOS: <b data-ref="spoints">0</b></span></p>
+          <div class="skill-list ai-skills">
+            ${SKILLS.map((s) => `
+              <div class="skill-row skill-${s.cls}">
+                <span class="ico">${s.icon}</span>
+                <span class="sk-name">${s.nome}</span>
+                <span class="sk-lvl" data-ref="sl-${s.key}"></span>
+                <b class="sk-val" data-ref="sv-${s.key}"></b>
+                <button type="button" class="sk-plus" id="skill-${s.key}" data-skill="${s.key}" aria-label="Melhorar ${s.nome}">+</button>
+              </div>`).join('')}
+            <div class="skill-row skill-torpor" style="--p:0%"><span class="ico">${AI.torpor}</span><span class="sk-name">Torpor</span><b class="sk-val" data-ref="sv-torpor">0.0/200.0</b><span class="sk-plus sk-none"></span></div>
+          </div>
+        </section>
+
+        <!-- direita: o personagem (ou Item / Engramas / Baú quando abertos) -->
+        <section class="inv-right ai-right">
+          <div class="ai-char" data-ref="char"><canvas data-ref="charcv" width="420" height="640"></canvas></div>
+          <div class="tab-body ai-rbody" data-tab-body="item" hidden>
             <div class="item-detail" data-ref="idetail"></div>
           </div>
-          <div class="tab-body" data-tab-body="box" hidden>
+          <div class="tab-body ai-rbody" data-tab-body="box" hidden>
             <p class="muted box-help">Toque num item da mochila para guardar; toque num item do baú para pegar.</p>
             <div class="rd-actions"><button type="button" class="btn btn-small" id="box-all">Guardar tudo da mochila</button><button type="button" class="btn btn-small" id="box-take">Pegar tudo</button></div>
             <div class="inv-grid box-grid" data-ref="box"></div>
           </div>
-          <div class="tab-body" data-tab-body="engrams" hidden>
+          <div class="tab-body ai-rbody" data-tab-body="engrams" hidden>
             <div class="eg-grid" data-ref="egrid"></div>
             <div class="eg-foot">
               <span class="eg-pts">PONTOS DISPONÍVEIS: <b data-ref="egpts">0</b></span>
+              <span class="eg-next" data-ref="egnext"></span>
               <div class="eg-detail" data-ref="egdetail"></div>
             </div>
           </div>
-          <div class="tab-body" data-tab-body="skills" hidden>
-            <div class="you-info" data-ref="youinfo"></div>
-            <p class="skill-points you-xp"><span data-ref="youxp"></span><span>PONTOS: <b data-ref="spoints">0</b></span></p>
-            <div class="skill-list">
-              ${SKILLS.map((s) => `
-                <div class="skill-row skill-${s.cls}">
-                  <span class="ico">${s.icon}</span>
-                  <span class="sk-name">${s.nome}</span>
-                  <span class="sk-lvl" data-ref="sl-${s.key}"></span>
-                  <b class="sk-val" data-ref="sv-${s.key}"></b>
-                  <button type="button" class="sk-plus" id="skill-${s.key}" data-skill="${s.key}" aria-label="Melhorar ${s.nome}">+</button>
-                </div>`).join('')}
-            </div>
-          </div>
         </section>
+
+        <!-- embaixo: barra rápida, pontos de engrama e atalhos -->
+        <div class="ai-bottom">
+          <div class="inv-grid inv-hot ai-hot" data-ref="hot"></div>
+          <div class="ai-points" title="Pontos de engrama">${ICONS.engram}<b data-ref="aipts">0</b></div>
+          <div class="ai-icons">
+            <button type="button" class="tab ai-ib" data-tab="inv" aria-label="Inventário">${ICONS.backpack}</button>
+            <button type="button" class="tab ai-ib" data-tab="engrams" id="tab-engrams" aria-label="Engramas">${ICONS.engram}</button>
+            <button type="button" class="tab ai-ib" data-tab="item" aria-label="Item">${ITEM_ICON}</button>
+            <button type="button" class="tab ai-ib" data-tab="box" id="tab-box" aria-label="Baú" hidden>${BOX_ICON}</button>
+            <button type="button" class="ai-ib" id="ai-map" aria-label="Mapa">${MAP_ICON}</button>
+            <button type="button" class="ai-ib" id="ai-help" aria-label="Ajuda">${BOOK_ICON}</button>
+            <button type="button" class="ai-ib" id="ai-pause" aria-label="Opções">${GEAR_ICON}</button>
+          </div>
+        </div>
+        <button type="button" class="ai-x" id="inv-close" aria-label="Fechar">${X_ICON}</button>
       </div>
       <div class="drag-ghost" data-ref="ghost" hidden></div>
     `;
@@ -169,6 +224,16 @@ export class InventoryScreen {
     }));
     el.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => this.showTab(t.dataset.tab)));
     el.querySelector('#inv-close').addEventListener('click', () => this.onClose());
+    el.querySelector('#ai-map').addEventListener('click', () => this.onMap?.());
+    el.querySelector('#ai-help').addEventListener('click', () => this.onHelp?.());
+    el.querySelector('#ai-pause').addEventListener('click', () => this.onPause?.());
+    // lupa: mostra/esconde o campo de busca (escurece o que não combina)
+    el.querySelector('#inv-search').addEventListener('click', () => {
+      const f = this.refs.filter;
+      f.hidden = !f.hidden;
+      if (!f.hidden) f.focus(); else { f.value = ''; this.refresh(); }
+    });
+    this.refs.filter.addEventListener('input', () => this.refresh());
     el.querySelectorAll('.sk-plus').forEach((b) => b.addEventListener('click', () => {
       if (this.stats?.spendPoint(b.dataset.skill)) this.refresh();
     }));
@@ -194,7 +259,7 @@ export class InventoryScreen {
 
     events.on(EV.INVENTORY_CHANGED, () => this.visible && this.refresh());
     events.on(EV.CRAFT_QUEUE, () => this.visible && this.refresh());
-    this.showTab('craft');
+    this.showTab('inv');
   }
 
   get visible() {
@@ -204,13 +269,15 @@ export class InventoryScreen {
   show() {
     this.el.hidden = false;
     this.refresh();
+    // a textura do personagem pode demorar um instante: desenha de novo
+    if (!this.rightMode) [150, 700].forEach((ms) => setTimeout(() => this.visible && !this.rightMode && this._renderPreview(), ms));
   }
 
   hide() {
     this.el.hidden = true;
     this.box = null;
     this.el.querySelector('#tab-box').hidden = true;
-    if (this.tab === 'box') this.showTab('craft');
+    if (this.rightMode === 'box') this.showTab('inv');
   }
 
   // Abre junto com um baú (aba Baú)
@@ -271,26 +338,68 @@ export class InventoryScreen {
     });
   }
 
+  // Esquerda: 'inv' ou 'craft'. Direita: personagem; 'item', 'engrams' e 'box' ocupam o lugar dele.
   showTab(tab) {
+    if (tab === 'skills') tab = this.leftTab; // a ficha Você fica sempre à vista
+    if (tab === 'inv' || tab === 'craft') {
+      this.leftTab = tab;
+      if (tab === 'inv') this.rightMode = null;
+    } else {
+      this.rightMode = tab;
+    }
     this.tab = tab;
-    if (tab === 'engrams') this._renderEngrams();
-    this.el.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.tab === tab));
-    this.el.querySelectorAll('[data-tab-body]').forEach((b) => { b.hidden = b.dataset.tabBody !== tab; });
+    if (this.rightMode === 'engrams') this._renderEngrams();
+    this.el.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.tab === this.leftTab || t.dataset.tab === this.rightMode));
+    this.el.querySelectorAll('[data-tab-body]').forEach((b) => {
+      const n = b.dataset.tabBody;
+      b.hidden = n === 'inv' || n === 'craft' ? n !== this.leftTab : n !== this.rightMode;
+    });
+    this.refs.char.hidden = !!this.rightMode;
+    if (!this.rightMode) this._renderPreview();
+  }
+
+  // Boneco do personagem (uma cena pequena, desenhada só com a tela aberta)
+  _renderPreview() {
+    try {
+      if (!this._pv) {
+        const cv = this.refs.charcv;
+        const renderer = new THREE.WebGLRenderer({ canvas: cv, alpha: true, antialias: true, preserveDrawingBuffer: false });
+        renderer.setPixelRatio(1);
+        renderer.setSize(cv.width, cv.height, false);
+        const scene = new THREE.Scene();
+        const cam = new THREE.PerspectiveCamera(24, cv.width / cv.height, 0.1, 20);
+        cam.position.set(0, 1.0, -4.6);
+        cam.lookAt(0, 0.92, 0);
+        scene.add(new THREE.HemisphereLight(0xdfeeff, 0x4a4036, 1.5));
+        const sun = new THREE.DirectionalLight(0xffffff, 1.6);
+        sun.position.set(-2, 3, -3);
+        scene.add(sun);
+        const model = makePlayerModel();
+        scene.add(model.root);
+        model.update(0, { position: new THREE.Vector3(), facing: 0, visible: true, dead: false, speed: 0, swimming: false, crouching: false, onGround: true });
+        this._pv = { renderer, scene, cam };
+      }
+      this._pv.renderer.render(this._pv.scene, this._pv.cam);
+    } catch (e) {
+      console.warn('Sem prévia do personagem:', e);
+    }
   }
 
   _refreshSkills() {
     const st = this.stats;
     if (!st) return;
     this.refs.spoints.textContent = String(st.points);
-    this.refs.sdot.hidden = st.points <= 0;
-    this.refs.sdot.textContent = String(st.points);
     for (const s of SKILLS) {
       // como no ARK: atual/máximo nas barras do corpo
       const cur = CUR[s.key]?.(st, this.inv);
       this.refs[`sv-${s.key}`].textContent = cur !== undefined
         ? `${cur.toFixed(1)}/${st.skillValue(s.key).toFixed(1)}`
-        : `${Math.round(st.skillValue(s.key))}${s.unit ?? ''}`;
+        : `${+st.skillValue(s.key).toFixed(1)}${s.unit ?? ''}`;
       this.refs[`sl-${s.key}`].textContent = st.skills[s.key] ? `+${st.skills[s.key]}` : '';
+      // a linha é uma barra: a parte clara mostra quanto está cheio (vida, estamina, comida...)
+      const max = st.skillValue(s.key);
+      const frac = cur !== undefined && max > 0 ? Math.max(0, Math.min(1, cur / max)) : 1;
+      this.refs[`sv-${s.key}`].parentElement.style.setProperty('--p', `${(frac * 100).toFixed(1)}%`);
     }
     this.el.querySelectorAll('.sk-plus').forEach((b) => { b.disabled = st.points <= 0; });
     // ficha "Você" (nível, dia, hora, temperatura, proteção...)
@@ -316,6 +425,10 @@ export class InventoryScreen {
     const st = this.stats;
     if (!st) return;
     this.refs.egpts.textContent = String(st.engramPoints);
+    // quanto o próximo nível rende de pontos de engrama (tabela do ARK)
+    this.refs.egnext.textContent = st.level >= BALANCE.nivel.max
+      ? 'Nível máximo'
+      : `Ao chegar no nível ${st.level + 1}: +${st.engramsForLevel(st.level + 1)} pontos`;
     const g = this.refs.egrid;
     if (!g.children.length) {
       const byLevel = new Map();
@@ -335,7 +448,8 @@ export class InventoryScreen {
           b.type = 'button';
           b.className = 'eg-tile';
           b.dataset.id = r.id;
-          b.innerHTML = `<span class="eg-icon">${itemIcon(r.resultado)}</span><span class="eg-name">${itemName(r.resultado)}</span>`;
+          // nível mínimo ao lado de cada engrama (e o custo em pontos, como no ARK)
+          b.innerHTML = `<span class="eg-lv">Nv ${r.nivel ?? 1}</span><span class="eg-cost">${r.engrama ? `✦${r.engrama}` : 'grátis'}</span><span class="eg-icon">${itemIcon(r.resultado)}</span><span class="eg-name">${itemName(r.resultado)}</span>`;
           b.addEventListener('click', () => {
             this.selEngram = r;
             this._renderEngrams();
@@ -391,6 +505,7 @@ export class InventoryScreen {
       dur.hidden = !s;
       if (s) dur.style.transform = `scaleX(${Math.max(0, (s.dur ?? 1) / ITEMS[s.id].equipamento.durabilidade).toFixed(3)})`;
     }
+    this.refs.aipts.textContent = String(this.stats?.engramPoints ?? 0);
     this.refs.armor.textContent = `· proteção ${Math.round(Math.min(BALANCE.armadura.max_reducao, inv.armor) * 100)}% · calor +${inv.warmth}°`;
     inv.slots.forEach((s, i) => {
       const b = this.slotEls[i];
@@ -410,6 +525,12 @@ export class InventoryScreen {
       else if (sp) dur.style.transform = `scaleX(${Math.max(0, (s.spoil ?? sp * 60) / (sp * 60)).toFixed(3)})`;
       else if (cn) dur.style.transform = `scaleX(${Math.max(0, (s.agua ?? 0) / cn.capacidade).toFixed(3)})`;
       b.title = s ? `${ITEMS[s.id].nome} ×${s.qty}` : '';
+    });
+
+    // busca (lupa): escurece o que não combina
+    const q = (this.refs.filter.value ?? '').trim().toLowerCase();
+    inv.slots.forEach((s, i) => {
+      this.slotEls[i].classList.toggle('filtered', !!q && i >= HOTBAR && !(s && ITEMS[s.id].nome.toLowerCase().includes(q)));
     });
 
     // categorias e estação por perto
@@ -634,9 +755,24 @@ export class InventoryScreen {
         this._toBox(i);
         this.refresh();
       } else {
-        this.selSlot = i;
-        this.showTab('item');
-        this.refresh();
+        // toque duplo no mesmo item (como no ARK): mochila -> barra rápida; barra rápida -> mochila
+        const now = performance.now();
+        const dbl = this._lastTap && this._lastTap.i === i && now - this._lastTap.t < 380 && this.inv.slots[i];
+        this._lastTap = dbl ? null : { i, t: now };
+        if (dbl) {
+          const inHot = i < HOTBAR;
+          const target = this.inv.slots.findIndex((x, k) => !x && (inHot ? k >= HOTBAR : k < HOTBAR));
+          const to = target >= 0 ? target : (inHot ? -1 : HOTBAR - 1);
+          if (to >= 0) {
+            this.inv.move(i, to);
+            this.selSlot = to;
+          }
+          this.refresh();
+        } else {
+          this.selSlot = i;
+          this.showTab('item');
+          this.refresh();
+        }
       }
       start = null;
       dragging = false;

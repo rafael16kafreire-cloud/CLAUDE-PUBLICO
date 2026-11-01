@@ -24,8 +24,15 @@ import { renderImpostor } from './impostor.js';
 import { foliageTexture, addPlantDetail } from './foliage_texture.js';
 import recursos from '../data/world/recursos.json';
 import * as P from './props.js';
-import { snowRockGeometry, snowRockMaterial } from './snow_models.js';
-import { vegGeometry, vegMaterial } from './veg_models.js';
+import { MODELOS_LOWPOLY, materialLowPoly } from './lowpoly_veg.js';
+// ETAPA 2: os modelos antigos (com textura) saíram; tudo vem de lowpoly_veg.js (veja MODELOS_LOWPOLY
+// abaixo da tabela). Os nomes antigos ficam só para a tabela continuar legível.
+const vegGeometry = () => null;
+const vegMaterial = () => null;
+const snowRockGeometry = null;
+const snowRockMaterial = null;
+const makeLayeredRock = () => null;
+const layeredRockMaterial = null;
 
 const ROOTS = P.sumaumaRootColliders();
 
@@ -38,19 +45,41 @@ const ROOTS = P.sumaumaRootColliders();
 const TYPES = {
   sumauma: { roots: true, foot: 2.6, hi: P.makeSumauma, lo: P.makeSumaumaLow, imp: true, collider: 1.5, shadow: true, scale: [1.2, 1.6], res: 'arvore_gigante' },
   arvore_dossel: { foot: 0.75, hi: P.makeCanopyTree, lo: P.makeCanopyTreeLow, imp: true, collider: 0.55, shadow: true, scale: [1.0, 1.45], res: 'arvore' },
-  arvore_media: { foot: 0.3, hi: P.makeUnderstoryTree, lo: P.makeUnderstoryTreeLow, imp: true, collider: 0.3, shadow: true, scale: [0.75, 1.3], res: 'arvore' },
+  arvore_media: { foot: 0.3, hi: P.makeUnderstoryTree, lo: P.makeUnderstoryTreeLow, imp: true, collider: 0.3, shadow: true, scale: [0.75, 1.3], res: 'arvore_mole' },
   acai: { foot: 0.4, hi: P.makeAcai, lo: P.makeAcaiLow, imp: true, collider: 0.22, shadow: true, scale: [0.8, 1.2], res: 'palmeira' },
   // praia (modelos enviados: Palm Tree Realistic, Date palm and vegetation)
   coqueiro: { foot: 0.3, hi: () => vegGeometry('palmeira', 11), lo: P.makeCoconutPalmLow, mat: () => vegMaterial('palmeira'), collider: 0.3, shadow: true, scale: [0.85, 1.25], res: 'palmeira', textured: true },
+  palma_bl_a: { hiDist: 60, hiScale: true, foot: 0.3, hi: () => vegGeometry('palma_bl_a', 14.2), lo: () => vegGeometry('palma_bl_a_lo', 14.2), loMat: () => vegMaterial('palma_bl_a_lo'), mat: () => vegMaterial('palma_bl_a'), collider: 0.3, shadow: true, scale: [0.85, 1.2], res: 'palmeira', textured: true, maxDist: 320 },
+  palma_bl_b: { hiDist: 60, hiScale: true, foot: 0.3, hi: () => vegGeometry('palma_bl_b', 11.0), lo: () => vegGeometry('palma_bl_b_lo', 11.0), loMat: () => vegMaterial('palma_bl_b_lo'), mat: () => vegMaterial('palma_bl_b'), collider: 0.3, shadow: true, scale: [0.85, 1.2], res: 'palmeira', textured: true, maxDist: 320 },
+  palma_bl_c: { hiDist: 60, hiScale: true, foot: 0.3, hi: () => vegGeometry('palma_bl_c', 16.1), lo: () => vegGeometry('palma_bl_c_lo', 16.1), loMat: () => vegMaterial('palma_bl_c_lo'), mat: () => vegMaterial('palma_bl_c'), collider: 0.3, shadow: true, scale: [0.85, 1.2], res: 'palmeira', textured: true, maxDist: 320 },
+  copa_a: { hiDist: 18, hiScale: true, foot: 0.75, hi: () => vegGeometry('copa_a', 30.1), lo: () => vegGeometry('copa_a_lo', 30.1), loMat: () => vegMaterial('copa_a_lo'), mat: () => vegMaterial('copa_a'), collider: 1.15, shadow: true, scale: [0.85, 1.3], res: 'arvore', textured: true, maxDist: 320 },
+  copa_b: { hiDist: 18, hiScale: true, foot: 0.75, hi: () => vegGeometry('copa_b', 37.1), lo: () => vegGeometry('copa_b_lo', 37.1), loMat: () => vegMaterial('copa_b_lo'), mat: () => vegMaterial('copa_b'), collider: 1.4, shadow: true, scale: [0.85, 1.3], res: 'arvore', textured: true, maxDist: 320 },
+  copa_c: { hiDist: 18, hiScale: true, foot: 0.75, hi: () => vegGeometry('copa_c', 25.8), lo: () => vegGeometry('copa_c_lo', 25.8), loMat: () => vegMaterial('copa_c_lo'), mat: () => vegMaterial('copa_c'), collider: 0.95, shadow: true, scale: [0.85, 1.3], res: 'arvore', textured: true, maxDist: 320 },
+  copa_g_a: { hiDist: 22, hiScale: true, foot: 2.6, hi: () => vegGeometry('copa_g_a', 47.8), lo: () => vegGeometry('copa_g_a_lo', 47.8), loMat: () => vegMaterial('copa_g_a_lo'), mat: () => vegMaterial('copa_g_a'), collider: 3.9, shadow: true, scale: [1.0, 1.4], res: 'arvore_gigante', textured: true, maxDist: 320 },
+  copa_g_b: { hiDist: 22, hiScale: true, foot: 2.6, hi: () => vegGeometry('copa_g_b', 45.7), lo: () => vegGeometry('copa_g_b_lo', 45.7), loMat: () => vegMaterial('copa_g_b_lo'), mat: () => vegMaterial('copa_g_b'), collider: 3.5, shadow: true, scale: [1.0, 1.4], res: 'arvore_gigante', textured: true, maxDist: 320 },
+  media_a: { hiDist: 22, hiScale: true, foot: 0.3, hi: () => vegGeometry('media_a', 13.8), lo: () => vegGeometry('media_a_lo', 13.8), loMat: () => vegMaterial('media_a_lo'), mat: () => vegMaterial('media_a'), collider: 0.45, shadow: true, scale: [0.8, 1.3], res: 'arvore_mole', textured: true, maxDist: 320 },
+  media_b: { hiDist: 22, hiScale: true, foot: 0.3, hi: () => vegGeometry('media_b', 16.9), lo: () => vegGeometry('media_b_lo', 16.9), loMat: () => vegMaterial('media_b_lo'), mat: () => vegMaterial('media_b'), collider: 0.5, shadow: true, scale: [0.8, 1.3], res: 'arvore_mole', textured: true, maxDist: 320 },
+  pinheiro_nv_a: { hiDist: 34, hiScale: true, foot: 0.4, hi: () => vegGeometry('pinheiro_nv_a', 22.9), lo: () => vegGeometry('pinheiro_nv_a_lo', 22.9), loMat: () => vegMaterial('pinheiro_nv_a_lo'), mat: () => vegMaterial('pinheiro_nv_a'), collider: 0.78, shadow: true, scale: [0.8, 1.3], res: 'arvore_mole', textured: true, maxDist: 320, cold: true },
+  pinheiro_nv_b: { hiDist: 34, hiScale: true, foot: 0.4, hi: () => vegGeometry('pinheiro_nv_b', 27.9), lo: () => vegGeometry('pinheiro_nv_b_lo', 27.9), loMat: () => vegMaterial('pinheiro_nv_b_lo'), mat: () => vegMaterial('pinheiro_nv_b'), collider: 0.9, shadow: true, scale: [0.8, 1.3], res: 'arvore_mole', textured: true, maxDist: 320, cold: true },
+  pinheiro_nv_c: { hiDist: 34, hiScale: true, foot: 0.4, hi: () => vegGeometry('pinheiro_nv_c', 18.9), lo: () => vegGeometry('pinheiro_nv_c_lo', 18.9), loMat: () => vegMaterial('pinheiro_nv_c_lo'), mat: () => vegMaterial('pinheiro_nv_c'), collider: 0.66, shadow: true, scale: [0.8, 1.3], res: 'arvore_mole', textured: true, maxDist: 320, cold: true },
+  pinheiro_vd_a: { hiDist: 34, hiScale: true, foot: 0.4, hi: () => vegGeometry('pinheiro_vd_a', 24.9), lo: () => vegGeometry('pinheiro_vd_a_lo', 24.9), loMat: () => vegMaterial('pinheiro_vd_a_lo'), mat: () => vegMaterial('pinheiro_vd_a'), collider: 0.78, shadow: true, scale: [0.8, 1.3], res: 'arvore_mole', textured: true, maxDist: 320, cold: true },
+  pinheiro_vd_b: { hiDist: 34, hiScale: true, foot: 0.4, hi: () => vegGeometry('pinheiro_vd_b', 19.9), lo: () => vegGeometry('pinheiro_vd_b_lo', 19.9), loMat: () => vegMaterial('pinheiro_vd_b_lo'), mat: () => vegMaterial('pinheiro_vd_b'), collider: 0.66, shadow: true, scale: [0.8, 1.3], res: 'arvore_mole', textured: true, maxDist: 320, cold: true },
   tamareira: { foot: 0.45, hi: () => vegGeometry('tamareira', 8.5), lo: P.makeCoconutPalmLow, mat: () => vegMaterial('tamareira'), collider: 0.4, shadow: true, scale: [0.8, 1.2], res: 'palmeira', textured: true, maxDist: 280 },
   tamareira2: { foot: 0.45, hi: () => vegGeometry('tamareira2', 7), lo: P.makeCoconutPalmLow, mat: () => vegMaterial('tamareira2'), collider: 0.4, shadow: true, scale: [0.8, 1.2], res: 'palmeira', textured: true, maxDist: 280 },
   planta_praia: { hi: () => vegGeometry('planta_praia', 1.1), mat: () => vegMaterial('planta_praia'), collider: 0, shadow: false, scale: [0.7, 1.4], res: 'arbusto', maxDist: 80, textured: true },
   capim_praia: { hi: () => vegGeometry('capim_praia', 0.9), mat: () => vegMaterial('capim_praia'), collider: 0, shadow: false, scale: [0.7, 1.4], res: null, maxDist: 60, textured: true },
   // floresta (Low Poly Tree Scene Free): árvores folhosas e tufos de capim
-  arvore_folhosa: { hiDist: 26, foot: 0.5, hi: () => vegGeometry('arvore_folhosa', 15), lo: P.makeCanopyTreeLow, mat: () => vegMaterial('arvore_folhosa'), collider: 0.45, shadow: true, scale: [0.8, 1.3], res: 'arvore', textured: true, maxDist: 320 },
-  arvore_folhosa2: { foot: 0.35, hi: () => vegGeometry('arvore_folhosa2', 11), lo: P.makeUnderstoryTreeLow, mat: () => vegMaterial('arvore_folhosa2'), collider: 0.35, shadow: true, scale: [0.8, 1.3], res: 'arvore', textured: true, maxDist: 320 },
+  arvore_bl_a: { hiDist: 16, hiScale: true, foot: 0.75, hi: () => vegGeometry('arvore_bl_a', 22), lo: () => vegGeometry('arvore_bl_a_lo', 22), loMat: () => vegMaterial('arvore_bl_a_lo'), mat: () => vegMaterial('arvore_bl_a'), collider: 0.55, shadow: true, scale: [0.85, 1.35], res: 'arvore', textured: true, maxDist: 320 },
+  arvore_bl_b: { hiDist: 16, hiScale: true, foot: 0.75, hi: () => vegGeometry('arvore_bl_b', 22), lo: () => vegGeometry('arvore_bl_b_lo', 22), loMat: () => vegMaterial('arvore_bl_b_lo'), mat: () => vegMaterial('arvore_bl_b'), collider: 0.55, shadow: true, scale: [0.85, 1.35], res: 'arvore', textured: true, maxDist: 320 },
+  arvore_bl_c: { hiDist: 16, hiScale: true, foot: 0.75, hi: () => vegGeometry('arvore_bl_c', 22), lo: () => vegGeometry('arvore_bl_c_lo', 22), loMat: () => vegMaterial('arvore_bl_c_lo'), mat: () => vegMaterial('arvore_bl_c'), collider: 0.55, shadow: true, scale: [0.85, 1.35], res: 'arvore', textured: true, maxDist: 320 },
+  arvore_folhosa: { hiDist: 26, foot: 0.5, hi: () => vegGeometry('arvore_folhosa', 15), lo: P.makeCanopyTreeLow, mat: () => vegMaterial('arvore_folhosa'), collider: 0.45, shadow: true, scale: [0.8, 1.3], res: 'arvore_mole', textured: true, maxDist: 320 },
+  arvore_folhosa2: { foot: 0.35, hi: () => vegGeometry('arvore_folhosa2', 11), lo: P.makeUnderstoryTreeLow, mat: () => vegMaterial('arvore_folhosa2'), collider: 0.35, shadow: true, scale: [0.8, 1.3], res: 'arvore_mole', textured: true, maxDist: 320 },
   // árvore alta da mata (Agarwood): tronco liso, copa no alto e cipós
-  arvore_agar: { hiDist: 24, foot: 0.45, hi: () => vegGeometry('arvore_agar', 24), lo: P.makeCanopyTreeLow, mat: () => vegMaterial('arvore_agar'), collider: 0.45, shadow: true, scale: [0.8, 1.25], res: 'arvore', textured: true, maxDist: 320 },
+  arvore_agar: { hiDist: 24, foot: 0.45, hi: () => vegGeometry('arvore_agar', 24), lo: P.makeCanopyTreeLow, mat: () => vegMaterial('arvore_agar'), collider: 0.45, shadow: true, scale: [0.8, 1.25], res: 'arvore_mole', textured: true, maxDist: 320 },
+  // grama e margarida do .blend enviado: tufos grandes (perto) e leves (médio), sem versão "foto" (somem na neblina)
+  capim_bq_a: { hiDist: 22, hiScale: true, hi: () => vegGeometry('capim_bq_a', 0.27, 0.9), lo: () => vegGeometry('capim_bq_a_lo', 0.27, 0.9), loMat: () => vegMaterial('capim_bq_a_lo'), mat: () => vegMaterial('capim_bq_a'), collider: 0, shadow: false, scale: [0.7, 1.3], res: null, maxDist: 90, textured: true },
+  capim_bq_d: { hiDist: 22, hiScale: true, hi: () => vegGeometry('capim_bq_d', 0.25, 0.9), lo: () => vegGeometry('capim_bq_d_lo', 0.25, 0.9), loMat: () => vegMaterial('capim_bq_d_lo'), mat: () => vegMaterial('capim_bq_d'), collider: 0, shadow: false, scale: [0.7, 1.3], res: null, maxDist: 90, textured: true },
+  margarida_bq: { hiDist: 20, hiScale: true, hi: () => vegGeometry('margarida_bq', 0.3, 0.7), lo: () => vegGeometry('margarida_bq_lo', 0.3, 0.7), loMat: () => vegMaterial('margarida_bq_lo'), mat: () => vegMaterial('margarida_bq'), collider: 0, shadow: false, scale: [0.7, 1.3], res: null, maxDist: 75, textured: true },
   capim: { hi: () => vegGeometry('capim', 0.8), mat: () => vegMaterial('capim'), collider: 0, shadow: false, scale: [0.7, 1.5], res: null, maxDist: 55, textured: true },
   samambaia_gigante: { foot: 0.3, hi: P.makeTreeFern, lo: P.makeTreeFernLow, imp: true, collider: 0.2, shadow: true, scale: [0.8, 1.3], res: 'samambaia_gigante' },
   bananeira: { foot: 0.45, hi: P.makeBananaTree, lo: P.makeBananaTreeLow, collider: 0.22, shadow: false, scale: [0.85, 1.25], res: 'bananeira', maxDist: 110 },
@@ -65,14 +94,19 @@ const TYPES = {
   tronco_caido: { hi: () => vegGeometry('musgo', 5, 0), lo: P.makeFallenLogLow, mat: () => vegMaterial('musgo'), textured: true, collider: 'log', log: [2.3, 0.7, 1.5], shadow: true, scale: [0.8, 1.3], res: 'tronco', maxDist: 140 },
   tronco_pinho: { hi: () => vegGeometry('pinho', 9, 0), lo: P.makeFallenLogLow, mat: () => vegMaterial('pinho'), textured: true, collider: 'log', log: [4.3, 0.45, 0.9], shadow: true, scale: [0.8, 1.2], res: 'tronco', maxDist: 140 },
   pedrinhas: { foot: 0.05, hi: P.makePebbles, collider: 0, shadow: false, scale: [0.8, 1.3], res: 'pedrinhas', maxDist: 45 },
+  cogumelos: { foot: 0.05, hi: P.makeMushrooms, collider: 0, shadow: false, scale: [0.8, 1.5], res: null, maxDist: 40 },
   gravetos: { foot: 0.05, hi: P.makeSticks, collider: 0, shadow: false, scale: [0.8, 1.3], res: 'gravetos', maxDist: 45 },
-  pinheiro: { foot: 0.4, hi: P.makeSpruce, lo: P.makeSpruceLow, imp: true, collider: 0.3, shadow: true, scale: [0.7, 1.3], res: 'arvore', cold: true },
+  pinheiro: { foot: 0.4, hi: P.makeSpruce, lo: P.makeSpruceLow, imp: true, collider: 0.3, shadow: true, scale: [0.7, 1.3], res: 'arvore_mole', cold: true },
   // modelos da neve enviados pelo jogador (mat = material próprio, com textura)
   // neve: árvores em 3D de verdade (galhos e neve em cima), não placas com foto
-  pinheiro_neve: { foot: 0.4, hi: P.makeSnowSpruce, lo: P.makeSnowSpruceLow, imp: true, collider: 0.3, shadow: true, scale: [0.75, 1.35], res: 'arvore', cold: true },
-  arvore_morta_neve: { foot: 0.4, hi: P.makeSnowDeadTree, lo: P.makeSnowDeadTreeLow, collider: 0.3, shadow: true, scale: [0.8, 1.3], res: 'arvore', cold: true, maxDist: 320 },
-  arvore_seca: { foot: 0.4, hi: () => P.makeSnowDeadTree(false, 5), lo: () => P.makeSnowDeadTree(true, 5), collider: 0.25, shadow: true, scale: [0.9, 1.4], res: 'arvore', cold: true, maxDist: 320 },
+  pinheiro_neve: { foot: 0.4, hi: P.makeSnowSpruce, lo: P.makeSnowSpruceLow, imp: true, collider: 0.3, shadow: true, scale: [0.75, 1.35], res: 'arvore_mole', cold: true },
+  arvore_morta_neve: { foot: 0.4, hi: P.makeSnowDeadTree, lo: P.makeSnowDeadTreeLow, collider: 0.3, shadow: true, scale: [0.8, 1.3], res: 'arvore_mole', cold: true, maxDist: 320 },
+  arvore_seca: { foot: 0.4, hi: () => P.makeSnowDeadTree(false, 5), lo: () => P.makeSnowDeadTree(true, 5), collider: 0.25, shadow: true, scale: [0.9, 1.4], res: 'arvore_mole', cold: true, maxDist: 320 },
   arbusto_neve: { hi: P.makeSnowShrub, collider: 0, shadow: false, scale: [0.7, 1.4], res: 'arbusto', maxDist: 90 },
+  // rochedos em camadas (paredões e pedregulhos escuros de laje, como nas ilhas do ARK): 3 formatos
+  rochedo_camadas: { foot: 0.8, hi: () => makeLayeredRock(0), lo: () => makeLayeredRock(0, true), mat: layeredRockMaterial, loMat: layeredRockMaterial, collider: 0.6, shadow: true, scale: [3, 9], res: 'rochedo', maxDist: 320, rock: true, textured: true, cluster: 0.6 },
+  rochedo_camadas_b: { foot: 0.8, hi: () => makeLayeredRock(1), lo: () => makeLayeredRock(1, true), mat: layeredRockMaterial, loMat: layeredRockMaterial, collider: 0.6, shadow: true, scale: [2.5, 7], res: 'rochedo', maxDist: 320, rock: true, textured: true, cluster: 0.56 },
+  rochedo_camadas_c: { foot: 0.8, hi: () => makeLayeredRock(2), lo: () => makeLayeredRock(2, true), mat: layeredRockMaterial, loMat: layeredRockMaterial, collider: 0.6, shadow: true, scale: [4, 12], res: 'rochedo', maxDist: 320, rock: true, textured: true, cluster: 0.64 },
   rochedo: { foot: 1.6, hi: snowRockGeometry, mat: snowRockMaterial, lo: P.makeBoulderLow, collider: 1.0, shadow: true, scale: [1.8, 9], res: 'rochedo', maxDist: 320, rock: true, textured: true },
   // recursos por região (como no ARK): metal e cristal na serra, obsidiana
   // e petróleo nas montanhas, conchas com pérolas no fundo do mar
@@ -84,11 +118,29 @@ const TYPES = {
   minerio_ferro: { foot: 0.8, hi: P.makeIronOre, collider: 0.9, shadow: false, scale: [0.9, 1.6], res: 'ferro', maxDist: 140, rock: true },
   pedra_musgo: { foot: 0.85, hi: P.makeMossRock, lo: P.makeMossRockLow, collider: 1.0, shadow: false, scale: [0.6, 2.2], res: 'pedra', maxDist: 160 },
   mangue: { foot: 1.2, hi: P.makeMangrove, lo: P.makeMangroveLow, imp: true, collider: 0.6, shadow: true, scale: [0.8, 1.2], res: 'arvore', water: true },
-  arvore_morta: { foot: 0.3, hi: P.makeDeadTree, collider: 0.3, shadow: true, scale: [0.8, 1.3], res: 'arvore', water: true, maxDist: 200 },
-  junco: { hi: P.makeReeds, collider: 0, shadow: false, scale: [0.8, 1.3], res: 'junco', water: true, maxDist: 70 },
-  taboa: { hi: P.makeCattail, collider: 0, shadow: false, scale: [0.8, 1.3], res: 'junco', water: true, maxDist: 70 },
+  arvore_morta: { foot: 0.3, hi: P.makeDeadTree, collider: 0.3, shadow: true, scale: [0.8, 1.3], res: 'arvore_mole', water: true, maxDist: 200 },
+  junco: { shore: true, hi: P.makeReeds, collider: 0, shadow: false, scale: [0.8, 1.3], res: 'junco', water: true, maxDist: 70 },
+  taboa: { shore: true, hi: P.makeCattail, collider: 0, shadow: false, scale: [0.8, 1.3], res: 'junco', water: true, maxDist: 70 },
   vitoria_regia: { hi: P.makeWaterLily, collider: 0, shadow: false, scale: [0.6, 1.7], res: null, surface: true, maxDist: 120 },
 };
+
+// =============================================================
+// ETAPA 2 (low-poly / Valheim): todo tipo de planta e pedra passa a usar o
+// modelo feito de formas simples (lowpoly_veg.js), um material só (cor por
+// face + vento) e sem "foto" de longe: o modelo médio é leve o bastante para
+// ir até a neblina. Nome, colisão e recurso de cada tipo continuam os mesmos.
+// =============================================================
+for (const [t, m] of Object.entries(MODELOS_LOWPOLY(ROOTS))) {
+  const d = TYPES[t];
+  if (!d) continue;
+  d.hi = m.hi;
+  d.lo = m.lo;
+  d.mat = materialLowPoly;
+  d.loMat = materialLowPoly;
+  delete d.imp;
+  d.textured = true; // cor já vem pintada: a instância só varia o brilho
+  if (m.collider) d.collider = m.collider;
+}
 
 const CHUNK = 48;
 
@@ -154,7 +206,7 @@ export class Vegetation {
       vertexColors: true,
       map: foliageTexture(),
       alphaTest: 0.42,
-    }), 0.012, 0.045));
+    }), 0.012, 0.045, 1));
     // Modelos de média distância não têm recortes: material sem
     // "alphaTest" (a placa de vídeo descarta pixels escondidos antes).
     this.materialSolid = addPlantDetail(addWind(new THREE.MeshLambertMaterial({ vertexColors: true, map: this.material.map }), 0.012, 0.045));
@@ -221,6 +273,7 @@ export class Vegetation {
         const def = TYPES[type];
         const wb = this.water.bodyAt(x, z);
         const depth = wb ? wb.level - h : 0;
+        if (def.shore && !wb && key !== 'pantano' && key !== 'igapo') continue; // junco/taboa fora do brejo: só na beira da água
         if (def.surface) {
           if (!wb || depth < 0.4) continue;
         } else if (key !== 'mar' && wb && (!def.water || depth > 0.9)) {
@@ -229,10 +282,12 @@ export class Vegetation {
         const ny = map.normalAt(x, z, normal).y;
         if (ny < 0.78 && type !== 'pedra_musgo' && def.collider !== 'log' && !def.rock) continue;
         // pinheiro não sobe nos picos (linha das árvores); minério só no alto
-        if (def.cold && h > 75) continue;
+        if (def.cold && h > (key === 'serra' ? 120 : 75)) continue; // na serra os pinheiros de neve sobem mais
         if (type === 'minerio_ferro' && h < 30) continue;
         if (key === 'neve' && (type === 'rocha_obsidiana' || type === 'cristal') && h < 60) continue; // no alto da montanha
         if (def.rock && ny < 0.3) continue;
+        // pedras em grupos (afloramentos): só nascem onde o ruído de rocha passa do limite
+        if (def.cluster && 0.5 + 0.5 * map.nRock(x * 0.0045 + 13.1, z * 0.0045 - 7.7) < def.cluster) continue;
         if (map.onPlateau(x, z)) continue; // topo dos platôs: livre para construir
         // sub-bosque: não nasce dentro de troncos e pedras
         if (layer.under) {
@@ -246,7 +301,7 @@ export class Vegetation {
 
         const scale = def.scale[0] + r2 * (def.scale[1] - def.scale[0]);
         const rot = r3 * Math.PI * 2;
-        const sink = type === 'pedra_musgo' || def.rock ? 0.2 * scale : def.collider === 'log' ? 0.12 : (type === 'gravetos' || type === 'pedrinhas') ? 0.02 : 0.15;
+        const sink = type === 'pedra_musgo' || def.rock ? 0.2 * scale : def.collider === 'log' ? 0.12 : (type === 'gravetos' || type === 'pedrinhas' || type === 'cogumelos') ? 0.02 : 0.15;
         // Em morro: apoia no ponto MAIS BAIXO do chão embaixo da planta
         // (senão um lado fica "flutuando").
         let ground = h;
@@ -338,10 +393,10 @@ export class Vegetation {
     for (const [t, def] of Object.entries(TYPES)) {
       const cap = (counts[t] ?? 0) + (extra[t] ?? 0);
       if (!cap) continue;
-      const ts = { def, meshes: {}, n: { hi: 0, lo: 0, imp: 0 } };
+      const ts = { def, cap, meshes: {}, n: { hi: 0, lo: 0, imp: 0 } };
       const hiGeo = P.ensureUv(def.hi());
       ts.meshes.hi = this._mesh(hiGeo, def.mat ? def.mat() : this.material, cap, `${t}_perto`, def.shadow);
-      if (def.lo) ts.meshes.lo = this._mesh(P.ensureUv(def.lo()), this.materialSolid, cap, `${t}_medio`, false);
+      if (def.lo) ts.meshes.lo = this._mesh(P.ensureUv(def.lo()), def.loMat ? def.loMat() : this.materialSolid, cap, `${t}_medio`, false);
       if (def.imp && renderer) {
         const imp = renderImpostor(renderer, hiGeo, this.material.map);
         ts.meshes.imp = this._mesh(imp.geometry, makeImpostorMaterial(imp.texture), cap, `${t}_longe`, false);
@@ -378,8 +433,18 @@ export class Vegetation {
   // ---------------------------------------------------------
   // Separa as plantas visíveis em perto/médio/longe
   // ---------------------------------------------------------
+  // A seleção do que aparece é feita aos poucos (fatias de ~2 ms por quadro), em duas fases:
+  // A) decide, chunk por chunk, quais plantas vão em cada faixa (perto/médio/longe);
+  // B) copia as matrizes de cada malha para a placa de vídeo, uma malha por vez.
+  // Assim nunca há uma pausa grande quando o jogador anda ou vira (antes eram ~15 ms de uma vez
+  // no computador, bem mais num celular). Com force = true faz tudo de uma vez.
   update(dt, camera, viewDistance, force = false) {
     this._last.t -= dt;
+    if (force) this._job = null;
+    if (this._job) {
+      this._step(2.0);
+      return;
+    }
     const cp = camera.position;
     const e = camera.matrixWorld.elements;
     const yaw = Math.atan2(e[8], e[10]);
@@ -391,7 +456,7 @@ export class Vegetation {
 
     // Frustum mais largo que a câmera (não "pisca" nas bordas ao virar).
     const cc = this._cullCam;
-    cc.copy(camera);
+    cc.copy(camera, false); // sem copiar os filhos da câmera (mãos, braço...): era o que custava ~7 ms
     cc.fov = Math.min(170, camera.fov + 55);
     cc.near = 0.5;
     cc.far = viewDistance + 40;
@@ -400,45 +465,101 @@ export class Vegetation {
     this._m4.multiplyMatrices(cc.projectionMatrix, cc.matrixWorldInverse);
     this._frustum.setFromProjectionMatrix(this._m4);
 
-    for (const ts of Object.values(this.types)) {
-      ts.n.hi = 0;
-      ts.n.lo = 0;
-      ts.n.imp = 0;
-    }
     const { hi, lo } = this.lod;
-    const M = this.matrices;
-    const C = this.colors;
-    for (const chunk of this.chunks.values()) {
+    const chunks = [];
+    // só os blocos da grade em volta do jogador (antes: a ilha inteira, ~7 mil blocos, a cada atualização)
+    const R = viewDistance + CHUNK * 0.75 + 24;
+    const gx0 = Math.floor((cp.x - R) / CHUNK);
+    const gx1 = Math.floor((cp.x + R) / CHUNK);
+    const gz0 = Math.floor((cp.z - R) / CHUNK);
+    const gz1 = Math.floor((cp.z + R) / CHUNK);
+    for (let gx = gx0; gx <= gx1; gx++) for (let gz = gz0; gz <= gz1; gz++) {
+      const chunk = this.chunks.get(`${gx},${gz}`);
+      if (!chunk) continue;
       const s = chunk.sphere;
       const dc = Math.hypot(s.center.x - cp.x, s.center.z - cp.z);
       if (dc - s.radius > viewDistance) continue;
       if (dc > s.radius && !this._frustum.intersectsSphere(s)) continue;
-      for (const rec of chunk.recs) {
-        if (!rec.alive) continue;
-        const ts = this.types[rec.type];
-        if (!ts) continue;
-        const d = Math.hypot(rec.x - cp.x, rec.z - cp.z);
-        if (d > viewDistance || d > (ts.def.maxDist ?? Infinity)) continue;
-        let band = 'hi';
-        if (d > Math.min(hi, ts.def.hiDist ?? Infinity) && ts.meshes.lo) band = 'lo';
-        if (d > lo && ts.meshes.imp) band = 'imp';
-        const mesh = ts.meshes[band];
-        const n = ts.n[band]++;
-        mesh.instanceMatrix.array.set(M.subarray(rec.id * 16, rec.id * 16 + 16), n * 16);
-        mesh.instanceColor.array.set(C.subarray(rec.id * 3, rec.id * 3 + 3), n * 3);
-      }
+      chunks.push(chunk);
     }
+    // limites por tipo (distâncias ao quadrado: sem raiz quadrada no laço)
+    const info = [];
     for (const ts of Object.values(this.types)) {
-      for (const band of ['hi', 'lo', 'imp']) {
-        const mesh = ts.meshes[band];
-        if (!mesh) continue;
-        const n = ts.n[band];
-        if (n === 0 && mesh.count === 0) continue;
-        mesh.count = n;
-        mesh.instanceMatrix.needsUpdate = true;
-        mesh.instanceColor.needsUpdate = true;
-      }
+      ts.sel = ts.sel ?? { hi: new Int32Array(ts.cap), lo: new Int32Array(ts.cap), imp: new Int32Array(ts.cap) };
+      ts.cnt = { hi: 0, lo: 0, imp: 0 };
+      const capHi = ts.def.hiDist ? (ts.def.hiScale ? ts.def.hiDist * Math.max(1, hi / 42) : ts.def.hiDist) : Infinity;
+      const dHi = Math.min(hi, capHi);
+      // árvores sem versão "foto" (impostor): a neblina já cobre quase tudo depois de ~70% do alcance,
+      // então não vale desenhar a malha média até o fim (custa centenas de milhares de triângulos)
+      const semFoto = ts.def.lo && !ts.meshes.imp;
+      const dMax = Math.min(viewDistance * (semFoto ? 0.72 : 1), ts.def.maxDist ?? Infinity);
+      ts.lim = { max2: dMax * dMax, hi2: dHi * dHi, lo2: lo * lo, hasLo: !!ts.meshes.lo, hasImp: !!ts.meshes.imp };
     }
+    this._job = { phase: 'A', chunks, ci: 0, cx: cp.x, cz: cp.z, vd2: viewDistance * viewDistance, mi: 0, list: null };
+    this._step(force ? Infinity : 2.0);
+  }
+
+  _step(budgetMs) {
+    const job = this._job;
+    const t0 = performance.now();
+    if (job.phase === 'A') {
+      const M_ = this.types;
+      const { cx, cz, vd2 } = job;
+      while (job.ci < job.chunks.length) {
+        const chunk = job.chunks[job.ci++];
+        const recs = chunk.recs;
+        for (let i = 0; i < recs.length; i++) {
+          const rec = recs[i];
+          if (!rec.alive) continue;
+          const ts = M_[rec.type];
+          if (!ts) continue;
+          const dx = rec.x - cx;
+          const dz = rec.z - cz;
+          const d2 = dx * dx + dz * dz;
+          if (d2 > vd2) continue;
+          const L = ts.lim;
+          if (d2 > L.max2) continue;
+          let band = 0; // 0 perto, 1 médio, 2 longe
+          if (d2 > L.hi2 && L.hasLo) band = 1;
+          if (d2 > L.lo2 && L.hasImp) band = 2;
+          const key = band === 0 ? 'hi' : band === 1 ? 'lo' : 'imp';
+          ts.sel[key][ts.cnt[key]++] = rec.id;
+        }
+        if (performance.now() - t0 > budgetMs) return;
+      }
+      job.phase = 'B';
+      job.list = [];
+      for (const ts of Object.values(this.types)) for (const band of ['hi', 'lo', 'imp']) if (ts.meshes[band]) job.list.push([ts, band]);
+    }
+    // fase B: uma malha por vez (cada uma é atualizada inteira de uma só vez)
+    const M = this.matrices;
+    const C = this.colors;
+    while (job.mi < job.list.length) {
+      const [ts, band] = job.list[job.mi++];
+      const mesh = ts.meshes[band];
+      const n = ts.cnt[band];
+      if (n === 0 && mesh.count === 0) continue;
+      const sel = ts.sel[band];
+      const MA = mesh.instanceMatrix.array;
+      const CA = mesh.instanceColor.array;
+      for (let i = 0; i < n; i++) {
+        const id = sel[i];
+        let a = id * 16;
+        let b = i * 16;
+        for (let k = 0; k < 16; k++) MA[b + k] = M[a + k];
+        a = id * 3;
+        b = i * 3;
+        CA[b] = C[a];
+        CA[b + 1] = C[a + 1];
+        CA[b + 2] = C[a + 2];
+      }
+      ts.n[band] = n;
+      mesh.count = n;
+      mesh.instanceMatrix.needsUpdate = true;
+      mesh.instanceColor.needsUpdate = true;
+      if (performance.now() - t0 > budgetMs) return;
+    }
+    this._job = null;
   }
 
   // ---------------------------------------------------------
@@ -543,6 +664,8 @@ export class Vegetation {
       rec.cap = recursos.tipos[TYPES[res.esvazia].res]?.capacidade ?? 5;
     } else {
       rec.alive = false;
+      // árvore esgotada tomba de verdade (física em falling_trees.js)
+      if ((res.key === 'arvore' || res.key === 'arvore_mole') && !TYPES[rec.type].log) this.onFelled?.(rec);
     }
     rec.respawnAt = performance.now() / 1000 + recursos.reaparece_min * 60;
     if (!this.depleted.includes(rec)) this.depleted.push(rec);

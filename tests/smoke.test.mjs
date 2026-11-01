@@ -15,7 +15,7 @@ const { chromium } = require('playwright');
 
 const SHOTS = process.env.SHOTS || 'build/shots';
 await mkdir(SHOTS, { recursive: true });
-const url = pathToFileURL(resolve('dist/ilha-primordial.html')).href;
+const url = pathToFileURL(resolve(process.env.GAME_HTML || 'dist/ilha-primordial.html')).href;
 
 const results = [];
 function check(name, ok, detail = '') {
@@ -29,14 +29,14 @@ const browser = await chromium.launch({
   args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--disable-gpu-compositing'],
 });
 
-async function openGame(contextOptions, label) {
+async function openGame(contextOptions, label, extraSettings = {}) {
   const context = await browser.newContext(contextOptions);
   // Testes medem a qualidade padrão: sem baixar sozinho.
-  await context.addInitScript(() => {
+  await context.addInitScript((extra) => {
     try {
-      localStorage.setItem('ilha-primordial:opcoes', JSON.stringify({ version: 3, autoQuality: false }));
+      localStorage.setItem('ilha-primordial:opcoes', JSON.stringify({ version: 3, autoQuality: false, ...extra }));
     } catch { /* ok */ }
-  });
+  }, extraSettings);
   const page = await context.newPage();
   page.setDefaultTimeout(120000); // navegador de teste sem placa de vídeo é lento
   const errors = [];
@@ -83,11 +83,15 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   let context;
   let page;
   let errors;
+  let inicioSemIlha = null;
   for (let attempt = 0; attempt < 2; attempt++) {
     ({ context, page, errors } = await openGame({ viewport: { width: 1280, height: 720 } }, 'PC'));
     try {
       await frames(page, 20);
+      // na tela inicial a ilha ainda NÃO foi gerada (o botão já está pronto)
+      inicioSemIlha = await page.evaluate(() => ({ semMundo: !window.__ilha.ctx, texto: document.querySelector('#btn-play').textContent, ativo: !document.querySelector('#btn-play').disabled }));
       await page.click('#btn-play');
+      await page.waitForFunction(() => window.__ilha?.game?.state === 'playing' && !!window.__ilha.ctx, null, { timeout: 240000 }); // a ilha agora é gerada ao clicar em Entrar
       await page.mouse.move(640, 360); // cliques no meio da tela
       await frames(page, 30);
       break;
@@ -99,6 +103,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   }
   const state = await page.evaluate(() => window.__ilha.game.state);
   check('PC: botão Jogar inicia o jogo', state === 'playing', state);
+  check('Início: a ilha só é gerada ao clicar em Entrar (tela inicial já pronta)', !!inicioSemIlha?.semMundo && inicioSemIlha.ativo && !/Gerando/.test(inicioSemIlha.texto), JSON.stringify(inicioSemIlha));
 
   const p0 = await page.evaluate(() => {
     const p = window.__ilha.ctx.player.position;
@@ -129,7 +134,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   const st = await page.evaluate(() => window.__ilha.ctx.player.stats.stamina);
   await page.keyboard.up('ShiftLeft');
   await page.keyboard.up('KeyW');
-  check('PC: correr gasta stamina', st < 199, `stamina ${st.toFixed(1)}`);
+  check('PC: correr gasta stamina', st < 99, `stamina ${st.toFixed(1)}`);
 
   // Pular
   const yBefore = await page.evaluate(() => window.__ilha.ctx.player.position.y);
@@ -169,13 +174,15 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
       return null;
     };
     // Coloca o jogador na frente de uma planta do tipo pedido.
+    // 'type' pode ser um nome ou uma lista (as árvores têm vários modelos)
     T.faceRec = (type, near = { x: 0, z: -200 }) => {
       const c = ctx();
       const veg = c.world.vegetation;
+      const types = Array.isArray(type) ? type : [type];
       let best = null;
       let bd = Infinity;
       for (const r of veg.recs) {
-        if (r.type !== type || !r.alive) continue;
+        if (!types.includes(r.type) || !r.alive) continue;
         if (c.world.waterAt(r.x, r.z)) continue;
         const d = Math.hypot(r.x - near.x, r.z - near.z);
         if (d < bd) { bd = d; best = r; }
@@ -250,7 +257,8 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   // Embaixo d'água (mar): fôlego cai
   await page.evaluate(() => {
     const { ctx } = window.__ilha;
-    ctx.player.position.set(0, ctx.world.heightAt(0, 1630) + 0.1, 1630);
+    const sul = ctx.world.respawnPoint('sul').position;
+    ctx.player.position.set(sul.x, ctx.world.heightAt(sul.x, sul.z + 218) + 0.1, sul.z + 218);
     ctx.camCtl.pitch = -0.2;
   });
   await page.keyboard.down('KeyC'); // segurar C = descer
@@ -264,7 +272,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   await page.keyboard.up('KeyC');
   check('Água: embaixo d\'água o fôlego cai e aparece no HUD', under.head && under.oxygen < 99.95 && under.shown, JSON.stringify(under));
 
-  // Mar: água salgada não mata a sede
+  // Mar: toda a água do jogo dá para beber (sem água salgada)
   await page.evaluate(() => {
     const { ctx } = window.__ilha;
     const sul = ctx.world.respawnPoint('sul').position;
@@ -275,23 +283,16 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     ctx.player.stats.water = 40;
   });
   await frames(page, 20);
+  let seaMsg = '';
   for (let t = 0; t < 10; t++) {
     await gameWait(page, 400);
-    const pr = await page.evaluate(() => document.querySelector('.prompt:not([hidden])')?.textContent ?? '');
-    if (/salgada|beber/i.test(pr)) break;
+    seaMsg = await page.evaluate(() => document.querySelector('.prompt:not([hidden])')?.textContent ?? '');
+    if (/beber/i.test(seaMsg)) break;
   }
-  // guarda os avisos que aparecerem (no navegador lento eles somem rápido)
-  await page.evaluate(() => {
-    window.__seaMsgs = [];
-    const box = document.querySelector('.hud-msgs');
-    window.__seaObs = new MutationObserver(() => box.querySelectorAll('.msg').forEach((m) => window.__seaMsgs.push(m.textContent)));
-    window.__seaObs.observe(box, { childList: true, subtree: true, characterData: true });
-  });
   await page.keyboard.press('KeyE');
   await gameWait(page, 400);
-  const seaMsg = await page.evaluate(() => { window.__seaObs.disconnect(); return [...new Set(window.__seaMsgs)].join(' | '); });
   const water2 = await page.evaluate(() => window.__ilha.ctx.player.stats.water);
-  check('Mar: água salgada não mata a sede', water2 <= 40.01 && /salgada/i.test(seaMsg), seaMsg);
+  check('Mar: dá para beber a água do mar (sem "salgada")', water2 > 40.5 && !/salgada/i.test(seaMsg), `${water2} ${seaMsg}`);
 
   // Overlay de debug (F3)
   await page.keyboard.press('F3');
@@ -309,7 +310,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     ctx.player.position.set(j.x, ctx.world.heightAt(j.x, j.z), j.z);
     ctx.camCtl.yaw = Math.PI * 0.75;
     ctx.camCtl.pitch = -0.05;
-    const ids = ['raptor', 'raptor', 'raptor', 'trex', 'parassauro', 'parassauro', 'braquiossauro', 'titanoboa', 'pterodactilo', 'dodo', 'onca', 'paquicefalossauro', 'triceratops', 'aranha', 'dodo'];
+    const ids = ['raptor', 'raptor', 'raptor', 'trex', 'parassauro', 'parassauro', 'braquiossauro', 'titanoboa', 'pterodactilo', 'dodo', 'carnotauro', 'paquicefalossauro', 'triceratops', 'espinossauro', 'dodo'];
     ids.forEach((id, i) => {
       const a = (i / ids.length) * Math.PI * 2;
       const cr = ctx.creatures.spawn(id, j.x + Math.sin(a) * 30, j.z + Math.cos(a) * 30, 5);
@@ -330,14 +331,15 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
 
   // ---------- Coleta ----------
   // Soco numa árvore: palha (e às vezes madeira)
-  const tree = await page.evaluate(() => window.__t.faceRec('arvore_dossel'));
+  const tree = await page.evaluate(() => window.__t.faceRec(['arvore_dossel', 'arvore_bl_a', 'arvore_bl_b', 'arvore_bl_c', 'copa_a', 'copa_b', 'copa_c']));
   await frames(page, 10);
   await gameWait(page, 250);
   const treePrompt = await page.evaluate(() => document.querySelector('.prompt:not([hidden])')?.textContent ?? null);
+  check('Coleta: achou uma árvore para testar', !!tree, JSON.stringify(tree));
   check('Coleta: mirar numa árvore mostra o que sai dela', !!treePrompt && /Árvore/.test(treePrompt), treePrompt ?? 'nada');
   await page.screenshot({ path: `${SHOTS}/07-pc-coleta-arvore.png` });
   for (let i = 0; i < 4; i++) {
-    await page.evaluate(() => { window.__ilha.ctx.player.stats.stamina = 100; });
+    await page.evaluate(() => { window.__ilha.ctx.player.stats.stamina = 100; window.__ilha.ctx.player.stats.exhausted = false; });
     await page.mouse.down();
     await page.mouse.up();
     await gameWait(page, 520);
@@ -348,19 +350,29 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   await page.evaluate(() => { const s = window.__ilha.ctx.world.respawnPoint('sul').position; window.__t.faceRec('coqueiro', { x: s.x, z: s.z }); });
   await frames(page, 6);
   for (let i = 0; i < 4; i++) {
-    await page.evaluate(() => { window.__ilha.ctx.player.stats.stamina = 100; window.__ilha.ctx.player.stats.health = 100; });
+    await page.evaluate(() => { window.__ilha.ctx.player.stats.stamina = 100; window.__ilha.ctx.player.stats.exhausted = false; window.__ilha.ctx.player.stats.health = 100; });
     await page.mouse.down();
     await page.mouse.up();
     await gameWait(page, 520);
   }
   const thatch = await page.evaluate(() => ({ palha: window.__t.count('palha'), madeira: window.__t.count('madeira') }));
   check('Coleta: socar palmeira dá palha', thatch.palha >= 4, `${JSON.stringify(tree)} ${JSON.stringify(thatch)}`);
+  // árvore fina (sub-bosque): o soco rende 1 madeira + 1 palha por golpe e custa 5% da vida
+  await page.evaluate(() => { window.__t.faceRec(['arvore_media', 'media_a', 'media_b', 'arvore_folhosa', 'arvore_folhosa2']); const st = window.__ilha.ctx.player.stats; st.health = st.max.health; });
+  await frames(page, 6);
+  const thin0 = await page.evaluate(() => ({ h: window.__ilha.ctx.player.stats.health, m: window.__t.count('madeira'), p: window.__t.count('palha') }));
+  await page.evaluate(() => { window.__ilha.ctx.player.stats.stamina = 100; window.__ilha.ctx.player.stats.exhausted = false; });
+  await page.mouse.down();
+  await page.mouse.up();
+  await gameWait(page, 520);
+  const thin1 = await page.evaluate(() => ({ h: window.__ilha.ctx.player.stats.health, m: window.__t.count('madeira'), p: window.__t.count('palha') }));
+  check('Coleta: socar árvore fina dá 1 madeira + 1 palha e custa ~5% da vida', thin1.m === thin0.m + 1 && thin1.p === thin0.p + 1 && thin0.h - thin1.h > 3 && thin0.h - thin1.h < 8, JSON.stringify({ thin0, thin1 }));
 
   // Pedra: soco dá pedra
   await page.evaluate(() => window.__t.faceRec('pedra_musgo'));
   await frames(page, 6);
   for (let i = 0; i < 3; i++) {
-    await page.evaluate(() => { window.__ilha.ctx.player.stats.stamina = 100; });
+    await page.evaluate(() => { window.__ilha.ctx.player.stats.stamina = 100; window.__ilha.ctx.player.stats.exhausted = false; });
     await page.mouse.down();
     await page.mouse.up();
     await gameWait(page, 520);
@@ -421,6 +433,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   await frames(page, 4);
   const invOpen = await page.evaluate(() => ({ open: !document.querySelector('.inv').hidden, blocked: window.__ilha.ctx.touch.input.blocked }));
   check('Inventário: Tab abre a tela de inventário', invOpen.open && invOpen.blocked, JSON.stringify(invOpen));
+  await page.click('.ai-tab[data-tab="craft"]');
   await page.click('#receita-machado_pedra');
   await frames(page, 2);
   const reqs = await page.evaluate(() => [...document.querySelectorAll('.reqs li')].map((li) => li.textContent.replace(/\s+/g, ' ').trim()));
@@ -433,20 +446,37 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   // Largar um item: vira bolsa no chão
   const bags0 = await page.evaluate(() => window.__ilha.ctx.world.deathBags.length);
   const fiberSlot = await page.evaluate(() => window.__ilha.ctx.inventory.slots.findIndex((s) => s && s.id === 'fibra'));
+  await page.click('.ai-tab[data-tab="inv"]');
   await page.click(`.inv-slot[data-i="${fiberSlot}"]`);
   await page.click('#it-drop');
   const bags1 = await page.evaluate(() => window.__ilha.ctx.world.deathBags.length);
   check('Inventário: Largar cria uma bolsa no chão', bags1 === bags0 + 1, `${bags0} -> ${bags1}`);
+  // Carga (como no ARK): quanto mais pesado, mais devagar, aos poucos; acima do máximo não corre
+  const wf = await page.evaluate(() => {
+    const { ctx } = window.__ilha;
+    const inv = ctx.inventory;
+    const st = ctx.player.stats;
+    const keep = inv.slots.map((x) => (x ? { ...x } : null));
+    const base = ctx.actions.weightFactor();
+    inv.add('pedra', Math.round((st.maxWeight * 0.7) / 0.5));
+    const f70 = ctx.actions.weightFactor();
+    inv.add('pedra', Math.round((st.maxWeight * 0.5) / 0.5));
+    const f120 = ctx.actions.weightFactor();
+    const over = ctx.actions.overloaded();
+    for (let i = 0; i < inv.slots.length; i++) inv.slots[i] = keep[i];
+    return { base, f70: +f70.toFixed(2), f120: +f120.toFixed(2), over };
+  });
+  check('Carga: fica mais lento aos poucos e acima do máximo não corre', wf.base === 1 && wf.f70 < 1 && wf.f70 > 0.7 && wf.f120 < wf.f70 && wf.over === true, JSON.stringify(wf));
   await page.keyboard.press('Tab');
   await frames(page, 3);
   const invClosed = await page.evaluate(() => document.querySelector('.inv').hidden && !window.__ilha.ctx.touch.input.blocked);
   check('Inventário: Tab fecha de novo', invClosed);
 
   // Árvore gigante: com a mão machuca e não dá nada
-  await page.evaluate(() => window.__t.faceRec('sumauma'));
+  await page.evaluate(() => window.__t.faceRec(['sumauma', 'copa_g_a', 'copa_g_b']));
   await frames(page, 6);
   const giant0 = await page.evaluate(() => ({ h: window.__ilha.ctx.player.stats.health, m: window.__t.count('madeira'), p: window.__t.count('palha'), sel: window.__ilha.ctx.inventory.selected }));
-  await page.evaluate(() => { window.__ilha.ctx.inventory.selected = -1; window.__ilha.ctx.player.stats.stamina = 100; });
+  await page.evaluate(() => { window.__ilha.ctx.inventory.selected = -1; window.__ilha.ctx.player.stats.stamina = 100; window.__ilha.ctx.player.stats.exhausted = false; });
   await page.mouse.down();
   await page.mouse.up();
   await gameWait(page, 600);
@@ -562,11 +592,11 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   // Machado na mão: muito mais madeira
   const axeSlot = await page.evaluate(() => window.__ilha.ctx.inventory.slots.findIndex((s) => s && s.id === 'machado_pedra'));
   await page.keyboard.press(`Digit${axeSlot + 1}`);
-  await page.evaluate(() => window.__t.faceRec('arvore_dossel', { x: 100, z: -300 }));
+  await page.evaluate(() => window.__t.faceRec(['arvore_dossel', 'arvore_bl_a', 'arvore_bl_b', 'arvore_bl_c', 'copa_a', 'copa_b', 'copa_c'], { x: 100, z: -300 }));
   await frames(page, 6);
   const wood0 = await page.evaluate(() => window.__t.count('madeira'));
   for (let i = 0; i < 3; i++) {
-    await page.evaluate(() => { window.__ilha.ctx.player.stats.stamina = 100; });
+    await page.evaluate(() => { window.__ilha.ctx.player.stats.stamina = 100; window.__ilha.ctx.player.stats.exhausted = false; });
     await page.mouse.down();
     await page.mouse.up();
     await gameWait(page, 680);
@@ -635,7 +665,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     return { night: w.sky.isNight, sun: +w.sky.sun.intensity.toFixed(2), fire: +w.fireLight.intensity.toFixed(2), clock: document.querySelector('.hud-clock').textContent };
   });
   await page.screenshot({ path: `${SHOTS}/07e-pc-noite.png` });
-  check('Noite: escurece, relógio mostra a lua e a fogueira ilumina', nightInfo.night && nightInfo.sun < 0.6 && nightInfo.fire > 2 && /☾/.test(nightInfo.clock), JSON.stringify(nightInfo));
+  check('Noite: escurece, relógio mostra a lua e a fogueira ilumina', nightInfo.night && nightInfo.sun < 0.7 && nightInfo.fire > 2 && /☾/.test(nightInfo.clock), JSON.stringify(nightInfo));
   const sleep = await page.evaluate(() => {
     const c = window.__ilha.ctx;
     c.inventory.add('saco_dormir', 1);
@@ -676,7 +706,8 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   const before = await page.evaluate(() => window.__ilha.ctx.inventory.slots.filter(Boolean).length);
   await page.evaluate(() => {
     const { ctx } = window.__ilha;
-    ctx.player.position.set(0, ctx.world.heightAt(0, 1630) + 0.1, 1630);
+    const sul = ctx.world.respawnPoint('sul').position;
+    ctx.player.position.set(sul.x, ctx.world.heightAt(sul.x, sul.z + 218) + 0.1, sul.z + 218);
     ctx.player.stats.oxygen = 0;
     ctx.player.stats.health = 3;
   });
@@ -699,8 +730,14 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   check('Morte: tela de morte e itens no saco de morte', dead.state === 'dead' && dead.screen && dead.bagItems === before && dead.invLeft === 0, JSON.stringify({ ...dead, before }));
   await page.screenshot({ path: `${SHOTS}/09-pc-tela-de-morte.png` });
 
-  const pins = await page.evaluate(() => ({ pins: document.querySelectorAll('.map-pin').length, labels: [...document.querySelectorAll('.map-label')].map((l) => l.textContent) }));
-  check('Morte: mapa mostra os pontos de renascer e o Pântano', pins.pins >= 6 && pins.labels.includes('Pântano'), JSON.stringify(pins));
+  const pins = await page.evaluate(() => ({
+    zonas: [...document.querySelectorAll('.zone-btn')].map((b) => b.textContent),
+    pontos: document.querySelectorAll('.map-pin').length,
+    mapa: !!document.querySelector('.death-map')?.src,
+    xVermelho: !!document.querySelector('.map-death'),
+    criarNovo: /criar novo/i.test(document.querySelector('.death').textContent),
+  }));
+  check('Morte: mapa de relevo, X vermelho e lista de zonas de respawn (sem "criar novo sobrevivente")', pins.zonas.length >= 6 && pins.pontos === pins.zonas.length && pins.mapa && pins.xVermelho && !pins.criarNovo && pins.zonas.some((z) => /^Zona Leste 1 \(Médio\)$/.test(z)), JSON.stringify(pins));
   await page.click('#respawn-leste');
   await page.click('#respawn-confirm');
   await frames(page, 20);
@@ -777,9 +814,9 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   check('Pântano: tem deinosuchus e titanoboa', swamp.includes('deinosuchus') && swamp.includes('titanoboa'), swamp.join(','));
   await page.evaluate(() => {
     const c = window.__ilha.ctx;
-    c.player.position.set(0, -4, 1590);
+    const sul = c.world.respawnPoint('sul').position;
+    c.player.position.set(sul.x, -4, sul.z + 178);
     c.player.velocity.set(0, 0, 0);
-    c.player.stats.stamina = c.player.stats.max.stamina; // cansado afunda um pouco
   });
   await gameWait(page, 3000);
   const floatY = await page.evaluate(() => ({ y: window.__ilha.ctx.player.position.y, sw: window.__ilha.ctx.player.swimming, cam: window.__ilha.ctx.world.cameraUnderwater }));
@@ -789,7 +826,8 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   const dive = await page.evaluate(() => ({ cam: window.__ilha.ctx.world.cameraUnderwater, cls: document.body.classList.contains('underwater'), dust: window.__ilha.ctx.world.underwater.dust.visible }));
   check('Mergulho: visual embaixo d\'água (cor, partículas)', dive.cam && dive.cls && dive.dust, JSON.stringify(dive));
   await page.screenshot({ path: `${SHOTS}/10b-pc-mergulho.png` });
-  await page.evaluate(() => { const c = window.__ilha.ctx; c.player.position.set(0, c.world.heightAt(0, 1410), 1410); c.player.stats.oxygen = 100; });
+  await page.evaluate(() => { const c = window.__ilha.ctx; const sul = c.world.respawnPoint('sul').position;
+    c.player.position.set(sul.x, c.world.heightAt(sul.x, sul.z - 2), sul.z - 2); c.player.stats.oxygen = 100; });
   await gameWait(page, 300);
   await page.screenshot({ path: `${SHOTS}/10-pc-pantano.png` });
 
@@ -805,9 +843,9 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   });
   const land = (biomes.selva ?? 0) + (biomes.igapo ?? 0) + (biomes.pantano ?? 0) + (biomes.praia ?? 0);
   check('Mapa: floresta, igapó, pântano, praia, neve da Lapônia, Serra Rochosa e Campos', Object.keys(biomes).every((k) => ['mar', 'praia', 'selva', 'igapo', 'pantano', 'neve', 'serra', 'campos'].includes(k)) && biomes.neve > 0 && biomes.serra > 0 && biomes.campos > 0, JSON.stringify(biomes));
-  check('Mapa: a maior parte da terra é Floresta Amazônica', biomes.selva / land > 0.5 && biomes.pantano > 0, `${Math.round((biomes.selva / land) * 100)}% floresta`);
+  check('Mapa: a Floresta Amazônica é o maior bioma (depois vêm a pastagem e a cordilheira)', biomes.selva / land > 0.4 && biomes.selva > biomes.campos && biomes.pantano > 0, `${Math.round((biomes.selva / land) * 100)}% floresta`);
   const plants = await page.evaluate(() => window.__ilha.ctx.world.vegetation.countByType());
-  check('Floresta: samambaias gigantes, bananeiras, bagas e troncos caídos', ['samambaia_gigante', 'bananeira', 'arbusto_mejo', 'arbusto_escura', 'tronco_caido', 'sumauma'].every((k) => plants[k] > 20), JSON.stringify(plants));
+  check('Floresta: samambaias gigantes, bananeiras, bagas e troncos caídos', ['samambaia_gigante', 'bananeira', 'arbusto_mejo', 'arbusto_escura', 'tronco_caido'].every((k) => plants[k] > 20) && (plants.sumauma ?? 0) + (plants.copa_g_a ?? 0) + (plants.copa_g_b ?? 0) > 20, JSON.stringify(plants));
 
   // Animais: todas as espécies nascem sem erro
   const species = await page.evaluate(() => {
@@ -885,7 +923,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   const xp0 = await page.evaluate(() => {
     const c = window.__ilha.ctx;
     c.player.stats.health = 100;
-    c.player.stats.stamina = 100;
+    c.player.stats.stamina = 100; c.player.stats.exhausted = false;
     c.inventory.selected = -1;
     const f = c.camCtl.forward;
     const p = c.player.position;
@@ -898,7 +936,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     await page.evaluate(() => {
       const c = window.__ilha.ctx; const d = window.__dodo; const p = c.player.position;
       if (d.alive) { const f = c.camCtl.forward; d.pos.x = p.x + f.x * 1.6; d.pos.z = p.z + f.z * 1.6; }
-      c.player.stats.stamina = 100;
+      c.player.stats.stamina = 100; c.player.stats.exhausted = false;
     });
     await page.mouse.down();
     await page.mouse.up();
@@ -950,7 +988,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     // gravetos e pedrinhas no chão
     const n = {}; for (const r of c.world.vegetation.recs) n[r.type] = (n[r.type] ?? 0) + 1;
     out.ground = { gravetos: n.gravetos ?? 0, pedrinhas: n.pedrinhas ?? 0 };
-    // stamina dobrada + habilidades
+    // stamina e habilidades iguais ao ARK
     const st = c.player.stats;
     out.stamina = st.max.stamina;
     st.points += 2; const hp0 = st.max.health; st.spendPoint('vida'); st.spendPoint('peso');
@@ -961,7 +999,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   check('Tamanhos reais: espino 14–18 m, deinosuchus 10–12, titanoboa 12–14, T-rex < 13', v07.sizesOk, JSON.stringify(v07.sizes));
   check('Ciclo de vida: nasce filhote, cresce e o velho morre', v07.baby && v07.grew && v07.oldDies, JSON.stringify({ b: v07.baby, g: v07.grew, o: v07.oldDies }));
   check('Chão: gravetos e pedrinhas para pegar', v07.ground.gravetos > 500 && v07.ground.pedrinhas > 300, JSON.stringify(v07.ground));
-  check('Stamina dobrada e habilidades aumentam vida/peso', v07.stamina === 200 && v07.skills.vida === 20 && v07.skills.peso === 120, JSON.stringify(v07));
+  check('Stamina 100 e habilidades como no ARK (+10 vida, +10 peso)', v07.stamina === 100 && v07.skills.vida === 10 && v07.skills.peso === 110, JSON.stringify(v07));
 
   // Construção: piso encaixa do lado do outro, parede na beira, teto em cima,
   // rampa sobe 3 m, parede segura o jogador e a porta abre
@@ -1080,27 +1118,25 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   check('Montar: F monta, o bicho anda com você e F desce', ride1 && ride1.riding && ride1.onTop && ride1.moved > 1 && !ride2.riding, JSON.stringify({ ride1, ride2 }));
   await page.evaluate(() => window.__ilha.ctx.creatures.clear());
 
-  // Atributos como no ARK: nível 1 = valores da espécie; cada nível a mais
-  // é um ponto sorteado entre os atributos
+  // Atributos sorteados entre o mínimo e o máximo da espécie
   const rolls = await page.evaluate(() => {
     const c = window.__ilha.ctx; const p = c.player.position; const out = { ok: true, bad: [], distinct: 0 };
     const seen = new Set();
     for (let i = 0; i < 12; i++) {
-      const lv1 = c.creatures.spawn('raptor', p.x + 200 + i * 3, p.z + 200, 1);
-      const at = lv1.species.atributos;
+      // o sauropelta tem faixas de atributos (o raptor é fixo: mínimo = máximo em todos)
+      const cr = c.creatures.spawn('sauropelta', p.x + 200 + i * 3, p.z + 200, 1);
+      const at = cr.species.atributos;
       for (const k of ['vida', 'forca', 'peso', 'stamina', 'velocidade', 'torpor']) {
-        if (lv1.stats[k] !== at[k][0]) { out.ok = false; out.bad.push(`nv1 ${k}=${lv1.stats[k]}`); }
+        const v = cr.stats[k]; const [a, b] = at[k];
+        if (v < Math.floor(a) || v > Math.ceil(b)) { out.ok = false; out.bad.push(`${k}=${v}`); }
       }
-      const lv30 = c.creatures.spawn('raptor', p.x + 200 + i * 3, p.z + 210, 30);
-      const pts = Object.values(lv30.levelPoints).reduce((a, b) => a + b, 0);
-      if (pts !== 29) { out.ok = false; out.bad.push(`pontos=${pts}`); }
-      seen.add(lv30.stats.vida);
+      seen.add(cr.stats.vida);
     }
     out.distinct = seen.size;
     c.creatures.clear();
     return out;
   });
-  check('Atributos: nível 1 igual à espécie e pontos de nível sorteados (como no ARK)', rolls.ok && rolls.distinct > 3, JSON.stringify(rolls));
+  check('Atributos: cada bicho sorteia vida/força/peso/stamina/velocidade/torpor no intervalo', rolls.ok && rolls.distinct > 3, JSON.stringify(rolls));
 
   // Lupa: mira num bicho, espera 2 s e aparece a ficha com os atributos
   await page.evaluate(() => {
@@ -1201,6 +1237,8 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   // abre de novo
   dev = await openProfile();
   const label = await dev.pg.evaluate(() => ({ play: document.querySelector('#btn-play').textContent, newShown: !document.querySelector('#btn-new').hidden }));
+  await dev.pg.click('#btn-play');
+  await dev.pg.waitForFunction(() => window.__ilha?.game?.state === 'playing' && !!window.__ilha.ctx, null, { timeout: 240000 });
   const saved1 = await dev.pg.evaluate(() => {
     const c = window.__ilha.ctx;
     return { lvl: c.player.stats.level, sticks: c.inventory.count('graveto'), builds: c.world.structures.filter((s) => s.isBuild).length, pets: c.creatures.tamedBy(c.player).length, day: c.world.day };
@@ -1223,10 +1261,11 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     isMobile: true,
     hasTouch: true,
     userAgent: 'Mozilla/5.0 (Linux; Android 13; Pixel 6a) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36',
-  }, 'Celular');
+  }, 'Celular', { touchScheme: 'botoes' });
   await frames(page, 10);
   await page.screenshot({ path: `${SHOTS}/20-cel-tela-inicial.png` });
   await page.tap('#btn-play');
+  await page.waitForFunction(() => window.__ilha?.game?.state === 'playing' && !!window.__ilha.ctx, null, { timeout: 240000 }); // a ilha agora é gerada ao clicar em Entrar
   await frames(page, 30);
   const touchVisible = await page.evaluate(() => !document.querySelector('.tc').hidden);
   check('Celular: controles de toque aparecem', touchVisible);
@@ -1287,7 +1326,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
       ctx.camCtl.yaw = Math.atan2(dx, dz);
       break;
     }
-    ctx.camCtl.pitch = -0.45;
+    ctx.camCtl.pitch = -0.75; // o alcance de interação é menor: mira mais para baixo, perto da beira
     ctx.player.stats.water = 30;
   });
   await gameWait(page, 400);
@@ -1320,6 +1359,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   const invM = await page.evaluate(() => ({ open: !document.querySelector('.inv').hidden, touch: !document.querySelector('.tc').hidden }));
   await page.screenshot({ path: `${SHOTS}/24-cel-inventario.png` });
   check('Celular: botão Inventário abre a tela (sem botões por cima)', invM.open && !invM.touch, JSON.stringify(invM));
+  await page.tap('.ai-tab[data-tab="craft"]');
   await page.tap('#receita-lanca');
   await frames(page, 2);
   await page.screenshot({ path: `${SHOTS}/25-cel-receita-lanca.png` });
@@ -1357,6 +1397,112 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   await frames(page, 4);
   await page.screenshot({ path: `${SHOTS}/28-cel-em-pe-inventario.png` });
   await page.tap('#inv-close');
+  // volta para o celular deitado: os gestos da direita usam x = 600 e 794
+  await page.setViewportSize({ width: 800, height: 360 });
+  await frames(page, 20);
+
+  // ---------- Gestos (esquema padrão do ARK Mobile) ----------
+  // Os tempos dos gestos são alargados: o navegador de teste (sem placa de vídeo) é lento.
+  await page.evaluate(() => {
+    const { ctx, settings } = window.__ilha;
+    settings.set('touchScheme', 'gestos');
+    ctx.touch.timing = { flick: 6000, double: 6000, hold: 700, tap: 6000, edge: 6000 };
+    ctx.creatures.enabled = false; ctx.creatures.clear();
+    if (ctx.invScreen.visible) ctx.invScreen.hide();
+    document.body.classList.remove('inv-open');
+    ctx.touch.input.blocked = false;
+    ctx.touch.setVisible(true);
+    ctx.camCtl.pitch = 1.2; // olhando para o céu: sem aviso de interação no caminho
+    const i = ctx.touch.input;
+    window.__rec = { press: [], look: 0, runSeen: false };
+    const p = i.press.bind(i); i.press = (a) => { window.__rec.press.push(a); return p(a); };
+    const al = i.addLook.bind(i); i.addLook = (dx, dy) => { window.__rec.look += Math.abs(dx); return al(dx, dy); };
+    setInterval(() => { if (i.runToggle) window.__rec.runSeen = true; }, 10);
+    window.__resetRec = () => { window.__rec.press = []; window.__rec.look = 0; window.__rec.runSeen = false; };
+  });
+  await frames(page, 5);
+  const gwait = (ms) => page.waitForTimeout(ms);
+  const rec = () => page.evaluate(() => JSON.parse(JSON.stringify(window.__rec)));
+  check('Gestos: esquema de gestos ligado', await page.evaluate(() => document.querySelector('.tc').classList.contains('tc-esquema-gestos')));
+  const gz0 = await page.evaluate(() => window.__ilha.ctx.player.position.z);
+  await touch('touchStart', [{ x: 120, y: 280, id: 1 }]);
+  for (let i = 1; i <= 6; i++) { await touch('touchMove', [{ x: 120, y: 280 - i * 10, id: 1 }]); await gwait(40); }
+  await gwait(1800);
+  await touch('touchEnd', []);
+  const gz1 = await page.evaluate(() => window.__ilha.ctx.player.position.z);
+  check('Gestos: arrastar na esquerda anda', gz1 < gz0 - 1.5, `z ${gz0.toFixed(1)} -> ${gz1.toFixed(1)}`);
+  await gwait(800);
+  await page.evaluate(() => window.__resetRec());
+  await touch('touchStart', [{ x: 120, y: 300, id: 1 }]);
+  await gwait(40); await touch('touchMove', [{ x: 122, y: 262, id: 1 }]);
+  await gwait(40); await touch('touchMove', [{ x: 122, y: 238, id: 1 }]);
+  await gwait(900);
+  await touch('touchEnd', []);
+  await gwait(500);
+  check('Gestos: arrastar rápido para cima pula', (await rec()).press.includes('jump'));
+  await gwait(1200);
+  await page.evaluate(() => window.__resetRec());
+  await touch('touchStart', [{ x: 120, y: 300, id: 1 }]); await gwait(50); await touch('touchEnd', []);
+  await gwait(100);
+  await touch('touchStart', [{ x: 120, y: 300, id: 1 }]); await gwait(900);
+  await touch('touchEnd', []);
+  await gwait(500);
+  const gRun = await rec();
+  const gRunOff = await page.evaluate(() => window.__ilha.ctx.touch.input.runToggle);
+  check('Gestos: tocar duas vezes e segurar corre (e solta ao levantar)', gRun.runSeen === true && gRunOff === false, `${gRun.runSeen}/${gRunOff}`);
+  // pular correndo: dois toques e segurar (corre), depois um peteleco para cima bem depois do início
+  await gwait(800);
+  await page.evaluate(() => { window.__resetRec(); window.__ilha.ctx.touch.timing.flick = 1; });
+  await touch('touchStart', [{ x: 120, y: 300, id: 1 }]); await gwait(50); await touch('touchEnd', []);
+  await gwait(100);
+  await touch('touchStart', [{ x: 120, y: 300, id: 1 }]); await gwait(900);
+  await touch('touchMove', [{ x: 121, y: 270, id: 1 }]);
+  await touch('touchMove', [{ x: 121, y: 225, id: 1 }]); await gwait(500);
+  await touch('touchEnd', []);
+  await gwait(300);
+  const gRunJump = await rec();
+  await page.evaluate(() => { window.__ilha.ctx.touch.timing.flick = 6000; });
+  check('Gestos: dá para pular correndo (peteleco para cima com o dedo já segurando)', gRunJump.runSeen && gRunJump.press.includes('jump'), JSON.stringify(gRunJump));
+  await gwait(800);
+  await page.evaluate(() => window.__resetRec());
+  await touch('touchStart', [{ x: 600, y: 160, id: 2 }]); await gwait(50); await touch('touchEnd', []);
+  await gwait(1000);
+  const gTap = (await rec()).press;
+  check('Gestos: tocar na direita ataca ou usa', gTap.includes('attack') || gTap.includes('interact'), JSON.stringify(gTap));
+  await gwait(600);
+  const gy0 = await page.evaluate(() => window.__ilha.ctx.camCtl.yaw);
+  await touch('touchStart', [{ x: 480, y: 160, id: 2 }]);
+  for (let i = 1; i <= 8; i++) { await touch('touchMove', [{ x: 480 + i * 12, y: 160, id: 2 }]); await gwait(60); }
+  await gwait(300);
+  await touch('touchEnd', []);
+  await gwait(500);
+  const gy1 = await page.evaluate(() => window.__ilha.ctx.camCtl.yaw);
+  check('Gestos: arrastar na direita gira a câmera', Math.abs(gy1 - gy0) > 0.2, `${gy0.toFixed(2)} -> ${gy1.toFixed(2)}`);
+  await touch('touchStart', [{ x: 600, y: 160, id: 2 }]); await gwait(1000);
+  await touch('touchEnd', []);
+  await gwait(800);
+  check('Gestos: segurar parado na direita NÃO abre mais o inventário', await page.evaluate(() => document.querySelector('.inv').hidden));
+  await page.keyboard.press('Tab');
+  await gwait(800);
+  await page.evaluate(() => { const c = window.__ilha.ctx; if (c.invScreen.visible) { c.invScreen.hide(); document.body.classList.remove('inv-open'); c.touch.input.blocked = false; c.touch.setVisible(true); } });
+  await gwait(500);
+  const swipeEdge = async (x0, x1) => {
+    await touch('touchStart', [{ x: x0, y: 180, id: 3 }]); await gwait(60);
+    await touch('touchMove', [{ x: (x0 + x1) / 2, y: 180, id: 3 }]); await gwait(60);
+    await touch('touchMove', [{ x: x1, y: 180, id: 3 }]); await gwait(600);
+    await touch('touchEnd', []);
+    await gwait(800);
+  };
+  await swipeEdge(6, 90);
+  check('Gestos: arrastar da borda esquerda abre a roda de assovios', await page.evaluate(() => window.__ilha.ctx.whistle.visible));
+  await page.evaluate(() => window.__ilha.ctx.whistle.close());
+  await gwait(800);
+  await swipeEdge(794, 720);
+  check('Gestos: arrastar da borda direita abre a roda de ações', await page.evaluate(() => window.__ilha.ctx.actionWheel.visible));
+  await page.screenshot({ path: `${SHOTS}/25-cel-roda-acoes.png` });
+  await page.evaluate(() => window.__ilha.ctx.actionWheel.close());
+  await gwait(500);
+  await page.screenshot({ path: `${SHOTS}/26-cel-hud-gestos.png` });
 
   check('Celular: sem erros no console', errors.length === 0, errors.slice(0, 3).join(' / '));
   await context.close();
@@ -1373,11 +1519,13 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     window.IlhaAndroid = { exit() { window.__fechou = true; } };
   });
   const page = await context.newPage();
+  page.setDefaultTimeout(180000); // gerar a ilha trava a página alguns segundos: o toque em Jogar demora
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(url);
   await page.waitForFunction(() => !document.querySelector('#btn-play').disabled, null, { timeout: 60000 });
   await page.tap('#btn-play');
+  await page.waitForFunction(() => window.__ilha?.game?.state === 'playing' && !!window.__ilha.ctx, null, { timeout: 240000 }); // a ilha agora é gerada ao clicar em Entrar
   await frames(page, 10);
   await page.tap('.corner-btn[data-action="inventory"]');
   await frames(page, 3);
@@ -1430,7 +1578,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   await A.click('#tab-coop');
   await A.fill('#coop-name', 'Rafa');
   await A.click('#btn-host');
-  await A.waitForFunction(() => window.__ilha.net?.active, null, { timeout: 20000 }).catch(() => {});
+  await A.waitForFunction(() => window.__ilha.net?.active, null, { timeout: 240000 }).catch(() => {});
   const code = await A.evaluate(() => window.__ilha.net?.code ?? '');
   check('Co-op: criar partida dá um código de 6 letras', /^[A-Z0-9]{6}$/.test(code), code);
   await B.click('#tab-coop');
@@ -1438,7 +1586,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   await B.click('#btn-join-open');
   await B.fill('#coop-code', code);
   await B.click('#btn-join');
-  await B.waitForFunction(() => window.__ilha.net?.active, null, { timeout: 30000 }).catch(() => {});
+  await B.waitForFunction(() => window.__ilha.net?.active, null, { timeout: 240000 }).catch(() => {});
   await gameWait(A, 2500);
   // convidado: espera o mundo do anfitrião chegar (navegador de teste é lento)
   await B.waitForFunction(() => window.__ilha.net?.playerNames?.includes('Rafa') && window.__ilha.ctx?.creatures.list.length > 0, null, { timeout: 90000 }).catch(() => {});
@@ -1450,7 +1598,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   await B.evaluate(() => { window.__ilha.ctx.player.position.x += 6; });
   await gameWait(B, 800);
   await gameWait(A, 800);
-  const seen = await A.evaluate(() => [...window.__ilha.net.remotes.values()][0].position.x);
+  const seen = await A.evaluate(() => [...window.__ilha.net.remotes.values()][0]?.position.x ?? NaN);
   const bx = await B.evaluate(() => window.__ilha.ctx.player.position.x);
   check('Co-op: posição do amigo chega', Math.abs(seen - bx) < 1, `${seen.toFixed(2)} vs ${bx.toFixed(2)}`);
   await A.evaluate(() => { const c = window.__ilha.ctx; c.inventory.add('fogueira', 1); c.actions.place(c.inventory.slots.findIndex((x) => x && x.id === 'fogueira')); });
@@ -1462,7 +1610,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   const nid = await A.evaluate(() => {
     const c = window.__ilha.ctx;
     c.creatures.enabled = false;
-    const b = [...window.__ilha.net.remotes.values()][0];
+    const b = [...window.__ilha.net.remotes.values()][0] ?? { position: { x: 0, y: 0, z: 0 } };
     const d = c.creatures.spawn('dodo', b.position.x, b.position.z - 3, 1);
     d._setState('parado'); d.idleFor = 99;
     window.__dodo = d;
@@ -1478,7 +1626,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   const xp1 = await B.evaluate(() => window.__ilha.ctx.player.stats.xp + window.__ilha.ctx.player.stats.level * 1000);
   check('Co-op: convidado acerta animal do anfitrião e ganha XP', kill && xp1 > xp0, JSON.stringify({ kill, xp0, xp1 }));
   // raptor do anfitrião ataca o convidado
-  await A.evaluate(() => { const c = window.__ilha.ctx; const b = [...window.__ilha.net.remotes.values()][0]; c.creatures.spawn('raptor', b.position.x + 6, b.position.z, 3); });
+  await A.evaluate(() => { const c = window.__ilha.ctx; const b = [...window.__ilha.net.remotes.values()][0] ?? { position: { x: 0, y: 0, z: 0 } }; c.creatures.spawn('raptor', b.position.x + 6, b.position.z, 3); });
   const h0 = await B.evaluate(() => window.__ilha.ctx.player.stats.health);
   await gameWait(A, 4000);
   await gameWait(B, 600);

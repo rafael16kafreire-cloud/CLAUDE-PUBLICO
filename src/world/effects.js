@@ -10,8 +10,89 @@ import * as THREE from 'three';
 
 const MAX = 80;
 const MAX_CHIPS = 60;
-const MAX_GOUGES = 48;
-const GOUGE_LIFE = 90; // segundos
+const MAX_GOUGES = 64;
+const GOUGE_LIFE = 300; // segundos
+
+// Ferida de corte (como no ARK): entalhe com madeira laranja em camadas,
+// borda de casca rasgada e sombra no alto. Desenhada por código.
+function woundTexture() {
+  const W = 256;
+  const H = 192;
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  let seed = 1234567;
+  const R = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
+  const cx = W / 2;
+  const cy = H / 2;
+  const rx = W * 0.46;
+  const ry = H * 0.44;
+  const N = 30;
+  const pts = [];
+  for (let i = 0; i < N; i++) {
+    const a = (i / N) * Math.PI * 2;
+    const rad = 1 + (R() - 0.5) * 0.3 + (i % 2 ? -0.07 : 0.06);
+    pts.push([cx + Math.cos(a) * rx * rad, cy + Math.sin(a) * ry * rad]);
+  }
+  const poly = (k) => {
+    ctx.beginPath();
+    pts.forEach(([x, y], i) => {
+      const px = cx + (x - cx) * k;
+      const py = cy + (y - cy) * k;
+      if (i) ctx.lineTo(px, py);
+      else ctx.moveTo(px, py);
+    });
+    ctx.closePath();
+  };
+  poly(1);
+  ctx.fillStyle = '#2f2016';
+  ctx.fill();
+  poly(0.94);
+  ctx.fillStyle = '#6a4a2c';
+  ctx.fill();
+  poly(0.86);
+  const g = ctx.createRadialGradient(cx, cy + 6, 6, cx, cy, rx * 0.9);
+  g.addColorStop(0, '#f6c27f');
+  g.addColorStop(0.55, '#d58f4a');
+  g.addColorStop(1, '#9c5c2a');
+  ctx.fillStyle = g;
+  ctx.fill();
+  ctx.save();
+  poly(0.86);
+  ctx.clip();
+  // anéis de crescimento (camadas de madeira)
+  ctx.lineWidth = 2.4;
+  for (const t of [0.8, 0.6, 0.42, 0.26]) {
+    ctx.strokeStyle = 'rgba(112,58,22,0.5)';
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + 10, rx * 0.86 * t, ry * 0.86 * t, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  // fibras claras
+  ctx.lineWidth = 1.2;
+  for (let i = 0; i < 40; i++) {
+    const x = cx + (R() - 0.5) * rx * 1.6;
+    const y = cy + (R() - 0.5) * ry * 1.6;
+    ctx.strokeStyle = `rgba(255,226,170,${0.15 + R() * 0.2})`;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + 10 + R() * 22, y + (R() - 0.5) * 3);
+    ctx.stroke();
+  }
+  // sombra no alto (a casca cobre) e luz embaixo
+  const sh = ctx.createLinearGradient(0, 0, 0, H);
+  sh.addColorStop(0, 'rgba(38,18,6,0.7)');
+  sh.addColorStop(0.45, 'rgba(38,18,6,0)');
+  sh.addColorStop(1, 'rgba(255,214,150,0.18)');
+  ctx.fillStyle = sh;
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  return tex;
+}
 
 export const FX_COLORS = {
   madeira: ['#7a5a3a', '#a07a4e', '#5a4028'],
@@ -48,17 +129,19 @@ export class Effects {
       this.chipParts.push({ life: 0, p: new THREE.Vector3(), v: new THREE.Vector3(), r: new THREE.Vector3(), w: new THREE.Vector3(), s: 1, rest: false });
     }
     this._nextChip = 0;
-    // marcas de corte na casca: disco com centro claro e borda escura
-    const g = new THREE.CircleGeometry(1, 9);
-    const col = new Float32Array(g.attributes.position.count * 3);
-    const light = new THREE.Color('#d9b680');
-    const dark = new THREE.Color('#2e1d0f');
-    for (let i = 0; i < g.attributes.position.count; i++) (i === 0 ? light : dark).toArray(col, i * 3);
-    g.setAttribute('color', new THREE.BufferAttribute(col, 3));
-    this.gouges = new THREE.InstancedMesh(g, new THREE.MeshLambertMaterial({ vertexColors: true, polygonOffset: true, polygonOffsetFactor: -2 }), MAX_GOUGES);
-    this.gouges.frustumCulled = false;
+    // feridas de corte: pedaço de cilindro curvo que abraça o tronco (largo e estreito)
+    const wmat = new THREE.MeshLambertMaterial({ map: woundTexture(), alphaTest: 0.45, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 });
+    const mk = (arc) => {
+      const m = new THREE.InstancedMesh(new THREE.CylinderGeometry(1, 1, 1, 10, 1, true, -arc / 2, arc), wmat, MAX_GOUGES);
+      m.frustumCulled = false;
+      m.setColorAt(0, new THREE.Color(1, 1, 1));
+      return m;
+    };
+    this.gouges = mk(1.3);   // troncos finos: ferida larga em volta
+    this.gougesB = mk(0.7);  // troncos grossos: ferida mais estreita
     this.gougeList = [];
     this._nextGouge = 0;
+    this._wounds = new Map(); // golpes seguidos na mesma árvore se juntam e crescem
 
     this._next = 0;
     this._m = new THREE.Matrix4();
@@ -67,7 +150,7 @@ export class Effects {
     this._s = new THREE.Vector3();
     this._c = new THREE.Color();
     this.groundAt = null; // (x, z) => altura do chão (o mundo liga)
-    scene.add(this.mesh, this.chips, this.gouges);
+    scene.add(this.mesh, this.chips, this.gouges, this.gougesB);
     this._hideAll();
   }
 
@@ -75,7 +158,10 @@ export class Effects {
     this._m.makeScale(0, 0, 0);
     for (let i = 0; i < MAX; i++) this.mesh.setMatrixAt(i, this._m);
     for (let i = 0; i < MAX_CHIPS; i++) this.chips.setMatrixAt(i, this._m);
-    for (let i = 0; i < MAX_GOUGES; i++) this.gouges.setMatrixAt(i, this._m);
+    for (let i = 0; i < MAX_GOUGES; i++) {
+      this.gouges.setMatrixAt(i, this._m);
+      this.gougesB.setMatrixAt(i, this._m);
+    }
     this.mesh.instanceMatrix.needsUpdate = true;
     this.chips.instanceMatrix.needsUpdate = true;
     this.gouges.instanceMatrix.needsUpdate = true;
@@ -120,36 +206,60 @@ export class Effects {
     this.chips.instanceColor.needsUpdate = true;
   }
 
-  // Marca de corte na casca: no tronco (centro x,z e raio r), do lado de
-  // quem bateu (from), na altura y.
+  // Ferida de corte na casca: no tronco (centro x,z e raio r), do lado de
+  // quem bateu (from), na altura y. Golpes seguidos na mesma árvore caem no
+  // mesmo lugar e a ferida vai crescendo.
   gouge(x, z, r, y, from) {
     const dx = from.x - x;
     const dz = from.z - z;
     const l = Math.hypot(dx, dz) || 1;
-    const nx = dx / l;
-    const nz = dz / l;
-    // um pouco para os lados, para as marcas não ficarem uma em cima da outra
-    const a = Math.atan2(nx, nz) + (Math.random() - 0.5) * 0.5;
-    const px = x + Math.sin(a) * r * 1.02;
-    const pz = z + Math.cos(a) * r * 1.02;
+    const key = `${Math.round(x)}_${Math.round(z)}`;
+    const now = performance.now() / 1000;
+    const prev = this._wounds.get(key);
+    let a;
+    let wy;
+    let n = 0;
+    if (prev && now - prev.t < 150) {
+      a = prev.a + (Math.random() - 0.5) * 0.22;
+      wy = prev.y + (Math.random() - 0.5) * 0.16;
+      n = prev.n + 1;
+    } else {
+      a = Math.atan2(dx / l, dz / l) + (Math.random() - 0.5) * 0.3;
+      wy = y + (Math.random() - 0.5) * 0.2;
+    }
+    this._wounds.set(key, { a, y: wy, t: now, n });
+    const grow = 1 + Math.min(n, 6) * 0.13;
+    const rr = r * 1.03;
     const i = this._nextGouge;
     this._nextGouge = (this._nextGouge + 1) % MAX_GOUGES;
-    const s = 0.06 + Math.random() * 0.05;
+    const prevItem = this.gougeList[i];
     this.gougeList[i] = {
       life: GOUGE_LIFE,
-      p: new THREE.Vector3(px, y + (Math.random() - 0.5) * 0.35, pz),
-      q: new THREE.Quaternion().setFromEuler(this._e.set(0, a, (Math.random() - 0.5) * 0.6, 'YXZ')),
-      s: new THREE.Vector3(s * 0.8, s * (1.3 + Math.random() * 0.6), 1),
+      big: r > 0.55,
+      p: new THREE.Vector3(x, wy, z),
+      q: new THREE.Quaternion().setFromEuler(this._e.set(0, a, 0, 'YXZ')),
+      s: new THREE.Vector3(rr, (0.3 + Math.random() * 0.1) * grow, rr),
+      tint: 0.85 + Math.random() * 0.25,
+      prevBig: prevItem?.big,
     };
     this._setGouge(i);
   }
 
   _setGouge(i) {
     const g = this.gougeList[i];
+    const use = g?.big ? this.gougesB : this.gouges;
+    const other = g?.big ? this.gouges : this.gougesB;
     if (!g || g.life <= 0) this._m.makeScale(0, 0, 0);
     else this._m.compose(g.p, g.q, this._s.copy(g.s).multiplyScalar(Math.min(1, g.life / 5)));
-    this.gouges.setMatrixAt(i, this._m);
-    this.gouges.instanceMatrix.needsUpdate = true;
+    use.setMatrixAt(i, this._m);
+    use.instanceMatrix.needsUpdate = true;
+    if (g && g.life > 0) {
+      use.setColorAt(i, this._c.setScalar(g.tint));
+      if (use.instanceColor) use.instanceColor.needsUpdate = true;
+      // a vaga pode ter sido usada pela outra malha antes
+      other.setMatrixAt(i, this._m.makeScale(0, 0, 0));
+      other.instanceMatrix.needsUpdate = true;
+    }
   }
 
   update(dt) {

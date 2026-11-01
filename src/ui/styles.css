@@ -997,6 +997,12 @@ body.is-touch .hb-key { display: none; }
   .btn-play { min-height: 42px; font-size: 19px; }
 }
 
+/* ---------------- Vinheta sutil (estilo low-poly) ---------------- */
+.vinheta {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 58%, rgba(12, 14, 22, 0.32) 100%);
+}
+
 /* ---------------- Embaixo d'água ---------------- */
 .uw-overlay {
   position: absolute;
@@ -1192,6 +1198,7 @@ body.underwater-swamp .uw-overlay {
   text-shadow: 0 2px 0 #7a2a10, 0 0 8px rgba(0, 0, 0, 0.6); will-change: transform, opacity;
 }
 .dmg-num[hidden] { display: none; }
+.dmg-num[data-kind="zero"] { color: #aab3b8; text-shadow: 0 1px 2px #000; }
 body.level-flash::after {
   content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 7;
   background: radial-gradient(circle at 50% 60%, rgba(255, 214, 110, 0.35), rgba(255, 214, 110, 0) 60%);
@@ -1327,10 +1334,10 @@ body.is-touch .hud-gauges { bottom: calc(var(--safe-b) + 72px); }
   position: absolute; left: 50%; top: 100%; transform: translateX(-50%);
   font-size: 9.5px; font-weight: 800; color: var(--ark-text); text-shadow: 0 1px 2px #000;
 }
-.stat-health { --c: #3fe36a; --mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 2h6v7h7v6h-7v7H9v-7H2V9h7z'/%3E%3C/svg%3E"); }
-.stat-stamina { --c: #f4f4f4; --mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M13.6 2 4.5 13.4h6.1L9.2 22l10.3-12.6h-6.3z'/%3E%3C/svg%3E"); }
-.stat-food { --c: #3fe36a; --mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M14.8 2.8a6.2 6.2 0 0 0-5.6 8.6l-3.6 3.6a2.4 2.4 0 1 0-1.7 4.1 2.4 2.4 0 1 0 4.1-1.7l3.6-3.6a6.2 6.2 0 1 0 3.2-11z'/%3E%3C/svg%3E"); }
-.stat-water { --c: #3fe36a; --mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2.4S5 10.3 5 14.8a7 7 0 0 0 14 0C19 10.3 12 2.4 12 2.4z'/%3E%3C/svg%3E"); }
+.stat-health { --c: #35c3e8; --mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 2h6v7h7v6h-7v7H9v-7H2V9h7z'/%3E%3C/svg%3E"); }
+.stat-stamina { --c: #35c3e8; --mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M13.6 2 4.5 13.4h6.1L9.2 22l10.3-12.6h-6.3z'/%3E%3C/svg%3E"); }
+.stat-food { --c: #35c3e8; --mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M14.8 2.8a6.2 6.2 0 0 0-5.6 8.6l-3.6 3.6a2.4 2.4 0 1 0-1.7 4.1 2.4 2.4 0 1 0 4.1-1.7l3.6-3.6a6.2 6.2 0 1 0 3.2-11z'/%3E%3C/svg%3E"); }
+.stat-water { --c: #35c3e8; --mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2.4S5 10.3 5 14.8a7 7 0 0 0 14 0C19 10.3 12 2.4 12 2.4z'/%3E%3C/svg%3E"); }
 .stat-oxygen { --c: #7fe3ff; --mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='8' cy='15' r='4.4'/%3E%3Ccircle cx='16.5' cy='9' r='3.2'/%3E%3Ccircle cx='17' cy='17.5' r='2'/%3E%3Ccircle cx='9.5' cy='5.5' r='1.8'/%3E%3C/svg%3E"); }
 /* acabando: fica vermelho e pisca (como no ARK) */
 .hud-gauges .stat.low { --c: #ff4a3a; }
@@ -1600,3 +1607,846 @@ body { font-weight: 600; }
 .title { font-family: "Lilita One", var(--font-ui); } /* logo do jogo continua igual */
 .stat .num, .hb-qty, .is-qty, .sk-val, .target-name b { font-weight: 700; font-variant-numeric: tabular-nums; }
 .item-svg { overflow: visible; }
+
+
+/* ---------- HUD estilo ARK Mobile: ícones novos (nível e peso) ---------- */
+.stat-xp { --c: #35c3e8; --mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2l9 9h-5v4H8v-4H3z M10.5 17h3v2.5H16v3h-2.5V24h-3v-1.5H8v-3h2.5z'/%3E%3C/svg%3E"); }
+.stat-weight { --c: #35c3e8; --mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 3h6a3 3 0 0 1 3 3v1h-2V6a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v1H6V6a3 3 0 0 1 3-3z M7 8h10l2.7 12.2a1.5 1.5 0 0 1-1.5 1.8H5.8a1.5 1.5 0 0 1-1.5-1.8z'/%3E%3C/svg%3E"); }
+/* fome e sede ficam um pouco menores, ao lado, e só aparecem quando baixas */
+.hud-gauges .stat-food, .hud-gauges .stat-water { width: 24px; height: 24px; align-self: center; }
+.hud-gauges .stat-xp .num, .hud-gauges .stat-weight .num { color: #bff1ff; }
+.hud-gauges .stat-weight.low .num { color: #ff7a6a; }
+
+/* Celular: barra rápida em grade 2x4 no canto de baixo à direita, translúcida */
+body.is-touch .hotbar {
+  --hb: clamp(34px, 7.4vh, 48px);
+  left: auto; right: calc(var(--safe-r, 0px) + 8px);
+  bottom: calc(8px + var(--safe-b));
+  transform: none;
+  display: grid;
+  grid-template-columns: repeat(4, var(--hb));
+  grid-auto-rows: var(--hb);
+  gap: 0; padding: 0; border-radius: 0;
+  background: rgba(8, 40, 56, 0.28);
+  border: 1px solid rgba(110, 215, 245, 0.45);
+}
+body.is-touch .hb-slot {
+  border: 1px solid rgba(110, 215, 245, 0.35);
+  border-radius: 0;
+  background: rgba(8, 40, 56, 0.18);
+}
+
+
+/* esquema de botões: a barra rápida sobe para o centro, longe do pulo/ataque */
+body.is-touch.touch-botoes .hotbar {
+  left: 40%; right: auto; transform: translateX(-50%);
+  bottom: calc(8px + var(--safe-b));
+  grid-template-columns: repeat(8, var(--hb));
+}
+
+/* ---------- Controles de toque: esquema de gestos (ARK Mobile) ---------- */
+.tc-gestos { position: absolute; inset: 0; pointer-events: none; touch-action: none; }
+.tc-esquema-gestos .tc-gestos { pointer-events: auto; }
+.tc-esquema-gestos .tc-look, .tc-esquema-gestos .tc-stick-zone { pointer-events: none; }
+.tc:not(.tc-esquema-gestos) .tc-gestos { display: none; }
+/* só sobra o botão de agachar (o bonequinho agachado, embaixo à esquerda) */
+.tc-esquema-gestos .tc-btn:not(.b-crouch):not(.b-camera) { display: none; }
+.tc-btn[hidden] { display: none !important; }
+.tc-esquema-gestos .tc-buttons { right: auto; left: var(--safe-l, 0px); bottom: var(--safe-b, 0px); }
+.tc-esquema-gestos .tc-btn.b-crouch {
+  left: 12px; bottom: 12px;
+  right: auto; top: auto; position: absolute;
+  width: 48px; height: 48px; opacity: 0.85;
+  background: transparent; border: none; box-shadow: none; color: #35c3e8;
+}
+.tc-esquema-gestos .tc-btn.b-crouch.on { color: #bff1ff; }
+
+/* ---------- Opções: proporções medidas no ARK Mobile (tudo em % da altura da tela) ---------- */
+.pause-opts-panel { padding: 1.6vh 2.4vh 1.8vh; }
+.po-head { margin-bottom: 1.4vh; }
+.po-head h2 { font: 700 4.6vh var(--font-ui); letter-spacing: 0.02em; color: #bff1ff; }
+.po-body { grid-template-columns: 0.32fr 1fr; grid-template-rows: none; gap: 1.8vh; }
+.po-cats { flex-direction: column; overflow-x: visible; overflow-y: auto; gap: 1.6vh; }
+.po-cat { min-height: 13.4vh; padding: 0 1vh; font: 600 4vh var(--font-ui); letter-spacing: 0.01em; color: #d4f4ff; background: rgba(6, 24, 34, 0.78); border: 1px solid rgba(110, 215, 245, 0.28); flex: none; }
+.po-cat.on { background: rgba(26, 120, 150, 0.7); border-color: rgba(150, 235, 255, 0.8); box-shadow: none; }
+.po-content { padding: 1.6vh 2vh; background: rgba(12, 18, 22, 0.84); border: 1px solid rgba(110, 215, 245, 0.14); font-size: 2.4vh; font-weight: 500; }
+.po-page { grid-template-columns: 1fr; gap: 1.2vh; }
+.po-page h3 { margin: 0 0 1.2vh; font: 500 3.7vh var(--font-ui); letter-spacing: 0.01em; color: #fff; }
+.po-page label, .po-page select, .po-page output { font-size: 2.4vh; font-weight: 500; }
+.po-ctrl { grid-template-columns: 0.55fr 1fr; gap: 2vh; align-items: start; min-height: 9vh; padding: 1.2vh 1.8vh; background: rgba(10, 92, 118, 0.82); }
+.po-ctrl b { font: 500 2.3vh/1.25 var(--font-ui); color: #52cbe8; letter-spacing: 0; }
+.po-ctrl span { font: 500 2.3vh/1.3 var(--font-ui); color: #f2fbff; }
+@media (max-width: 640px), (max-height: 460px) {
+  .po-body { grid-template-columns: 0.32fr 1fr; grid-template-rows: none; }
+  .po-cats { flex-direction: column; overflow-x: visible; }
+  .po-cat { min-height: 13.4vh; padding: 0 1vh; font-size: 4vh; }
+}
+
+/* Opções mais transparentes (dá para ver o jogo atrás, como no ARK Mobile) */
+.pause-opts-panel {
+  background: var(--ark-hex), linear-gradient(180deg, rgba(14, 74, 98, 0.5), rgba(5, 32, 46, 0.58)) !important;
+  backdrop-filter: blur(1.5px);
+}
+.overlay.pause { background: rgba(2, 14, 22, 0.18); }
+.po-cat { background: rgba(6, 24, 34, 0.5); }
+.po-cat.on { background: rgba(26, 120, 150, 0.55); }
+.po-content { background: rgba(10, 16, 20, 0.58); }
+.po-ctrl { background: rgba(10, 92, 118, 0.6); }
+
+/* ---------- Acordar no mapa: olhos abrindo ---------- */
+.intro { position: absolute; inset: 0; z-index: 9000; pointer-events: none; background: #000; overflow: hidden; }
+.intro.abrindo { background: transparent; }
+.olho { position: absolute; left: -10%; width: 120%; height: 52%; background: #000; opacity: 0; }
+.olho-cima { top: 0; border-radius: 0 0 50% 50% / 0 0 22% 22%; transform: translateY(0); }
+.olho-baixo { bottom: 0; border-radius: 50% 50% 0 0 / 22% 22% 0 0; transform: translateY(0); }
+.intro.abrindo .olho { opacity: 1; }
+.intro.abrindo .olho-cima { animation: olho-cima 3.6s cubic-bezier(.4, 0, .2, 1) forwards; }
+.intro.abrindo .olho-baixo { animation: olho-baixo 3.6s cubic-bezier(.4, 0, .2, 1) forwards; }
+.intro-blur { position: absolute; inset: 0; opacity: 0; }
+.intro.abrindo .intro-blur { animation: olho-foco 3.6s ease-out forwards; }
+/* 0% fechado, abre uma fresta, pisca, abre mais, pisca de leve e abre de vez */
+@keyframes olho-cima {
+  0% { transform: translateY(0); }
+  18% { transform: translateY(-62%); }
+  30% { transform: translateY(-18%); }
+  52% { transform: translateY(-82%); }
+  64% { transform: translateY(-40%); }
+  100% { transform: translateY(-112%); }
+}
+@keyframes olho-baixo {
+  0% { transform: translateY(0); }
+  18% { transform: translateY(62%); }
+  30% { transform: translateY(18%); }
+  52% { transform: translateY(82%); }
+  64% { transform: translateY(40%); }
+  100% { transform: translateY(112%); }
+}
+@keyframes olho-foco {
+  0% { opacity: 1; -webkit-backdrop-filter: blur(14px) brightness(1.25); backdrop-filter: blur(14px) brightness(1.25); }
+  60% { opacity: 1; -webkit-backdrop-filter: blur(7px) brightness(1.1); backdrop-filter: blur(7px) brightness(1.1); }
+  100% { opacity: 1; -webkit-backdrop-filter: blur(0) brightness(1); backdrop-filter: blur(0) brightness(1); }
+}
+
+/* carregamento normal: círculo girando ao lado do texto do botão */
+.girando { display: inline-block; width: 1em; height: 1em; margin-right: 0.6em; vertical-align: -0.15em; border: 0.14em solid rgba(191, 241, 255, 0.3); border-top-color: #bff1ff; border-radius: 50%; animation: girar 0.9s linear infinite; }
+@keyframes girar { to { transform: rotate(360deg); } }
+
+/* logo da tela inicial: aparece com o anel girando enquanto a ilha é gerada */
+.logo-carga { display: none; width: 64px; height: 64px; color: #bff1ff; margin-bottom: 10px; filter: drop-shadow(0 0 8px rgba(100, 220, 255, 0.5)); }
+.start.carregando .logo-carga { display: block; }
+.logo-anel { transform-origin: 60px 60px; animation: girar 1.2s linear infinite; }
+
+/* ---------- Brilho do sol na tela (sun_glare.js) ---------- */
+.sun-glare { position: absolute; inset: 0; pointer-events: none; overflow: hidden; mix-blend-mode: screen; --sc: 255, 244, 214; }
+.sun-glare[hidden] { display: none; }
+.sun-glare i { position: absolute; left: 0; top: 0; display: block; border-radius: 50%; will-change: transform, opacity; }
+.sg-core { width: 96vmin; height: 96vmin; background: radial-gradient(circle, rgba(255, 255, 250, 0.95) 0, rgba(var(--sc), 0.85) 3.5%, rgba(var(--sc), 0.5) 10%, rgba(var(--sc), 0.2) 24%, rgba(var(--sc), 0.07) 42%, transparent 68%); }
+.sg-streak { width: 110vmin; height: 5vmin; background: radial-gradient(ellipse 50% 50% at 50% 50%, rgba(255, 255, 250, 0.55) 0, rgba(var(--sc), 0.28) 30%, rgba(var(--sc), 0.08) 60%, transparent 100%); }
+.sg-g { background: radial-gradient(circle, transparent 54%, rgba(150, 230, 190, 0.22) 62%, rgba(255, 220, 150, 0.16) 70%, transparent 76%); }
+.sg-g1 { width: 15vmin; height: 15vmin; }
+.sg-g2 { width: 26vmin; height: 26vmin; background: radial-gradient(circle, rgba(255, 200, 140, 0.1) 0, rgba(160, 200, 255, 0.14) 50%, transparent 72%); }
+.sg-g3 { width: 9vmin; height: 9vmin; background: radial-gradient(circle, rgba(255, 240, 200, 0.3) 0, transparent 70%); }
+
+/* PC: barra rápida no canto de baixo à direita em grade 4x2 (como no ARK Mobile); status no centro embaixo */
+body:not(.is-touch) .hotbar {
+  --hb: clamp(40px, 7.4vh, 58px);
+  left: auto; right: calc(var(--safe-r, 0px) + 12px);
+  bottom: calc(12px + var(--safe-b));
+  transform: none;
+  display: grid;
+  grid-template-columns: repeat(4, var(--hb));
+  grid-auto-rows: var(--hb);
+  gap: 0; padding: 0; border-radius: 0;
+  background: rgba(8, 40, 56, 0.28);
+  border: 1px solid rgba(110, 215, 245, 0.45);
+}
+body:not(.is-touch) .hb-slot { border: 1px solid rgba(110, 215, 245, 0.35); border-radius: 0; background: rgba(8, 40, 56, 0.18); }
+body:not(.is-touch) .hud-gauges { bottom: calc(var(--safe-b) + 12px); }
+body.is-touch:not(.touch-botoes) .hud-gauges { bottom: calc(var(--safe-b) + 10px); }
+
+/* HUD como no ARK Mobile: ícones de status sem número (enchem/esvaziam com a porcentagem) e espaços mais altos, sem número */
+.hud-gauges { gap: 14px; }
+.hud-gauges .stat { width: 38px; height: 38px; }
+.hud-gauges .stat .num { display: none; }
+.hud-gauges .stat .track { background: rgba(53, 195, 232, 0.2); }
+.hud-gauges .stat-food, .hud-gauges .stat-water { width: 30px; height: 30px; }
+.hb-key { display: none !important; }
+body:not(.is-touch) .hotbar,
+body.is-touch .hotbar { grid-auto-rows: calc(var(--hb) * 1.3); }
+body.is-touch.touch-botoes .hotbar { grid-auto-rows: calc(var(--hb) * 1.3); }
+.hotbar .hb-slot { height: 100%; width: 100%; }
+.hud-gauges .stat-xp .fill { transform: none !important; }
+
+/* ---- HUD igual ao do ARK Mobile (medido na foto de referência: cor, opacidade e tamanho em % da tela) ---- */
+body .hotbar, body.is-touch .hotbar, body:not(.is-touch) .hotbar {
+  --hw: clamp(40px, 5.44vw, 96px);
+  --hh: clamp(44px, 11.4vh, 120px);
+  left: auto; right: calc(var(--safe-r, 0px) + 3vw);
+  bottom: calc(1.7vh + var(--safe-b, 0px));
+  transform: none;
+  display: grid;
+  grid-template-columns: repeat(4, var(--hw));
+  grid-auto-rows: var(--hh);
+  gap: 0; padding: 0; border: 0; border-radius: 0;
+  background: rgba(30, 50, 48, 0.4);
+}
+body .hb-slot, body.is-touch .hb-slot, body:not(.is-touch) .hb-slot {
+  width: 100%; height: 100%; border-radius: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: inset -1px -1px 0 rgba(150, 210, 205, 0.32), inset 1px 1px 0 rgba(150, 210, 205, 0.32);
+}
+body .hud-gauges, body.is-touch .hud-gauges, body.is-touch:not(.touch-botoes) .hud-gauges, body:not(.is-touch) .hud-gauges {
+  bottom: calc(2vh + var(--safe-b, 0px));
+  gap: 2.4vh;
+  align-items: flex-end;
+}
+.hud-gauges .stat { width: 6.2vh; height: 6.2vh; --c: #2a94aa; opacity: 0.85; }
+.hud-gauges .stat .track { background: rgba(42, 148, 170, 0.2); }
+.hud-gauges .stat-food, .hud-gauges .stat-water { width: 4.6vh; height: 4.6vh; }
+.hud-gauges .stat.low { --c: #ff4a3a; }
+
+/* ---- Uma fonte só em tudo (a do HUD) ---- */
+:root { --font-display: "Rajdhani", "Barlow Semi Condensed", system-ui, sans-serif; --font-ui: "Rajdhani", "Barlow Semi Condensed", system-ui, sans-serif; }
+html, body, button, input, select, textarea, .title { font-family: var(--font-ui) !important; }
+
+/* ---- Canto de cima à esquerda como no ARK Mobile: só a mochilinha, pequena ---- */
+.hud-left { top: calc(4.3vh + var(--safe-t)); left: calc(0.75vw + var(--safe-l)); display: block; }
+.ark-btn.hud-bag {
+  width: 9.2vh; height: 9.2vh; min-height: 0; padding: 0;
+  display: grid; place-items: center;
+  background: rgba(30, 50, 48, 0.4) !important;
+  border: 1px solid rgba(150, 210, 205, 0.32) !important; border-radius: 0 !important;
+  color: #2a94aa !important;
+}
+.ark-btn.hud-bag .ab-ico { width: 62%; height: 62%; }
+.ark-btn.hud-bag .ab-ico svg { filter: none; }
+.hud-status { left: calc(var(--safe-l) + 0.75vw + 10.6vh); top: calc(4.3vh + var(--safe-t)); }
+
+/* ---------- Tela inicial no estilo do menu do ARK Mobile: fundo preto, logo ISLA no meio, menu em texto à esquerda ---------- */
+.overlay.start { background: #08090a !important; backdrop-filter: none !important; }
+.start .start-panel { position: absolute; inset: 0; width: auto; max-width: none; padding: 0; background: none; border: 0; box-shadow: none; display: block; }
+.start .start-panel > * { animation: none !important; }
+.start .title, .start .tagline, .start .menu-tab[data-page="jogar"] { display: none !important; }
+.start-logo { position: absolute; left: 50%; top: 50%; width: min(52vw, 100vh); transform: translate(-50%, -52%); filter: drop-shadow(0 0 2.4vh rgba(120, 200, 200, 0.12)); }
+.start .logo-carga { display: none !important; }
+.start-menu { position: absolute; left: 11.4vw; top: 30vh; display: flex; flex-direction: column; gap: 2.6vh; z-index: 2; }
+.start-menu .menu-tabs { display: flex; flex-direction: column; align-items: flex-start; gap: 2.6vh; border: 0; flex-wrap: nowrap; }
+.start .menu-item, .start .menu-tab {
+  background: none !important; border: 0 !important; padding: 0 !important; margin: 0; cursor: pointer; text-align: left;
+  font: 700 5.4vh/1 var(--font-ui); letter-spacing: 0.02em; text-transform: uppercase; color: #c8f1ff;
+  text-shadow: 0 0 1.6vh rgba(110, 215, 245, 0.7), 0 0 0.5vh rgba(110, 215, 245, 0.9);
+  box-shadow: none !important; transform: none !important; animation: none !important;
+}
+.start .menu-item:disabled { opacity: 0.6; cursor: default; }
+.start .menu-tab[aria-selected="true"], .start .menu-item:not(:disabled):hover, .start .menu-tab:hover { color: #fff; }
+.start .menu-tab[aria-selected="true"] { text-shadow: 0 0 2.2vh rgba(140, 230, 255, 1); }
+.start .eyebrow { position: absolute; left: 11.4vw; bottom: 4.5vh; margin: 0; font-size: 2.4vh; letter-spacing: 0.04em; color: #cfeeff; }
+/* painel à direita (como a caixa de novidades do ARK) */
+.start .menu-page {
+  position: absolute; right: 8vw; top: 11.5vh; width: min(37vw, 640px); max-height: 74vh; overflow-y: auto; box-sizing: border-box;
+  padding: 2.4vh 2vw; background: rgba(10, 44, 58, 0.78); border: 1px solid #2a94aa; color: #e8f6ff;
+  display: flex; flex-direction: column; gap: 1.6vh; font-size: 2.6vh;
+}
+.start .menu-page[hidden] { display: none; }
+.start .menu-page[data-page="jogar"]:not(:has(*:not([hidden]) )) { display: none; }
+@media (max-height: 460px) { .start .menu-page { font-size: 3vh; } }
+/* ajuste de proporção: logo no centro sem encostar no menu; painel da direita mais estreito */
+.start-logo { left: 56vw; width: min(26vw, 70vh); top: 50%; }
+.start .menu-item, .start .menu-tab { font-size: 4.6vh; }
+.start-menu { top: 29vh; gap: 2.8vh; }
+.start-menu .menu-tabs { gap: 2.8vh; }
+.start .menu-page { right: 5vw; width: min(24vw, 440px); font-size: 2.3vh; }
+.start .menu-tip { opacity: 1 !important; color: #e8f6ff !important; margin: 0; }
+.start-logo { left: 57vw; width: min(32vw, 82vh); }
+
+/* ---------- Rodas (assovios e ações): animação de abrir, escolher e fechar ---------- */
+.wheel.abrindo { animation: roda-fundo-in 0.25s ease both; }
+.wheel.abrindo .wheel-ring { animation: roda-abre 0.34s cubic-bezier(0.2, 0.9, 0.3, 1.15) both; }
+.wheel.abrindo .wheel-item { animation: roda-item 0.34s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; animation-delay: calc(60ms + var(--i, 0) * 32ms); }
+.wheel.fechando { animation: roda-fundo-out 0.22s ease both; pointer-events: none; }
+.wheel.fechando .wheel-ring { animation: roda-fecha 0.22s ease-in both; }
+.wheel-item { transition: background 0.12s, transform 0.12s; }
+.wheel-item:hover, .wheel-item:focus-visible { transform: translate(-50%, -50%) scale(1.08); }
+.wheel-item.escolhido { background: rgba(60, 182, 216, 0.75) !important; transform: translate(-50%, -50%) scale(1.18) !important; box-shadow: 0 0 2.4vh rgba(120, 225, 255, 0.8); }
+.wheel.fechando .wheel-item:not(.escolhido) { opacity: 0.3; transition: opacity 0.15s; }
+@keyframes roda-abre { from { transform: scale(0.35) rotate(-28deg); opacity: 0; } to { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes roda-fecha { from { transform: scale(1); opacity: 1; } to { transform: scale(0.5) rotate(12deg); opacity: 0; } }
+@keyframes roda-item { from { opacity: 0; transform: translate(-50%, -50%) scale(0.4); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+@keyframes roda-fundo-in { from { background-color: rgba(0, 0, 0, 0); } to { background-color: rgba(0, 0, 0, 0.25); } }
+@keyframes roda-fundo-out { from { background-color: rgba(0, 0, 0, 0.25); } to { background-color: rgba(0, 0, 0, 0); } }
+
+/* ---------- Itens coletados: lista no canto esquerdo (como no ARK) ---------- */
+.hud-msgs {
+  right: auto;
+  left: calc(4.2vw + var(--safe-l));
+  top: 21.5%;
+  align-items: flex-start;
+  gap: 0.35vh;
+  max-width: 38vw;
+}
+.msg.msg-item {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  gap: 1.2vh;
+  height: 5.3vh;
+  font-size: max(18px, 3.9vh);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #fff;
+  text-shadow: 0 0 3px #000, 0 1px 3px #000, 1px 1px 2px rgba(0, 0, 0, 0.9);
+  white-space: nowrap;
+}
+.msg.msg-item .msg-icon { width: 5.2vh; height: 5.2vh; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8)); }
+.msg.msg-item .msg-plus { color: var(--ark-cyan); font-size: 0.62em; margin-right: -0.3vh; text-shadow: 0 0 3px #000; }
+.msg.msg-item.out { transform: none; }
+.msg.msg-item { animation: msg-in-l 0.2s ease-out; }
+@keyframes msg-in-l { from { opacity: 0; transform: translateX(-16px); } }
+
+/* ---------- Tela de morte (estilo ARK): visão vermelha que escurece + mapa de respawn ---------- */
+.death-fade { position: absolute; inset: 0; z-index: 19; pointer-events: none; }
+.death-fade[hidden] { display: none; }
+.death-fade::before, .death-fade::after { content: ""; position: absolute; inset: 0; opacity: 0; }
+.death-fade::before { background: radial-gradient(ellipse at center, rgba(150, 12, 12, 0.4) 0%, rgba(105, 0, 0, 0.92) 100%); }
+.death-fade::after { background: #000; }
+.death-fade.run::before { animation: df-red 3.2s ease-out forwards; }
+.death-fade.run::after { animation: df-black 3.2s ease-in forwards; }
+@keyframes df-red { 0% { opacity: 0; } 14% { opacity: 1; } 100% { opacity: 1; } }
+@keyframes df-black { 0%, 38% { opacity: 0; } 100% { opacity: 1; } }
+
+.overlay.death {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.42fr);
+  gap: 1.4vw;
+  align-items: center;
+  padding: 6vh 12vw 5vh;
+  background:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='56' height='97'><path d='M28 2 54 17v30L28 62 2 47V17Z M28 62v33 M2 47-26 62 M54 47l28 15' fill='none' stroke='%237fe3ff' stroke-opacity='0.07' stroke-width='1.2'/></svg>") 0 0 / 56px 97px,
+    #02080d;
+  font-family: var(--font-ui);
+  color: #cfeffa;
+}
+.overlay.death[hidden] { display: none; }
+.dz-time { position: absolute; top: 1.2vh; left: 3.5vw; font-size: max(13px, 2.3vh); font-weight: 600; letter-spacing: 0.04em; color: #4fd0f0; }
+.dz-cause { position: absolute; top: 1.2vh; left: 50%; transform: translateX(-50%); margin: 0; font-size: max(13px, 2.3vh); font-weight: 600; color: #ff9a8c; text-shadow: 0 0 4px #000; white-space: nowrap; }
+.dz-left { display: flex; flex-direction: column; gap: 1.2vh; min-width: 0; align-items: stretch; }
+.dz-frame { display: flex; justify-content: center; padding: 1vh; border: 1px solid rgba(127, 227, 255, 0.35); background: rgba(3, 20, 31, 0.72); box-shadow: inset 0 0 3vh rgba(60, 180, 220, 0.12); }
+.dz-plot {
+  position: relative;
+  width: min(74vh, 100%);
+  aspect-ratio: 1 / 1;
+  border: 1px solid rgba(127, 227, 255, 0.3);
+  background:
+    linear-gradient(rgba(127, 227, 255, 0.07) 1px, transparent 1px) 0 0 / 10% 10%,
+    linear-gradient(90deg, rgba(127, 227, 255, 0.07) 1px, transparent 1px) 0 0 / 10% 10%,
+    radial-gradient(ellipse at 40% 20%, rgba(60, 170, 210, 0.18), transparent 55%),
+    #020b11;
+}
+.dz-plot .death-map { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.dz-ticks, .death-pins { position: absolute; inset: 0; pointer-events: none; }
+.death-pins > * { pointer-events: auto; }
+.dz-tick { position: absolute; font-size: max(11px, 2.3vh); font-weight: 600; color: #3fb8da; text-shadow: 0 0 3px #000; }
+.dz-tick-y { left: 1.4%; transform: translateY(-50%); }
+.dz-tick-x { bottom: 1%; transform: translateX(-50%); }
+.dz-plot .map-death { font-size: max(22px, 5.2vh); line-height: 1; color: #ff6a5c; text-shadow: 0 0 8px rgba(255, 70, 60, 0.9), 0 0 2px #000; }
+.dz-plot .map-pin {
+  position: absolute;
+  width: 1.7vh; height: 1.7vh; min-width: 9px; min-height: 9px;
+  padding: 0;
+  transform: translate(-50%, -50%) rotate(45deg);
+  border: 1px solid rgba(170, 240, 255, 0.85);
+  background: rgba(60, 190, 230, 0.35);
+  box-shadow: 0 0 5px rgba(80, 210, 255, 0.6);
+}
+.dz-plot .map-pin.selected { width: 2.6vh; height: 2.6vh; background: #bff4ff; border-color: #fff; box-shadow: 0 0 10px #7fe3ff; z-index: 2; }
+.dz-filter { display: flex; align-items: center; gap: 1.2vh; font-size: max(13px, 2.5vh); font-weight: 700; letter-spacing: 0.05em; color: #e4f8ff; }
+.dz-filter input {
+  flex: 1; min-width: 0; height: 4.8vh; padding: 0 1.2vh;
+  border: 1px solid rgba(127, 227, 255, 0.35); background: rgba(3, 20, 31, 0.8);
+  color: #cfeffa; font: inherit; font-weight: 500; letter-spacing: 0;
+}
+.dz-filter input::placeholder { color: rgba(127, 227, 255, 0.35); }
+.dz-side { display: flex; flex-direction: column; gap: 1.4vh; min-width: 0; max-height: 88vh; }
+.dz-title { margin: 0 0 0.4vh; text-align: center; font-size: max(18px, 4.4vh); font-weight: 700; letter-spacing: 0.03em; color: #c9f1ff; text-shadow: 0 0 10px rgba(80, 210, 255, 0.5); }
+.dz-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-right: 0.8vh; scrollbar-width: thin; scrollbar-color: #3a97b4 rgba(10, 40, 56, 0.6); }
+.dz-list::-webkit-scrollbar { width: 1.1vh; }
+.dz-list::-webkit-scrollbar-track { background: rgba(10, 40, 56, 0.6); }
+.dz-list::-webkit-scrollbar-thumb { background: #3a97b4; }
+.zone-btn {
+  display: block; width: 100%; height: 7.4vh; margin: 0 0 1.2vh; padding: 0 1.6vh;
+  text-align: left; font: 600 max(14px, 2.6vh) var(--font-ui); letter-spacing: 0.02em; color: #bfe6f4;
+  background: rgba(10, 48, 68, 0.55); border: 1px solid rgba(127, 227, 255, 0.22); border-radius: 0;
+}
+.zone-btn[hidden] { display: none; }
+.zone-btn.selected { background: rgba(32, 150, 182, 0.78); border-color: #c4f4ff; color: #fff; }
+.dz-btn {
+  min-height: 9vh; padding: 0.6vh 1.2vh;
+  font: 700 max(14px, 2.7vh)/1.15 var(--font-ui); letter-spacing: 0.03em; text-transform: uppercase; color: #e2f8ff;
+  background: rgba(18, 112, 142, 0.92); border: 1px solid rgba(170, 238, 255, 0.55); border-radius: 0;
+}
+.dz-btn:active { background: rgba(30, 150, 185, 0.95); }
+@media (orientation: portrait) {
+  .overlay.death { grid-template-columns: 1fr; padding: 6vh 4vw 3vh; overflow-y: auto; }
+  .dz-plot { width: 100%; }
+}
+
+/* ---------- Títulos: Jost (estilo Futura); interface: Rajdhani ---------- */
+:root { --font-title: "Jost", "Josefin Sans", "Century Gothic", "Trebuchet MS", system-ui, sans-serif; }
+.overlay h2, .overlay h3, .pause-head h2, .inv-head h2, .rd-head h3, .death-title, .dz-title {
+  font-family: var(--font-title);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+.dz-title { font-weight: 700; font-size: max(17px, 3.9vh); }
+
+/* ---------- Ofuscamento do sol: lavagem branca (some devagar quando desvia o olhar) ---------- */
+.sun-wash {
+  position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen; opacity: 0;
+  --wx: 50%; --wy: 50%;
+  background:
+    radial-gradient(circle at var(--wx) var(--wy), rgba(255, 252, 240, 0.95) 0, rgba(255, 246, 220, 0.7) 14%, rgba(255, 240, 205, 0.35) 38%, rgba(255, 236, 200, 0.16) 70%),
+    rgba(255, 244, 224, 0.1);
+}
+.sun-wash[hidden] { display: none; }
+
+/* ---------- Tela de carregamento (ao clicar em Entrar): animações só em CSS ---------- */
+.loading-screen {
+  position: absolute; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(ellipse at 50% 42%, #0e2a36 0%, #071218 62%, #03080b 100%);
+  color: #dff6ff; font-family: var(--font-ui); transition: opacity 0.3s ease;
+}
+.loading-screen[hidden] { display: none; }
+.loading-screen.sai { opacity: 0; pointer-events: none; }
+.ld-center { display: flex; flex-direction: column; align-items: center; gap: 14px; width: min(78vw, 460px); text-align: center; }
+.ld-anel { width: 84px; height: 84px; will-change: transform; animation: ld-gira 1.1s linear infinite; }
+@keyframes ld-gira { to { transform: rotate(360deg); } }
+.ld-titulo { font-size: 26px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #bff1ff; }
+.ld-etapas { position: relative; height: 22px; width: 100%; font-size: 15px; font-weight: 600; color: #7fb9cc; letter-spacing: 0.03em; }
+.ld-etapas span { position: absolute; inset: 0; opacity: 0; animation: ld-etapa 10s infinite; }
+.ld-etapas span:nth-child(2) { animation-delay: 2.5s; }
+.ld-etapas span:nth-child(3) { animation-delay: 5s; }
+.ld-etapas span:nth-child(4) { animation-delay: 7.5s; }
+@keyframes ld-etapa { 0% { opacity: 0; } 4%, 22% { opacity: 1; } 28%, 100% { opacity: 0; } }
+.ld-barra { position: relative; width: 100%; height: 5px; background: rgba(127, 227, 255, 0.15); overflow: hidden; border-radius: 3px; }
+.ld-barra i { position: absolute; left: 0; top: 0; bottom: 0; width: 38%; background: linear-gradient(90deg, transparent, #7fe3ff, transparent); will-change: transform; animation: ld-barra 1.5s ease-in-out infinite; }
+@keyframes ld-barra { from { transform: translateX(-105%); } to { transform: translateX(265%); } }
+.ld-ondas { width: 100%; height: 22px; overflow: hidden; opacity: 0.85; }
+.ld-ondas svg { display: block; width: 110%; height: 22px; will-change: transform; animation: ld-onda 2.4s linear infinite; }
+@keyframes ld-onda { to { transform: translateX(-9.0909%); } }
+.ld-dica { margin: 6px 0 0; font-size: 14px; color: #8fb6c4; min-height: 1.4em; }
+
+/* ---------- Engramas: nível e custo escritos em cada tela; aviso de nível novo ---------- */
+.eg-tile { overflow: hidden; }
+.eg-lv, .eg-cost { position: absolute; top: 2px; font: 800 9.5px var(--font-ui); line-height: 1; letter-spacing: 0.02em; text-shadow: 0 1px 2px #000; pointer-events: none; }
+.eg-lv { left: 3px; color: #8fe6ff; }
+.eg-cost { right: 3px; color: #d9a8ff; }
+.eg-tile.dark .eg-lv { color: #ffd27a; }
+.eg-tile { padding-top: 13px; height: 74px; }
+.eg-icon { width: 38px; height: 38px; }
+.eg-next { font-size: 12.5px; font-weight: 700; color: #8fb6c4; }
+.levelup-toast {
+  position: absolute; left: 50%; top: calc(9% + var(--safe-t)); transform: translateX(-50%); z-index: 30;
+  display: flex; flex-direction: column; align-items: center; gap: 0; padding: 4px 12px 5px;
+  background: rgba(4, 30, 46, 0.82); border: 1px solid rgba(127, 227, 255, 0.55); border-left: 4px solid #ffd45a;
+  color: #eafaff; font-family: var(--font-ui); text-shadow: 0 1px 3px #000; pointer-events: none;
+  animation: lvlup-in 0.35s ease-out; transition: opacity 0.5s;
+}
+.levelup-toast.out { opacity: 0; }
+.levelup-toast b { font-size: 14px; letter-spacing: 0.08em; color: #ffd45a; }
+.levelup-toast span { font-size: 10.5px; font-weight: 700; color: #bff1ff; }
+@keyframes lvlup-in { from { opacity: 0; transform: translateX(-50%) translateY(-14px); } }
+
+/* =============================================================
+   TELA DE AJUDA (mesmo formato da ajuda do ARK Mobile)
+   ============================================================= */
+.helpscr { background: #000 !important; z-index: 40; backdrop-filter: none !important; }
+.hs-wrap { position: absolute; left: 10%; right: 10%; top: 2%; bottom: 1.2%; display: flex; flex-direction: column; gap: 1.2%; }
+.hs-top { display: flex; gap: 0.55%; height: 7.4%; min-height: 34px; flex: none; }
+.hs-tab {
+  width: calc(var(--hs-sq, 7vh)); min-width: 34px; height: 100%; padding: 0; display: grid; place-items: center;
+  background: rgba(2, 20, 32, 0.9); border: 2px solid #1f8fb4; color: #29b7e0; cursor: pointer;
+}
+.hs-tab svg { width: 62%; height: 62%; }
+.hs-tab.on { background: rgba(6, 40, 58, 0.95); border-color: #e8f8ff; color: #eaf9ff; }
+.hs-tab:hover { border-color: #7fe3ff; }
+.hs-x { margin-left: auto; }
+.hs-body { flex: 1; min-height: 0; display: flex; gap: 1.6%; }
+.hs-left, .hs-right {
+  position: relative; min-height: 0; border: 2px solid #1f8fb4; overflow: hidden;
+  background: var(--ark-hex), linear-gradient(180deg, rgba(8, 54, 76, 0.92), rgba(2, 24, 38, 0.95));
+}
+.hs-left { width: 27.5%; flex: none; display: flex; flex-direction: column; align-items: center; padding: 2% 7% 1.5%; }
+.hs-right { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 1.6% 4.5% 1.5%; }
+.hs-ltitle, .hs-rtitle {
+  margin: 0; font: 700 clamp(18px, 4.3vh, 40px)/1.1 "Rajdhani", var(--font-ui) !important; text-transform: uppercase; text-align: center;
+  color: #e9f7ff; letter-spacing: 0.01em; transform: scaleX(0.86); transform-origin: center; white-space: nowrap;
+}
+.hs-list { margin-top: 6%; width: 100%; display: flex; flex-direction: column; gap: 1.3vh; }
+.hs-item {
+  width: 100%; padding: 1.1vh 4px; background: rgba(18, 112, 146, 0.78); border: 1px solid #3cb6d8; color: #dff5ff;
+  font: 600 clamp(11px, 2.4vh, 20px)/1.15 "Rajdhani", var(--font-ui) !important; letter-spacing: 0.03em; text-transform: uppercase; cursor: pointer;
+}
+.hs-item:hover { background: rgba(30, 140, 176, 0.85); }
+.hs-item.on { background: rgba(30, 150, 186, 0.95); border-color: #e8f8ff; color: #fff; box-shadow: 0 0 0 1px rgba(232, 248, 255, 0.5) inset; }
+.hs-brand { margin-top: auto; text-align: center; color: #cfeaf5; display: flex; flex-direction: column; align-items: center; gap: 0.8vh; }
+.hs-brand b { font: 700 clamp(22px, 6.5vh, 58px)/1 "Lilita One", var(--font-ui); letter-spacing: 0.12em; color: #7fe3ff; text-shadow: 0 0 12px rgba(127, 227, 255, 0.5); }
+.hs-brand span { font: 600 clamp(9px, 1.9vh, 16px)/1.15 var(--font-ui); text-align: left; }
+.hs-img {
+  margin-top: 2.2%; width: 84%; aspect-ratio: 16 / 9; flex: none; border: 1px solid rgba(60, 182, 216, 0.5);
+  background: rgba(0, 12, 20, 0.6); overflow: hidden;
+}
+.hs-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hs-img.vazio { background: linear-gradient(135deg, rgba(10, 60, 84, 0.6), rgba(2, 14, 22, 0.8)); }
+.hs-text {
+  margin: 1.4vh 0 0; width: 100%; font: 700 clamp(11px, 2.45vh, 21px)/1.14 "Rajdhani", var(--font-ui) !important; color: #fff;
+  text-shadow: 0 1px 2px #000, 0 0 3px #000; overflow: auto;
+}
+@media (max-aspect-ratio: 3/2) {
+  .hs-wrap { left: 2%; right: 2%; }
+  .hs-left { width: 32%; }
+}
+.helpscr .hs-ltitle, .helpscr .hs-rtitle { font-family: "Rajdhani", "Barlow Semi Condensed", system-ui, sans-serif !important; font-weight: 700; letter-spacing: 0.01em; }
+
+/* =============================================================
+   INVENTÁRIO NO FORMATO DO ARK MOBILE
+   Três painéis (inventário/fabricação · você · personagem), barra
+   rápida e atalhos embaixo, X no canto.
+   ============================================================= */
+.inv.ark-inv { background: radial-gradient(ellipse at 50% 40%, rgba(6, 30, 46, 0.55), rgba(2, 10, 18, 0.82)) !important; padding: 0 !important; display: block !important; }
+.inv.ark-inv .inv-panel {
+  position: absolute !important; inset: 0 !important; width: auto !important; height: auto !important; max-width: none !important; max-height: none !important;
+  display: block !important; padding: 0 !important; margin: 0 !important; background: none !important; border: 0 !important; box-shadow: none !important; overflow: visible !important;
+  --slot: 7vh; --ai-line: #2aa9cf;
+}
+.ark-inv .ai-left, .ark-inv .ai-mid, .ark-inv .ai-right {
+  position: absolute; top: 1.1%; height: 83.4%; box-sizing: border-box; margin: 0; padding: 0; min-width: 0; max-width: none; min-height: 0;
+  border: 2px solid var(--ai-line); background: var(--ark-hex), linear-gradient(180deg, rgba(6, 40, 58, 0.92), rgba(2, 20, 32, 0.95));
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.ark-inv .ai-left { left: 13.4%; width: 26.9%; flex: none; }
+.ark-inv .ai-mid { left: 40.6%; width: 18.9%; padding: 0.8% 0.6%; }
+.ark-inv .ai-right { left: 59.8%; width: 26.9%; flex: none; }
+
+/* esquerda: abas */
+.ark-inv .ai-tabs { display: flex; align-items: flex-end; gap: 4%; padding: 3% 5% 0; flex: none; }
+.ark-inv .ai-tab {
+  flex: none; min-height: 0 !important; padding: 0 !important; background: none !important; border: 0 !important; border-radius: 0 !important;
+  font: 700 clamp(16px, 4.6vh, 44px)/1 "Rajdhani", var(--font-ui) !important; letter-spacing: 0.01em; color: #3a8fb0 !important; transform: scaleX(0.88); transform-origin: left bottom; cursor: pointer;
+}
+.ark-inv .ai-tab.active { color: #eef9ff !important; }
+.ark-inv .ai-tab[data-tab="craft"] { margin-left: auto; }
+.ark-inv .ai-body { flex: 1; min-height: 0; padding: 3% 4% 2%; display: flex; flex-direction: column; gap: 2%; overflow-y: auto; }
+.ark-inv .ai-body[hidden] { display: none !important; }
+.ark-inv .ai-tools { display: flex; align-items: center; gap: 1.4%; flex: none; }
+.ark-inv .ai-spacer { flex: 1; }
+.ark-inv .ai-tool {
+  width: 5.6vh; height: 5.6vh; padding: 0; display: grid; place-items: center; background: rgba(2, 22, 34, 0.9); border: 2px solid var(--ai-line); color: #7fe3ff; cursor: pointer;
+}
+.ark-inv .ai-tool svg { width: 62%; height: 62%; }
+.ark-inv .ai-filter { height: 5.2vh; width: 40%; background: rgba(0, 12, 20, 0.8); border: 1px solid var(--ai-line); color: #eaf9ff; padding: 0 8px; font: 600 2.2vh var(--font-ui); }
+.ark-inv .inv-wbar { width: 22%; height: 2.2vh; position: relative; background: rgba(0, 10, 18, 0.7); border: 1px solid rgba(60, 182, 216, 0.5); }
+.ark-inv .inv-wbar i { position: absolute; inset: 0; background: #2cc6e8; transform-origin: left; }
+.ark-inv .inv-weight { position: absolute; left: 4px; top: 0; font: 700 1.7vh/2.2vh var(--font-ui); color: #fff; white-space: nowrap; text-shadow: 0 1px 2px #000; margin: 0; }
+.ark-inv .ai-bag { display: grid !important; grid-template-columns: repeat(7, 1fr) !important; gap: 0.5vh !important; align-content: start; width: 100%; }
+.ark-inv .ai-bag .inv-slot, .ark-inv .ai-hot .inv-slot, .ark-inv .ai-equip .inv-slot { width: auto !important; height: auto !important; aspect-ratio: 1; }
+.ark-inv .inv-slot {
+  border-radius: 0 !important; border: 1px solid rgba(60, 182, 216, 0.45) !important; background: rgba(8, 56, 80, 0.5) !important; color: #eaf9ff;
+}
+.ark-inv .inv-slot.empty { background: rgba(4, 34, 50, 0.45) !important; }
+.ark-inv .inv-slot.selected { border-color: #fff !important; box-shadow: 0 0 0 1px #fff inset; }
+.ark-inv .inv-slot.equipped { border: 2px solid #ffd45a !important; }
+.ark-inv .inv-slot.filtered { opacity: 0.25; }
+.ark-inv .is-qty { right: 3px; bottom: 1px; font-size: clamp(9px, 1.9vh, 16px); }
+
+/* meio: VOCÊ */
+.ark-inv .ai-title { margin: 0 0 0.8%; text-align: left; font: 700 clamp(16px, 4.2vh, 40px)/1 "Rajdhani", var(--font-ui) !important; letter-spacing: 0.01em !important; color: #eef9ff; transform: scaleX(0.88); transform-origin: left; flex: none; }
+.ark-inv .ai-you { display: grid; grid-template-columns: minmax(0, 21%) minmax(0, 1fr) minmax(0, 21%); grid-auto-rows: auto; gap: 1.2%; align-items: start; flex: none; }
+.ark-inv .ai-equip { display: contents !important; }
+.ark-inv .ai-equip .eq-slot:nth-child(1) { grid-column: 1; grid-row: 1; }
+.ark-inv .ai-equip .eq-slot:nth-child(2) { grid-column: 1; grid-row: 2; }
+.ark-inv .ai-equip .eq-slot:nth-child(3) { grid-column: 1; grid-row: 3; }
+.ark-inv .ai-equip .eq-slot:nth-child(4) { grid-column: 3; grid-row: 1; }
+.ark-inv .ai-equip .eq-slot:nth-child(5) { grid-column: 3; grid-row: 2; }
+.ark-inv .ai-equip .eq-name { display: none !important; }
+.ark-inv .ai-info { min-width: 0; overflow: hidden; grid-column: 2; grid-row: 1 / span 3; font: 600 clamp(8px, 1.65vh, 15px)/1.35 var(--font-ui); color: #dff5ff; text-transform: uppercase; align-self: stretch; }
+.ark-inv .ai-info .you-name { margin: 0 0 4px; text-align: center; text-transform: none; font-weight: 600; }
+.ark-inv .ai-info div { display: flex; justify-content: space-between; gap: 4px; }
+.ark-inv .ai-info b { font-weight: 700; color: #fff; }
+.ark-inv .ai-armor { margin: 0; font-size: clamp(8px, 1.5vh, 14px); color: #8fc6d8; text-align: center; flex: none; }
+.ark-inv .ai-xp { display: flex; justify-content: space-between; margin: 1% 0 0.8%; padding: 0.6% 2%; background: rgba(16, 128, 164, 0.85); border: 1px solid var(--ai-line); font: 700 clamp(10px, 2.3vh, 20px)/1.2 "Rajdhani", var(--font-ui); color: #eaf9ff; flex: none; }
+.ark-inv .ai-skills { display: flex; flex-direction: column; gap: 0.5vh; flex: 1; min-height: 0; overflow-y: auto; }
+.ark-inv .skill-row {
+  display: flex !important; align-items: center; gap: 2%; padding: 0 0 0 1%; min-height: 4.7vh; flex: none;
+  background: linear-gradient(90deg, rgba(10, 92, 124, 0.88), rgba(8, 70, 98, 0.88)); border: 0 !important; border-radius: 0 !important;
+}
+.ark-inv .skill-row .ico { width: 3.6vh; height: 3.6vh; flex: none; color: #eaf9ff; }
+.ark-inv .skill-row .ico svg { width: 100%; height: 100%; }
+.ark-inv .sk-name { flex: 1; min-width: 0; font: 700 clamp(8px, 2vh, 18px)/1.05 "Rajdhani", var(--font-ui); text-transform: uppercase; color: #eaf9ff; white-space: normal; }
+.ark-inv .sk-lvl { font: 700 1.5vh var(--font-ui); color: #ffd45a; }
+.ark-inv .sk-val { font: 700 clamp(8px, 1.9vh, 17px) var(--font-ui); color: #fff; white-space: nowrap; }
+.ark-inv .sk-plus {
+  width: 4.4vh; height: 4.4vh; flex: none; margin: 0; padding: 0; display: grid; place-items: center; background: rgba(2, 26, 40, 0.92); border: 1px solid #1d7e9f; color: #7fe3ff; font: 700 3.2vh/1 var(--font-ui); border-radius: 0;
+}
+.ark-inv .sk-plus:disabled { color: #2a7f99; }
+.ark-inv .sk-plus.sk-none { background: transparent; border-color: transparent; }
+
+/* direita: personagem / item / engramas / baú */
+.ark-inv .ai-right { padding: 1.2%; }
+.ark-inv .ai-char { flex: 1; min-height: 0; border: 1px solid rgba(60, 182, 216, 0.5); background: rgba(2, 18, 28, 0.55); display: grid; place-items: center; }
+.ark-inv .ai-char canvas { width: 100%; height: 100%; object-fit: contain; }
+.ark-inv .ai-char[hidden] { display: none; }
+.ark-inv .ai-rbody { flex: 1; min-height: 0; overflow-y: auto; padding: 1.5%; }
+.ark-inv .ai-rbody[hidden] { display: none !important; }
+
+/* embaixo */
+.ark-inv .ai-bottom { position: absolute; left: 9.1%; right: 13.3%; top: 85.6%; height: 8.8%; display: flex; gap: 0.8%; align-items: stretch; }
+.ark-inv .ai-hot { display: grid !important; grid-template-columns: repeat(8, 1fr) !important; gap: 0.35vh !important; flex: 0 0 43.3%; width: auto; }
+.ark-inv .ai-hot .inv-slot { background: rgba(60, 70, 74, 0.55) !important; border-color: rgba(190, 210, 220, 0.4) !important; }
+.ark-inv .ai-points { flex: 0 0 16.7%; display: flex; align-items: center; justify-content: space-around; background: #000; border: 2px solid #35e05a; color: #cfd8dc; }
+.ark-inv .ai-points svg { width: 3.8vh; height: 3.8vh; color: #7fe3ff; }
+.ark-inv .ai-points b { font: 700 clamp(16px, 4.4vh, 40px)/1 "Rajdhani", var(--font-ui); color: #41f061; }
+.ark-inv .ai-icons { flex: 1; display: flex; gap: 0.25vh; }
+.ark-inv .ai-ib {
+  flex: 1; min-width: 0; padding: 0; display: grid; place-items: center; background: rgba(6, 40, 58, 0.9) !important; border: 1px solid #1d7e9f !important; border-radius: 0 !important; color: #7fe3ff; cursor: pointer; min-height: 0 !important;
+}
+.ark-inv .ai-ib[hidden] { display: none; }
+.ark-inv .ai-ib svg { width: 56%; height: 56%; }
+.ark-inv .ai-ib.active { background: rgba(20, 130, 168, 0.95) !important; border-color: #eaf9ff !important; color: #fff; }
+.ark-inv .ai-x { position: absolute; right: 3.1%; top: 2.8%; width: 6vh; height: 6vh; padding: 0; background: none; border: 0; color: #1fb8e0; cursor: pointer; }
+.ark-inv .ai-x svg { width: 100%; height: 100%; }
+@media (max-aspect-ratio: 3/2) {
+  .ark-inv .ai-left { left: 1.5%; width: 36%; }
+  .ark-inv .ai-mid { left: 38.5%; width: 29%; }
+  .ark-inv .ai-right { left: 68.5%; width: 30%; }
+  .ark-inv .ai-bottom { left: 1.5%; right: 1.5%; }
+  .ark-inv .ai-x { right: 1.5%; }
+}
+
+/* com o inventário aberto, o HUD de jogo sai da frente (como no ARK) */
+body.inv-open #ui > .hud, body.inv-open #ui > .hotbar, body.inv-open #ui > .hud-corner, body.inv-open .hud-left { visibility: hidden; }
+
+.ark-inv .ai-info { display: block !important; }
+.ark-inv .ai-armor { display: none; }
+.ark-inv .skill-row { min-height: 3.7vh; }
+.ark-inv .skill-row .ico { width: 3vh; height: 3vh; }
+.ark-inv .sk-plus { width: 3.7vh; height: 3.7vh; font-size: 2.8vh; }
+.ark-inv .ai-skills { gap: 0.4vh; }
+.ark-inv .sk-plus.sk-none { background: transparent !important; border-color: transparent !important; }
+
+/* ---- painel VOCÊ: copiando a tela do ARK (barras, fonte e botões +) ---- */
+.ark-inv .ai-info, .ark-inv .ai-xp, .ark-inv .skill-row { font-family: "Jost", "Josefin Sans", "Century Gothic", system-ui, sans-serif !important; }
+.ark-inv .ai-info { font-weight: 500; color: #cfe3ea; text-transform: uppercase; letter-spacing: 0.02em; font-size: clamp(8px, 1.5vh, 14px); line-height: 1.45; }
+.ark-inv .ai-info .you-name { color: #dbe9ef; font-weight: 500; text-transform: none; margin: 0 0 2px; }
+.ark-inv .ai-info b { color: #e6f1f5; font-weight: 500; }
+.ark-inv .ai-xp {
+  background: linear-gradient(90deg, #1b87a5, #1a7893) !important; border: 0 !important; padding: 0.5vh 2.5% !important; margin: 0.8% 0 0.5vh;
+  font-weight: 500; font-size: clamp(10px, 2.5vh, 22px); letter-spacing: 0.01em; text-transform: uppercase;
+}
+.ark-inv .ai-xp b { font-weight: 600; }
+.ark-inv .skill-row {
+  --p: 100%;
+  background: linear-gradient(90deg, #1b86a4 var(--p), #0b2431 var(--p)) !important;
+  padding: 0 0 0 1.2% !important; gap: 2.4%; min-height: 3.9vh;
+  box-shadow: inset 0 0 0 1px rgba(60, 182, 216, 0.18);
+}
+.ark-inv .skill-row .ico { color: #f1f9fc; width: 2.9vh; height: 2.9vh; }
+.ark-inv .sk-name { font-family: "Jost", "Josefin Sans", system-ui, sans-serif !important; font-weight: 500; font-size: clamp(8px, 2.05vh, 18px); letter-spacing: 0.01em; color: #f1f9fc; text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5); }
+.ark-inv .sk-val { font-family: "Jost", "Josefin Sans", system-ui, sans-serif !important; font-weight: 500; font-size: clamp(8px, 2vh, 17px); color: #f1f9fc; text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5); }
+.ark-inv .sk-plus { background: #0a1820 !important; border: 0 !important; color: #c6dbe4 !important; width: 3.9vh; height: 3.9vh; font-size: 3.4vh; font-weight: 700; text-shadow: 0 0 0 #c6dbe4; }
+.ark-inv .sk-plus:disabled { color: #4d6874 !important; }
+.ark-inv .sk-plus.sk-none { background: transparent !important; }
+.ark-inv .ai-title, .ark-inv .ai-tab { font-family: "Rajdhani", system-ui, sans-serif !important; }
+.ark-inv .skill-row { height: 3.9vh; max-height: 3.9vh; overflow: hidden; }
+.ark-inv .sk-name { white-space: nowrap !important; overflow: hidden; text-overflow: clip; }
+.ark-inv .skill-melee .sk-name, .ark-inv .skill-speed .sk-name, .ark-inv .skill-craft .sk-name { font-size: clamp(7px, 1.45vh, 13px); }
+.ark-inv .sk-plus { font-size: 4vh !important; line-height: 3.8vh; font-weight: 800 !important; color: #dcebf1 !important; }
+.ark-inv .skill-row { height: 3.55vh; max-height: 3.55vh; }
+.ark-inv .ai-skills { gap: 0.3vh; }
+.ark-inv .sk-name { line-height: 1.5 !important; overflow: visible; }
+.ark-inv .skill-row { overflow: visible; }
+.ark-inv .skill-melee .sk-name, .ark-inv .skill-speed .sk-name, .ark-inv .skill-craft .sk-name { font-size: clamp(6px, 1.2vh, 11px); letter-spacing: 0; }
+.ark-inv .sk-plus { width: 3.55vh; height: 3.55vh; line-height: 3.4vh; }
+.ark-inv .skill-row .ico { width: 2.6vh; height: 2.6vh; }
+.ark-inv .skill-row .ico { width: 3.5vh; height: 3.5vh; margin-left: -0.3vh; }
+.inv.ark-inv[hidden] { display: none !important; }
+
+/* botão de câmera (1ª / 3ª pessoa): aparece ao lado do agachar quando está montado */
+.tc-esquema-gestos .tc-btn.b-camera {
+  left: 66px; bottom: 16px; right: auto; top: auto; position: absolute;
+  width: 30px; height: 30px; opacity: 0.8; background: transparent; border: none; border-radius: 6px; box-shadow: none; color: #35c3e8;
+}
+.tc-esquema-gestos .tc-btn.b-camera svg { width: 100%; height: 100%; }
+.tc-esquema-gestos .tc-btn.b-camera.down { color: #bff1ff; }
+
+/* névoa dourada do sol baixo (estilo Valheim): gradiente grande em volta do sol, soma à imagem */
+.sun-haze { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen; --hx: 50%; --hy: 30%; --hc: 255, 190, 110;
+  background: radial-gradient(circle at var(--hx) var(--hy), rgba(var(--hc), 0.62) 0, rgba(var(--hc), 0.34) 22%, rgba(var(--hc), 0.14) 50%, rgba(var(--hc), 0.05) 80%, transparent 120%); }
+.sun-haze[hidden] { display: none; }
+
+/* ---------------- Jogos salvos ---------------- */
+.saves-overlay { z-index: 40; background: rgba(4, 12, 16, 0.78); }
+.saves-panel {
+  position: relative; width: min(760px, 100%); max-height: 100%; overflow-y: auto; box-sizing: border-box;
+  padding: 14px 16px 12px; background: rgba(8, 22, 30, 0.96); border: 1px solid rgba(110, 215, 245, 0.45); border-radius: 8px; color: #d4f4ff;
+}
+.saves-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.saves-head h2 { margin: 0; font: 700 22px var(--font-ui); letter-spacing: 0.04em; color: #bff1ff; }
+.saves-x { background: none; border: 1px solid rgba(110, 215, 245, 0.45); color: #bff1ff; font-size: 18px; width: 36px; height: 36px; border-radius: 6px; cursor: pointer; }
+.saves-list { display: flex; flex-direction: column; gap: 8px; }
+.save-card {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  padding: 8px 10px; background: rgba(14, 40, 52, 0.7); border: 1px solid rgba(110, 215, 245, 0.25); border-radius: 6px;
+}
+.save-card.vazio { opacity: 0.85; border-style: dashed; }
+.save-card.ativo { border-color: #6fe6ff; box-shadow: 0 0 0 1px rgba(111, 230, 255, 0.35) inset; }
+.save-info { display: flex; flex-direction: column; gap: 2px; min-width: 190px; flex: 1; }
+.save-info b { font-size: 15px; color: #e8fbff; }
+.save-info span { font-size: 13px; color: #9fd3e6; }
+.save-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.save-btns .btn { min-height: 34px; padding: 0 12px; font-size: 14px; }
+.btn-danger { border-color: #d65a4a; color: #ffb4a8; }
+.saves-note { margin: 10px 2px 0; font-size: 12px; color: #7fb4c8; }
+.saves-confirm { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(2, 8, 12, 0.82); border-radius: 8px; }
+.saves-confirm[hidden] { display: none; }
+.saves-confirm-box { width: min(420px, 90%); padding: 16px; background: #0b2430; border: 1px solid #6fe6ff; border-radius: 8px; text-align: center; }
+.saves-confirm-box p { margin: 0 0 14px; font-size: 16px; line-height: 1.35; color: #e8fbff; }
+.saves-confirm-btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+
+/* =============================================================
+   ETAPA 5 – TEMA NÓRDICO LOW-POLY (estilo Valheim)
+   HUD minimalista e translúcido, sem molduras pesadas, fonte de
+   estilo rústico (serifada do próprio aparelho, em caixa alta e
+   espaçada: nenhum arquivo de fonte novo). Cores da paleta
+   (core/paleta.js). Fica no fim para valer por cima dos temas antigos.
+   >>> AJUSTE: mude as variáveis --p-* e --font-nordica abaixo.
+   ============================================================= */
+:root {
+  --font-nordica: "Palatino Linotype", "Book Antiqua", Palatino, "Noto Serif", "Droid Serif", Georgia, "Times New Roman", serif;
+  --p-ferrugem: #94482f;
+  --p-sol: #e3a456;
+  --p-capim: #9c9258;
+  --p-agua: #46687e;
+  --p-neve: #dde3e6;
+  --p-madeira: #977653;
+  --p-terra: #3a3027;
+  --p-noite: #1a2335;
+  /* menus e painéis: couro/madeira escura translúcida, sem hexágonos, borda fina */
+  --ark-deep: rgba(24, 20, 16, 0.84);
+  --ark-mid: rgba(40, 33, 26, 0.84);
+  --ark-tile: rgba(151, 118, 83, 0.16);
+  --ark-tile-hi: rgba(227, 164, 86, 0.26);
+  --ark-line: rgba(227, 164, 86, 0.3);
+  --ark-cyan: #e8c890;
+  --ark-text: #ece4d4;
+  --ark-hex: none;
+  --ember: #e3a456;
+  --ember-deep: #94482f;
+  --panel: rgba(28, 23, 18, 0.7);
+  --panel-solid: #2a231c;
+  --line: rgba(227, 164, 86, 0.28);
+  --bone: #ece4d4;
+  --bone-dim: #b8ab94;
+  --track: rgba(10, 8, 6, 0.42);
+}
+.panel, .inv-panel, .cmenu-panel, .ark-panel {
+  border-width: 1px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45) !important;
+}
+.pause-head h2, .death-title, .inv-head h2, .rd-head h3 {
+  font-family: var(--font-nordica);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: #e8c890;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+
+/* ---------- HUD: barras finas e translúcidas, embaixo no meio ---------- */
+.hud-status { width: 140px; }
+.lvl-badge { font-family: var(--font-nordica); font-weight: 700; letter-spacing: 0.12em; color: #e8c890; text-transform: uppercase; }
+.xp-track { height: 3px; border: 0; background: rgba(10, 8, 6, 0.45); border-radius: 2px; }
+.xp-track i { background: var(--p-neve); opacity: 0.8; }
+.hud-clock, .hud-temp b { font-family: var(--font-nordica); letter-spacing: 0.08em; }
+.hud-gauges {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 5px;
+  width: 210px;
+  padding: 7px 10px 6px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(14, 12, 10, 0.28), rgba(14, 12, 10, 0.42));
+}
+body.is-touch .hud-gauges { width: 180px; }
+.hud-gauges .stat {
+  display: grid;
+  grid-template-columns: 52px 1fr 30px;
+  align-items: center;
+  gap: 6px;
+  width: auto;
+  height: 10px;
+}
+.hud-gauges .stat .rot {
+  font: 700 9.5px var(--font-nordica);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(236, 228, 212, 0.85);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  white-space: nowrap;
+}
+.hud-gauges .stat .track {
+  position: relative;
+  inset: auto;
+  height: 5px;
+  border-radius: 3px;
+  overflow: hidden;
+  background: rgba(10, 8, 6, 0.5);
+  -webkit-mask: none;
+  mask: none;
+  box-shadow: inset 0 0 0 1px rgba(236, 228, 212, 0.08);
+}
+.hud-gauges .stat .fill {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  background: var(--c);
+  transform-origin: left center;
+  transform: scaleX(var(--v, 1));
+  transition: transform 0.25s;
+  border-radius: 3px;
+}
+.hud-gauges .stat .num {
+  position: static;
+  transform: none;
+  text-align: right;
+  font: 700 10px var(--font-nordica);
+  color: rgba(236, 228, 212, 0.9);
+  text-shadow: 0 1px 2px #000;
+}
+/* cores das barras (paleta) */
+.hud-gauges .stat-health { --c: #b0533a; }
+.hud-gauges .stat-stamina { --c: var(--p-sol); }
+.hud-gauges .stat-food { --c: var(--p-capim); }
+.hud-gauges .stat-water { --c: #6a90a8; }
+.hud-gauges .stat-oxygen { --c: var(--p-neve); }
+.hud-gauges .stat-xp { --c: var(--p-neve); }
+.hud-gauges .stat-weight { --c: var(--p-madeira); }
+.hud-gauges .stat.low { --c: #d0583a; }
+.hud-gauges .stat.low .rot { color: #f0a080; }
+
+/* aviso de nível, mensagens e dicas na mesma letra */
+.hud-levelup { font-family: var(--font-nordica) !important; letter-spacing: 0.12em !important; color: #e8c890 !important; }
+.prompt { font-family: var(--font-nordica); letter-spacing: 0.06em; background: rgba(14, 12, 10, 0.5); border: 0; }
+.msg { font-family: var(--font-nordica); letter-spacing: 0.04em; }
+/* (tema nórdico) vence as regras antigas do HUD do ARK, que tinham seletor mais forte */
+body .hud-gauges, body.is-touch .hud-gauges, body.is-touch:not(.touch-botoes) .hud-gauges, body:not(.is-touch) .hud-gauges {
+  align-items: stretch;
+  gap: 5px;
+  bottom: calc(2vh + var(--safe-b, 0px));
+}
+.hud-gauges .stat, .hud-gauges .stat-food, .hud-gauges .stat-water { width: auto; height: 10px; opacity: 1; }
+.hud-gauges .stat .num { display: block; }
+.hud-gauges .stat-food, .hud-gauges .stat-water { align-self: stretch; }
+/* dica de interação acima do painel de barras (não cobre a Vida) */
+:root, body, body.is-touch, body:not(.is-touch) { --prompt-bottom: calc(2vh + 112px); }

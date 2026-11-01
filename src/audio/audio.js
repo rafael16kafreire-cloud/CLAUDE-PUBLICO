@@ -23,6 +23,7 @@
 // =============================================================
 import * as THREE from 'three';
 import SONS_GRAVADOS from 'virtual:sons';
+import { settings } from '../core/settings.js';
 
 const MAX_VOICES = 32;
 
@@ -38,20 +39,15 @@ const VOWELS = {
 // Voz de cada espécie: tipo, tom base (Hz) e duração base (s).
 const VOICES = {
   dodo: { kind: 'ave', f: 520, d: 0.35 },
-  arara: { kind: 'arara', f: 900, d: 0.4 },
   compsognato: { kind: 'pio', f: 1300, d: 0.25 },
   galimimo: { kind: 'ave', f: 420, d: 0.5 },
-  capivara: { kind: 'assobio', f: 700, d: 0.3 },
   parassauro: { kind: 'buzina', f: 95, d: 1.6 },
   paquicefalossauro: { kind: 'mugido', f: 140, d: 0.9 },
   triceratops: { kind: 'mugido', f: 70, d: 1.2 },
   estegossauro: { kind: 'mugido', f: 80, d: 1.1 },
   anquilossauro: { kind: 'mugido', f: 75, d: 1.0 },
   braquiossauro: { kind: 'buzina', f: 45, d: 2.4 },
-  dilofossauro: { kind: 'chiado', f: 420, d: 0.7 },
   raptor: { kind: 'grito', f: 360, d: 0.6 },
-  onca: { kind: 'rosnado', f: 110, d: 0.9 },
-  aranha: { kind: 'chiado', f: 900, d: 0.5 },
   carnotauro: { kind: 'rugido', f: 85, d: 1.4 },
   trex: { kind: 'rugido', f: 48, d: 2.2 },
   titanoboa: { kind: 'chiado', f: 260, d: 1.2 },
@@ -63,6 +59,14 @@ const VOICES = {
   mamute: { kind: 'buzina', f: 120, d: 1.4 },
   argentavis: { kind: 'grito', f: 520, d: 0.7 },
   reidodo: { kind: 'rugido', f: 140, d: 1.2 },
+  dilofossauro: { kind: 'chiado', f: 420, d: 0.8 },
+  iguanodonte: { kind: 'mugido', f: 90, d: 1.2 },
+  dimetrodonte: { kind: 'rosnado', f: 110, d: 0.9 },
+  kentrossauro: { kind: 'mugido', f: 150, d: 0.7 },
+  paquirrinossauro: { kind: 'mugido', f: 75, d: 1.3 },
+  moschops: { kind: 'mugido', f: 170, d: 0.7 },
+  diplodoco: { kind: 'buzina', f: 40, d: 2.6 },
+  terizinossauro: { kind: 'rugido', f: 110, d: 1.4 },
 };
 
 class Sound {
@@ -79,6 +83,8 @@ class Sound {
     this._muffled = false;
     this.musicVolume = 0.35;
     this._music = { next: 0, bar: 0, step: 0 };
+    // trilha de perseguição: alvo (0..1) vem do jogo, lvl é o valor suavizado
+    this._chase = { alvo: 0, lvl: 0, next: 0, step: 0 };
   }
 
   // Precisa de um toque/clique do jogador para começar (regra dos navegadores).
@@ -87,7 +93,14 @@ class Sound {
       if (!this.ctx) {
         const AC = window.AudioContext || window.webkitAudioContext;
         if (!AC) return;
-        this.ctx = new AC();
+        // estalos na música = o som engasga porque o aparelho não dá conta: pede um "colchão" de áudio maior
+        // (latencyHint 'playback') e, no modo som leve (padrão na qualidade Baixa), menos carga: taxa menor e sem eco
+        this.leve = settings.get('somLeve') === true || (settings.get('somLeve') !== false && settings.get('quality') === 'baixa');
+        try {
+          this.ctx = new AC({ latencyHint: 'playback', ...(this.leve ? { sampleRate: 32000 } : {}) });
+        } catch {
+          this.ctx = new AC();
+        }
         const c = this.ctx;
         this.master = c.createGain();
         this.master.gain.value = this.volume;
@@ -106,12 +119,21 @@ class Sound {
         this.musicBus = c.createGain();
         this.musicBus.gain.value = this.musicVolume;
         this.musicBus.connect(this.master);
+        this.chaseBus = c.createGain();
+        this.chaseBus.gain.value = 1;
+        this.chaseBus.connect(this.master);
         // eco de floresta (reverberação gerada aqui)
-        this.verb = c.createConvolver();
-        this.verb.buffer = this._makeIR(2.6, 3.2);
         this.verbIn = c.createGain();
         this.verbIn.gain.value = 0.32;
-        this.verbIn.connect(this.verb).connect(this.lowpass);
+        if (this.leve) {
+          // som leve: sem convolução (é o que mais pesa); só um pouquinho do som direto
+          this.verbIn.gain.value = 0.08;
+          this.verbIn.connect(this.lowpass);
+        } else {
+          this.verb = c.createConvolver();
+          this.verb.buffer = this._makeIR(1.7, 3.2);
+          this.verbIn.connect(this.verb).connect(this.lowpass);
+        }
         const ambSend = c.createGain();
         ambSend.gain.value = 0.35;
         this.ambBus.connect(ambSend).connect(this.verbIn);
@@ -130,7 +152,7 @@ class Sound {
   // Música (separada dos efeitos).
   setMusicVolume(v) {
     this.musicVolume = v;
-    if (this.musicBus) this.musicBus.gain.setTargetAtTime(v, this.ctx.currentTime, 0.2);
+    if (this.musicBus) this.musicBus.gain.setTargetAtTime(v * (1 - 0.85 * this._chase.lvl), this.ctx.currentTime, 0.2);
   }
 
   setVolume(v) {
@@ -399,6 +421,37 @@ class Sound {
     src.stop(t + attack + dur + 0.05);
   }
 
+  // Assovio de boca: seno puro com vibrato leve, "sopro" filtrado na mesma
+  // altura e queda de tom no fim de cada nota. notas = [[inicio_s, dur_s, f0, f1], ...]
+  _assobio(t, out, notas, peak = 0.5) {
+    const c = this.ctx;
+    for (const [at, dur, f0, f1] of notas) {
+      const t0 = t + at;
+      const o = c.createOscillator();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(f0, t0);
+      o.frequency.linearRampToValueAtTime(f1, t0 + dur * 0.85);
+      o.frequency.linearRampToValueAtTime(f1 * 0.97, t0 + dur);
+      const lfo = c.createOscillator();
+      const lg = c.createGain();
+      lfo.frequency.value = 5.5 + Math.random();
+      lg.gain.setValueAtTime(0, t0);
+      lg.gain.linearRampToValueAtTime(f1 * 0.012, t0 + dur * 0.5); // vibrato entra depois do ataque
+      lfo.connect(lg).connect(o.frequency);
+      const g = c.createGain();
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(peak, t0 + 0.03);
+      g.gain.setValueAtTime(peak, t0 + Math.max(0.03, dur - 0.07));
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      o.connect(g).connect(out);
+      lfo.start(t0);
+      lfo.stop(t0 + dur + 0.05);
+      o.start(t0);
+      o.stop(t0 + dur + 0.05);
+      this._noise(t0, dur, out, { f: (f0 + f1) / 2, fTo: f1, q: 14, peak: peak * 0.35, attack: 0.03 });
+    }
+  }
+
   // ---------------------------------------------------------
   // Efeitos
   // ---------------------------------------------------------
@@ -528,6 +581,22 @@ class Sound {
         [523, 659, 784, 1047].forEach((f, i) => this._osc('triangle', f, t + i * 0.1, 0.35, out, 0.35));
         break;
       }
+      case 'assovio': { // comandos da roda de assovios (opts.tipo), cada um com seu "desenho" de notas
+        const N = {
+          follow_all: [[0, 0.22, 1900, 2300], [0.28, 0.45, 2300, 2900]], // fiu-fiiiu (sobe)
+          follow_one: [[0, 0.2, 2000, 2500]],
+          stop_all: [[0, 0.6, 2800, 1500]], // fiiiu (cai)
+          stop_one: [[0, 0.35, 2600, 1800]],
+          agressivo: [[0, 0.1, 2200, 2900], [0.14, 0.1, 2200, 2900], [0.28, 0.2, 2400, 3200]], // fi-fi-fiu agudo
+          attack: [[0, 0.12, 1800, 3000], [0.2, 0.12, 1800, 3000], [0.4, 0.25, 2000, 3300]],
+          neutro: [[0, 0.3, 2200, 2250], [0.4, 0.3, 2000, 2050]],
+          passivo: [[0, 0.7, 2400, 1700]],
+        }[opts.tipo] ?? [[0, 0.3, 2200, 2600]];
+        const total = N[N.length - 1][0] + N[N.length - 1][1];
+        if (!this._voice(total + 0.1)) return;
+        this._assobio(t, this._dest(null, 0.9 * v), N, 0.45);
+        break;
+      }
       case 'clique': {
         if (!this._voice(0.08)) return;
         this._osc('square', 1400, t, 0.03, this._dest(null, 0.06 * v), 0.4, 0.001);
@@ -594,8 +663,9 @@ class Sound {
     if (!v || v.kind === 'nenhum') return;
     const pos = c.pos;
     const big = Math.min(2.2, Math.max(0.6, c.scale ?? 1));
-    const ref = 6 * big;
-    const max = 45 + 60 * Math.min(1, v.d);
+    const grande = kind === 'rugido' && (v.kind === 'rugido' || v.kind === 'rosnado');
+    const ref = 6 * big * (grande ? 1.9 : 1); // rugido de bicho grande se ouve de longe
+    const max = (45 + 60 * Math.min(1, v.d)) * (grande ? 1.3 : 1);
     if (pos.distanceTo(this._listenerPos) > max) return;
     const t = this.ctx.currentTime + 0.01;
     const R = (a, b) => a + Math.random() * (b - a);
@@ -607,7 +677,7 @@ class Sound {
     // som gravado (assets/sons): bicho_<espécie>_<tipo> ou bicho_<espécie>
     const sg = kind === 'chamado' ? 0.5 : 0.85;
     if (this._sample(`bicho_${c.species.id}_${kind}`, pos, sg, ref, max) || this._sample(`bicho_${c.species.id}`, pos, sg, ref, max)) return;
-    const out = this._dest(pos, (kind === 'chamado' ? 0.45 : 0.75), ref, max);
+    const out = this._dest(pos, (kind === 'chamado' ? 0.45 : grande ? 1.0 : 0.75), ref, max);
     if (!out) return;
     if (kind === 'ataque' && v.kind !== 'ave' && v.kind !== 'pio') {
       // estalo de mandíbula
@@ -626,6 +696,9 @@ class Sound {
           grit: rough ? 6 : 4.5, breath: rough ? 0.9 : 0.6, trem: rough ? R(22, 32) : R(8, 13), peak: 0.85, attack: d * 0.12, sub: 0.5,
         });
         this._noise(t, d * 0.9, out, { f: f * 7, q: 0.9, peak: 0.25, attack: d * 0.2, brown: true });
+        // o alto-falante do celular não toca grave (85 Hz some): camada de rosnado no médio, que se ouve de verdade
+        this._noise(t, d * 0.85, out, { f: 520, q: 0.7, peak: grande ? 0.6 : 0.3, attack: d * 0.1 });
+        this._noise(t + d * 0.1, d * 0.7, out, { f: 1100, q: 0.8, peak: grande ? 0.35 : 0.18, attack: d * 0.15 });
         break;
       }
       case 'mugido':
@@ -661,11 +734,6 @@ class Sound {
         for (let i = 0; i < n; i++) this._osc('sine', f * R(0.95, 1.2), t + i * d * 0.45, d * 0.35, out, 0.4, 0.01, f * R(0.6, 1.5));
         break;
       }
-      case 'arara': {
-        this._osc('sawtooth', f, t, d, out, 0.18, 0.01, f * 0.7);
-        this._noise(t, d, out, { f: f * 2.2, q: 4, peak: 0.3 });
-        break;
-      }
       default:
         break;
     }
@@ -687,6 +755,29 @@ class Sound {
     src.connect(lp).connect(g).connect(this.ambBus);
     src.start();
     this._wind = { lp, g };
+  }
+
+  // Chuva: chiado (ruído branco filtrado), volume = força da chuva
+  setChuva(v) {
+    this._chuvaAlvo = v;
+  }
+
+  _startRain() {
+    const c = this.ctx;
+    const src = c.createBufferSource();
+    src.buffer = this.noise;
+    src.loop = true;
+    const hp = c.createBiquadFilter();
+    hp.type = 'highpass';
+    hp.frequency.value = 700;
+    const lp = c.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = this.leve ? 4000 : 6500;
+    const g = c.createGain();
+    g.gain.value = 0;
+    src.connect(hp).connect(lp).connect(g).connect(this.ambBus);
+    src.start();
+    this._rain = { g };
   }
 
   _startFire() {
@@ -716,6 +807,11 @@ class Sound {
     const a = this._amb;
     a.t += dt;
     this._updateMusic(night);
+    this._updateChase(dt);
+    // chuva (atmosfera.js): liga o chiado na primeira vez que chove
+    const chuva = this._chuvaAlvo ?? 0;
+    if (chuva > 0.01 && !this._rain) this._startRain();
+    if (this._rain) this._rain.g.gain.setTargetAtTime(chuva * 0.22, t, 0.8);
     // cigarras: zumbido contínuo de dia, some à noite
     if (this._cicada) this._cicada.g.gain.setTargetAtTime(night ? 0 : 0.018 + 0.012 * Math.sin(a.t * 0.4), t, 1.5);
 
@@ -858,6 +954,13 @@ class Sound {
   _updateMusic(night) {
     if (!this.musicBus || this.musicVolume <= 0.001) return;
     const c = this.ctx;
+    // música gravada (assets/sons/musica_dia.mp3 e musica_noite.mp3): toca em loop
+    // e troca com um fade quando vira dia/noite. Sem os arquivos, usa a de baixo.
+    const faixa = this.samples?.[night ? 'musica_noite' : 'musica_dia']?.[0];
+    if (faixa) {
+      this._tocarFaixa(night, faixa);
+      return;
+    }
     const M = this._music;
     const beat = night ? 0.95 : 0.75; // segundos por tempo
     if (M.next < c.currentTime) M.next = c.currentTime + 0.2;
@@ -904,22 +1007,142 @@ class Sound {
       const o = c.createOscillator();
       o.type = 'sine';
       o.frequency.value = hz(n);
-      const o2 = c.createOscillator();
-      o2.type = 'sine';
-      o2.frequency.value = hz(n) * 4; // brilho de marimba
+      const o2 = this.leve ? null : c.createOscillator();
+      if (o2) {
+        o2.type = 'sine';
+        o2.frequency.value = hz(n) * 4; // brilho de marimba
+      }
       const g = c.createGain();
       this._env(g.gain, ti, 0.07, 0.005, 0.9);
-      const g2 = c.createGain();
-      this._env(g2.gain, ti, 0.015, 0.002, 0.15);
       o.connect(g).connect(this.musicBus);
-      o2.connect(g2).connect(this.musicBus);
       o.start(ti);
-      o2.start(ti);
       o.stop(ti + 1);
-      o2.stop(ti + 0.2);
+      if (o2) {
+        const g2 = c.createGain();
+        this._env(g2.gain, ti, 0.015, 0.002, 0.15);
+        o2.connect(g2).connect(this.musicBus);
+        o2.start(ti);
+        o2.stop(ti + 0.2);
+      }
     }
     M.next = t0 + barLen;
     M.bar++;
+  }
+
+  // ---------------------------------------------------------
+  // Trilha de perseguição (como no ARK): quando um bicho selvagem
+  // está te caçando, a música calma abaixa e entra batida de tambor,
+  // um motivo grave em Lá frígio e, bem perto, golpes agudos.
+  // nivel = 0..1 (0 = ninguém caçando). Tudo gerado aqui.
+  // ---------------------------------------------------------
+  setPerseguicao(nivel) {
+    this._chase.alvo = nivel;
+  }
+
+  _updateChase(dt) {
+    const C = this._chase;
+    if (!this.chaseBus || !this.musicBus) return;
+    // sobe rápido (0,4 s), desce devagar (3 s) para a música não cortar de repente
+    const k = C.alvo > C.lvl ? 1 - Math.exp(-dt / 0.4) : 1 - Math.exp(-dt / 3);
+    C.lvl += (C.alvo - C.lvl) * k;
+    if (C.lvl < 0.02 && C.alvo <= 0) {
+      if (C.lvl !== 0) {
+        C.lvl = 0;
+        this.musicBus.gain.setTargetAtTime(this.musicVolume, this.ctx.currentTime, 0.6);
+      }
+      C.next = 0;
+      return;
+    }
+    const c = this.ctx;
+    const lvl = C.lvl;
+    // música calma abaixa; a de perseguição segue o mesmo controle de volume da música
+    this.musicBus.gain.setTargetAtTime(this.musicVolume * (1 - 0.85 * lvl), c.currentTime, 0.25);
+    this.chaseBus.gain.setTargetAtTime(this.musicVolume > 0.001 ? Math.min(1.6, this.musicVolume * 2.6) : 0, c.currentTime, 0.2);
+    if (this.musicVolume <= 0.001) return;
+    if (C.next < c.currentTime) {
+      C.next = c.currentTime + 0.05;
+      C.step = 0;
+    }
+    // agenda 1 colcheia de cada vez, um pouco antes da hora
+    const colcheia = 0.19; // ~158 batidas por minuto
+    while (C.next - c.currentTime < 0.45) {
+      this._chaseStep(C.next, C.step, lvl, colcheia);
+      C.next += colcheia;
+      C.step = (C.step + 1) % 16;
+    }
+  }
+
+  _chaseStep(t, step, lvl, dur) {
+    const c = this.ctx;
+    const out = this.chaseBus;
+    const hz = (n) => 440 * Math.pow(2, (n - 69) / 12);
+    // bumbo a cada tempo (e "galope" nas contratempos quando está perto)
+    if (step % 2 === 0) {
+      this._osc('sine', 150, t, 0.2, out, 0.55 + 0.35 * lvl, 0.004, 48);
+      this._noise(t, 0.05, out, { peak: 0.1 + 0.15 * lvl, type: 'highpass', f: 2500 }); // estalo p/ celular ouvir
+    }
+    if (lvl > 0.5 && step % 4 === 3) this._osc('sine', 130, t, 0.14, out, 0.3 + 0.2 * lvl, 0.004, 52);
+    // tambor grave no começo de cada compasso de 8 colcheias
+    if (step % 8 === 0) this._noise(t, 0.35, out, { peak: 0.25 + 0.25 * lvl, type: 'lowpass', f: 420, fTo: 120, brown: true });
+    // motivo grave em Lá frígio (A, A, C, A, Bb, A, C, Eb) – entra a partir de um nível médio
+    if (lvl > 0.3) {
+      const NOTAS = [57, 57, 60, 57, 58, 57, 60, 63];
+      const o = c.createOscillator();
+      o.type = 'sawtooth';
+      o.frequency.value = hz(NOTAS[step % 8]);
+      const lp = c.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = 650 + 900 * lvl;
+      const g = c.createGain();
+      this._env(g.gain, t, 0.05 + 0.07 * lvl, 0.012, dur * 1.7);
+      o.connect(lp).connect(g).connect(out);
+      o.start(t);
+      o.stop(t + dur * 1.7 + 0.1);
+    }
+    // cordas tensas (trítono) sustentadas: uma por compasso
+    if (step % 8 === 0) {
+      for (const n of [45, 51, 57]) {
+        const o = c.createOscillator();
+        o.type = 'sawtooth';
+        o.frequency.value = hz(n);
+        const lp = c.createBiquadFilter();
+        lp.type = 'lowpass';
+        lp.frequency.value = 800;
+        const g = c.createGain();
+        const pico = (n === 57 ? 0.018 : 0.03) * (0.4 + 0.6 * lvl);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(pico, t + dur * 3);
+        g.gain.linearRampToValueAtTime(0.0001, t + dur * 8.2);
+        o.connect(lp).connect(g).connect(out);
+        o.start(t);
+        o.stop(t + dur * 8.3);
+      }
+    }
+    // golpes agudos de cordas quando o bicho está bem perto
+    if (lvl > 0.75 && (step % 8 === 0 || step % 8 === 4)) {
+      this._osc('sawtooth', hz(81), t, dur * 1.4, out, 0.035 * lvl, 0.01, hz(82) * 0.97);
+    }
+  }
+
+  _tocarFaixa(night, buf) {
+    const c = this.ctx;
+    const cur = this._faixa;
+    if (cur && cur.night === night) return;
+    const FADE = 5;
+    if (cur) {
+      cur.g.gain.cancelScheduledValues(c.currentTime);
+      cur.g.gain.setTargetAtTime(0.0001, c.currentTime, FADE / 3);
+      try { cur.src.stop(c.currentTime + FADE * 1.5); } catch { /* já parou */ }
+    }
+    const src = c.createBufferSource();
+    src.buffer = buf;
+    src.loop = true;
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.0001, c.currentTime);
+    g.gain.linearRampToValueAtTime(1, c.currentTime + (cur ? FADE : 2));
+    src.connect(g).connect(this.musicBus);
+    src.start();
+    this._faixa = { night, src, g };
   }
 
   _insect() {

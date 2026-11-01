@@ -9,32 +9,59 @@
 // =============================================================
 import * as THREE from 'three';
 import { makeSkyMaterial, sharedDay } from './materials.js';
+import { PALETA, mistura } from '../core/paleta.js';
 
-const HORIZON = new THREE.Color('#aebfb6'); // neblina úmida
-const ZENITH = new THREE.Color('#4d8cc4');
-const UNDERWATER = new THREE.Color('#2a4b3c');
+// =============================================================
+// >>> AJUSTE DE LUZ E CÉU (estilo low-poly / Valheim) <<<
+// Todas as cores daqui saem da paleta (core/paleta.js), misturadas.
+// - HORIZONTE/ZÊNITE: degradê do céu (o horizonte também é a cor da névoa).
+// - Sol: baixo (no máximo ~35° no meio-dia) e dourado -> sombras compridas.
+// - Luz ambiente (hemisfério): FRIA (azul-acinzentada) para contrastar com o sol quente.
+// - Névoa exponencial: perto limpa, longe esconde o horizonte e o fim da visão.
+// =============================================================
+const M = (a, b, t) => mistura(a, b, t);
+const HORIZON = M('neve', 'agua', 0.32); // horizonte: branco-azulado (também é a cor da névoa)
+const ZENITH = M('agua', 'pedraClara', 0.18); // alto do céu: azul-aço
+const UNDERWATER = M('agua', 'ceuNoite', 0.45);
+
+// Névoa com começo: perto fica limpo, a névoa entra no meio do caminho e fecha no fim da
+// visão (esconde o corte do mundo). Vale para tudo que usa neblina exp2 (densidade = 2/visão).
+//   COMEÇO = 0,25 / densidade (12% da visão)   FORÇA = 3,2 (quanto fecha no fim)
+THREE.ShaderChunk.fog_fragment = THREE.ShaderChunk.fog_fragment.replace(
+  'float fogFactor = 1.0 - exp( - fogDensity * fogDensity * vFogDepth * vFogDepth );',
+  'float fogT = max( vFogDepth - 0.25 / fogDensity, 0.0 ) * fogDensity * 0.55;\n\t\tfloat fogFactor = 1.0 - exp( - 3.2 * pow( fogT, 2.2 ) );',
+);
 
 // Direção da luz principal (sol de dia, lua à noite). É o MESMO vetor
 // usado pela água e pelo céu: mudar aqui muda tudo junto.
-export const SUN_DIR = new THREE.Vector3(0.45, 0.8, 0.35).normalize();
+export const SUN_DIR = new THREE.Vector3(0.45, 0.5, 0.6).normalize();
+// ALTURA DO SOL: SOL_ALTO = quanto ele sobe (0,42 com SOL_LADO 0,6 => ~35° no meio-dia)
+const SOL_ALTO = 0.42;
+const SOL_LADO = 0.6;
 
 // Noite = antes de NIGHT_END ou depois de NIGHT_START (fração do ciclo).
 export const NIGHT_START = 0.79;
 export const NIGHT_END = 0.22;
 
 // Cores do céu ao longo do dia: [t, horizonte, zênite, cor da luz,
-// força da luz, céu do hemisfério, força do hemisfério, nuvens]
+// força da luz, céu do hemisfério (ambiente), força do hemisfério, nuvens]
+// >>> AMBIENTE: a cor fria (azul-acinzentada) é escura, por isso a força passa de 1;
+//     abaixe a força para sombras mais fechadas, suba para sombras mais claras.
 const KEYS = [
-  [0.0, '#141c27', '#070c16', '#8ea6d8', 0.45, '#5a6e98', 0.42, 0.22],
-  [0.2, '#1c2430', '#0a1220', '#8ea6d8', 0.45, '#5a6e98', 0.42, 0.25],
-  [0.26, '#d79a72', '#4f6a96', '#ffb27a', 1.2, '#c7b4a0', 0.8, 0.85],
-  [0.34, '#b9c7bc', '#4d8cc4', '#fff0d0', 2.3, '#dbeee6', 1.15, 1.0],
-  [0.5, '#aebfb6', '#4d8cc4', '#fff0d0', 2.6, '#dbeee6', 1.25, 1.0],
-  [0.68, '#b9c4b4', '#5288bd', '#ffe6c0', 2.3, '#dbe8de', 1.15, 1.0],
-  [0.75, '#e08a5a', '#4a5f8c', '#ff9a5a', 1.1, '#c8a890', 0.8, 0.85],
-  [0.8, '#1c2430', '#0a1220', '#8ea6d8', 0.45, '#5a6e98', 0.42, 0.25],
-  [1.0, '#141c27', '#070c16', '#8ea6d8', 0.45, '#5a6e98', 0.42, 0.22],
-].map(([t, h, z, sc, si, hs, hi, cl]) => ({ t, h: new THREE.Color(h), z: new THREE.Color(z), sc: new THREE.Color(sc), si, hs: new THREE.Color(hs), hi, cl }));
+  // noite: azul-escura de verdade, luar azulado fraco
+  [0.0, M('ceuNoite', 'pedraEscura', 0.3), M('ceuNoite', 'terraEscura', 0.35), M('pedraClara', 'ceuNoite', 0.25), 0.5, M('ceuNoite', 'pedra', 0.45), 0.9, 0.18],
+  [0.19, M('ceuNoite', 'pedraEscura', 0.3), M('ceuNoite', 'terraEscura', 0.35), M('pedraClara', 'ceuNoite', 0.25), 0.5, M('ceuNoite', 'pedra', 0.45), 0.9, 0.18],
+  // amanhecer: horizonte alaranjado, sol laranja
+  [0.26, M('solLaranja', 'ferrugem', 0.15), M('ceuNoite', 'pedra', 0.55), PALETA.solLaranja, 1.6, M('pedra', 'solLaranja', 0.3), 1.35, 0.9],
+  [0.33, M('neve', 'solLaranja', 0.28), M('agua', 'pedraClara', 0.22), M('neve', 'solLaranja', 0.6), 3.0, M('pedraClara', 'agua', 0.45), 2.3, 1.0],
+  // meio do dia: céu azul-acinzentado e sol dourado (baixo)
+  [0.5, HORIZON, ZENITH, M('neve', 'solLaranja', 0.45), 3.4, M('pedraClara', 'agua', 0.4), 2.3, 1.0],
+  [0.67, M('neve', 'solLaranja', 0.3), M('agua', 'pedraClara', 0.22), M('neve', 'solLaranja', 0.62), 3.0, M('pedraClara', 'agua', 0.45), 2.3, 1.0],
+  // entardecer: avermelhado
+  [0.75, M('ferrugem', 'solLaranja', 0.4), M('ceuNoite', 'ferrugem', 0.25), M('ferrugem', 'solLaranja', 0.55), 1.5, M('pedra', 'ferrugem', 0.3), 1.3, 0.9],
+  [0.8, M('ceuNoite', 'pedraEscura', 0.3), M('ceuNoite', 'terraEscura', 0.35), M('pedraClara', 'ceuNoite', 0.25), 0.5, M('ceuNoite', 'pedra', 0.45), 0.9, 0.18],
+  [1.0, M('ceuNoite', 'pedraEscura', 0.3), M('ceuNoite', 'terraEscura', 0.35), M('pedraClara', 'ceuNoite', 0.25), 0.5, M('ceuNoite', 'pedra', 0.45), 0.9, 0.18],
+].map(([t, h, z, sc, si, hs, hi, cl]) => ({ t, h, z, sc, si, hs, hi, cl }));
 
 export class Sky {
   constructor(scene) {
@@ -44,10 +71,11 @@ export class Sky {
     this.underwater = false;
     this.shadowRange = 40;
 
-    this.hemi = new THREE.HemisphereLight('#dbeee6', '#4a4a2c', 1.25);
+    // luz ambiente: céu frio em cima, chão de terra embaixo (cores trocadas por setTime)
+    this.hemi = new THREE.HemisphereLight(M('pedraClara', 'agua', 0.4), PALETA.terraEscura.clone(), 1.0);
     scene.add(this.hemi);
 
-    this.sun = new THREE.DirectionalLight('#fff0d0', 2.6);
+    this.sun = new THREE.DirectionalLight(M('neve', 'solLaranja', 0.45), 2.6);
     this.sun.castShadow = true;
     this._setShadowRange(40);
     this.sun.shadow.mapSize.set(1024, 1024);
@@ -69,6 +97,8 @@ export class Sky {
     scene.add(this.dome);
     this.time = 0.35;
     this.daylight = 1;
+    this.night = 0;
+    this.exposure = 1.15;
     this._horizon = HORIZON.clone();
   }
 
@@ -93,26 +123,36 @@ export class Sky {
     this.hemi.intensity = L(a.hi, b.hi);
     // sol gira em volta da ilha; à noite a luz vem da lua (oposta)
     const ang = (t - 0.25) * Math.PI * 2;
-    const sun = new THREE.Vector3(Math.cos(ang) * 0.85, Math.sin(ang), 0.35).normalize();
+    // sol baixo: sobe só até ~35° (sombras compridas e luz dourada o dia todo)
+    const sun = new THREE.Vector3(Math.cos(ang) * 0.85, Math.sin(ang) * SOL_ALTO, SOL_LADO).normalize();
     const up = sun.y > -0.05 ? sun : sun.clone().negate();
     if (up.y < 0.15) up.y = 0.15;
     SUN_DIR.copy(up).normalize();
     this.sunDir.copy(SUN_DIR);
     u.uSunColor.value.copy(this.sun.color).multiplyScalar(sun.y > -0.05 ? 1 : 0.35);
-    this.daylight = Math.min(1, Math.max(0.18, (this.sun.intensity - 0.45) / 2.15 * 0.82 + 0.18));
+    this.daylight = Math.min(1, Math.max(0.3, (this.sun.intensity - 0.62) / 2.9 * 0.7 + 0.3));
+    // 0 = dia, 1 = noite fechada (vale para o céu: estrelas e lua) e para o brilho do sol na tela
+    this.night = Math.min(1, Math.max(0, 1 - (this.sun.intensity - 0.62) / 0.88));
+    u.uNight.value = this.night;
+    // o filme (exposição) sobe um pouco no sol forte e desce à noite
+    this.exposure = 1.12 + 0.14 * Math.max(0, Math.min(1, (this.sun.intensity - 0.62) / 2.9)); // noite mais escura (antes 1,3)
     sharedDay.value = this.daylight;
     if (!this.underwater) {
       this.scene.fog.color.copy(this._horizon);
       // Lapônia: ar frio e limpo, neblina azulada (cold = 0..1, vem do mundo)
       if (this.cold > 0) {
         this._coldTint = this._coldTint ?? new THREE.Color();
-        this._coldTint.setRGB(0.72, 0.8, 0.88).multiplyScalar(0.25 + this.daylight * 0.85);
+        this._coldTint.copy(PALETA.neve).lerp(PALETA.agua, 0.3).multiplyScalar(0.25 + this.daylight * 0.85);
         this.scene.fog.color.lerp(this._coldTint, this.cold * 0.7);
+        // céu dourado sobre a neve (Valheim): de dia o horizonte puxa para o ouro
+        this._goldTint = this._goldTint ?? new THREE.Color();
+        this._goldTint.copy(PALETA.neve).lerp(PALETA.solLaranja, 0.55).multiplyScalar(0.3 + this.daylight * 0.8);
+        this.scene.fog.color.lerp(this._goldTint, this.cold * 0.5 * (1 - this.night));
       }
       // morros da mata: neblina clara e úmida (mist = 0..1, vem do mundo)
       if (this.mist > 0.01) {
         this._mistTint = this._mistTint ?? new THREE.Color();
-        this._mistTint.setRGB(0.8, 0.84, 0.82).multiplyScalar(0.2 + this.daylight * 0.85);
+        this._mistTint.copy(PALETA.pedraClara).lerp(PALETA.musgo, 0.3).multiplyScalar(0.2 + this.daylight * 0.85); // neblina esverdeada da mata
         this.scene.fog.color.lerp(this._mistTint, this.mist * 0.5);
       }
       this.scene.background.copy(this.scene.fog.color);

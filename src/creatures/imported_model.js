@@ -8,6 +8,7 @@
 import * as THREE from 'three';
 import { hdTextures } from '../core/settings.js';
 import { parseClips } from './clip_player.js';
+import { BOCAS } from './bocas.js';
 import espinossauro from './imported/espinossauro.js';
 import trex from './imported/trex.js';
 import braquiossauro from './imported/braquiossauro.js';
@@ -26,12 +27,25 @@ import argentinossauro from './imported/argentinossauro.js';
 import mosassauro from './imported/mosassauro.js';
 import pterodactilo from './imported/pterodactilo.js';
 import carnotauro from './imported/carnotauro.js';
+import triceratops from './imported/triceratops.js';
+import galimimo from './imported/galimimo.js';
+import dodo from './imported/dodo.js';
+import paquicefalossauro from './imported/paquicefalossauro.js';
+import piranha from './imported/piranha.js';
+import moschops from './imported/moschops.js';
+import dimetrodonte from './imported/dimetrodonte.js';
+import paquirrinossauro from './imported/paquirrinossauro.js';
+import diplodoco from './imported/diplodoco.js';
+import terizinossauro from './imported/terizinossauro.js';
+import compsognato from './imported/compsognato.js';
+import iguanodonte from './imported/iguanodonte.js';
 
 export const IMPORTED = {
   espinossauro, trex, braquiossauro, titanoboa, deinosuchus, estegossauro,
   anquilossauro, parassauro, raptor, quetzalcoatlus, mamute, argentavis, reidodo,
   // com animação do próprio modelo
-  sauropelta, argentinossauro, mosassauro, pterodactilo, carnotauro,
+  sauropelta, argentinossauro, mosassauro, pterodactilo, carnotauro, triceratops, galimimo, dodo, paquicefalossauro, piranha,
+  moschops, dimetrodonte, paquirrinossauro, diplodoco, terizinossauro, compsognato, iguanodonte,
 };
 
 function bytes(b64) {
@@ -52,7 +66,107 @@ function texture(dataUri, srgb) {
   return t;
 }
 
-export function buildImportedModel(d) {
+// Modelos cuja textura original é só cinza (sem cor): pintamos os vértices
+// (costas x barriga, com listras) e a textura cinza dá as escamas e o relevo.
+// costas/barriga/listra = cores; freq = listras por metro; forca = quanto escurece;
+// materiais = quais materiais do modelo recebem a tinta; brilho = clareia.
+const TINTAS = {
+  // Piranha (modelo sem textura): costas cinza-esverdeadas, barriga vermelha, escamas em listras escuras
+  piranha: { costas: '#59635c', barriga: '#c4442e', listra: '#2c332f', freq: 9, forca: 0.35, brilho: 1.05 },
+  // Dodô (modelo sem textura): costas azul-acinzentadas, barriga clara, penas escuras nas pontas e pés roxos
+  dodo: { costas: '#4a4858', barriga: '#756c64', listra: '#22212b', freq: 5, forca: 0.6, brilho: 1.05, pes: '#5a4c7a' },
+  estegossauro: { costas: '#8f7f3d', barriga: '#d8cc9a', listra: '#3a301c', freq: 1.7, forca: 0.5, brilho: 1.9 },
+  anquilossauro: { costas: '#75603c', barriga: '#bba67a', listra: '#2e2414', freq: 1.4, forca: 0.35, brilho: 1.9 },
+  titanoboa: { costas: '#55612f', barriga: '#d3c48c', listra: '#1b2210', freq: 1.0, forca: 0.55, brilho: 1.8 },
+  // modelos com textura cinza ("Colorize"): pintamos os vértices e a textura dá o relevo
+  // Compy (modelo sem textura): costas verde-oliva, barriga clara e listras escuras
+  compsognato: { costas: '#68733a', barriga: '#d2c590', listra: '#2c3318', freq: 7, forca: 0.5, brilho: 1.0 },
+  moschops: { costas: '#8a7650', barriga: '#cdbf98', listra: '#3d3220', freq: 1.6, forca: 0.4, brilho: 1.8 },
+  diplodoco: { costas: '#6f7d58', barriga: '#cfc8a4', listra: '#2b3320', freq: 0.8, forca: 0.35, brilho: 1.8 },
+  terizinossauro: { costas: '#7a6a48', barriga: '#d6c9a0', listra: '#352a18', freq: 1.0, forca: 0.4, brilho: 1.8 },
+  paquirrinossauro: { costas: '#85805a', barriga: '#d2c698', listra: '#3a3520', freq: 1.2, forca: 0.25, brilho: 2.3 },
+  argentavis: { costas: '#5d4630', barriga: '#c4b391', listra: '#2a1d10', freq: 1.2, forca: 0.3, brilho: 1.9 },
+};
+
+const _c = new THREE.Color();
+function paintVertices(g, d, tinta) {
+  const n = d.vertices;
+  const pos = g.getAttribute('position');
+  const nor = g.getAttribute('normal');
+  const costas = new THREE.Color(tinta.costas);
+  const barriga = new THREE.Color(tinta.barriga);
+  const listra = new THREE.Color(tinta.listra);
+  // eixo mais comprido do corpo (as listras correm ao longo dele)
+  const [bmin, bmax] = d.box;
+  let ax = 0;
+  for (let q = 1; q < 3; q++) if (bmax[q] - bmin[q] > bmax[ax] - bmin[ax]) ax = q;
+  const col = new Float32Array(n * 3).fill(1);
+  const mats = new Set(tinta.materiais ?? d.groups.map((gr) => gr[2]));
+  const idx = g.getIndex();
+  for (const [start, count, m] of d.groups) {
+    if (!mats.has(m)) continue;
+    for (let k = start; k < start + count; k++) {
+      const v = idx.getX(k);
+      const ny = nor.getY(v);
+      const dorsal = THREE.MathUtils.smoothstep(ny, -0.35, 0.55);
+      _c.copy(barriga).lerp(costas, dorsal);
+      // listras suaves nas costas, com um pouco de irregularidade
+      const along = pos.getX(v) * (ax === 0) + pos.getY(v) * (ax === 1) + pos.getZ(v) * (ax === 2);
+      const wob = Math.sin(pos.getX(v) * 7.1 + pos.getY(v) * 5.3 + pos.getZ(v) * 6.7) * 0.6;
+      const st = Math.max(0, Math.sin(along * tinta.freq * 6.28 + wob)) ** 3;
+      _c.lerp(listra, st * tinta.forca * dorsal);
+      if (tinta.pes) _c.lerp(new THREE.Color(tinta.pes), 1 - THREE.MathUtils.smoothstep(pos.getY(v), bmin[1] + 0.04 * (bmax[1] - bmin[1]), bmin[1] + 0.12 * (bmax[1] - bmin[1])));
+      col[v * 3] = _c.r;
+      col[v * 3 + 1] = _c.g;
+      col[v * 3 + 2] = _c.b;
+    }
+  }
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+}
+
+// Cria o osso 'jaw' e fecha a boca na pose parada (ver bocas.js): os vértices
+// da mandíbula de baixo giram em volta da dobradiça e passam a seguir o osso.
+function fecharBoca(cfg, pos, nor, sIdx, sWt, bones, n) {
+  const hi = bones.findIndex((b) => b.name === 'head');
+  let ji = bones.findIndex((b) => b.name === 'jaw');
+  if (hi < 0) return;
+  if (ji < 0) {
+    bones.push({ name: 'jaw', parent: 'head', pos: [0, cfg.hy, cfg.hz] });
+    ji = bones.length - 1;
+  } else {
+    bones[ji] = { ...bones[ji], pos: [0, cfg.hy, cfg.hz] };
+  }
+  const th = -cfg.dir * cfg.fecha;
+  const zh = Math.abs(cfg.zr - cfg.hz);
+  for (let v = 0; v < n; v++) {
+    let best = 0;
+    for (let k = 1; k < 4; k++) if (sWt[v * 4 + k] > sWt[v * 4 + best]) best = k;
+    const dom = sIdx[v * 4 + best];
+    if (dom !== hi && dom !== ji) continue;
+    const y = pos[v * 3 + 1];
+    const z = pos[v * 3 + 2];
+    const zf = (z - cfg.zr) * cfg.dir; // distância da nuca (cresce até o focinho)
+    if (y >= cfg.A + cfg.B * zf) continue; // de cima: fica com a cabeça
+    const w = THREE.MathUtils.smoothstep(zf, zh * 0.6, zh * 1.8);
+    if (w <= 0) continue;
+    const a = th * w;
+    const c = Math.cos(a);
+    const sn = Math.sin(a);
+    const dy = y - cfg.hy;
+    const dz = z - cfg.hz;
+    pos[v * 3 + 1] = cfg.hy + dy * c - dz * sn;
+    pos[v * 3 + 2] = cfg.hz + dy * sn + dz * c;
+    const ny = nor[v * 3 + 1];
+    const nz = nor[v * 3 + 2];
+    nor[v * 3 + 1] = Math.round(ny * c - nz * sn);
+    nor[v * 3 + 2] = Math.round(ny * sn + nz * c);
+    const wj = Math.round(255 * w);
+    sIdx[v * 4] = ji; sIdx[v * 4 + 1] = hi; sIdx[v * 4 + 2] = 0; sIdx[v * 4 + 3] = 0;
+    sWt[v * 4] = wj; sWt[v * 4 + 1] = 255 - wj; sWt[v * 4 + 2] = 0; sWt[v * 4 + 3] = 0;
+  }
+}
+
+export function buildImportedModel(d, id) {
   const n = d.vertices;
   const [bmin, bmax] = d.box;
   const qp = view(d.position, Uint16Array);
@@ -60,13 +174,18 @@ export function buildImportedModel(d) {
   for (let i = 0; i < n; i++) {
     for (let q = 0; q < 3; q++) pos[i * 3 + q] = bmin[q] + (qp[i * 3 + q] / 65535) * (bmax[q] - bmin[q]);
   }
+  const nor = view(d.normal, Int8Array).slice();
+  const sIdx = bytes(d.skinIndex);
+  const sWt = bytes(d.skinWeight);
+  const boneDefs = d.bones.map((b) => ({ ...b }));
+  if (BOCAS[id]) fecharBoca(BOCAS[id], pos, nor, sIdx, sWt, boneDefs, n);
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  g.setAttribute('normal', new THREE.BufferAttribute(view(d.normal, Int8Array), 3, true));
+  g.setAttribute('normal', new THREE.BufferAttribute(nor, 3, true));
   g.setAttribute('uv', new THREE.BufferAttribute(view(d.uv, Uint16Array), 2, true));
   if (d.color) g.setAttribute('color', new THREE.BufferAttribute(bytes(d.color), 3, true));
-  g.setAttribute('skinIndex', new THREE.BufferAttribute(bytes(d.skinIndex), 4));
-  g.setAttribute('skinWeight', new THREE.BufferAttribute(bytes(d.skinWeight), 4, true));
+  g.setAttribute('skinIndex', new THREE.BufferAttribute(sIdx, 4));
+  g.setAttribute('skinWeight', new THREE.BufferAttribute(sWt, 4, true));
   g.setIndex(new THREE.BufferAttribute(view(d.index, d.index32 ? Uint32Array : Uint16Array), 1));
   g.computeBoundingBox();
   g.computeBoundingSphere();
@@ -75,12 +194,15 @@ export function buildImportedModel(d) {
   // modelos com textura colorida (um material por textura)
   if (d.materiais) {
     for (const [start, count, m] of d.groups) g.addGroup(start, count, m);
-    const material = d.materiais.map((m) => {
+    const tinta = TINTAS[id];
+    if (tinta) paintVertices(g, d, tinta);
+    const material = d.materiais.map((m, mi) => {
       // qualidade alta: luz "de verdade" (brilho e relevo mais bonitos)
       const mat = hdTextures()
-        ? new THREE.MeshStandardMaterial({ map: texture(m.map, true), roughness: 0.82, metalness: 0 })
-        : new THREE.MeshLambertMaterial({ map: texture(m.map, true) });
-      mat.color.setScalar(d.brilho ?? 1); // textura muito escura: clareia
+        ? new THREE.MeshStandardMaterial({ map: m.map ? texture(m.map, true) : null, roughness: 0.82, metalness: 0 })
+        : new THREE.MeshLambertMaterial({ map: m.map ? texture(m.map, true) : null });
+      mat.color.setScalar((d.brilho ?? 1) * (tinta?.brilho ?? 1)); // textura muito escura: clareia
+      if (tinta && (tinta.materiais ?? [mi]).includes(mi)) mat.vertexColors = true;
       if (m.normalMap) mat.normalMap = texture(m.normalMap, false);
       // modelo com faces de um lado só pintado dos dois lados
       if (d.doisLados) mat.side = THREE.DoubleSide;
@@ -90,8 +212,8 @@ export function buildImportedModel(d) {
       }
       return mat;
     });
-    const bones = d.bones.map((b) => ({ name: b.name, parent: b.parent, pos: new THREE.Vector3(...b.pos) }));
-    return { geometry: g, bones, material, imported: true, clipes: parseClips(d.clipes) };
+    const bones = boneDefs.map((b) => ({ name: b.name, parent: b.parent, pos: new THREE.Vector3(...b.pos) }));
+    return { geometry: g, bones, material, imported: true, clipes: parseClips(d.clipes), sela: d.sela ?? -1 };
   }
 
   // textura cinza (escamas e relevo) × cor pintada por região
@@ -103,6 +225,6 @@ export function buildImportedModel(d) {
   material.normalScale.set(0.9, 0.9);
   material.color.setScalar(2.2); // a textura é escura (média ~0,45): compensa
 
-  const bones = d.bones.map((b) => ({ name: b.name, parent: b.parent, pos: new THREE.Vector3(...b.pos) }));
+  const bones = boneDefs.map((b) => ({ name: b.name, parent: b.parent, pos: new THREE.Vector3(...b.pos) }));
   return { geometry: g, bones, material, imported: true };
 }

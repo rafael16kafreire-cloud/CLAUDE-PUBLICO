@@ -15,10 +15,8 @@ import { mulberry32 } from '../core/math.js';
 import { MODELS } from './creature_models.js';
 import { buildSpeciesModel, createSkinnedMesh } from './creature_builder.js';
 import { makeCreatureMaterial } from './creature_material.js';
-import { IMPORTED, buildImportedModel } from './imported_model.js';
-import { ESPINO_COR_HD, ESPINO_RELEVO_HD } from '../world/textures/hd.js';
-import { hdTextures } from '../core/settings.js';
 import { Creature, CSTATE } from './creature.js';
+import { aplicarCor, herdarCor, sortearCor } from './cores.js';
 import { sound } from '../audio/audio.js';
 import { settings } from '../core/settings.js';
 
@@ -56,14 +54,10 @@ export class CreatureManager {
   }
 
   _model(id) {
-    // espécies com modelo importado (ex.: espinossauro) usam ele;
-    // as outras são feitas por código
-    if (!this.models[id]) {
-      let d = IMPORTED[id];
-      // qualidade alta: textura e relevo em 2048 px
-      if (d && id === 'espinossauro' && hdTextures()) d = { ...d, map: ESPINO_COR_HD, normalMap: ESPINO_RELEVO_HD };
-      this.models[id] = d ? buildImportedModel(d) : buildSpeciesModel(MODELS[id]);
-    }
+    // ETAPA 3 (low-poly): TODOS os bichos saem do gerador paramétrico (creature_builder.js):
+    // corpo, pescoço, cabeça, cauda em gomos, patas e cores vêm dos parâmetros de cada
+    // espécie (creature_models.js). Os modelos 3D importados (realistas, com textura) saíram.
+    if (!this.models[id]) this.models[id] = buildSpeciesModel(MODELS[id]);
     return this.models[id];
   }
 
@@ -74,11 +68,19 @@ export class CreatureManager {
     const model = this._model(id);
     const { mesh, bones } = createSkinnedMesh(model, model.material ?? this.material);
     mesh.name = species.nome;
+    // modelo com sela embutida: um material próprio para este bicho, que só aparece quando ele está selado
+    if (model.sela >= 0 && Array.isArray(mesh.material)) {
+      mesh.material = mesh.material.map((m, i) => (i === model.sela ? m.clone() : m));
+      mesh.material[model.sela].visible = false;
+      mesh.userData.selaIdx = model.sela;
+    }
     const lvl = level ?? 1 + Math.floor(Math.pow(this.rand(), 1.7) * 29);
     const c = new Creature({
       species, spec: MODELS[id], mesh, bones, level: lvl, x, z,
       world: this.world, manager: this, rand: this.rand,
     });
+    // cores próprias (como no ARK): cada bicho nasce com uma combinação de costas e barriga
+    aplicarCor(c, sortearCor(this.rand));
     this.scene.add(mesh);
     this.list.push(c);
     return c;
@@ -102,7 +104,10 @@ export class CreatureManager {
     for (const c of this.list) {
       c.update(dt, ctx);
       // Sombra só para as que estão perto.
-      c.mesh.castShadow = c.pos.distanceTo(camera.position) < 32;
+      const dCam = c.pos.distanceTo(camera.position);
+      c.mesh.castShadow = dCam < 32;
+      // longe da câmera o bicho nem é desenhado (a névoa já esconde): poupa os modelos pesados
+      c.mesh.visible = dCam < (settings.quality?.drawCreatures ?? 110) || c === player.riding || c.rider === player;
     }
     this._separate();
 
@@ -278,7 +283,7 @@ export class CreatureManager {
       st[k] = Math.round(st[k] * 1.1);
       mut = 1;
     }
-    return { st, mut: (mom.mutations ?? 0) + (dad.mutations ?? 0) + mut };
+    return { st, mut: (mom.mutations ?? 0) + (dad.mutations ?? 0) + mut, cor: herdarCor(mom.cor, dad.cor, this.rand) };
   }
 
   // Casal domado: ovo (choca no chão) ou gestação (mamífero).
@@ -306,6 +311,7 @@ export class CreatureManager {
     const baby = this.spawn(id, x, z, level);
     if (!baby) return null;
     if (gene?.st) baby.applyStats(gene.st);
+    if (gene && 'cor' in gene) aplicarCor(baby, gene.cor);
     baby.mutations = gene?.mut ?? 0;
     baby.age = 0;
     baby.setGrowth(0.3);
@@ -367,6 +373,19 @@ export class CreatureManager {
   // Carcaças: carne, couro e ossos
   // ---------------------------------------------------------
   // Carcaça com carne perto (carnívoro com fome vai comer).
+  /** 0..1: quão perto está o bicho selvagem que te caça (0 = ninguém caçando). Alimenta a trilha de perseguição. */
+  nivelPerseguicao(player) {
+    let melhor = Infinity;
+    for (const c of this.list) {
+      if (!c.alive || c.tamed || c.netControlled || c.target !== player) continue;
+      if (c.state !== CSTATE.CHASE && c.state !== CSTATE.ATTACK) continue;
+      const d = Math.hypot(c.position.x - player.position.x, c.position.z - player.position.z);
+      if (d < melhor) melhor = d;
+    }
+    if (melhor > 75) return 0;
+    return Math.min(1, Math.max(0.25, 1 - (melhor - 8) / 67));
+  }
+
   nearestCarcass(pos, radius) {
     let best = null;
     let bestD = radius;
@@ -572,9 +591,9 @@ export class CreatureManager {
       events.emit(EV.MESSAGE, { text: `${c.name ?? c.species.nome} (domado) morreu${c.oldAge ? ' de velhice' : ''}.`, kind: 'warn' });
     }
     if (attacker?.isRemote) {
-      this.net?.sendKill(attacker, c, Math.round(c.species.xp * (1 + c.level * 0.05)));
+      this.net?.sendKill(attacker, c, +(c.species.xp * (1 + 0.1 * (c.level - 1))).toFixed(1));
     } else if (attacker === game.player) {
-      const xp = Math.round(c.species.xp * (1 + c.level * 0.05));
+      const xp = +(c.species.xp * (1 + 0.1 * (c.level - 1))).toFixed(1);
       game.player.stats.addXP(xp);
       events.emit(EV.MESSAGE, { text: `${c.species.nome} abatido! +${xp} XP`, kind: 'gain' });
     } else if (attacker && attacker.state !== undefined) {
@@ -608,7 +627,7 @@ export class CreatureManager {
       const dy = pt.y - (p.y + 1.2);
       const d = Math.hypot(dx, dz);
       const r = Math.min(c.radius, 1.2); // grossura do corpo
-      if (d - r > reach + 0.4 || Math.abs(dy) > c.height * 0.8 + 1.5) continue;
+      if (d - r > reach + 0.15 || Math.abs(dy) > c.height * 0.8 + 1.5) continue;
       // precisa estar mais ou menos na frente
       const dot = (dx * forward.x + dz * forward.z) / (d || 1) / fl;
       if (d > r + 0.8 && dot < 0.3) continue;
@@ -673,7 +692,7 @@ export class CreatureManager {
     let best = null;
     let bestD = maxD;
     for (const c of this.tamedBy(owner)) {
-      if (!c.species.pode_montar || c.flies || c.isBaby) continue;
+      if (!c.species.pode_montar || c.isBaby) continue;
       if (BALANCE.sela.precisa && !c.saddled) continue; // sem sela não monta
       const d = Math.hypot(c.pos.x - pos.x, c.pos.z - pos.z) - c.radius;
       if (d < bestD) {
@@ -699,7 +718,7 @@ export class CreatureManager {
 
   onTamed(c, owner) {
     if (owner === game.player) {
-      const xp = Math.round(c.species.xp * (1 + c.level * 0.05) * 1.5);
+      const xp = +(c.species.xp * (1 + 0.1 * (c.level - 1)) * 1.5).toFixed(1);
       owner.stats.addXP(xp);
       events.emit(EV.MESSAGE, { text: `${c.species.nome} domado! +${xp} XP`, kind: 'gain' });
       events.emit(EV.CREATURE_TAMED, { creature: c });

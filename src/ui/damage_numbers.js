@@ -33,7 +33,7 @@ export class DamageNumbers {
     it.t = LIFE;
     it.pos.copy(pos);
     it.dx = (Math.random() - 0.5) * 0.8;
-    it.d.textContent = Math.max(1, Math.round(amount));
+    it.d.textContent = Math.max(0, Math.round(amount));
     it.d.dataset.kind = kind;
     it.d.hidden = false;
   }

@@ -9,7 +9,7 @@ import { BALANCE } from '../core/balance.js';
 import { events, EV } from '../core/event_bus.js';
 import { angleDelta } from '../core/math.js';
 import { PlayerStats } from './player_stats.js';
-import { PlayerModel } from './player_model.js';
+import { makePlayerModel } from './make_model.js';
 
 const RADIUS = 0.38;            // "largura" do jogador para colisão
 const EYE_STAND = 1.62;         // altura dos olhos em pé
@@ -38,7 +38,7 @@ export class Player {
 
     this.stats = new PlayerStats();
     this.stats.onDeath = (cause) => this._die(cause);
-    this.model = new PlayerModel();
+    this.model = makePlayerModel();
     scene.add(this.model.root);
 
     const M = BALANCE.movimento;
@@ -75,6 +75,7 @@ export class Player {
 
   // cam = { yaw, pitch } da câmera
   update(dt, input, cam) {
+    this._camPitch = cam?.pitch ?? 0;
     if (this.dead) {
       this._updateModel(dt);
       return;
@@ -221,7 +222,7 @@ export class Player {
     dx /= len;
     dz /= len;
     this.moving = mag > 0.05;
-    c.rideInput = { x: dx, z: dz, mag, run: input.isHeld('run') || input.runToggle };
+    c.rideInput = { x: dx, z: dz, mag, run: input.isHeld('run') || input.runToggle, up: input.isHeld('jump'), down: input.isHeld('crouch') };
     // sentado nas costas
     const seat = c.seat;
     // modelo olha para -z: z do assento vai para a frente/trás pelo yaw
@@ -268,13 +269,14 @@ export class Player {
         const tool = actions.tool;
         if (actions.shootArrow(cam)) {
           this._attackTimer = tool.tipo === 'arco' ? BALANCE.arco.intervalo_seg : tool.intervalo;
+          this.model.swing(tool.tipo);
           this.onPunch?.(tool.tipo);
         } else this._attackTimer = 0.4;
-      } else if (this.stats.useStamina(C.soco_stamina)) {
+      } else if (this.stats.useStamina(actions?.tool && actions.tool.tipo !== 'mao' ? BALANCE.stamina.gasto_golpe_ferramenta : C.soco_stamina)) {
         const tool = actions?.tool ?? { tipo: 'mao', intervalo: C.soco_intervalo_seg };
         this._attackTimer = tool.intervalo;
-        this._pendingHit = tool.tipo === 'mao' ? 0.14 : 0.22; // acerta no meio da animação
-        this.model.swing();
+        this._pendingHit = tool.tipo === 'mao' ? 0.12 : 0.14; // acerta logo no início da animação
+        this.model.swing(tool.tipo);
         this.onPunch?.(tool.tipo);
       }
     }
@@ -322,7 +324,7 @@ export class Player {
 
     // Correr cancela o agachar.
     if (runRequest && this.moving && this.crouching) this.crouching = false;
-    this.running = runRequest && this.moving && !this.crouching && st.stamina > 0.5;
+    this.running = runRequest && this.moving && !this.crouching && st.stamina > 0.5 && !st.exhausted;
     this.swimFast = false;
 
     let speed = (this.crouching ? M.agachado : this.running ? M.correr : M.andar) * st.speedMul;
@@ -330,13 +332,14 @@ export class Player {
     // carregando peso demais: anda devagar ou nem anda
     const wf = this.actions ? this.actions.weightFactor() : 1;
     speed *= wf;
-    if (wf < 1) this.running = false;
+    if (this.actions?.overloaded?.()) this.running = false;
     speed *= mag;
 
     const len = Math.hypot(dirX, dirZ);
     const tx = len > 0.001 ? (dirX / len) * speed : 0;
     const tz = len > 0.001 ? (dirZ / len) * speed : 0;
-    const k = Math.min(1, (this.onGround ? 14 : 3) * dt);
+    // no ar o corpo mantém o embalo (o pulo leva para frente); com o dedo no joystick dá para corrigir um pouco
+    const k = Math.min(1, (this.onGround ? 24 : len > 0.001 ? 2.2 : 0.2) * dt);
     vel.x += (tx - vel.x) * k;
     vel.z += (tz - vel.z) * k;
 
@@ -347,6 +350,13 @@ export class Player {
       } else if (this.onGround && st.useStamina(BALANCE.stamina.gasto_pulo)) {
         vel.y = M.pulo;
         this.onGround = false;
+        // o personagem vai para frente no pulo: parado dá um salto curto, andando vai mais longe e correndo vai bem longe
+        const hs = Math.hypot(vel.x, vel.z);
+        const dx = hs > 0.5 ? vel.x / hs : -Math.sin(this.facing);
+        const dz = hs > 0.5 ? vel.z / hs : -Math.cos(this.facing);
+        const extra = this.running ? M.pulo_frente_correndo : hs > 0.5 ? M.pulo_frente_andando : M.pulo_frente_parado;
+        vel.x += dx * extra;
+        vel.z += dz * extra;
       }
     }
 
@@ -424,7 +434,7 @@ export class Player {
     const st = this.stats;
     const pos = this.position;
     const vel = this.velocity;
-    const tired = st.stamina <= 0.5;
+    const tired = st.stamina <= 0.5 || st.exhausted;
 
     this.running = false;
     this.onGround = false;
@@ -539,6 +549,7 @@ export class Player {
       crouching: this.crouching,
       swimming: this.swimming,
       dead: this.dead,
+      pitch: this._camPitch ?? 0,
       visible: !this.firstPerson || this.dead,
     });
   }

@@ -3,16 +3,22 @@
 // Cria o desenho 3D (renderer), o mundo, o jogador e as telas, e
 // roda o "loop": a cada quadro atualiza tudo e desenha.
 // =============================================================
+import { abrirOlhos } from './ui/intro.js';
+import { SunGlare } from './ui/sun_glare.js';
 import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { events, EV } from './core/event_bus.js';
 import { game, STATE } from './core/game_manager.js';
 import { settings, QUALITY_PRESETS, hdTextures } from './core/settings.js';
+import { BALANCE } from './core/balance.js';
 import { input } from './core/input.js';
 import { World } from './world/world.js';
+import { setPushers } from './world/materials.js';
 import { Player } from './player/player.js';
 import { PlayerCamera } from './player/player_camera.js';
 import { PlayerInteraction } from './player/player_interaction.js';
@@ -23,8 +29,11 @@ import { saddleFor } from './creatures/saddle.js';
 import { itemName } from './items/items.js';
 import { DamageNumbers } from './ui/damage_numbers.js';
 import { CreatureMenu } from './ui/creature_menu.js';
+import { ActionWheel } from './ui/action_wheel.js';
 import { WhistleWheel } from './ui/whistle_wheel.js';
-import { loadGame, saveGame, clearSave, saveSlot, useSlot } from './core/save.js';
+import { loadGame, saveGame, clearSave, saveSlot, useSlot, hasSave, setActiveSlot, deleteSlot, resetLevelSlot, resetLevelMain, newGameInSlot, getActiveSlot } from './core/save.js';
+import { SaveScreen } from './ui/save_screen.js';
+import { LoadingScreen } from './ui/loading_screen.js';
 import { Messages } from './ui/messages.js';
 import { TouchControls } from './ui/touch_controls.js';
 import { DeathScreen } from './ui/death_screen.js';
@@ -34,6 +43,7 @@ import { DebugOverlay } from './ui/debug_overlay.js';
 import { PauseMenu } from './ui/pause_menu.js';
 import { StartScreen } from './ui/start_screen.js';
 import { PlayerHands } from './player/player_hands.js';
+import { HelpScreen } from './ui/help_screen.js';
 import { CreatureManager, SPECIES } from './creatures/creature_manager.js';
 import { Inventory } from './inventory/inventory.js';
 import { Crafting } from './crafting/crafting.js';
@@ -42,6 +52,8 @@ import { Hotbar } from './ui/hotbar.js';
 import { InventoryScreen } from './ui/inventory_screen.js';
 import { Multiplayer } from './net/multiplayer.js';
 import { sound } from './audio/audio.js';
+import { aplicarCor } from './creatures/cores.js';
+import { aplicarLowPoly } from './world/estilo.js';
 
 // Ponte com o app Android (existe só dentro do APK).
 const androidApp = typeof window !== 'undefined' ? window.IlhaAndroid : undefined;
@@ -65,6 +77,9 @@ function boot(hotData = {}) {
   // ---------- Renderer (desenho 3D) ----------
   const canvas = document.createElement('canvas');
   canvas.id = 'game';
+  // visual levemente pixelado (estilo low-poly): a imagem é desenhada com menos pixels
+  // (pixel ratio 0,75 a 1, ver settings.js) e ampliada SEM borrar
+  canvas.style.imageRendering = 'pixelated';
   app.appendChild(canvas);
   // qualidade alta: bordas lisas (antialias) e sombra suave
   const high = hdTextures();
@@ -74,8 +89,14 @@ function boot(hotData = {}) {
     powerPreference: 'high-performance',
   });
   renderer.info.autoReset = false; // zerado a cada quadro (veja o fim do loop)
+  // um shader que o aparelho recusa deixa partes (ou tudo) pretas: avisa e oferece o modo seguro
+  renderer.debug.onShaderError = (gl, program, vs, fs) => {
+    const log = gl.getProgramInfoLog(program) || '';
+    const e1 = (gl.getShaderInfoLog(fs) || gl.getShaderInfoLog(vs) || '').split('\n').find((l) => /ERROR/.test(l)) ?? '';
+    window.__ilhaFail?.('shader', (e1 || log).slice(0, 220));
+  };
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = high ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   // Cores mais naturais (luz forte não "estoura").
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.15;
@@ -90,18 +111,57 @@ function boot(hotData = {}) {
   uwOverlay.className = 'uw-overlay';
   app.appendChild(uwOverlay);
 
+  // vinheta sutil (bordas um pouco mais escuras): feita com CSS, vale para todas as qualidades e não pesa
+  const vinheta = document.createElement('div');
+  vinheta.className = 'vinheta';
+  app.appendChild(vinheta);
+  const sunGlare = new SunGlare(app); // clarão do sol (por cima do 3D, embaixo dos botões)
   const ui = document.createElement('div');
   ui.id = 'ui';
   app.appendChild(ui);
 
   input.attach(canvas);
+  input.canLock = () => !game.isTouch && game.state === STATE.PLAYING && !input.blocked;
+  // roda do mouse: distância da câmera na 3ª pessoa (como no Valheim)
+  input.onWheel = (dy) => {
+    if (!ctx || ctx.camCtl.mode !== 'terceira') return;
+    const z = Math.min(2, Math.max(0.55, (settings.get('cameraDist') ?? 1) + Math.sign(dy) * 0.12));
+    settings.set('cameraDist', Math.round(z * 100) / 100);
+  };
   game.isTouch = detectTouch();
   document.body.classList.toggle('is-touch', game.isTouch);
 
   let ctx = null; // tudo do jogo, criado depois de gerar a ilha
 
+  // Tela de Jogos salvos (escolher, novo, apagar, resetar nível). Recarregar a página para aplicar:
+  // trava o salvamento automático (senão o jogo aberto regrava por cima do que acabou de ser mudado).
+  const recarregar = (entrarDireto = true) => {
+    window.__semSalvar = true;
+    try { if (entrarDireto) sessionStorage.setItem('ilha-primordial:auto-continuar', '1'); } catch { /* ok */ }
+    window.location.reload();
+  };
+  const noJogo = () => !!ctx && game.state !== STATE.MENU;
+  const saves = new SaveScreen(ui, {
+    onContinue: () => { saves.close(); entrar(); },
+    onPlaySlot: (n) => { setActiveSlot(n); loadSlotAndRestart(n); },
+    onNewInSlot: (n) => { newGameInSlot(n); recarregar(true); },
+    onDeleteSlot: (n) => { deleteSlot(n); },
+    onResetSlot: (n) => {
+      const ativo = getActiveSlot() === n;
+      resetLevelSlot(n);
+      if (ativo && noJogo()) recarregar(true);
+    },
+    onResetMain: () => { resetLevelMain(); if (noJogo()) recarregar(true); else saves.render(); },
+    onSaveHere: (n) => {
+      const ok = saveSlot(n, gameSnapshot());
+      if (ok) setActiveSlot(n);
+      events.emit(EV.MESSAGE, { text: ok ? `Jogo salvo no Espaço ${n}.` : 'Não deu para salvar (sem espaço no aparelho).', kind: ok ? 'gain' : 'warn' });
+    },
+  });
+
   const start = new StartScreen(ui, {
-    onPlay: () => play(),
+    onOpenSaves: () => saves.open({ inGame: false }),
+    onPlay: () => entrar(),
     onLoadSlot: (n) => loadSlotAndRestart(n),
     onHost: (name) => hostCoop(name),
     onJoin: (code, name) => joinCoop(code, name),
@@ -111,25 +171,109 @@ function boot(hotData = {}) {
     },
     playerName: settings.get('playerName') || '',
   });
-  start.setLoading('Gerando a ilha…');
+  const loading = new LoadingScreen(ui);
+  // A tela inicial já abre pronta: a ilha só é gerada quando clicar em Entrar (tela de carregamento).
+  const temSalvo = hasSave();
+  start.setReady(temSalvo ? 'Continuar' : 'Jogar', temSalvo);
+  window.__ilhaReady = true;
 
-  // SMAA: suaviza as bordas serrilhadas depois de desenhar a cena
-  // (opção "Suavizar bordas"; desligado = desenha direto, mais leve)
+  // Pós-processamento: SMAA (bordas lisas, opção "Suavizar bordas") e os efeitos
+  // da qualidade gráfica: "grade" = cor de cinema + vinheta; "full" = também brilho (bloom).
+  // Ordem: cena -> brilho -> tom (OutputPass) -> cor -> SMAA.
+  const GRADE_SHADER = {
+    uniforms: { tDiffuse: { value: null } },
+    vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: `
+      uniform sampler2D tDiffuse;
+      varying vec2 vUv;
+      void main() {
+        vec4 c = texture2D(tDiffuse, vUv);
+        float l = dot(c.rgb, vec3(0.299, 0.587, 0.114));
+        // >>> AJUSTE DE COR DA IMAGEM (qualidade média): mude os números para mudar o clima
+        c.rgb = mix(vec3(l), c.rgb, 0.96);                           // saturação (1 = igual; <1 = mais apagado)
+        c.rgb = mix(c.rgb, c.rgb * c.rgb * (3.0 - 2.0 * c.rgb), 0.28); // contraste
+        c.rgb += vec3(0.03, 0.012, -0.022) * l * l;                   // luz quente (sol) nas partes claras
+        c.rgb += vec3(-0.014, -0.004, 0.024) * (1.0 - l);             // sombra fria (azulada)
+        gl_FragColor = vec4(clamp(c.rgb, 0.0, 1.0), c.a);
+      }`,
+  };
   let composer = null;
+  let composerKey = '';
+  let cinema = false;      // true: composer é o da biblioteca "postprocessing" (qualidade alta)
+  let godrays = null;      // (raios de sol: desligado; velava a imagem inteira)
+  let aoPass = null;
+  // Qualidade alta: oclusão ambiental (n8ao), brilho (bloom), tom ACES, cor e vinheta, com as
+  // bibliotecas "postprocessing" e "n8ao". Elas só são carregadas AQUI, quando a qualidade alta
+  // pede (import dinâmico dentro de try/catch): se alguma falhar no aparelho, o jogo continua
+  // com o modo leve em vez de nem abrir.
+  let cinemaTry = 0;
+  async function upgradeToCinema(smaa, key) {
+    const my = ++cinemaTry;
+    try {
+      const pp = await import('postprocessing');
+      const { N8AOPostPass } = await import('n8ao');
+      if (my !== cinemaTry || composerKey !== key) return; // as opções mudaram nesse meio tempo
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const c = new pp.EffectComposer(renderer, { frameBufferType: THREE.HalfFloatType });
+      c.addPass(new pp.RenderPass(scene, camera));
+      const ao = new N8AOPostPass(scene, camera, w, h);
+      ao.configuration.aoRadius = 2.6;
+      ao.configuration.distanceFalloff = 1.2;
+      ao.configuration.intensity = 2.4;
+      ao.configuration.halfRes = true;
+      ao.setQualityMode('Medium');
+      c.addPass(ao);
+      const bloom = new pp.BloomEffect({ intensity: 0.32, luminanceThreshold: 0.88, luminanceSmoothing: 0.25, mipmapBlur: true });
+      const tone = new pp.ToneMappingEffect({ mode: pp.ToneMappingMode.ACES_FILMIC });
+      const sat = new pp.HueSaturationEffect({ saturation: -0.04, hue: 0 }); // paleta já é apagada: quase neutro
+      const bc = new pp.BrightnessContrastEffect({ brightness: 0.02, contrast: 0.12 });
+      c.addPass(new pp.EffectPass(camera, bloom, tone, sat, bc)); // vinheta: CSS (.vinheta)
+      if (smaa) c.addPass(new pp.EffectPass(camera, new pp.SMAAEffect({ preset: pp.SMAAPreset.MEDIUM })));
+      c.setSize(w, h);
+      aoPass = ao;
+      composer?.dispose();
+      composer = c;
+      cinema = true;
+    } catch (e) {
+      console.warn('efeitos de cinema indisponíveis, ficando no modo leve:', e?.message);
+      cinema = false;
+    }
+  }
   function setupSMAA() {
-    const on = settings.get('smaa') !== false;
-    if (!on) {
+    const smaa = settings.get('smaa') !== false;
+    const post = settings.quality.post ?? 'none';
+    const key = `${smaa}|${post}`;
+    if (!smaa && post === 'none') {
       composer?.dispose();
       composer = null;
+      composerKey = '';
+      cinema = false;
+      cinemaTry++;
       return;
     }
+    if (composer && composerKey !== key) {
+      composer.dispose();
+      composer = null;
+      cinema = false;
+      cinemaTry++;
+    }
     if (!composer) {
+      // modo leve (também é o ponto de partida da qualidade alta: o cinema entra depois)
       composer = new EffectComposer(renderer);
       composer.addPass(new RenderPass(scene, camera));
-      composer.addPass(new SMAAPass(window.innerWidth, window.innerHeight));
+      if (post === 'full') {
+        // bloom leve: só o que é bem claro (sol, fogo, céu) ganha um brilho em volta
+        composer.addPass(new UnrealBloomPass(new THREE.Vector2(window.innerWidth / 2, window.innerHeight / 2), 0.28, 0.5, 0.86));
+      }
       composer.addPass(new OutputPass());
+      if (post !== 'none') composer.addPass(new ShaderPass(GRADE_SHADER));
+      if (smaa) composer.addPass(new SMAAPass(window.innerWidth, window.innerHeight));
+      composerKey = key;
+      if (post === 'cinema') upgradeToCinema(smaa, key);
     }
-    composer.setPixelRatio(renderer.getPixelRatio());
+    composerKey = key;
+    composer.setPixelRatio?.(renderer.getPixelRatio());
     composer.setSize(window.innerWidth, window.innerHeight);
   }
 
@@ -138,7 +282,7 @@ function boot(hotData = {}) {
     const w = window.innerWidth;
     const h = window.innerHeight;
     renderer.setSize(w, h, false);
-    composer?.setPixelRatio(renderer.getPixelRatio());
+    composer?.setPixelRatio?.(renderer.getPixelRatio());
     composer?.setSize(w, h);
     camera.aspect = w / h;
     baseFov = w < h ? 82 : 70; // celular em pé: campo de visão maior
@@ -158,16 +302,21 @@ function boot(hotData = {}) {
     document.body.classList.toggle('is-touch', game.isTouch);
     if (!ctx) return;
     ctx.world.setQuality(q);
+    const lp = settings.get('lowPoly');
+    ctx.world.setLowPoly(lp === 'ligado' ? true : lp === 'desligado' ? false : !!ctx.world._autoLow || settings.get('quality') === 'baixa'); // qualidade Baixa já usa grama e árvores low poly
     const vd = settings.get('viewDistance');
     ctx.world.setViewDistance(vd);
     camera.far = vd + 40;
     camera.updateProjectionMatrix();
     const inGame = [STATE.PLAYING, STATE.PAUSED, STATE.DEAD].includes(game.state);
-    ctx.touch.setVisible((game.isTouch && inGame && !ctx.invScreen.visible && !ctx.creatureMenu.visible && !ctx.whistle.visible) || ctx.touch.editing);
+    ctx.touch.setVisible((game.isTouch && inGame && !ctx.invScreen.visible && !ctx.creatureMenu.visible && !ctx.whistle.visible && !ctx.actionWheel.visible) || ctx.touch.editing);
     ctx.touch.applySettings(settings.get('buttonOpacity'), settings.get('buttonSize'));
+    ctx.touch.setScheme(settings.get('touchScheme'));
+    ctx.touch.flickJump = settings.get('flickJump') !== false;
     if (!ctx.touch.editing) ctx.touch.applyLayout(settings.get('buttonLayout'));
     ctx.debug.setVisible(settings.get('showDebug'));
     ctx.camCtl.setMode(settings.get('cameraMode'));
+    ctx.camCtl.zoom = settings.get('cameraDist') ?? 1;
   }
   events.on(EV.SETTINGS_CHANGED, applySettings);
   // texturas HD (qualidade alta) só trocam ao abrir o jogo de novo
@@ -203,6 +352,14 @@ function boot(hotData = {}) {
     const inspect = new InspectPanel(hud.el, () => creatures.findAimed(camera.position, camCtl.forward, 45));
     const messages = new Messages(ui);
     const touch = new TouchControls(ui, input);
+    // segurar o dedo MIRANDO num bicho domado seu e perto (até ~6 m) = montar / mensagem de sela, como no ARK
+    touch.mountNear = () => {
+      const p = ctx?.player;
+      if (!p || p.dead) return false;
+      const c = ctx.creatures.findAimed(ctx.camCtl.camera.position, ctx.camCtl.forward, 14);
+      if (!c || !c.tamed || c.owner !== p || !c.species.pode_montar || c.isBaby) return false;
+      return Math.hypot(c.pos.x - p.position.x, c.pos.z - p.position.z) - c.radius < 6;
+    };
     const death = new DeathScreen(ui, world);
     const minimap = new Minimap(hud.el, world);
     const mapScreen = new MapScreen(ui, world);
@@ -226,6 +383,15 @@ function boot(hotData = {}) {
     const hotbar = new Hotbar(ui, inventory, (i) => actions.pressHotbar(i));
     const damageNumbers = new DamageNumbers(ui);
     const whistle = new WhistleWheel(ui, { creatures, player, camCtl, onClose: () => closeCreatureMenu() });
+    const actionWheel = new ActionWheel(ui, {
+      onClose: () => closeCreatureMenu(),
+      onAction: (a) => {
+        input.press(a);
+        setTimeout(() => input.release(a), 90);
+      },
+    });
+    // arrastar a partir da borda: esquerda = roda de assovios; direita = roda de ações
+    touch.onEdge = (side) => (side === 'L' ? openWhistle() : openActionWheel());
     const creatureMenu = new CreatureMenu(ui, {
       inventory,
       onClose: () => closeCreatureMenu(),
@@ -240,11 +406,26 @@ function boot(hotData = {}) {
       stats: player.stats,
       onDrop: (stack) => dropStack(stack),
       onClose: () => closeInventory(),
+      // atalhos da barra de baixo do inventário (como no ARK Mobile)
+      onHelp: () => ctx.help.open(0, 0, () => {}),
+      onPause: () => {
+        closeInventory();
+        pauseGame();
+      },
+      onMap: () => {
+        closeInventory();
+        ctx.mapScreen.show(ctx.player, ctx.camCtl.yaw);
+      },
       world: () => world,
       tamedCount: () => creatures.tamedBy(player).length,
     });
+    const help = new HelpScreen(ui);
     const pause = new PauseMenu(ui, {
       onResume: () => resume(),
+      onHelp: () => {
+        ctx.pause.hide();
+        ctx.help.open(0, 0, () => ctx.pause.show());
+      },
       onQuitToMenu: () => toMenu(),
       onCloseApp: androidApp?.exit ? () => androidApp.exit() : null,
       onSaveSlot: (n) => {
@@ -252,6 +433,7 @@ function boot(hotData = {}) {
         events.emit(EV.MESSAGE, { text: ok ? `Jogo salvo no Espaço ${n}.` : 'Não deu para salvar (sem espaço no aparelho).', kind: ok ? 'gain' : 'warn' });
       },
       onLoadSlot: (n) => loadSlotAndRestart(n),
+      onOpenSaves: () => saves.open({ inGame: true }),
       // ajustar botões: esconde o menu, arrasta, Travar salva e volta ao menu
       onAdjustButtons: () => {
         ctx.pause.hide();
@@ -268,8 +450,8 @@ function boot(hotData = {}) {
     game.world = world;
     game.player = player;
     ctx = {
-      world, player, camCtl, interaction, hud, minimap, mapScreen, inspect, buildGhost, messages, touch, death, debug, pause, creatures, hands, damageNumbers,
-      inventory, crafting, actions, hotbar, invScreen, creatureMenu, whistle,
+      world, player, camCtl, interaction, hud, minimap, mapScreen, inspect, buildGhost, messages, touch, death, debug, pause, help, creatures, hands, damageNumbers,
+      inventory, crafting, actions, hotbar, invScreen, creatureMenu, whistle, actionWheel,
     };
     ctx.net = new Multiplayer({ world, player, creatures, inventory, actions, camCtl });
 
@@ -303,11 +485,10 @@ function boot(hotData = {}) {
       console.warn('[Ilha] compile', err);
     }
     start.setReady(hotData.player ? 'Continuar' : 'Jogar', !!hotData.player);
-    // veio de "Carregar" um espaço: entra direto no jogo
     try {
-      if (sessionStorage.getItem('ilha-primordial:auto-continuar')) {
-        sessionStorage.removeItem('ilha-primordial:auto-continuar');
-        setTimeout(() => play(), 50);
+      if (localStorage.getItem('ilha-primordial:avisar-seguro')) {
+        localStorage.removeItem('ilha-primordial:avisar-seguro');
+        setTimeout(() => events.emit(EV.MESSAGE, { text: 'Abri em modo seguro (gráficos simples) porque da última vez o jogo não terminou de abrir. Dá para subir a qualidade nas Opções.', kind: 'warn' }), 2500);
       }
     } catch { /* ok */ }
     game.setState(STATE.MENU);
@@ -328,7 +509,7 @@ function boot(hotData = {}) {
   }
 
   function hostCoop(name) {
-    if (!ctx) return;
+    if (!ctx) { carregarMundo(() => hostCoop(name)); return; }
     sound.unlock();
     settings.set('playerName', name);
     ctx.player.name = name;
@@ -342,7 +523,7 @@ function boot(hotData = {}) {
   }
 
   function joinCoop(code, name) {
-    if (!ctx) return;
+    if (!ctx) { carregarMundo(() => joinCoop(code, name)); return; }
     sound.unlock();
     code = (code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     if (code.length !== 6) {
@@ -370,17 +551,69 @@ function boot(hotData = {}) {
     ctx.hud.setCoop(n.active ? n.code : null, n.playerCount);
   });
 
+  // Gera a ilha (só agora, ao clicar em Entrar) atrás de uma tela de carregamento e então chama 'depois'.
+  let gerando = false;
+  function carregarMundo(depois) {
+    if (ctx) { depois?.(); return; }
+    if (gerando) return;
+    gerando = true;
+    sound.unlock();
+    // marca "abrindo": se o aparelho morrer gerando a ilha, da próxima vez abre em modo seguro
+    try { localStorage.setItem('ilha-primordial:abrindo', '1'); } catch { /* ok */ }
+    loading.show();
+    // dá 2 quadros para a tela de carregamento aparecer antes do trabalho pesado
+    requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(() => {
+      try {
+        buildGame();
+        window.__ilhaReady = true; // ilha pronta: tira a marca "abrindo"
+      } catch (err) {
+        console.error(err);
+        gerando = false;
+        loading.hide();
+        start.setStatus('Erro ao gerar a ilha. Feche e abra o jogo de novo.', 'erro');
+        return;
+      }
+      gerando = false;
+      loading.hide();
+      depois?.();
+    }, 30)));
+  }
+
+  function entrar() {
+    if (ctx) { play(); return; }
+    carregarMundo(() => play());
+  }
+
   function play() {
     if (!ctx) return;
     sound.unlock();
     sound.setPaused(false);
+    comecarAJogar();
+    requestFullscreenLandscape();
+    if (!game.isTouch) input.requestPointerLock();
+    // testes automáticos entram direto, sem a animação de acordar
+    let pular = false;
+    try { pular = navigator.webdriver && !localStorage.getItem('ilha-primordial:intro-forcar'); } catch { /* ok */ }
+    if (!pular) acordar();
+  }
+
+  // Acorda deitado no chão: olhos abrindo, câmera levantando, sem controle por uns instantes.
+  function acordar() {
+    ctx.camCtl.acordar(3.4);
+    input.clear();
+    input.blocked = true;
+    abrirOlhos(ui);
+    setTimeout(() => {
+      if (!ctx.invScreen.visible) input.blocked = false;
+    }, 2800);
+  }
+
+  function comecarAJogar() {
     start.hide();
     ctx.hud.setVisible(true);
     ctx.hotbar.setVisible(true);
     ctx.touch.setVisible(game.isTouch);
     game.setState(STATE.PLAYING);
-    requestFullscreenLandscape();
-    if (!game.isTouch) input.requestPointerLock();
     if (game.playTime < 1) {
       events.emit(EV.MESSAGE, { text: 'Bata nas árvores para pegar palha e madeira. Abaixado (agachar) os predadores te veem menos.', kind: 'info' });
       events.emit(EV.MESSAGE, { text: 'Água doce: o pântano fica no meio da ilha.', kind: 'info' });
@@ -396,6 +629,7 @@ function boot(hotData = {}) {
   // Carregar um espaço: vira o salvo principal e o jogo recomeça dele.
   function loadSlotAndRestart(n) {
     if (!useSlot(n)) return;
+    window.__semSalvar = true; // não deixa o jogo aberto regravar por cima do espaço escolhido
     sessionStorage.setItem('ilha-primordial:auto-continuar', '1');
     window.location.reload();
   }
@@ -438,6 +672,16 @@ function boot(hotData = {}) {
     input.exitPointerLock();
   }
 
+  // Roda de ações (arrasto a partir da borda esquerda, no celular)
+  function openActionWheel() {
+    if (game.state !== STATE.PLAYING || ctx.player.dead || ctx.invScreen.visible || ctx.creatureMenu.visible || ctx.whistle.visible || ctx.actionWheel.visible) return;
+    input.clear();
+    input.blocked = true;
+    ctx.touch.setVisible(false);
+    ctx.actionWheel.open();
+    input.exitPointerLock();
+  }
+
   // Roda de assovios (T / botão de apito)
   function openWhistle() {
     if (game.state !== STATE.PLAYING || ctx.player.dead || ctx.invScreen.visible || ctx.creatureMenu.visible) return;
@@ -472,10 +716,10 @@ function boot(hotData = {}) {
     const len = Math.hypot(f.x, f.z) || 1;
     const x = p.x + (f.x / len) * 1.4;
     const z = p.z + (f.z / len) * 1.4;
-    const pos = new THREE.Vector3(x, Math.max(ctx.world.heightAt(x, z), p.y - 1.5), z);
-    const body = ctx.world.waterAt(x, z);
-    if (body) pos.y = Math.max(pos.y, body.level - 0.3);
-    ctx.world.spawnDeathBag(pos, [stack], 'bolsa');
+    // a caixa sai da altura da mão, com um impulso para frente e um pouco para cima
+    const pos = new THREE.Vector3(p.x + (f.x / len) * 0.9, p.y + 0.9, p.z + (f.z / len) * 0.9);
+    const vel = new THREE.Vector3((f.x / len) * 3.4, 1.8, (f.z / len) * 3.4);
+    ctx.world.spawnDeathBag(pos, [stack], 'bolsa', vel);
   }
 
   function pauseGame() {
@@ -518,7 +762,7 @@ function boot(hotData = {}) {
       yaw: +c.yaw.toFixed(2), follow: !!c.follow, growth: +c.growth.toFixed(3), age: Math.round(c.age),
       hp: Math.round(c.health), name: c.name ?? null, adult: +c.adultScale.toFixed(4), saddled: !!c.saddled,
       saddle: c.saddleKind ?? null, imprint: c.imprint ?? 0, st: c.inherited ? c.stats : null, mut: c.mutations ?? 0,
-      gestation: c.gestation > 0 ? Math.round(c.gestation) : 0, unborn: c.unborn ?? null,
+      gestation: c.gestation > 0 ? Math.round(c.gestation) : 0, unborn: c.unborn ?? null, cor: c.cor ?? null,
       opts: { followDist: c.followDist, targetRange: c.targetRange, aggression: c.aggression, wander: !!c.wander, neutered: !!c.neutered },
     };
   }
@@ -532,6 +776,7 @@ function boot(hotData = {}) {
     if (t.opts) Object.assign(c, t.opts);
     c.mutations = t.mut ?? 0;
     if (t.st) c.applyStats(t.st);
+    if ('cor' in t) aplicarCor(c, t.cor); // save antigo (sem cor): fica com a sorteada agora
     if (t.gestation > 0) {
       c.gestation = t.gestation;
       c.unborn = t.unborn;
@@ -563,7 +808,7 @@ function boot(hotData = {}) {
 
   // Salva (não no co-op como convidado: o mundo é do anfitrião).
   function autosave() {
-    if (!ctx || game.state === STATE.MENU || game.playTime < 2 || ctx.creatures.netClient) return;
+    if (window.__semSalvar || !ctx || game.state === STATE.MENU || game.playTime < 2 || ctx.creatures.netClient) return;
     saveGame(gameSnapshot());
   }
   setInterval(autosave, 30000);
@@ -577,10 +822,14 @@ function boot(hotData = {}) {
       p.dismount();
       return;
     }
-    const c = ctx.creatures.findMountable(p, p.position, 5);
+    // monta o bicho que você está mirando (com sela e perto); se não mira em nenhum, o domado montável mais perto
+    const aimed = ctx.creatures.findAimed(ctx.camCtl.camera.position, ctx.camCtl.forward, 14);
+    const noOlho = aimed && aimed.tamed && aimed.owner === p && aimed.species.pode_montar && !aimed.isBaby && (aimed.saddled || !BALANCE.sela.precisa)
+      && Math.hypot(aimed.pos.x - p.position.x, aimed.pos.z - p.position.z) - aimed.radius < 6;
+    const c = noOlho ? aimed : ctx.creatures.findMountable(p, p.position, 5);
     if (c) p.mount(c);
     else if (ctx.creatures.tamedBy(p).length) {
-      const near = ctx.creatures.tamedBy(p).find((o) => o.species.pode_montar && !o.flies && Math.hypot(o.pos.x - p.position.x, o.pos.z - p.position.z) - o.radius < 5);
+      const near = ctx.creatures.tamedBy(p).find((o) => o.species.pode_montar && Math.hypot(o.pos.x - p.position.x, o.pos.z - p.position.z) - o.radius < 5);
       events.emit(EV.MESSAGE, {
         text: near && !near.saddled ? `Precisa de ${itemName(near.saddleNeed)}: crie no Inventário, segure na mão e use Interagir no bicho.` : 'Chegue perto de um bicho domado que dá para montar.',
         kind: 'info',
@@ -596,6 +845,7 @@ function boot(hotData = {}) {
     }
     if (action === 'whistle') {
       if (ctx.whistle.visible) ctx.whistle.close();
+      if (ctx.actionWheel.visible) ctx.actionWheel.close();
       else openWhistle();
       return;
     }
@@ -633,8 +883,9 @@ function boot(hotData = {}) {
     ctx.world.spawnDeathBag(position, ctx.inventory.takeAll());
     input.exitPointerLock();
     input.runToggle = false;
-    // primeiro o jogador cai (animação); depois aparece a tela de morte
-    ctx.deathPending = { cause, position, t: 1.6 };
+    // primeiro o jogador cai e a visão fica vermelha e escurece; depois aparece o mapa de respawn
+    ctx.death.startFade();
+    ctx.deathPending = { cause, position, t: 3.3 };
   });
 
   events.on(EV.RESPAWN_REQUESTED, ({ pointId }) => {
@@ -655,7 +906,7 @@ function boot(hotData = {}) {
   // Mouse solto com Esc no PC = pausa.
   document.addEventListener('pointerlockchange', () => {
     if (document.pointerLockElement || game.state !== STATE.PLAYING || game.isTouch) return;
-    if (ctx?.invScreen.visible || ctx?.creatureMenu.visible || ctx?.whistle.visible) {
+    if (ctx?.invScreen.visible || ctx?.creatureMenu.visible || ctx?.whistle.visible || ctx?.actionWheel.visible) {
       input.selfUnlock = false; // soltou com o inventário/menu aberto: tudo certo
       return;
     }
@@ -676,7 +927,8 @@ function boot(hotData = {}) {
 
   // Botão "voltar" do Android: pausa / continua.
   window.__ilhaBack = () => {
-    if (ctx?.invScreen.visible) closeInventory();
+    if (ctx?.help.visible) ctx.help.close();
+    else if (ctx?.invScreen.visible) closeInventory();
     else if (ctx?.creatureMenu.visible) ctx.creatureMenu.close();
     else if (game.state === STATE.PLAYING) pauseGame();
     else if (game.state === STATE.PAUSED) resume();
@@ -687,10 +939,12 @@ function boot(hotData = {}) {
     if (input.wasPressed('pause')) {
       // Evita pausar/despausar duas vezes quando o Esc também solta o mouse.
       const justUnlocked = performance.now() - input.lastUnlockTime < 300;
-      if (ctx.mapScreen.visible) ctx.mapScreen.hide();
+      if (ctx.help.visible) ctx.help.close();
+      else if (ctx.mapScreen.visible) ctx.mapScreen.hide();
       else if (ctx.invScreen.visible) closeInventory();
       else if (ctx.creatureMenu.visible) ctx.creatureMenu.close();
       else if (ctx.whistle.visible) ctx.whistle.close();
+      else if (ctx.actionWheel.visible) ctx.actionWheel.close();
       else if (game.state === STATE.PLAYING) pauseGame();
       else if (game.state === STATE.PAUSED && !justUnlocked) resume();
     }
@@ -709,12 +963,69 @@ function boot(hotData = {}) {
     }
     if (ctx.mapScreen.visible) ctx.mapScreen.update(ctx.player, ctx.camCtl.yaw);
     if (input.wasPressed('camera')) settings.set('cameraMode', ctx.camCtl.mode === 'primeira' ? 'terceira' : 'primeira');
+    // montou: vai para a 3ª pessoa (para ver o bicho); desceu: volta para a que estava. O botão de câmera troca quando quiser.
+    const riding = !!ctx.player.riding;
+    if (riding !== !!ctx._riding) {
+      ctx._riding = riding;
+      if (riding) {
+        ctx._camBefore = ctx.camCtl.mode;
+        if (ctx.camCtl.mode !== 'terceira') settings.set('cameraMode', 'terceira');
+      } else if (ctx._camBefore) {
+        settings.set('cameraMode', ctx._camBefore);
+        ctx._camBefore = null;
+      }
+    }
     for (let i = 0; i < 8; i++) if (input.wasPressed(`slot${i + 1}`)) ctx.actions.pressHotbar(i);
     if (input.wasPressed('build')) events.emit(EV.MESSAGE, { text: COMING_SOON.build, kind: 'info' });
     if (input.wasPressed('mount')) toggleMount();
   }
 
   // ---------- Qualidade automática ----------
+  // Tela preta: depois de alguns segundos desenhando, lê alguns pontos do quadro. Se estão todos
+  // pretos, o aparelho não aceitou algum efeito: avisa e oferece o modo seguro.
+  let _frames = 0;
+  let _blackHits = 0;
+  function checkBlackFrame() {
+    _frames++;
+    if (_frames !== 150 && _frames !== 400 && _frames !== 900) return;
+    try {
+      const gl = renderer.getContext();
+      const px = new Uint8Array(4);
+      const w = gl.drawingBufferWidth;
+      const h = gl.drawingBufferHeight;
+      let lit = 0;
+      for (let j = 1; j <= 5; j++) {
+        for (let i = 1; i <= 7; i++) {
+          gl.readPixels(Math.floor((w * i) / 8), Math.floor((h * j) / 6), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+          if (px[0] + px[1] + px[2] > 12) lit++;
+        }
+      }
+      _blackHits = lit === 0 ? _blackHits + 1 : 0;
+      if (_blackHits >= 1) window.__ilhaFail?.('tela preta', `o quadro desenhado está todo preto (${w}x${h}, qualidade ${settings.get('quality')})`);
+    } catch (e) {
+      console.warn('[Ilha] checkBlackFrame', e);
+    }
+  }
+
+  // Quem anda empurra a grama e as plantas baixas: o jogador e os bichos mais perto.
+  const _pushers = [];
+  function updatePushers(focus) {
+    _pushers.length = 0;
+    _pushers.push({ x: focus.x, z: focus.z, r: 1.5, w: 1 });
+    const cand = [];
+    for (const c of ctx.creatures.list) {
+      if (!c.alive || !c.mesh) continue;
+      const p = c.mesh.position;
+      const d = Math.hypot(p.x - focus.x, p.z - focus.z);
+      if (d > 32) continue;
+      if (p.y - ctx.world.heightAt(p.x, p.z) > 3) continue; // voando: não encosta no mato
+      cand.push({ d, x: p.x, z: p.z, r: Math.min(7, 1.3 + ((c.bodyFront ?? 1) + (c.bodyBack ?? 1)) * (c.scale ?? 1) * 0.4) });
+    }
+    cand.sort((a, b) => a.d - b.d);
+    for (let i = 0; i < Math.min(cand.length, 6); i++) _pushers.push({ x: cand[i].x, z: cand[i].z, r: cand[i].r, w: 1 });
+    setPushers(_pushers);
+  }
+
   // Se o aparelho ficar lento (menos de 22 quadros por segundo por
   // alguns segundos), baixa um nível de qualidade e avisa.
   const perf = { time: 0, frames: 0, warmup: 6 };
@@ -731,6 +1042,14 @@ function boot(hotData = {}) {
     perf.time = 0;
     perf.frames = 0;
     if (fps >= 22) return;
+    // 1º passo: grama e árvores low poly (mantém a qualidade do resto); 2º passo: desce a qualidade
+    if (!ctx.world.lowPoly && settings.get('lowPoly') === 'auto') {
+      ctx.world._autoLow = true;
+      ctx.world.setLowPoly(true);
+      perf.warmup = 4;
+      events.emit(EV.MESSAGE, { text: `Jogo lento (${Math.round(fps)} FPS): grama e árvores em low poly.`, kind: 'warn' });
+      return;
+    }
     const order = ['alta', 'media', 'baixa'];
     const i = order.indexOf(settings.get('quality'));
     if (i < 0 || i >= order.length - 1) return;
@@ -764,7 +1083,10 @@ function boot(hotData = {}) {
   });
   events.on(EV.CRAFTED, () => sound.play('criar'));
   events.on(EV.ATE, () => sound.play('comer'));
-  events.on(EV.WATER_DRUNK, () => sound.play('beber'));
+  events.on(EV.WATER_DRUNK, () => {
+    sound.play('beber');
+    ctx?.hands.drink();
+  });
   events.on(EV.PLAYER_HURT, () => sound.play('dor'));
   events.on(EV.PLAYER_DIED, () => sound.play('morte'));
   events.on(EV.LEVEL_UP, ({ level }) => {
@@ -777,8 +1099,15 @@ function boot(hotData = {}) {
       void document.body.offsetWidth;
       document.body.classList.add('level-flash');
     }
+    // aviso de nível novo no topo da tela: pontos de habilidade e os pontos de engrama exatos do ARK
     const ep = ctx?.player.stats.engramsForLevel(level) ?? 0;
-    events.emit(EV.MESSAGE, { text: `Nível ${level}! +1 habilidade e +${ep} pontos de engrama (Inventário → Criar → Aprender)`, kind: 'gain' });
+    const sp = BALANCE.habilidades.pontos_por_nivel;
+    const toast = document.createElement('div');
+    toast.className = 'levelup-toast';
+    toast.innerHTML = `<b>NÍVEL ${level}</b><span>+${sp} ponto de habilidade</span><span>+${ep} pontos de engrama</span>`;
+    ui.appendChild(toast);
+    setTimeout(() => toast.classList.add('out'), 4200);
+    setTimeout(() => toast.remove(), 4800);
   });
   events.on(EV.PLACED, ({ structure }) => {
     sound.play('colocar', structure.position);
@@ -827,6 +1156,7 @@ function boot(hotData = {}) {
   let menuAngle = 0;
   let pausedSkip = 0;
   let targetTimer = 0;
+  let estiloT = 0;
 
   function frame(now) {
     requestAnimationFrame(frame);
@@ -838,6 +1168,12 @@ function boot(hotData = {}) {
 
     handleActions();
     autoQuality(dt);
+    // estilo low-poly: liga a luz facetada no que entrou na cena (bichos, construções...)
+    estiloT -= dt;
+    if (estiloT <= 0) {
+      estiloT = 1;
+      aplicarLowPoly(scene);
+    }
     const { world, player, camCtl, interaction, hud, minimap, inspect, buildGhost, touch, debug, creatures, hands, damageNumbers, crafting, invScreen, actions } = ctx;
     const look = input.consumeLook();
     const sens = settings.get('sensitivity');
@@ -902,7 +1238,15 @@ function boot(hotData = {}) {
     }
 
     const focus = game.state === STATE.MENU ? camera.position : player.position;
+    if (ctx && game.state !== STATE.MENU) updatePushers(focus);
     world.update(dt, camera, focus);
+    // exposição do filme acompanha o sol (mais luz de dia, menos à noite) e brilho do sol na tela
+    // brilho (gamma) escolhido nas opções + ofuscamento (olhando para o sol a imagem clareia e depois o olho se adapta)
+    const bright = settings.get('brightness') ?? 1;
+    // ofuscamento mais fraco: o sol baixo (estilo Valheim) fica na frente da câmera com frequência
+    const expTarget = (world.sky.exposure ?? 1.15) * bright * (1 + 0.18 * sunGlare.dazzle * bright);
+    renderer.toneMappingExposure += (expTarget - renderer.toneMappingExposure) * Math.min(1, dt * (expTarget > renderer.toneMappingExposure ? 6 : 1.2));
+    sunGlare.update(dt, camera, world.sky, world, game.state === STATE.PLAYING && !world.cameraUnderwater, bright);
     if (game.state !== STATE.MENU) {
       hud.update(dt);
       minimap.update(dt, player, camCtl.yaw);
@@ -944,7 +1288,11 @@ function boot(hotData = {}) {
       world.torchLight.intensity = 0;
     }
     if (hands.toolKind !== toolKind) hands.setTool(toolKind);
+    player.model.setTool(toolKind);
     damageNumbers.update(dt, camera);
+    // trilha de perseguição (como no ARK): toca quando um bicho selvagem está te caçando, mais forte quanto mais perto
+    sound.setChuva(world.cameraUnderwater ? 0 : world.atmosfera?.clima.chuva ?? 0);
+    sound.setPerseguicao(game.state === STATE.PLAYING && !player.dead && !photo ? creatures.nivelPerseguicao(player) : 0);
     hands.update(dt, {
       visible: !photo && game.state === STATE.PLAYING && camCtl.mode === 'primeira' && !player.dead,
       speed: Math.hypot(player.velocity.x, player.velocity.z),
@@ -970,21 +1318,21 @@ function boot(hotData = {}) {
     }
     if (composer) composer.render(dt);
     else renderer.render(scene, camera);
+    checkBlackFrame();
     camera.rotation.z -= wob;
     debug.frame(dt);
     input.endFrame();
   }
 
-  // Dá tempo da tela "Gerando a ilha…" aparecer antes do trabalho pesado.
-  setTimeout(() => {
-    try {
-      buildGame();
-    } catch (err) {
-      console.error(err);
-      start.setLoading('Erro ao gerar a ilha');
+  // A tela inicial aparece na hora; a ilha só é gerada ao clicar em Entrar.
+  requestAnimationFrame(frame);
+  // veio de "Carregar" um espaço: entra direto no jogo
+  try {
+    if (sessionStorage.getItem('ilha-primordial:auto-continuar')) {
+      sessionStorage.removeItem('ilha-primordial:auto-continuar');
+      setTimeout(() => entrar(), 50);
     }
-    requestAnimationFrame(frame);
-  }, 50);
+  } catch { /* ok */ }
 
   // Acesso para testes automáticos e depuração.
   window.__ilha = {
@@ -998,6 +1346,8 @@ function boot(hotData = {}) {
     snapshot: () => (ctx ? gameSnapshot() : {}),
     save: () => autosave(),
     clearSave,
+    // depuração dos efeitos de imagem (testes automáticos)
+    get post() { return { composer, godrays, ao: aoPass, cinema }; },
   };
 }
 

@@ -9,10 +9,16 @@ import * as THREE from 'three';
 import { VEG_MODELOS as M1, VEG_TEXTURAS as T1, FOLHAGEM_COR } from './textures/veg_modelos.js';
 import { VEG_MODELOS2, VEG_TEXTURAS2 } from './textures/veg_modelos2.js';
 import { VEG_TRONCOS, VEG_TRONCOS_TEX } from './textures/veg_troncos.js';
+import { VEG_BL_MODELOS, VEG_BL_TEXTURAS } from './textures/veg_blender.js';
+import { VEG_CX_MODELOS, VEG_CX_TEXTURAS } from './textures/veg_caixa.js';
+import { VEG_PL_MODELOS, VEG_PL_TEXTURAS } from './textures/veg_palmas.js';
+import { VEG_CP_MODELOS, VEG_CP_TEXTURAS } from './textures/veg_copas.js';
+import { VEG_CAP_MODELOS, VEG_CAP_TEXTURAS } from './textures/veg_capim.js';
 
-const VEG_MODELOS = { ...M1, ...VEG_MODELOS2, ...VEG_TRONCOS };
-const VEG_TEXTURAS = { ...T1, ...VEG_TEXTURAS2, ...VEG_TRONCOS_TEX, folhagem_arbusto: FOLHAGEM_COR };
+const VEG_MODELOS = { ...M1, ...VEG_MODELOS2, ...VEG_TRONCOS, ...VEG_BL_MODELOS, ...VEG_CX_MODELOS, ...VEG_PL_MODELOS, ...VEG_CP_MODELOS, ...VEG_CAP_MODELOS };
+const VEG_TEXTURAS = { ...T1, ...VEG_TEXTURAS2, ...VEG_TRONCOS_TEX, ...VEG_BL_TEXTURAS, ...VEG_CX_TEXTURAS, ...VEG_PL_TEXTURAS, ...VEG_CP_TEXTURAS, ...VEG_CAP_TEXTURAS, folhagem_arbusto: FOLHAGEM_COR };
 import { addWind } from './materials.js';
+import { addLeafLight } from './foliage_texture.js';
 
 function bytes(b64) {
   const bin = atob(b64);
@@ -40,6 +46,8 @@ export function vegGeometry(key, height, wind = 0.5) {
     const [u0, v0, u1, v1] = part.uvbox;
     // tronco não balança; folhas balançam mais em cima
     const leafy = parts.length === 1 || pi > 0;
+    // cor por vértice (tons diferentes por tufo de folhas), se o modelo tiver
+    const cq = part.col ? new Uint8Array(bytes(part.col)) : null;
     for (let i = 0; i < part.n; i++) {
       const k = base + i;
       pos[k * 3] = (x0 + (q[i * 3] / 65535) * (x1 - x0)) * height;
@@ -47,6 +55,11 @@ export function vegGeometry(key, height, wind = 0.5) {
       pos[k * 3 + 2] = (z0 + (q[i * 3 + 2] / 65535) * (z1 - z0)) * height;
       uv[k * 2] = u0 + (uq[i * 2] / 65535) * (u1 - u0);
       uv[k * 2 + 1] = v0 + (uq[i * 2 + 1] / 65535) * (v1 - v0);
+      if (cq) {
+        col[k * 3] = cq[i * 3] / 255;
+        col[k * 3 + 1] = cq[i * 3 + 1] / 255;
+        col[k * 3 + 2] = cq[i * 3 + 2] / 255;
+      }
       wnd[k] = leafy ? Math.min(1, pos[k * 3 + 1] / height) * wind : 0;
     }
     g.addGroup(index.length, idx.length, pi);
@@ -91,11 +104,13 @@ export function vegMaterial(key, berry) {
       vertexColors: true,
       alphaTest: opaque ? 0 : 0.42,
       // cipós são cartões sem recorte: dos dois lados
-      side: opaque && part.tex !== 'agar_cipo' ? THREE.FrontSide : THREE.DoubleSide,
+      // troncos gerados por código ficam dos dois lados (se uma face sair virada, nunca aparece oco)
+      side: opaque && part.tex !== 'agar_cipo' && part.tex !== 'tronco_bl' && part.tex !== 'tronco_palma' ? THREE.FrontSide : THREE.DoubleSide,
     });
     // relevo (normal map), se o modelo tiver
     if (VEG_TEXTURAS[`${part.tex}_relevo`]) m.normalMap = texture(`${part.tex}_relevo`, false);
-    return addWind(m, opaque ? 0.004 : 0.01, opaque ? 0 : 0.03);
+    addWind(m, opaque ? 0.004 : 0.01, opaque ? 0 : 0.03, opaque ? 0 : 1);
+    return opaque ? m : addLeafLight(m, 0.55);
   });
   return mats.length === 1 ? mats[0] : mats;
 }

@@ -29,12 +29,13 @@ export class PlayerActions {
   }
 
   // Ferramenta em uso (ou mãos vazias).
+  // alcance de ferramenta = braço + cabo (machado ~1,5 m, lança ~1,9 m); soco 1,1 m
   get tool() {
     const s = this.inv.equipped;
     const f = s && ITEMS[s.id]?.ferramenta;
     const C = BALANCE.combate;
     if (!f) return { ...FIST, dano: C.soco_dano, alcance: C.soco_alcance_m, intervalo: C.soco_intervalo_seg };
-    return { tipo: f.tipo, dano: f.dano, alcance: f.alcance, intervalo: INTERVAL[f.tipo] ?? 0.6, id: s.id, rende: f.rende ?? 1, projetil: !!f.projetil };
+    return { tipo: f.tipo, dano: f.dano, alcance: f.projetil ? f.alcance : f.alcance * 0.55, intervalo: INTERVAL[f.tipo] ?? 0.6, id: s.id, rende: f.rende ?? 1, projetil: !!f.projetil };
   }
 
   // Munições que a arma na mão usa (arco: flechas; pistola: balas).
@@ -90,12 +91,20 @@ export class PlayerActions {
   }
 
   // Peso: até o máximo anda normal; acima anda devagar; muito acima, para.
+  // Quanto a carga atrapalha o andar (como no ARK): até metade da carga máxima não
+  // pesa nada; daí até a carga máxima vai caindo de 100% para 75% da velocidade;
+  // passou da carga máxima cai rápido até ~20% (a 150%) e acima disso não anda.
   weightFactor() {
-    const max = this.player.stats.maxWeight;
-    const w = this.inv.weight();
-    if (w <= max) return 1;
-    if (w <= max * 1.5) return 0.45;
+    const r = this.inv.weight() / this.player.stats.maxWeight;
+    if (r <= 0.5) return 1;
+    if (r <= 1) return 1 - (r - 0.5) * 0.5;
+    if (r <= 1.5) return 0.75 - (r - 1) * 1.1;
     return 0;
+  }
+
+  // Passou da carga máxima: não dá para correr.
+  overloaded() {
+    return this.inv.weight() > this.player.stats.maxWeight;
   }
 
   // ---------------------------------------------------------
@@ -118,7 +127,7 @@ export class PlayerActions {
       return;
     }
     // 2) carcaça: tirar carne, couro e ossos
-    const corpse = creatures?.findCorpse(p.position, forward, t.alcance + 0.5);
+    const corpse = creatures?.findCorpse(p.position, forward, t.alcance + 0.3);
     if (corpse) {
       p.onImpact?.(0.6);
       const got = creatures.harvestCorpse(corpse, t.tipo);
@@ -137,6 +146,24 @@ export class PlayerActions {
     }
   }
 
+  // Soco em árvore: tira uma fração da vida máxima, com um pouco de sangue na
+  // mão, e afunda a casca no lugar do golpe.
+  _punchHurt(frac, rec) {
+    const hurt = this.player.stats.max.health * frac;
+    this.player.stats.damage(hurt, 'arvore');
+    events.emit(EV.PLAYER_HURT, { amount: hurt, source: 'árvore' });
+    const pp = this.player.position;
+    this.world.effects.burst(new THREE.Vector3(pp.x + (rec.x - pp.x) * 0.75, pp.y + 1.1, pp.z + (rec.z - pp.z) * 0.75), 'sangue', 5, 1.1);
+    if (rec.r) this.world.effects.gouge(rec.x, rec.z, rec.r * 0.8, pp.y + 1.25, pp);
+  }
+
+  // Número de dano flutuando no ponto do golpe (árvore, pedra, planta).
+  _dmgNumber(rec, amount, kind) {
+    const pp = this.player.position;
+    const pos = new THREE.Vector3(pp.x + (rec.x - pp.x) * 0.8, pp.y + 1.5, pp.z + (rec.z - pp.z) * 0.8);
+    events.emit(EV.DAMAGE_NUMBER, { pos, amount, kind });
+  }
+
   // Coleta de uma planta/pedra com o modo dado (mao, machado, colher...).
   harvest(rec, mode) {
     const veg = this.world.vegetation;
@@ -144,10 +171,9 @@ export class PlayerActions {
     if (!res) return false;
     // árvore gigante: só com machado; com a mão (ou outra coisa) machuca
     if (res.so_machado && mode !== 'machado' && mode !== 'colher') {
+      this._dmgNumber(rec, 0, 'zero');
       if (mode === 'mao') {
-        const hurt = this.player.stats.max.health * BALANCE.combate.soco_arvore_dura_vida;
-        this.player.stats.damage(hurt, 'arvore');
-        events.emit(EV.PLAYER_HURT, { amount: hurt, source: 'árvore' });
+        this._punchHurt(BALANCE.combate.soco_arvore_dura_vida, rec);
       }
       events.emit(EV.MESSAGE, { text: `Ai! ${res.nome} é dura demais: precisa de um machado.`, kind: 'warn' });
       const pp = this.player.position;
@@ -158,12 +184,17 @@ export class PlayerActions {
     }
     // pedra grande: com a mão não sai nada (pedra vem das pedrinhas do chão)
     if (res.so_ferramenta && (mode === 'mao' || mode === 'colher')) {
+      if (mode === 'mao') this._dmgNumber(rec, 0, 'zero');
       if (mode === 'mao') events.emit(EV.MESSAGE, { text: `${res.nome}: precisa de picareta ou machado. Pegue pedrinhas no chão.`, kind: 'warn' });
       sound.play('pedra', new THREE.Vector3(rec.x, this.player.position.y + 1, rec.z), { volume: 0.5 });
       return false;
     }
+    // árvore fina: dá para socar e ganhar madeira e palha, mas machuca um pouco
+    if (res.soco_dano && mode === 'mao') this._punchHurt(res.soco_dano, rec);
     const table = res[mode] ?? res.mao;
     if (!table) return false;
+    // bateu (não é colher com Interagir): mostra o dano da ferramenta, como nos bichos
+    if (mode !== 'colher') this._dmgNumber(rec, this.tool.dano * (this.player.stats.damageMul ?? 1), '');
     const got = {};
     for (const [id, range] of Object.entries(table)) {
       let n = rnd(range);
@@ -173,7 +204,8 @@ export class PlayerActions {
       if (n > 0) got[id] = n;
     }
     this._give(got);
-    this.player.stats.addXP(res.xp ?? 1);
+    // XP por golpe igual ao do ARK: machado 0,3; picareta e mão 0,2 (antes era 1 a 3 por golpe)
+    this.player.stats.addXP(mode === 'machado' ? 0.3 : 0.2);
     veg.consume(rec);
     if (mode !== 'colher') this._wear();
     // coleta tem um tempinho até a próxima (e animação de pegar)
@@ -185,7 +217,7 @@ export class PlayerActions {
     if (mode === 'colher') this.player.onGather?.();
     // efeito visual
     // efeito = tipo de pedacinho (recursos.json); rochas soltam pó de pedra
-    const kind = res.efeito ?? (res.key === 'pedra' ? 'pedra' : ['arvore', 'arvore_gigante', 'tronco', 'palmeira'].includes(res.key) ? 'madeira' : 'folha');
+    const kind = res.efeito ?? (res.key === 'pedra' ? 'pedra' : ['arvore', 'arvore_mole', 'arvore_gigante', 'tronco', 'palmeira'].includes(res.key) ? 'madeira' : 'folha');
     const fx = this.player.position.clone();
     fx.x += (rec.x - fx.x) * 0.8;
     fx.z += (rec.z - fx.z) * 0.8;
@@ -195,7 +227,7 @@ export class PlayerActions {
     if (kind === 'madeira') {
       this.world.effects.burst(fx.clone().setY(fx.y + 3), 'folha', 6, 1.5);
       // marca de corte na casca, do lado de quem bateu
-      if (['arvore', 'arvore_gigante', 'palmeira'].includes(res.key) && rec.r) {
+      if (['arvore', 'arvore_mole', 'arvore_gigante', 'palmeira'].includes(res.key) && rec.r) {
         this.world.effects.gouge(rec.x, rec.z, rec.r * 0.8, this.player.position.y + 1.25, this.player.position);
       }
       shakeAt(rec.x, rec.z, 1);
@@ -208,7 +240,7 @@ export class PlayerActions {
   // Colher (botão Interagir) a planta mais perto na frente.
   findHarvestable(forward) {
     const p = this.player.position;
-    return this.world.vegetation.findTarget(p.x, p.z, forward.x, forward.z, 2.4, true, p.y);
+    return this.world.vegetation.findTarget(p.x, p.z, forward.x, forward.z, 1.5, true, p.y);
   }
 
   colher(rec) {
@@ -268,13 +300,19 @@ export class PlayerActions {
     st.food = Math.min(st.max.food, st.food + (c.fome ?? 0));
     st.water = Math.min(st.max.water, st.water + (c.sede ?? 0));
     st.stamina = Math.max(0, Math.min(st.max.stamina, st.stamina + (c.stamina ?? 0)));
-    if (c.vida > 0) st.health = Math.min(st.max.health, st.health + c.vida);
+    // comer sempre cura um pouco: o valor "vida" do alimento, ou uma parte da fome que ele mata
+    const heal = c.vida != null ? Math.max(0, c.vida) : (c.fome ?? 0) * S.cura_por_fome;
+    const before = st.health;
+    if (heal > 0) st.health = Math.min(st.max.health, st.health + heal);
     if (c.vida < 0) st.damage(-c.vida, 'comida');
+    if (c.enjoo) st.sick = { dps: c.enjoo.dano_seg, left: c.enjoo.seg };
+    const healed = Math.round(st.health - before);
     this.inv.takeFrom(i, 1);
     events.emit(EV.ATE, { id: s.id });
     const verb = def.tipo === 'consumivel' ? 'Usou' : 'Comeu';
-    events.emit(EV.MESSAGE, { text: `${verb}: ${itemName(s.id)}`, kind: 'info' });
+    events.emit(EV.MESSAGE, { text: `${verb}: ${itemName(s.id)}${healed > 0 ? ` (+${healed} Vida)` : ''}`, kind: 'info' });
     if (s.id === 'baga_escura') events.emit(EV.MESSAGE, { text: 'Você ficou sonolento…', kind: 'warn' });
+    if (c.enjoo) events.emit(EV.MESSAGE, { text: 'Você ficou enjoado: vai perdendo vida aos poucos…', kind: 'warn' });
     return true;
   }
 

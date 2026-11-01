@@ -445,29 +445,6 @@ export const MODELS = {
     extras: [...eyes(0.07, 2.47, -1.2, 0.022)],
   },
 
-  // -------------------------------------------------- Capivara
-  capivara: {
-    body: 'quad',
-    colors: { top: '#7c5a38', belly: '#a07c56', pattern: '#5a3e24' },
-    skin: 'pelo', pattern: { type: 'mosqueado', freq: 12, strength: 0.3 },
-    spine: [
-      [0, 0.52, 0.64, 0.12, 1, 'hips'],
-      [0, 0.55, 0.45, 0.33, 0.95, 'hips'],
-      [0, 0.55, 0.0, 0.36, 0.95, 'chest'],
-      [0, 0.58, -0.4, 0.28, 1, 'neck'],
-      [0, 0.6, -0.6, 0.22, 1.1, 'head'],
-      [0, 0.55, -0.84, 0.16, 1.0, 'head'],
-    ],
-    legs: [
-      ...pair('trás', 'hips', [0.2, 0.4, 0.3], [0.22, 0.25, 0.38], [0.22, 0.08, 0.3], [0.22, 0.0, 0.22], [0.12, 0.07, 0.05], 0),
-      ...pair('frente', 'chest', [0.18, 0.38, -0.25], [0.2, 0.22, -0.27], [0.2, 0.07, -0.25], [0.2, 0.0, -0.32], [0.09, 0.06, 0.05], 0.25),
-    ],
-    extras: [
-      ...eyes(0.14, 0.72, -0.66, 0.025),
-      { type: 'ellipsoid', bone: 'head', p: [0.12, 0.82, -0.52], r: [0.04, 0.05, 0.03], color: '#5a3e28' },
-      { type: 'ellipsoid', bone: 'head', p: [-0.12, 0.82, -0.52], r: [0.04, 0.05, 0.03], color: '#5a3e28' },
-    ],
-  },
 
   // -------------------------------------------------- Espinossauro
   espinossauro: {
@@ -500,32 +477,6 @@ export const MODELS = {
     ],
   },
 
-  // -------------------------------------------------- Dilofossauro
-  dilofossauro: {
-    body: 'biped',
-    colors: { top: '#5c7436', belly: '#e2d6a2', pattern: '#233012' },
-    skin: 'escamas', pattern: { type: 'manchas', freq: 11, strength: 0.75 }, teeth: { n: 9, size: 0.05 },
-    spine: [
-      [0, 1.35, 2.7, 0.04, 1, 'tail3'],
-      [0, 1.3, 1.8, 0.11, 1, 'tail2'],
-      [0, 1.28, 0.85, 0.21, 1, 'tail1'],
-      [0, 1.27, 0.1, 0.34, 1, 'hips'],
-      [0, 1.3, -0.55, 0.32, 1, 'chest'],
-      [0, 1.62, -1.0, 0.15, 1, 'neck'],
-      [0, 1.85, -1.2, 0.16, 1, 'head'],
-      [0, 1.8, -1.55, 0.11, 0.85, 'head'],
-      [0, 1.72, -1.82, 0.05, 0.8, 'head'],
-    ],
-    legs: [
-      ...pair('perna', 'hips', [0.22, 1.2, 0.1], [0.26, 0.72, -0.18], [0.26, 0.26, 0.15], [0.26, 0.0, -0.1], [0.15, 0.09, 0.06], 0),
-      ...pair('braco', 'chest', [0.22, 1.2, -0.6], [0.27, 0.95, -0.68], [0.27, 0.82, -0.9], [0.27, 0.78, -1.0], [0.06, 0.05, 0.04], 0),
-    ],
-    extras: [
-      ...eyes(0.1, 1.93, -1.3, 0.025),
-      { type: 'ellipsoid', bone: 'head', p: [0.07, 2.08, -1.42], r: [0.025, 0.14, 0.32], color: '#d0522a', pele: { type: 'listras', freq: 30, color: '#f0c040', strength: 0.7 } },
-      { type: 'ellipsoid', bone: 'head', p: [-0.07, 2.08, -1.42], r: [0.025, 0.14, 0.32], color: '#d0522a', pele: { type: 'listras', freq: 30, color: '#f0c040', strength: 0.7 } },
-    ],
-  },
 
   // -------------------------------------------------- Compsognato
   compsognato: {
@@ -579,58 +530,7 @@ export const MODELS = {
     ],
   },
 
-  // -------------------------------------------------- Onça-pintada
-  onca: {
-    body: 'quad',
-    colors: { top: '#cc9238', belly: '#efe1c0', pattern: '#1a120c' },
-    skin: 'pelo', pattern: { type: 'rosetas', freq: 15, strength: 0.95 }, claws: false,
-    spine: [
-      [0, 0.78, 1.75, 0.035, 1, 'tail3'],
-      [0, 0.62, 1.3, 0.055, 1, 'tail2'],
-      [0, 0.68, 0.8, 0.085, 1, 'tail1'],
-      [0, 0.72, 0.42, 0.24, 1.0, 'hips'],
-      [0, 0.75, -0.25, 0.27, 1.05, 'chest'],
-      [0, 0.85, -0.62, 0.16, 1, 'neck'],
-      [0, 0.9, -0.8, 0.17, 1, 'head'],
-      [0, 0.84, -1.0, 0.1, 0.85, 'head'],
-    ],
-    legs: [
-      ...pair('trás', 'hips', [0.15, 0.65, 0.4], [0.17, 0.4, 0.52], [0.17, 0.15, 0.42], [0.17, 0.0, 0.32], [0.11, 0.07, 0.05], 0),
-      ...pair('frente', 'chest', [0.14, 0.62, -0.32], [0.16, 0.35, -0.3], [0.16, 0.1, -0.32], [0.16, 0.0, -0.4], [0.09, 0.06, 0.05], 0.25),
-    ],
-    extras: [
-      ...eyes(0.08, 0.97, -0.92, 0.02),
-      { type: 'cone', bone: 'head', base: [0.1, 1.02, -0.76], tip: [0.12, 1.12, -0.74], r: 0.045, color: '#8a6428' },
-      { type: 'cone', bone: 'head', base: [-0.1, 1.02, -0.76], tip: [-0.12, 1.12, -0.74], r: 0.045, color: '#8a6428' },
-      { type: 'ellipsoid', bone: 'head', p: [0, 0.8, -1.05], r: [0.05, 0.035, 0.03], color: '#2a1e14' },
-    ],
-  },
 
-  // -------------------------------------------------- Aranha-gigante
-  aranha: {
-    body: 'spider',
-    colors: { top: '#2a221c', belly: '#4a3a2a', pattern: '#9a7430', limbs: '#2e2620' },
-    skin: 'pelo', pattern: { type: 'listras', count: 6, strength: 0.55 }, claws: false,
-    spine: [
-      [0, 1.05, 1.35, 0.08, 1, 'tail1'],
-      [0, 1.1, 0.95, 0.55, 0.85, 'tail1'],
-      [0, 0.95, 0.35, 0.45, 0.85, 'hips'],
-      [0, 0.82, -0.15, 0.36, 0.8, 'chest'],
-      [0, 0.76, -0.52, 0.28, 0.8, 'head'],
-      [0, 0.7, -0.74, 0.1, 0.8, 'head'],
-    ],
-    legs: [0, 1, 2, 3].flatMap((k) => pair(`pata${k}`, 'chest',
-      [0.22, 0.8, -0.35 + k * 0.16], [0.85, 1.3, -0.5 + k * 0.32 + (k - 1.5) * 0.15],
-      [1.35, 0.55, -0.55 + k * 0.38 + (k - 1.5) * 0.3], [1.5, 0.0, -0.6 + k * 0.42 + (k - 1.5) * 0.35],
-      [0.07, 0.05, 0.035], k % 2 ? 0.5 : 0, '#2e2620')),
-    extras: [
-      ...eyes(0.08, 0.88, -0.72, 0.035),
-      { type: 'ellipsoid', bone: 'head', p: [0.13, 0.92, -0.66], r: [0.025, 0.025, 0.025], color: '#a01810' },
-      { type: 'ellipsoid', bone: 'head', p: [-0.13, 0.92, -0.66], r: [0.025, 0.025, 0.025], color: '#a01810' },
-      { type: 'cone', bone: 'head', base: [0.07, 0.68, -0.78], tip: [0.05, 0.42, -0.86], r: 0.04, color: '#1a1412' },
-      { type: 'cone', bone: 'head', base: [-0.07, 0.68, -0.78], tip: [-0.05, 0.42, -0.86], r: 0.04, color: '#1a1412' },
-    ],
-  },
 
   // -------------------------------------------------- Piranha-gigante
   piranha: {
@@ -656,32 +556,6 @@ export const MODELS = {
     ],
   },
 
-  // -------------------------------------------------- Arara
-  arara: {
-    body: 'flyer',
-    colors: { top: '#c4282a', belly: '#c4282a', pattern: '#c4282a' },
-    skin: 'penas',
-    radial: 8,
-    spine: [
-      [0, 0, 0.3, 0.02, 1, 'tail1'],
-      [0, 0, 0.18, 0.07, 1, 'hips'],
-      [0, 0, 0.0, 0.1, 1, 'chest'],
-      [0, 0.08, -0.15, 0.07, 1, 'neck'],
-      [0, 0.12, -0.24, 0.08, 1, 'head'],
-      [0, 0.07, -0.34, 0.03, 1, 'head'],
-    ],
-    wings: [
-      { name: 'asaE', points: [[0.06, 0.02, -0.04], [0.3, 0.04, -0.06], [0.6, 0, 0.08], [0.3, 0, 0.18], [0.05, 0, 0.15]], armR: 0.012, color: '#2a5ab8' },
-      { name: 'asaD', points: [[-0.06, 0.02, -0.04], [-0.3, 0.04, -0.06], [-0.6, 0, 0.08], [-0.3, 0, 0.18], [-0.05, 0, 0.15]], armR: 0.012, color: '#2a5ab8' },
-    ],
-    extras: [
-      ...eyes(0.05, 0.15, -0.27, 0.012),
-      { type: 'ellipsoid', bone: 'tail1', p: [0, 0, 0.55], r: [0.05, 0.015, 0.3], color: '#2a5ab8' },
-      { type: 'ellipsoid', bone: 'tail1', p: [0, 0.01, 0.45], r: [0.035, 0.015, 0.22], color: '#e8c030' },
-      { type: 'ellipsoid', bone: 'head', p: [0, 0.14, -0.21], r: [0.06, 0.05, 0.05], color: '#f0e8e0' },
-      { type: 'cone', bone: 'head', base: [0, 0.08, -0.3], tip: [0, 0.0, -0.38], r: 0.03, color: '#2a2420' },
-    ],
-  },
 
   // -------------------------------------------------- Mamute-lanoso
   // (o modelo importado substitui a malha; aqui ficam ossos e pernas)
@@ -764,6 +638,124 @@ export const MODELS = {
       { type: 'ellipsoid', bone: 'head', p: [0, 3.5, -4.0], r: [0.35, 0.3, 0.7], color: '#c8a050' },
     ],
   },
+};
+
+// -------------------------------------------------------------
+// ESPÉCIES NOVAS (feitas a partir das formas já existentes, com outras cores e enfeites).
+// Mudar o comprimento_m no criaturas.json muda o tamanho do bicho; aqui só a forma e a cor.
+// -------------------------------------------------------------
+const semCor = (extras, ...cores) => extras.filter((e) => !cores.includes(e.color));
+
+// Dilofossauro: raptor esverdeado com duas cristas vermelhas e um leque preto no pescoço
+MODELS.dilofossauro = {
+  ...MODELS.raptor,
+  colors: { top: '#7d8c3a', belly: '#e4dba8', pattern: '#25301a' },
+  pattern: { type: 'listras', count: 12, strength: 0.6 },
+  extras: [
+    ...semCor(MODELS.raptor.extras, '#7a2c18'),
+    { type: 'ellipsoid', bone: 'head', p: [0.07, 1.64, -0.98], r: [0.02, 0.1, 0.34], color: '#c23a1e' },
+    { type: 'ellipsoid', bone: 'head', p: [-0.07, 1.64, -0.98], r: [0.02, 0.1, 0.34], color: '#c23a1e' },
+    { type: 'ellipsoid', bone: 'neck', p: [0.13, 1.34, -0.84], r: [0.035, 0.15, 0.16], color: '#242424' },
+    { type: 'ellipsoid', bone: 'neck', p: [-0.13, 1.34, -0.84], r: [0.035, 0.15, 0.16], color: '#242424' },
+  ],
+};
+
+// Iguanodonte: andador pesado de corpo horizontal, pescoço curto, bico de pato e braços fortes com esporão no polegar
+MODELS.iguanodonte = {
+  body: 'biped',
+  colors: { top: '#6b6a3a', belly: '#d6cba0', pattern: '#33301a' },
+  skin: 'escamas', pattern: { type: 'listras', count: 9, strength: 0.5 },
+  spine: [
+    [0, 1.9, 3.5, 0.06, 1, 'tail3'],
+    [0, 1.95, 2.6, 0.2, 1, 'tail2'],
+    [0, 2.0, 1.5, 0.42, 1, 'tail1'],
+    [0, 2.1, 0.4, 0.72, 1.1, 'hips'],
+    [0, 2.1, -0.75, 0.7, 1.05, 'chest'],
+    [0, 2.35, -1.55, 0.32, 1, 'neck'],
+    [0, 2.7, -2.0, 0.26, 1.05, 'head'],
+    [0, 2.62, -2.5, 0.2, 0.9, 'head'],
+    [0, 2.52, -2.95, 0.1, 0.8, 'head'],
+  ],
+  legs: [
+    ...pair('perna', 'hips', [0.5, 1.95, 0.1], [0.58, 1.2, 0.35], [0.58, 0.45, 0.0], [0.58, 0.0, -0.28], [0.34, 0.2, 0.14], 0),
+    ...pair('braco', 'chest', [0.5, 1.75, -0.9], [0.55, 1.3, -1.15], [0.55, 0.95, -1.35], [0.55, 0.85, -1.5], [0.14, 0.1, 0.06], 0),
+  ],
+  extras: [
+    ...eyes(0.2, 2.78, -2.2, 0.045),
+    { type: 'ellipsoid', bone: 'head', p: [0, 2.5, -2.9], r: [0.2, 0.05, 0.22], color: '#c9b06a' },
+    { type: 'ellipsoid', bone: 'chest', p: [0, 2.85, -0.4], r: [0.07, 0.12, 0.9], color: '#4f4e2a' },
+    { type: 'cone', bone: 'bracoE_pe', base: [0.55, 0.86, -1.5], tip: [0.7, 0.95, -1.75], r: 0.04, color: '#2a2420' },
+    { type: 'cone', bone: 'bracoD_pe', base: [-0.55, 0.86, -1.5], tip: [-0.7, 0.95, -1.75], r: 0.04, color: '#2a2420' },
+  ],
+};
+
+// Dimetrodonte: réptil baixo e comprido com a grande vela nas costas
+MODELS.dimetrodonte = {
+  ...MODELS.deinosuchus,
+  colors: { top: '#a8612f', belly: '#e0c690', pattern: '#4a2a12' },
+  pattern: { type: 'listras', count: 10, strength: 0.6 },
+  teeth: { n: 8, size: 0.05 },
+  extras: [
+    ...semCor(MODELS.deinosuchus.extras, '#2e3424'),
+    // vela: lâminas altas e finas, mais altas no meio
+    ...[[-1.15, 0.75, 'chest'], [-0.75, 1.0, 'chest'], [-0.35, 1.2, 'chest'], [0.05, 1.25, 'hips'], [0.45, 1.15, 'hips'], [0.85, 0.9, 'hips'], [1.2, 0.6, 'tail1']].map(([z, h, bone]) => ({
+      type: 'ellipsoid', bone, p: [0, 1.15 + h * 0.55, z], r: [0.04, h * 0.6, 0.22], color: h > 1 ? '#d0482a' : '#c25f2c', pele: { type: 'listras', freq: 10, color: '#6a2a14', strength: 0.5 },
+    })),
+  ],
+};
+
+// Kentrossauro: estegossauro pequeno e ágil, cor de terra
+MODELS.kentrossauro = {
+  ...MODELS.estegossauro,
+  colors: { top: '#8a6a3c', belly: '#d8c490', pattern: '#3a2a14' },
+  pattern: { type: 'manchas', freq: 7, strength: 0.55 },
+};
+
+// Moschops: réptil-mamífero baixo e atarracado, corpo de barril, cabeça grossa com testa saliente e cauda curta
+MODELS.moschops = {
+  body: 'quad',
+  colors: { top: '#8a7a52', belly: '#d8cca0', pattern: '#4a3d24' },
+  skin: 'escamas', pattern: { type: 'listras', count: 9, strength: 0.5 },
+  spine: [
+    [0, 0.55, 1.5, 0.04, 1, 'tail3'],
+    [0, 0.62, 1.0, 0.14, 1, 'tail2'],
+    [0, 0.7, 0.55, 0.26, 1, 'tail1'],
+    [0, 0.78, 0.1, 0.42, 1.05, 'hips'],
+    [0, 0.78, -0.5, 0.44, 1.05, 'chest'],
+    [0, 0.74, -1.0, 0.28, 1, 'neck'],
+    [0, 0.7, -1.3, 0.3, 1, 'head'],
+    [0, 0.62, -1.65, 0.2, 0.9, 'head'],
+    [0, 0.55, -1.9, 0.09, 0.85, 'head'],
+  ],
+  legs: [
+    ...pair('trás', 'hips', [0.36, 0.68, 0.3], [0.6, 0.42, 0.4], [0.62, 0.12, 0.3], [0.62, 0.0, 0.08], [0.16, 0.12, 0.08], 0),
+    ...pair('frente', 'chest', [0.36, 0.68, -0.6], [0.58, 0.42, -0.72], [0.6, 0.12, -0.62], [0.6, 0.0, -0.84], [0.14, 0.1, 0.07], 0.25),
+  ],
+  extras: [
+    ...eyes(0.2, 0.82, -1.45, 0.04),
+    { type: 'ellipsoid', bone: 'head', p: [0, 0.93, -1.3], r: [0.24, 0.13, 0.22], color: '#6e5e3e' },
+    { type: 'ellipsoid', bone: 'chest', p: [0, 1.1, -0.2], r: [0.12, 0.1, 0.7], color: '#5e4e30' },
+  ],
+};
+
+
+// Moldes de osso dos bichos que só existem como modelo importado (o jogo encaixa o esqueleto nestes moldes).
+MODELS.diplodoco = { ...MODELS.braquiossauro };
+MODELS.terizinossauro = { ...MODELS.iguanodonte, colors: { top: '#7a6a4a', belly: '#d8caa0', pattern: '#3a2e1c' } };
+
+// Paquirrinossauro: parente do triceratops sem chifres, com uma grande protuberância no nariz e gola curta
+MODELS.paquirrinossauro = {
+  ...MODELS.triceratops,
+  colors: { top: '#5c6a4a', belly: '#c9bf94', pattern: '#2c3320' },
+  pattern: { type: 'listras', count: 8, strength: 0.5 },
+  extras: [
+    ...MODELS.triceratops.extras.slice(0, 6), // olhos
+    { type: 'ellipsoid', bone: 'head', p: [0, 2.2, -2.3], r: [0.8, 0.6, 0.16], color: '#6a7a52' },
+    { type: 'cone', bone: 'head', base: [0.5, 2.55, -2.3], tip: [0.55, 3.15, -2.0], r: 0.08, color: '#e2d6b8' },
+    { type: 'cone', bone: 'head', base: [-0.5, 2.55, -2.3], tip: [-0.55, 3.15, -2.0], r: 0.08, color: '#e2d6b8' },
+    { type: 'ellipsoid', bone: 'head', p: [0, 1.95, -3.3], r: [0.3, 0.32, 0.45], color: '#8a7a5a' },
+    { type: 'cone', bone: 'head', base: [0, 1.38, -3.75], tip: [0, 1.15, -4.15], r: 0.14, color: '#2e2a22' },
+  ],
 };
 
 // Bichos com modelo animado (o formato aqui só dá o tamanho do molde e

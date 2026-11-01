@@ -44,3 +44,7 @@ pegar_*, folhas_*, madeira_*, pedra_*, colocar_*, criar_*, clique_*,
 carne_*, passo_mato_*, passo_neve_*, passo_areia_* (.ogg) vêm dos
 pacotes "RPG Audio", "Impact Sounds" e "Interface Sounds" de
 Kenney.nl, licença CC0 (domínio público). Ver LICENCA-kenney.txt.
+
+Música: musica_dia.mp3 e musica_noite.mp3 tocam em loop (troca com fade quando
+vira dia/noite). Foram compostas por tools/audio/compor_musica.py. Para usar outra
+música, é só trocar esses dois arquivos (qualquer mp3/ogg) e fazer o build.

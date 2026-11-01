@@ -20,5 +20,6 @@ for id in $IDS; do
   $PY -I "$DIR/bicho_texturas.py" "$out/rig.json" "$out/tex" "$size"
   tris=$(node -e "console.log(require('$DIR/bichos.json')['$id'].triangulos)")
   brilho=$(node -e "console.log(require('$DIR/bichos.json')['$id'].brilho ?? 1)")
-  node "$DIR/bicho_para_jogo.mjs" "$out/rig.json" "$out/tex/texturas.json" "$ROOT/src/creatures/imported/$id.js" "$tris" "$brilho"
+  sela=$(node -e "console.log(require('$DIR/bichos.json')['$id'].sela_embutida ?? '')")
+  node "$DIR/bicho_para_jogo.mjs" "$out/rig.json" "$out/tex/texturas.json" "$ROOT/src/creatures/imported/$id.js" "$tris" "$brilho" "$sela"
 done

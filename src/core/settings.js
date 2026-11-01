@@ -13,18 +13,20 @@ const SETTINGS_VERSION = 3;
 // Predefinições de qualidade gráfica.
 // lodHi/lodLo: até onde as plantas aparecem detalhadas / simples
 // (depois disso viram "cartões" leves). grassRadius: raio do mato.
+// pixelRatio 0,75 a 1: visual levemente pixelado (low-poly) e mais leve no celular.
+// post: 'none' (nada), 'grade' (cor), 'full' (cor + bloom leve), 'cinema' (alta: oclusão + bloom).
 export const QUALITY_PRESETS = {
   baixa: {
-    pixelRatio: 0.75, shadows: false, shadowMap: 512, shadowRange: 40, viewDistance: 130,
-    lodHi: 22, lodLo: 55, grassRadius: 16, grassDensity: 0.55, creatures: 45,
+    pixelRatio: 0.75, shadows: false, shadowMap: 512, shadowRange: 40, viewDistance: 115,
+    lodHi: 14, lodLo: 40, grassRadius: 16, grassDensity: 0.55, creatures: 18, drawCreatures: 70, post: 'none',
   },
   media: {
-    pixelRatio: 1.0, shadows: true, shadowMap: 1024, shadowRange: 55, viewDistance: 180,
-    lodHi: 34, lodLo: 75, grassRadius: 26, grassDensity: 1.0, creatures: 45,
+    pixelRatio: 0.9, shadows: true, shadowMap: 2048, shadowRange: 48, viewDistance: 180,
+    lodHi: 28, lodLo: 80, grassRadius: 26, grassDensity: 0.9, creatures: 32, drawCreatures: 110, post: 'full',
   },
   alta: {
-    pixelRatio: 2, shadows: true, shadowMap: 4096, shadowRange: 110, viewDistance: 320,
-    lodHi: 90, lodLo: 200, grassRadius: 55, grassDensity: 1.6, creatures: 45,
+    pixelRatio: 1.0, shadows: true, shadowMap: 4096, shadowRange: 80, viewDistance: 320,
+    lodHi: 120, lodLo: 240, grassRadius: 55, grassDensity: 1.6, creatures: 45, drawCreatures: 190, post: 'cinema',
   },
 };
 
@@ -38,9 +40,16 @@ const DEFAULTS = {
   showDebug: false,        // overlay de FPS
   smaa: true,              // suavizar bordas (SMAA)
   touchControls: 'auto',   // auto | sempre | nunca
+  touchScheme: 'gestos',   // gestos (ARK Mobile) | botoes
   cameraMode: 'primeira',  // primeira | terceira
+  cameraDist: 1.0,         // distância da câmera na 3ª pessoa (0,55 a 2): roda do mouse também muda
+  personagem: 'quadradinho', // quadradinho | realista (vale ao abrir o jogo de novo)
+  flickJump: true,         // toque: pular arrastando o dedo para cima (gesto)
+  somLeve: null,           // som leve (menos estalos em celular fraco): null = automático (liga na qualidade Baixa) | true | false
+  lowPoly: 'auto',         // grama e árvores low poly: auto (só se ficar lento) | ligado | desligado
   autoQuality: true,       // baixa a qualidade sozinho se ficar lento
   playerName: '',          // nome no co-op
+  brightness: 1.0,         // gamma/brilho da imagem (0.6 a 1.6); também muda a força do clarão do sol
   volume: 0.8,             // som (0 = mudo)
   music: 0.35,             // música de fundo (0 = sem música)
   buttonLayout: null,      // posição de cada botão de toque ({ id: [x, y] } em fração da tela) ou null = padrão

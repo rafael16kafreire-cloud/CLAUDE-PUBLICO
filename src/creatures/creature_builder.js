@@ -10,6 +10,32 @@
 //   - 1 desenho por criatura (leve para o celular)
 // =============================================================
 import * as THREE from 'three';
+import { PALETA } from '../core/paleta.js';
+
+// =============================================================
+// >>> ESTILO LOW-POLY (Etapa 3): menos lados em cada forma (o corpo fica facetado)
+//     e cores puxadas para a paleta. LOWPOLY = false volta ao modelo liso antigo.
+//     LADOS: fração dos lados de cada tubo/cilindro; ANEIS: fração dos anéis por metro.
+//     PUXA_PALETA: 0 = cor original da espécie, 1 = cor da paleta mais parecida.
+// =============================================================
+export const LOWPOLY = true;
+const LADOS = 0.5;
+const ANEIS = 0.35;
+const PUXA_PALETA = 0.55;
+const lados = (n, min = 4) => (LOWPOLY ? Math.max(min, Math.round(n * LADOS)) : n);
+
+const _PAL = Object.values(PALETA);
+/** Cor da espécie levada para perto da paleta (mais apagada e terrosa). */
+export function corDaPaleta(c) {
+  if (!LOWPOLY) return c;
+  let best = _PAL[0];
+  let bd = Infinity;
+  for (const p of _PAL) {
+    const d = (p.r - c.r) ** 2 + (p.g - c.g) ** 2 + (p.b - c.b) ** 2;
+    if (d < bd) { bd = d; best = p; }
+  }
+  return c.clone().lerp(best, PUXA_PALETA);
+}
 
 const V = (a) => new THREE.Vector3(a[0], a[1], a[2]);
 
@@ -75,10 +101,12 @@ class MeshBuilder {
   // Tubo liso ao longo de uma curva (corpo, cauda, pescoço, chifres).
   // ctrl: [{ p, r, h (achatamento), bone }]
   tube(ctrl, colorFn, radial = 10, perMeter = 7) {
+    radial = lados(radial, 5);
+    if (LOWPOLY) perMeter *= ANEIS;
     const pts = ctrl.map((c) => c.p);
     const curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal');
     const len = curve.getLength();
-    const segs = Math.max(6, Math.min(48, Math.round(len * perMeter)));
+    const segs = Math.max(LOWPOLY ? 4 : 6, Math.min(48, Math.round(len * perMeter)));
     const n = ctrl.length - 1;
     const rings = [];
     let side = new THREE.Vector3(1, 0, 0);
@@ -129,6 +157,7 @@ class MeshBuilder {
 
   // Segmento de perna/braço entre dois pontos.
   segment(a, b, r0, r1, bone, color, radial = 8) {
+    radial = lados(radial);
     const len = a.distanceTo(b);
     const g = new THREE.CylinderGeometry(r1, r0, len, radial, 1, false);
     g.translate(0, len / 2, 0);
@@ -138,12 +167,13 @@ class MeshBuilder {
   }
 
   ellipsoid(center, radii, bone, color, seg = [10, 8]) {
-    const g = new THREE.SphereGeometry(1, seg[0], seg[1]);
+    const g = LOWPOLY ? new THREE.IcosahedronGeometry(1, seg[0] > 9 ? 1 : 0) : new THREE.SphereGeometry(1, seg[0], seg[1]);
     const m = new THREE.Matrix4().compose(center, new THREE.Quaternion(), new THREE.Vector3(...radii));
     this.addGeometry(g, m, bone, color);
   }
 
   cone(base, tip, r, bone, color, radial = 8) {
+    radial = lados(radial);
     const len = base.distanceTo(tip);
     const g = new THREE.ConeGeometry(r, len, radial);
     g.translate(0, len / 2, 0);
@@ -190,10 +220,10 @@ const SKIN_TYPES = { escamas: 0, pelo: 1, penas: 2, lisa: 3 };
 
 export function buildSpeciesModel(spec) {
   const mb = new MeshBuilder();
-  const top = new THREE.Color(spec.colors.top);
-  const belly = new THREE.Color(spec.colors.belly);
-  const pattern = new THREE.Color(spec.colors.pattern ?? spec.colors.top);
-  const limbColor = spec.colors.limbs ? new THREE.Color(spec.colors.limbs) : top.clone().lerp(belly, 0.25).multiplyScalar(0.92);
+  const top = corDaPaleta(new THREE.Color(spec.colors.top));
+  const belly = corDaPaleta(new THREE.Color(spec.colors.belly));
+  const pattern = corDaPaleta(new THREE.Color(spec.colors.pattern ?? spec.colors.top));
+  const limbColor = spec.colors.limbs ? corDaPaleta(new THREE.Color(spec.colors.limbs)) : top.clone().lerp(belly, 0.25).multiplyScalar(0.92);
 
   // --- Pele e desenho da espécie ---
   const zs = spec.spine.map((s) => s[2]);
@@ -207,7 +237,7 @@ export function buildSpeciesModel(spec) {
   const ptFreq = pt.freq ?? (pt.count ? (pt.count * Math.PI * 2) / bodyLen : 6);
   const skin = SKIN_TYPES[spec.skin ?? 'escamas'] ?? 0;
   const scalesPerM = spec.scalesPerMeter ?? 9 / Math.sqrt(maxR);
-  const ptCol = pt.color ? new THREE.Color(pt.color) : pattern;
+  const ptCol = pt.color ? corDaPaleta(new THREE.Color(pt.color)) : pattern;
   const bodyPat = [ptType, ptFreq, pt.strength ?? 0.6, skin];
   const bodyPatCol = [ptCol.r, ptCol.g, ptCol.b, scalesPerM];
   const usePattern = (strengthMul = 1, skinType = skin) => {
@@ -256,7 +286,7 @@ export function buildSpeciesModel(spec) {
     if (head.length >= 2) {
       const A = head[Math.max(0, head.length - 3)];
       const B = head[head.length - 1];
-      const tooth = new THREE.Color(spec.colors.teeth ?? '#ece4cc');
+      const tooth = corDaPaleta(new THREE.Color(spec.colors.teeth ?? '#ece4cc'));
       const n = spec.teeth.n;
       const size = spec.teeth.size;
       const hb = mb.b('head');
@@ -283,7 +313,7 @@ export function buildSpeciesModel(spec) {
     const thigh = mb.bone(leg.name, parent, hip);
     const shin = mb.bone(`${leg.name}_joelho`, leg.name, knee);
     const foot = mb.bone(`${leg.name}_pe`, `${leg.name}_joelho`, ankle);
-    const col = leg.color ? new THREE.Color(leg.color) : limbColor;
+    const col = leg.color ? corDaPaleta(new THREE.Color(leg.color)) : limbColor;
     if (leg.color) plain(skin === 1 ? 1 : 0);
     else usePattern(0.8);
     // perna inteira como um tubo liso (coxa musculosa afinando até o
@@ -303,7 +333,7 @@ export function buildSpeciesModel(spec) {
     // garras / unhas na ponta
     if (spec.claws !== false && toe.y < 0.05 + r2) {
       plain(3);
-      const clawCol = new THREE.Color(spec.colors.claws ?? '#2a2520');
+      const clawCol = corDaPaleta(new THREE.Color(spec.colors.claws ?? '#2a2520'));
       const fwd = toe.clone().sub(ankle).setY(0).normalize();
       const n = spec.toes ?? 3;
       for (let k = 0; k < n; k++) {
@@ -322,13 +352,13 @@ export function buildSpeciesModel(spec) {
     const [shoulder, wrist, tip, mid, root] = wing.points.map(V);
     const wb = mb.bone(wing.name, wing.parent ?? 'chest', shoulder);
     const wr = mb.bone(`${wing.name}_punho`, wing.name, wrist);
-    const mcol = new THREE.Color(wing.color);
+    const mcol = corDaPaleta(new THREE.Color(wing.color));
     usePattern(0.6);
     mb.segment(shoulder, wrist, wing.armR, wing.armR * 0.7, wb, limbColor, 6);
     mb.segment(wrist, tip, wing.armR * 0.7, wing.armR * 0.25, wr, limbColor, 5);
     const wp = spec.wingPattern;
     if (wp) {
-      const wc = new THREE.Color(wp.color);
+      const wc = corDaPaleta(new THREE.Color(wp.color));
       mb.curPat = [PATTERN_TYPES[wp.type] ?? 4, wp.freq ?? 4, wp.strength ?? 0.5, 3];
       mb.curPatCol = [wc.r, wc.g, wc.b, scalesPerM];
     } else mb.curPat = [4, 3, 0.35, 3];
@@ -343,7 +373,7 @@ export function buildSpeciesModel(spec) {
   // --- Detalhes: olhos, crista, cúpula, bico, dentes, placas ---
   for (const e of spec.extras ?? []) {
     const bone = mb.b(e.bone);
-    const col = new THREE.Color(e.color);
+    const col = corDaPaleta(new THREE.Color(e.color));
     // e.pele: 'corpo' = mesmo desenho do corpo; ou um desenho próprio
     if (e.pele === 'corpo') usePattern(1);
     else if (e.pele && typeof e.pele === 'object') {

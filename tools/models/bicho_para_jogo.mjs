@@ -12,7 +12,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { MeshoptSimplifier } from 'meshoptimizer';
 
-const [rigPath, texPath, outPath, targetTris = '20000', brilho = '1'] = process.argv.slice(2);
+const [rigPath, texPath, outPath, targetTris = '20000', brilho = '1', selaNome = ''] = process.argv.slice(2);
 const raw = JSON.parse(readFileSync(rigPath, 'utf8'));
 const texs = JSON.parse(readFileSync(texPath, 'utf8'));
 
@@ -162,6 +162,7 @@ const clipes = raw.clipes
   }]))
   : null;
 const mats = groupTex.map(([map, normalMap, alpha]) => ({ map: dataUri(map), normalMap: dataUri(normalMap), alpha: alpha === 'true' }));
+const selaIdx = selaNome ? matOf[raw.materiais.findIndex((m) => (m.nome ?? '').includes(selaNome))] ?? -1 : -1;
 const out = `// =============================================================
 // MODELO IMPORTADO: ${info.title ?? 'modelo'} (gerado por tools/models/bichos.sh)
 // Autor: ${info.author ?? '?'}
@@ -184,6 +185,8 @@ export default {
   index32: ${index instanceof Uint32Array},
   doisLados: ${!!raw.doisLados},
   brilho: ${Number(brilho)},
+  // sela embutida no modelo: número do material que só aparece quando o bicho está selado (-1 = não tem)
+  sela: ${selaIdx},
   groups: ${JSON.stringify(groups)},
   materiais: ${JSON.stringify(mats)},
   clipes: ${JSON.stringify(clipes)},

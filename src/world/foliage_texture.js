@@ -31,26 +31,51 @@ function rand(seed) {
   };
 }
 
-// Uma folha: elipse pontuda com nervura.
+// Uma folha: elipse pontuda com gradiente (mais clara na borda), nervura
+// central e nervuras laterais finas.
 function leaf(ctx, x, y, len, wid, ang, lum, warm) {
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(ang);
-  const r = Math.round(Math.min(255, lum * (226 + warm * 22)));
-  const g = Math.round(Math.min(255, lum * 255));
-  const b = Math.round(Math.min(255, lum * (196 - warm * 30)));
-  ctx.fillStyle = `rgb(${r},${g},${b})`;
+  const shade = (k) => {
+    const r = Math.round(Math.min(255, lum * k * (226 + warm * 22)));
+    const g = Math.round(Math.min(255, lum * k * 255));
+    const b = Math.round(Math.min(255, lum * k * (196 - warm * 30)));
+    return [r, g, b];
+  };
+  const [r, g, b] = shade(1);
+  const [r2, g2, b2] = shade(0.78);
+  const grd = ctx.createLinearGradient(0, -wid, 0, wid);
+  grd.addColorStop(0, `rgb(${r},${g},${b})`);
+  grd.addColorStop(0.5, `rgb(${r2},${g2},${b2})`);
+  grd.addColorStop(1, `rgb(${r},${g},${b})`);
+  ctx.fillStyle = grd;
   ctx.beginPath();
   ctx.moveTo(0, 0);
-  ctx.quadraticCurveTo(len * 0.45, -wid, len, 0);
-  ctx.quadraticCurveTo(len * 0.45, wid, 0, 0);
+  ctx.quadraticCurveTo(len * 0.4, -wid, len, 0);
+  ctx.quadraticCurveTo(len * 0.4, wid, 0, 0);
   ctx.fill();
-  ctx.strokeStyle = `rgba(${Math.round(r * 0.7)},${Math.round(g * 0.72)},${Math.round(b * 0.6)},0.8)`;
-  ctx.lineWidth = 0.8;
+  // nervura central clara e nervuras laterais escuras
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = `rgba(${Math.min(255, r + 28)},${Math.min(255, g + 26)},${Math.min(255, b + 10)},0.85)`;
+  ctx.lineWidth = Math.max(0.7, wid * 0.11);
   ctx.beginPath();
   ctx.moveTo(1, 0);
-  ctx.lineTo(len * 0.9, 0);
+  ctx.lineTo(len * 0.92, 0);
   ctx.stroke();
+  ctx.strokeStyle = `rgba(${Math.round(r * 0.62)},${Math.round(g * 0.66)},${Math.round(b * 0.55)},0.55)`;
+  ctx.lineWidth = 0.55;
+  for (let k = 1; k <= 3; k++) {
+    const t = k * 0.22;
+    const px = len * t;
+    const py = wid * 0.55 * Math.sin(t * Math.PI);
+    ctx.beginPath();
+    ctx.moveTo(px, 0);
+    ctx.lineTo(px + len * 0.12, -py);
+    ctx.moveTo(px, 0);
+    ctx.lineTo(px + len * 0.12, py);
+    ctx.stroke();
+  }
   ctx.restore();
 }
 
@@ -85,19 +110,19 @@ export function foliageTexture() {
     ctx.stroke();
   }
   // folhas: de dentro (escuras) para fora (claras)
-  const N = 260;
+  const N = 380;
   for (let i = 0; i < N; i++) {
     const t = i / N;
     const a = R() * Math.PI * 2;
     const d = Math.sqrt(R()) * (58 + 22 * t) * (0.85 + R() * 0.2);
     const x = cx + Math.cos(a) * d;
     const y = cy + Math.sin(a) * d;
-    const len = 16 + R() * 18;
-    const wid = len * (0.28 + R() * 0.12);
+    const len = 15 + R() * 20;
+    const wid = len * (0.3 + R() * 0.14);
     // folhas apontam mais ou menos para fora do tufo
     const ang = a + (R() - 0.5) * 1.6;
     const lum = 0.5 + t * 0.35 + R() * 0.18;
-    leaf(ctx, x, y, len, wid, ang, lum, R() < 0.15 ? 1 : R() * 0.3);
+    leaf(ctx, x, y, len, wid, ang, lum, R() < 0.22 ? 1 : R() * 0.3);
   }
   // garante a borda transparente (sem "vazar" para fora do tufo)
   ctx.clearRect(250, 0, 198, 256);
@@ -121,7 +146,7 @@ export function foliageTexture() {
 
   texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
-  texture.anisotropy = 2;
+  texture.anisotropy = 4;
   texture.generateMipmaps = true;
   texture.minFilter = THREE.LinearMipmapLinearFilter;
   return texture;
@@ -154,29 +179,37 @@ function tileNoise(cellsX, cellsY, seed) {
 
 export function barkTexture() {
   if (bark) return bark;
-  const W = 128;
-  const H = 256;
+  const W = 256;
+  const H = 512;
   const data = new Uint8Array(W * H * 4);
-  // casca: muito mais detalhe na horizontal (veios em pé)
-  const n1 = tileNoise(16, 4, 11);
-  const n2 = tileNoise(32, 10, 12);
-  const n3 = tileNoise(8, 3, 13);
+  // casca: veios compridos em pé, rachaduras fundas, placas e grão fino
+  const n1 = tileNoise(24, 5, 11);
+  const n2 = tileNoise(64, 20, 12);
+  const n3 = tileNoise(10, 4, 13);
+  const n7 = tileNoise(128, 40, 17);   // grão fino
+  const n8 = tileNoise(12, 16, 18);    // placas (quebram o veio a cada tanto)
   // nervuras: linhas finas diagonais
   const n4 = tileNoise(24, 24, 14);
+  // líquen e musgo: manchas grandes e miúdas
+  const n5 = tileNoise(5, 10, 15);
+  const n6 = tileNoise(14, 26, 16);
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
       const u = x / W;
       const v = y / H;
-      const warp = (n3(u, v) - 0.5) * 0.08;
+      const warp = (n3(u, v) - 0.5) * 0.1 + (n8(u, v) - 0.5) * 0.03;
       const ridge = 1 - Math.abs(n1(u + warp, v) * 2 - 1); // 1 no meio do veio
       const fine = n2(u + warp, v);
-      let b = 0.35 + ridge * 0.5 + (fine - 0.5) * 0.3;
-      if (ridge < 0.18) b *= 0.45; // rachadura funda
+      const grain = n7(u, v);
+      const plate = n8(u, v);
+      let b = 0.3 + ridge * 0.5 + (fine - 0.5) * 0.34 + (grain - 0.5) * 0.14 + (plate - 0.5) * 0.12;
+      if (ridge < 0.2) b *= 0.4;          // rachadura funda
+      else if (ridge < 0.32) b *= 0.7;    // beira da rachadura
       const vein = 0.75 + 0.25 * Math.abs(Math.sin((u * 6 + v * 3) * Math.PI * 2)) * (0.6 + n4(u, v) * 0.4);
       const i = (y * W + x) * 4;
       data[i] = Math.max(0, Math.min(255, Math.round(b * 255)));
       data[i + 1] = Math.round(vein * 255);
-      data[i + 2] = 0;
+      data[i + 2] = Math.round(Math.min(1, n5(u, v) * 0.62 + n6(u, v) * 0.38) * 255);
       data[i + 3] = 255;
     }
   }
@@ -184,6 +217,7 @@ export function barkTexture() {
   bark.wrapS = THREE.RepeatWrapping;
   bark.wrapT = THREE.RepeatWrapping;
   bark.magFilter = THREE.LinearFilter;
+  bark.anisotropy = 4;
   bark.minFilter = THREE.LinearMipmapLinearFilter;
   bark.generateMipmaps = true;
   bark.needsUpdate = true;
@@ -211,7 +245,16 @@ export function addPlantDetail(material) {
         varying vec3 vPlantP;
         varying float vPlantW;`)
       .replace('#include <map_fragment>', `#include <map_fragment>
+        float plantLeaf = 1.0;
+        float plantBump = 0.0;
         #ifdef USE_MAP
+        if (vMapUv.x > 0.88 && vPlantW < 0.2) plantLeaf = 0.0;
+        if (plantLeaf > 0.5) {
+          // variação de cor por tufo: alguns mais amarelados, outros mais escuros
+          float hv = fract(sin(dot(floor(vPlantP * 0.9), vec3(12.9898, 78.233, 37.719))) * 43758.5453);
+          diffuseColor.rgb *= mix(vec3(0.86, 0.96, 0.88), vec3(1.18, 1.06, 0.66), smoothstep(0.6, 0.95, hv));
+          diffuseColor.rgb *= vec3(0.9, 0.98, 0.9);
+        }
         if (vMapUv.x > 0.88) {
           vec3 pp = vPlantP;
           if (vMapUv.y < 0.6) {
@@ -219,18 +262,73 @@ export function addPlantDetail(material) {
             float st = texture2D(uBark, pp.xz * 0.9 + pp.y * 0.5).r;
             diffuseColor.rgb *= mix(0.75, 1.12, st);
           } else if (vPlantW < 0.2) {
-            // casca: 5 voltas da textura em volta do tronco
+            // casca: 5 voltas da textura em volta do tronco, com líquen e musgo
             float ang = atan(pp.z, pp.x) / 6.28318;
-            float bk = texture2D(uBark, vec2(ang * 5.0, pp.y * 0.22)).r;
-            diffuseColor.rgb *= mix(0.42, 1.18, bk);
+            vec3 bt = texture2D(uBark, vec2(ang * 6.0, pp.y * 0.25)).rgb;
+            // relevo: amostra mais borrada e menos intensa (derivadas de tela dão blocos 2x2 se vierem do detalhe fino)
+            float btSoft = texture2D(uBark, vec2(ang * 6.0, pp.y * 0.25), 2.5).r;
+            vec3 base = diffuseColor.rgb * mix(0.36, 1.2, bt.r);
+            float low = 1.0 - smoothstep(0.0, 7.0, pp.y);
+            float lich = smoothstep(0.52, 0.78, bt.b);
+            base = mix(base, vec3(0.6, 0.66, 0.56) * (0.55 + 0.55 * bt.r), lich * 0.5 * (1.0 - low * 0.4));
+            float moss = smoothstep(0.42, 0.8, bt.b * (0.55 + low * 0.8));
+            base = mix(base, vec3(0.24, 0.38, 0.13) * (0.65 + 0.7 * bt.r), moss * (0.3 + low * 0.45));
+            diffuseColor.rgb = base;
+            plantBump = btSoft;
           } else {
             float vn = texture2D(uBark, pp.xz * 1.7 + pp.y * 0.3).g;
             diffuseColor.rgb *= mix(0.78, 1.1, vn);
           }
         }
+        #endif`)
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+        vec2 dHp = vec2(dFdx(plantBump), dFdy(plantBump));
+        if (plantBump > 0.0) {
+          vec3 sX = dFdx(-vViewPosition);
+          vec3 sY = dFdy(-vViewPosition);
+          vec3 R1 = cross(sY, normal);
+          vec3 R2 = cross(normal, sX);
+          float det = dot(sX, R1);
+          vec2 dH = dHp * 0.9;
+          vec3 gr = sign(det) * (dH.x * R1 + dH.y * R2);
+          normal = normalize(abs(det) * normal - gr);
+        }`)
+      .replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
+        reflectedLight.indirectDiffuse *= mix(1.0, 1.22, plantLeaf);
+        #if NUM_DIR_LIGHTS > 0
+        {
+          // luz atravessando a folha (contraluz): clareia e esquenta o verde
+          vec3 Vd = normalize(vViewPosition);
+          float tr = pow(clamp(-dot(Vd, directionalLights[0].direction), 0.0, 1.0), 2.0);
+          reflectedLight.directDiffuse += directionalLights[0].color * diffuseColor.rgb * vec3(1.0, 1.0, 0.55) * tr * 0.75 * plantLeaf;
+        }
         #endif`);
   };
   const key = material.customProgramCacheKey;
-  material.customProgramCacheKey = () => `${key ? key() : ''}-planta`;
+  material.customProgramCacheKey = () => `${key ? key() : ''}-planta6`;
+  return material;
+}
+
+// Luz atravessando as folhas, para modelos prontos com textura própria
+// (só materiais com recorte alfa = folhas).
+export function addLeafLight(material, strength = 0.6) {
+  const prev = material.onBeforeCompile;
+  material.onBeforeCompile = (shader, renderer) => {
+    prev?.(shader, renderer);
+    // folhas num verde mais fundo (menos verde-limão), como nas matas do ARK
+    shader.fragmentShader = shader.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
+        diffuseColor.rgb *= vec3(0.86, 0.93, 0.86);`);
+    shader.fragmentShader = shader.fragmentShader.replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
+        reflectedLight.indirectDiffuse *= 1.18;
+        #if NUM_DIR_LIGHTS > 0
+        {
+          vec3 Vd = normalize(vViewPosition);
+          float tr = pow(clamp(-dot(Vd, directionalLights[0].direction), 0.0, 1.0), 2.0);
+          reflectedLight.directDiffuse += directionalLights[0].color * diffuseColor.rgb * vec3(1.0, 1.0, 0.6) * tr * ${strength.toFixed(2)};
+        }
+        #endif`);
+  };
+  const key = material.customProgramCacheKey;
+  material.customProgramCacheKey = () => `${key ? key() : ''}-luzfolha3`;
   return material;
 }
