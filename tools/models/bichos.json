@@ -502,7 +502,7 @@
     "url": "https://sketchfab.com/3d-models/osprey-flying-raptor-rigged-bird-9e65ce0542a24ea388e81e3e6e9c9054"
    },
    "dois_lados": true,
-   "triangulos": 8000
+   "triangulos": 14000
   },
   "argentinossauro": {
    "credito": {
@@ -936,7 +936,7 @@
     "copyright": "CC BY 4.0",
     "url": "https://sketchfab.com/3d-models/european-dragon-82f393a2e6c048ad80c171ce3b3a7b87"
    },
-   "triangulos": 12000,
+   "triangulos": 14000,
    "mapa": {
     "hips": "DEF-Spine_02",
     "chest": "DEF-Spine004_06",

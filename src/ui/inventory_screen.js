@@ -25,6 +25,12 @@ const BOX_ICON = sv('<path d="M3 9h18v11H3zM2 5h20v4H2z M10 12.5h4v2h-4z"/>');
 const MAP_ICON = sv('<path d="M3.5 6.2l5.3-2 6.4 2.2 5.3-2v13.4l-5.3 2-6.4-2.2-5.3 2zM8.8 4.2v13.4M15.2 6.4v13.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>');
 const BOOK_ICON = sv('<path d="M4 4.5h6.8c.8 0 1.2.4 1.2 1.2V20c0-.8-.4-1.2-1.2-1.2H4zM20 4.5h-6.8c-.8 0-1.2.4-1.2 1.2V20c0-.8.4-1.2 1.2-1.2H20z"/>');
 const GEAR_ICON = sv('<path d="M10.6 2.5h2.8l.5 2.4 1.7.7 2-1.4 2 2-1.4 2 .7 1.7 2.4.5v2.8l-2.4.5-.7 1.7 1.4 2-2 2-2-1.4-1.7.7-.5 2.4h-2.8l-.5-2.4-1.7-.7-2 1.4-2-2 1.4-2-.7-1.7-2.4-.5v-2.8l2.4-.5.7-1.7-1.4-2 2-2 2 1.4 1.7-.7zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" fill-rule="evenodd"/>');
+const PAW = '<circle cx="5.6" cy="10.2" r="2.1"/><circle cx="9.6" cy="5.8" r="2.1"/><circle cx="14.6" cy="5.8" r="2.1"/><circle cx="18.6" cy="10.2" r="2.1"/><path d="M12 10.6c-3.1 0-6.2 3.1-6.2 5.7 0 1.7 1.3 2.6 3.1 2.6 1 0 2-.5 3.1-.5s2.1.5 3.1.5c1.8 0 3.1-.9 3.1-2.6 0-2.6-3.1-5.7-6.2-5.7z"/>';
+const PEOPLE_ICON = sv('<circle cx="9" cy="7.5" r="3.4"/><path d="M2.5 20c0-4 2.9-6.4 6.5-6.4s6.5 2.4 6.5 6.4z"/><circle cx="17" cy="8.5" r="2.7"/><path d="M16.5 14.1c3.2.1 5.5 2.2 5.5 5.9h-4.3c0-2.4-.5-4.2-1.2-5.9z"/>');
+const PAW_FOLDER_ICON = sv(PAW + '<path d="M13.5 16.6h3.6l.8 1h4.1v4.4h-8.5z" stroke="#0b2431" stroke-width="1"/>');
+const PAW_PLUS_ICON = sv(PAW + '<path d="M17.6 14.2h2v2.6h2.6v2h-2.6v2.6h-2v-2.6H15v-2h2.6z" stroke="#0b2431" stroke-width="1"/>');
+const WRENCH_ICON = sv('<path d="M20.7 6.4a4.8 4.8 0 0 1-6.3 5.7L6.2 20.4a2.1 2.1 0 0 1-3-3l8.3-8.2A4.8 4.8 0 0 1 17.6 3.4l-3.2 3.2.9 2.2 2.3.9z"/>');
+const LOCK_ICON = sv('<path d="M7 10V7.6a5 5 0 0 1 10 0V10h1.6v10.4H5.4V10zm2 0h6V7.6a3 3 0 0 0-6 0z" fill-rule="evenodd"/>');
 const X_ICON = sv('<path d="M5 5l14 14M19 5L5 19" stroke="currentColor" stroke-width="3" stroke-linecap="round" fill="none"/>');
 
 // ícones brancos da lista de atributos (formas como na tela do ARK)
@@ -69,7 +75,10 @@ const STATION_NAME = STATION_NAMES;
 const TYPE_LABEL = { recurso: 'Recurso', comida: 'Comida', ferramenta: 'Ferramenta', consumivel: 'Uso', estrutura: 'Estrutura', equipamento: 'Roupa', municao: 'Munição' };
 
 export class InventoryScreen {
-  constructor(root, { inventory, crafting, actions, stats, onDrop, onClose, onHelp, onPause, onMap, world, tamedCount }) {
+  constructor(root, { inventory, crafting, actions, stats, onDrop, onClose, onHelp, onPause, onMap, world, tamedCount, creatures, me, tribe }) {
+    this.creaturesOf = creatures;
+    this.meOf = me;
+    this.tribeOf = tribe;
     this.youWorld = world;
     this.youTamed = tamedCount;
     this.inv = inventory;
@@ -82,7 +91,7 @@ export class InventoryScreen {
     this.onPause = onPause;
     this.onMap = onMap;
     this.leftTab = 'inv';
-    this.rightMode = null; // null = personagem; 'item' | 'engrams' | 'box'
+    this.rightMode = null; // null = personagem; 'item' | 'engrams' | 'box' | 'tribo' | 'grupos' | 'doma' | 'caderno'
     this.selSlot = -1;
     this.selRecipe = RECIPES[0];
     this.cat = 'Tudo';
@@ -143,6 +152,9 @@ export class InventoryScreen {
           </div>
         </section>
 
+        <!-- meio, inventário duplo: ELES (a criatura) no lugar de VOCÊ -->
+        <section class="ai-mid ai-them" data-ref="midThem" hidden></section>
+
         <!-- direita: o personagem (ou Item / Engramas / Baú quando abertos) -->
         <section class="inv-right ai-right">
           <div class="ai-char" data-ref="char"><canvas data-ref="charcv" width="420" height="640"></canvas></div>
@@ -155,10 +167,15 @@ export class InventoryScreen {
             <div class="rd-actions"><button type="button" class="btn btn-small" id="box-all">Guardar tudo da mochila</button><button type="button" class="btn btn-small" id="box-take">Pegar tudo</button></div>
             <div class="inv-grid box-grid" data-ref="box"></div>
           </div>
+          <div class="tab-body ai-rbody" data-tab-body="tribo" hidden><h3 class="side-title">TRIBO</h3><div data-ref="tribo"></div></div>
+          <div class="tab-body ai-rbody" data-tab-body="grupos" hidden><h3 class="side-title">GRUPOS DE ORIENTAÇÃO</h3><p class="muted">Ordens para todos os domados de uma espécie.</p><div data-ref="grupos"></div></div>
+          <div class="tab-body ai-rbody" data-tab-body="doma" hidden><h3 class="side-title">PROGRESSO DE DOMA</h3><div data-ref="doma"></div></div>
+          <div class="tab-body ai-rbody" data-tab-body="caderno" hidden><h3 class="side-title">CADERNO</h3><textarea class="notebook" data-ref="caderno" placeholder="Anote aqui (fica salvo neste aparelho)." maxlength="4000"></textarea></div>
           <div class="tab-body ai-rbody" data-tab-body="engrams" hidden>
+            <div class="eg-top"><input type="text" class="ai-filter eg-search" data-ref="egsearch" placeholder="Buscar" autocomplete="off"><div class="eg-cats" data-ref="egcats"></div></div>
             <div class="eg-grid" data-ref="egrid"></div>
             <div class="eg-foot">
-              <span class="eg-pts">PONTOS DISPONÍVEIS: <b data-ref="egpts">0</b></span>
+              <span class="eg-pts">PONTOS DISPONÍVEIS: <b data-ref="egpts">0</b> <span class="eg-sum" data-ref="egsum"></span></span>
               <span class="eg-next" data-ref="egnext"></span>
               <div class="eg-detail" data-ref="egdetail"></div>
             </div>
@@ -168,15 +185,17 @@ export class InventoryScreen {
         <!-- embaixo: barra rápida, pontos de engrama e atalhos -->
         <div class="ai-bottom">
           <div class="inv-grid inv-hot ai-hot" data-ref="hot"></div>
-          <div class="ai-points" title="Pontos de engrama">${ICONS.engram}<b data-ref="aipts">0</b></div>
+          <div class="ai-points" title="Pontos de engrama">${WRENCH_ICON}<b data-ref="aipts">0</b></div>
           <div class="ai-icons">
             <button type="button" class="tab ai-ib" data-tab="inv" aria-label="Inventário">${ICONS.backpack}</button>
             <button type="button" class="tab ai-ib" data-tab="engrams" id="tab-engrams" aria-label="Engramas">${ICONS.engram}</button>
-            <button type="button" class="tab ai-ib" data-tab="item" aria-label="Item">${ITEM_ICON}</button>
+            <button type="button" class="tab ai-ib" data-tab="tribo" id="tab-tribo" aria-label="Tribo">${PEOPLE_ICON}</button>
+            <button type="button" class="tab ai-ib" data-tab="grupos" id="tab-grupos" aria-label="Grupos de orientação">${PAW_FOLDER_ICON}</button>
+            <button type="button" class="tab ai-ib" data-tab="doma" id="tab-doma" aria-label="Progresso de doma">${PAW_PLUS_ICON}</button>
+            <button type="button" class="tab ai-ib" data-tab="caderno" id="tab-caderno" aria-label="Caderno">${BOOK_ICON}</button>
+            <button type="button" class="ai-ib" id="ai-pause" aria-label="Configurações">${GEAR_ICON}</button>
+            <button type="button" class="tab ai-ib" data-tab="item" aria-label="Item" hidden>${ITEM_ICON}</button>
             <button type="button" class="tab ai-ib" data-tab="box" id="tab-box" aria-label="Baú" hidden>${BOX_ICON}</button>
-            <button type="button" class="ai-ib" id="ai-map" aria-label="Mapa">${MAP_ICON}</button>
-            <button type="button" class="ai-ib" id="ai-help" aria-label="Ajuda">${BOOK_ICON}</button>
-            <button type="button" class="ai-ib" id="ai-pause" aria-label="Opções">${GEAR_ICON}</button>
           </div>
         </div>
         <button type="button" class="ai-x" id="inv-close" aria-label="Fechar">${X_ICON}</button>
@@ -225,8 +244,6 @@ export class InventoryScreen {
     }));
     el.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => this.showTab(t.dataset.tab)));
     el.querySelector('#inv-close').addEventListener('click', () => this.onClose());
-    el.querySelector('#ai-map').addEventListener('click', () => this.onMap?.());
-    el.querySelector('#ai-help').addEventListener('click', () => this.onHelp?.());
     el.querySelector('#ai-pause').addEventListener('click', () => this.onPause?.());
     // lupa: mostra/esconde o campo de busca (escurece o que não combina)
     el.querySelector('#inv-search').addEventListener('click', () => {
@@ -235,6 +252,11 @@ export class InventoryScreen {
       if (!f.hidden) f.focus(); else { f.value = ''; this.refresh(); }
     });
     this.refs.filter.addEventListener('input', () => this.refresh());
+    try { this.refs.caderno.value = localStorage.getItem('ilha-primordial:caderno') ?? ''; } catch { /* sem armazenamento */ }
+    this.refs.caderno.addEventListener('input', () => { try { localStorage.setItem('ilha-primordial:caderno', this.refs.caderno.value); } catch { /* sem armazenamento */ } });
+    this.refs.caderno.addEventListener('keydown', (e) => e.stopPropagation());
+    this.refs.egsearch.addEventListener('input', () => this._renderEngrams());
+    this.refs.egsearch.addEventListener('keydown', (e) => e.stopPropagation());
     el.querySelectorAll('.sk-plus').forEach((b) => b.addEventListener('click', () => {
       if (this.stats?.spendPoint(b.dataset.skill)) this.refresh();
     }));
@@ -278,6 +300,8 @@ export class InventoryScreen {
     this.el.hidden = true;
     this.box = null;
     this.el.querySelector('#tab-box').hidden = true;
+    this.refs.midThem.hidden = true;
+    this.el.querySelector('#tab-skills-body').hidden = false;
     if (this.rightMode === 'box') this.showTab('inv');
   }
 
@@ -295,32 +319,13 @@ export class InventoryScreen {
   _renderBoxCreature() {
     const R = this.refs;
     const c = this.box?.creature;
-    R.boxCreature.hidden = !c;
+    R.boxCreature.hidden = true; // a ficha agora fica no centro (ELES)
+    this._renderThem();
     if (!c) {
       R.boxHelp.textContent = 'Toque num item da mochila para guardar; toque num item do baú para pegar.';
       return;
     }
-    const st = c.stats ?? {};
-    const linha = (rotulo, atual, max) => `<div class="bc-row"><span>${rotulo}</span><b>${atual}${max !== undefined ? ` / ${max}` : ''}</b></div>`;
-    const peso = c.inv ? Math.round(c.inv.weight() * 10) / 10 : 0;
-    const linhas = [
-      linha('Vida', Math.ceil(c.health), c.maxHealth),
-      linha('Estamina', Math.round(c.stamina ?? st.stamina), st.stamina),
-      linha('Peso', peso, st.peso),
-      linha('Dano de combate', `${Math.round(st.forca ?? 100)}%`),
-      linha('Velocidade', `${Math.round(st.velocidade ?? 100)}%`),
-      linha('Torpor', Math.round(c.torpor ?? 0), st.torpor),
-    ];
     const taming = c.knockedOut && !c.tamed;
-    const titulo = c.tamed ? (c.name ?? c.species.nome) : `${c.species.nome} selvagem`;
-    let doma = '';
-    if (taming) {
-      const seg = Math.round(c.tameTimeLeft ?? 0);
-      doma = `<p class="bc-tame">Domando: ${Math.floor((c.tameProgress ?? 0) * 100)}% · efetividade ${Math.round((c.tameEff ?? 1) * 100)}% · faltam ${Math.floor(seg / 60)}m${String(seg % 60).padStart(2, '0')}s</p>`;
-    }
-    R.boxCreature.innerHTML = `<h3 class="bc-title">${titulo} - Nv ${c.level}</h3>
-      <p class="bc-sub">${c.sex ?? ''}${c.isBaby ? ` · ${c.stage}` : ''}${c.tamed ? '' : c.knockedOut ? ' · Inconsciente' : ''}</p>${doma}
-      <div class="bc-stats">${linhas.join('')}</div>`;
     R.boxHelp.textContent = taming
       ? `Ponha comida no inventário dele para domar (${ITEMS[c.species.comida_preferida]?.nome ?? 'comida'} é a preferida; a Ração é a melhor). Narcótico nele dá mais sono.`
       : 'Toque num item da mochila para pôr no bicho; toque num item dele para pegar.';
@@ -387,6 +392,7 @@ export class InventoryScreen {
     }
     this.tab = tab;
     if (this.rightMode === 'engrams') this._renderEngrams();
+    this._renderSide();
     this.el.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.tab === this.leftTab || t.dataset.tab === this.rightMode));
     this.el.querySelectorAll('[data-tab-body]').forEach((b) => {
       const n = b.dataset.tabBody;
@@ -450,12 +456,132 @@ export class InventoryScreen {
       ['DIA', w?.day ?? 1],
       ['HORA', hora],
       ['TEMP', `${Math.round(temp)} °C`],
-      ['BICHOS DOMADOS', this.youTamed?.() ?? 0],
+      ['TRIBO', this.tribeOf?.()?.name ?? 'Sem tribo'],
+      ['DOMADOS', `${this.youTamed?.() ?? 0}/${BALANCE.domar.limite_domados ?? 600}`],
       ['PROTEÇÃO', `${Math.round(Math.min(BALANCE.armadura.max_reducao, this.inv.armor) * 100)}%`],
       ['HIPOTÉRMICO', (st.skillValue('fortitude') + this.inv.warmth).toFixed(1)],
+      ['HIPERTÉRMICO', (this.inv.cool ?? 0).toFixed(1)],
     ];
     this.refs.youinfo.innerHTML = `<p class="you-name">Humano · Sobrevivente</p>${rows.map(([k, v]) => `<div><span>${k}:</span><b>${v}</b></div>`).join('')}`;
     this.refs.youxp.textContent = `XP: ${Math.floor(st.xp)}/${st.xpToNext()}`;
+  }
+
+  // ---------- painéis da barra de baixo: Tribo, Grupos, Doma ----------
+  _renderSide() {
+    const m = this.rightMode;
+    if (m === 'tribo') {
+      const t = this.tribeOf?.() ?? { name: 'Sem tribo', members: [] };
+      this.refs.tribo.innerHTML = `<p class="tribe-name">${t.name}</p>
+        <p class="muted">Membros (${t.members.length}):</p>
+        ${t.members.map((n) => `<div class="side-row"><span>${n}</span></div>`).join('') || '<p class="muted">Só você, por enquanto. Chame amigos no Co-op.</p>'}`;
+    } else if (m === 'grupos') {
+      this._renderGrupos();
+    } else if (m === 'doma') {
+      this._renderDoma();
+    }
+  }
+
+  // Grupos de orientação: uma linha por espécie domada, com ordens para o grupo todo.
+  _renderGrupos() {
+    const list = this.creaturesOf?.()?.tamedBy(this.meOf?.()) ?? [];
+    const by = new Map();
+    for (const c of list) {
+      if (!by.has(c.species.id)) by.set(c.species.id, []);
+      by.get(c.species.id).push(c);
+    }
+    const box = this.refs.grupos;
+    if (!by.size) {
+      box.innerHTML = '<p class="muted">Nenhum bicho domado ainda.</p>';
+      return;
+    }
+    box.innerHTML = '';
+    for (const [id, cs] of by) {
+      const row = document.createElement('div');
+      row.className = 'group-row';
+      row.innerHTML = `<b>${cs[0].species.nome} ×${cs.length}</b>
+        <span class="group-btns">
+          <button type="button" data-g="seguir">Seguir</button><button type="button" data-g="parar">Parar</button>
+          <button type="button" data-g="agressivo">Agressivo</button><button type="button" data-g="neutro">Neutro</button><button type="button" data-g="passivo">Passivo</button>
+        </span>`;
+      row.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
+        for (const c of cs) {
+          if (c.ignoreWhistle) continue;
+          if (b.dataset.g === 'seguir' || b.dataset.g === 'parar') {
+            c.follow = b.dataset.g === 'seguir';
+            c.target = null;
+            c._setState('parado');
+            c.idleFor = c.follow ? 0.5 : (c.wander ? 3 : 1e9);
+            if (!c.follow) c.home.set(c.pos.x, c.pos.z);
+          } else {
+            c.aggression = b.dataset.g;
+            if (b.dataset.g === 'passivo') c.target = null;
+          }
+        }
+        events.emit(EV.MESSAGE, { text: `${cs[0].species.nome}: ${b.textContent}`, kind: 'info' });
+      }));
+      box.appendChild(row);
+    }
+  }
+
+  // Progresso de doma: bichos selvagens desmaiados por perto, com % e tempo que falta.
+  _renderDoma() {
+    const me = this.meOf?.();
+    const list = (this.creaturesOf?.()?.list ?? []).filter((c) => c.alive && !c.tamed && c.knockedOut && c.species.pode_domar
+      && me && Math.hypot(c.pos.x - me.position.x, c.pos.z - me.position.z) < 250);
+    const box = this.refs.doma;
+    if (!list.length) {
+      box.innerHTML = '<p class="muted">Nenhum bicho sendo domado por perto. Derrube um com tranquilizante, Narcótico ou clava e ponha comida no inventário dele.</p>';
+      return;
+    }
+    box.innerHTML = list.map((c) => {
+      const seg = Math.round(c.tameTimeLeft ?? 0);
+      const pct = Math.floor((c.tameProgress ?? 0) * 100);
+      return `<div class="doma-row"><b>${c.species.nome} - Nv ${c.level}</b>
+        <div class="doma-bar"><i style="transform:scaleX(${(pct / 100).toFixed(2)})"></i></div>
+        <span>${pct}% · efetividade ${Math.round((c.tameEff ?? 1) * 100)}% · faltam ${Math.floor(seg / 60)}m${String(seg % 60).padStart(2, '0')}s</span></div>`;
+    }).join('');
+  }
+
+  // Centro do inventário duplo: ELES (a criatura), com os atributos dela.
+  _renderThem() {
+    const c = this.box?.creature;
+    const el = this.refs.midThem;
+    this.refs.midThem.hidden = !c;
+    this.el.querySelector('#tab-skills-body').hidden = !!c;
+    if (!c) return;
+    const st = c.stats ?? {};
+    const nome = c.tamed ? (c.name ?? c.species.nome) : `${c.species.nome} selvagem`;
+    const peso = c.inv ? Math.round(c.inv.weight() * 10) / 10 : 0;
+    const row = (icon, rotulo, valor, frac = 1) => `<div class="skill-row" style="--p:${(Math.max(0, Math.min(1, frac)) * 100).toFixed(1)}%"><span class="ico">${icon}</span><span class="sk-name">${rotulo}</span><b class="sk-val">${valor}</b><span class="sk-plus sk-none"></span></div>`;
+    const sela = c.saddled ? itemIcon(c.saddleKind ?? 'sela') : '';
+    const taming = c.knockedOut && !c.tamed;
+    el.innerHTML = `<h2 class="ai-title">ELES</h2>
+      <div class="them-top">
+        <button type="button" class="inv-slot eq-slot them-slot" data-them="sela" title="Sela"><span class="is-icon">${sela}</span><span class="eq-name">Sela</span></button>
+        <div class="them-name"><b>${nome}</b><span>Nv ${c.level} · ${c.sex ?? ''}${c.isBaby ? ` · ${c.stage}` : ''}</span>
+          ${taming ? `<span class="them-tame">Inconsciente · doma ${Math.floor((c.tameProgress ?? 0) * 100)}%</span>` : ''}</div>
+        <div class="inv-slot eq-slot them-slot" title="Fantasia"><span class="is-icon"></span><span class="eq-name">Fantasia</span></div>
+      </div>
+      <div class="skill-list ai-skills">
+        ${row(AI.vida, 'Saúde', `${Math.ceil(c.health)}/${c.maxHealth}`, c.health / c.maxHealth)}
+        ${row(AI.stamina, 'Estamina', `${Math.round(c.stamina ?? st.stamina)}/${st.stamina}`, (c.stamina ?? st.stamina) / st.stamina)}
+        ${row(AI.folego, 'Oxigênio', c.aquatic || c.swims ? '100/100' : '—')}
+        ${row(AI.fome, 'Comida', '—')}
+        ${row(STAT_ICONS.peso, 'Peso', `${peso}/${st.peso}`, peso / Math.max(1, st.peso))}
+        ${row(STAT_ICONS.forca, 'Dano de combate', `${Math.round(st.forca ?? 100)}%`)}
+        ${row(AI.velocidade, 'Velocidade', `${Math.round(st.velocidade ?? 100)}%`)}
+        ${row(AI.torpor, 'Torpor', `${Math.round(c.torpor ?? 0)}/${st.torpor}`, (c.torpor ?? 0) / Math.max(1, st.torpor))}
+      </div>
+      <button type="button" class="btn btn-small them-anc-btn">Mostrar ancestrais</button>
+      <div class="them-anc" ${this._ancOpen ? '' : 'hidden'}>${c.parents ? `Mãe: ${c.parents.mae} · Pai: ${c.parents.pai}` : 'Sem ancestrais registrados (nasceu selvagem).'}<br>Mutações: ${c.mutations ?? 0}/${BALANCE.cria.mutacao_limite}</div>`;
+    el.querySelector('.them-anc-btn').addEventListener('click', () => { const a = el.querySelector('.them-anc'); a.hidden = !a.hidden; this._ancOpen = !a.hidden; });
+    el.querySelector('[data-them="sela"]').addEventListener('click', () => {
+      if (!c.tamed || !c.saddled) return;
+      const kind = c.saddleKind ?? 'sela';
+      if (this.inv.add(kind, 1) < 1) return;
+      c.setSaddle(null);
+      this.refresh();
+    });
   }
 
   // ---------- Engramas: grade por nível (como no ARK) ----------
@@ -463,11 +589,30 @@ export class InventoryScreen {
     const st = this.stats;
     if (!st) return;
     this.refs.egpts.textContent = String(st.engramPoints);
+    this.refs.egsum.textContent = `(${st.engramPoints}+0)`;
     // quanto o próximo nível rende de pontos de engrama (tabela do ARK)
     this.refs.egnext.textContent = st.level >= BALANCE.nivel.max
       ? 'Nível máximo'
       : `Ao chegar no nível ${st.level + 1}: +${st.engramsForLevel(st.level + 1)} pontos`;
     const g = this.refs.egrid;
+    // abas de categoria por ícone (a primeira, o cadeado, mostra só o que ainda não aprendeu)
+    const cats = this.refs.egcats;
+    if (!cats.children.length) {
+      this.egCat = 'lock';
+      const ABAS = [['lock', LOCK_ICON, 'Por aprender'], ['Ferramentas', itemIcon('machado_pedra'), 'Ferramentas'], ['Armas', itemIcon('lanca'), 'Armas'],
+        ['Roupas', itemIcon('camisa_pele'), 'Roupas'], ['Estruturas', itemIcon('bancada'), 'Estruturas'], ['Construção', itemIcon('piso'), 'Construção'], ['Cura', itemIcon('bandagem'), 'Cura']];
+      for (const [k, ic, nome] of ABAS) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'eg-cat';
+        b.dataset.cat = k;
+        b.title = nome;
+        b.innerHTML = ic;
+        b.addEventListener('click', () => { this.egCat = this.egCat === k ? null : k; this._renderEngrams(); });
+        cats.appendChild(b);
+      }
+    }
+    for (const b of cats.children) b.classList.toggle('active', b.dataset.cat === this.egCat);
     if (!g.children.length) {
       const byLevel = new Map();
       for (const r of RECIPES) {
@@ -486,6 +631,7 @@ export class InventoryScreen {
           b.type = 'button';
           b.className = 'eg-tile';
           b.dataset.id = r.id;
+          b.dataset.cat = r.categoria ?? '';
           // nível mínimo ao lado de cada engrama (e o custo em pontos, como no ARK)
           b.innerHTML = `<span class="eg-lv">Nv ${r.nivel ?? 1}</span><span class="eg-cost">${r.engrama ? `✦${r.engrama}` : 'grátis'}</span><span class="eg-icon">${itemIcon(r.resultado)}</span><span class="eg-name">${itemName(r.resultado)}</span>`;
           b.addEventListener('click', () => {
@@ -503,9 +649,16 @@ export class InventoryScreen {
       const block = st.learnBlock(r);
       b.classList.toggle('known', known);
       b.classList.toggle('learnable', !known && !block);
-      b.classList.toggle('dark', !known && st.level < (r.nivel ?? 1));
+      // como no ARK: o que ainda não aprendeu aparece como silhueta preta; o aprendido, colorido e com nome
+      b.classList.toggle('dark', !known);
       b.classList.toggle('selected', r === this.selEngram);
+      const q = (this.refs.egsearch.value ?? '').trim().toLowerCase();
+      const cat = this.egCat;
+      const okCat = !cat ? true : cat === 'lock' ? !known : (r.categoria ?? '') === cat;
+      const okBusca = !q || itemName(r.resultado).toLowerCase().includes(q);
+      b.hidden = !(okCat && okBusca);
     }
+    for (const row of g.children) row.hidden = ![...row.querySelectorAll('.eg-tile')].some((t) => !t.hidden);
     const r = this.selEngram;
     const d = this.refs.egdetail;
     if (!r) {

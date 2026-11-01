@@ -418,6 +418,13 @@ function boot(hotData = {}) {
       },
       world: () => world,
       tamedCount: () => creatures.tamedBy(player).length,
+      creatures: () => creatures,
+      me: () => player,
+      // tribo: sozinho = a tribo do jogador; no co-op, quem está na partida
+      tribe: () => {
+        const nomes = ctx.net?.active ? ctx.net.playerNames : ['Você'];
+        return { name: ctx.net?.active ? `Co-op ${ctx.net.code ?? ''}`.trim() : 'Sobreviventes', members: nomes };
+      },
     });
     const help = new HelpScreen(ui);
     const pause = new PauseMenu(ui, {
@@ -1238,6 +1245,13 @@ function boot(hotData = {}) {
     if (game.state !== STATE.MENU) {
       hud.update(dt);
       // inventário de um bicho aberto: a ficha (doma, torpor, vida) vai mudando
+      if (!ctx.invScreen?.el.hidden && ['doma', 'grupos', 'tribo'].includes(ctx.invScreen.rightMode)) {
+        ctx.invScreen._sideT = (ctx.invScreen._sideT ?? 0) - dt;
+        if (ctx.invScreen._sideT <= 0) {
+          ctx.invScreen._sideT = ctx.invScreen.rightMode === 'doma' ? 0.5 : 2;
+          ctx.invScreen._renderSide();
+        }
+      }
       if (ctx.invScreen?.box?.creature && !ctx.invScreen.el.hidden) {
         ctx.invScreen._boxT = (ctx.invScreen._boxT ?? 0) - dt;
         if (ctx.invScreen._boxT <= 0) {

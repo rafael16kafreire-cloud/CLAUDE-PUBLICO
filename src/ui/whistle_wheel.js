@@ -20,6 +20,9 @@ const ITEMS = [
   { id: 'attack', label: 'Assovio Ataque Meu Alvo' },
   { id: 'neutro', label: 'Assovio Neutro' },
   { id: 'passivo', label: 'Assovio Passivo' },
+  { id: 'pouse', label: 'Pouse (Um)' },
+  { id: 'emote', label: 'Emotes' },
+  { id: 'defecar', label: 'Defecar' },
 ];
 
 export class WhistleWheel {
@@ -69,6 +72,12 @@ export class WhistleWheel {
     for (const b of this.el.querySelectorAll('.wheel-item')) b.classList.remove('escolhido');
     this.el.classList.add('abrindo');
     this._t = setTimeout(() => this.el.classList.remove('abrindo'), 480);
+    // Defecar fica acinzentado quando o bicho na mira ainda não pode (ou não tem bicho seu na mira)
+    const a = this._aimed();
+    const mine = a && a.tamed && a.owner === this.player ? a : null;
+    this.el.querySelector('[data-w="defecar"]')?.classList.toggle('disabled', !(mine && mine.time > (mine._poopAt ?? 0)));
+    this.el.querySelector('[data-w="pouse"]')?.classList.toggle('disabled', !(mine && mine.flies));
+    this.el.querySelector('[data-w="emote"]')?.classList.toggle('disabled', !mine);
   }
 
   close() {
@@ -133,6 +142,31 @@ export class WhistleWheel {
           if (id === 'passivo') c.target = null;
         }
         msg(`${near.length} bicho(s) agora ${id === 'agressivo' ? 'agressivos' : id === 'neutro' ? 'neutros' : 'passivos'}`);
+        break;
+      case 'pouse':
+        if (mine && mine.flies) {
+          mine.follow = false;
+          mine.landed = true;
+          mine.target = null;
+          msg(`${mine.name ?? mine.species.nome}: pousando`);
+        } else msg('Mire num bicho seu que voa para mandar pousar.');
+        break;
+      case 'emote':
+        if (mine) {
+          sound.creature(mine, 'chamado');
+          mine.clipPlayer?.play('rugido');
+          mine.roarT = 1;
+          msg(`${mine.name ?? mine.species.nome} chamou`);
+        } else msg('Mire num bicho seu para usar o emote.');
+        break;
+      case 'defecar':
+        if (mine && mine.time > (mine._poopAt ?? 0)) {
+          mine._poopAt = mine.time + 120; // só de novo depois de 2 minutos
+          const at = { x: mine.pos.x + Math.sin(mine.yaw) * mine.bodyBack * mine.scale, y: mine.pos.y + 0.3, z: mine.pos.z + Math.cos(mine.yaw) * mine.bodyBack * mine.scale };
+          mine.world.effects?.burst(at, 'poeira', 8, 1.6);
+          sound.play('pisada', at, { volume: 0.4 });
+          msg(`${mine.name ?? mine.species.nome} fez o seu serviço`);
+        } else msg('Ele ainda não pode defecar.');
         break;
       case 'attack':
         if (!aimed || aimed.tamed || !aimed.alive) {

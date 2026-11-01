@@ -21,6 +21,6 @@ console.log(JSON.stringify({credito:c.credito,...g}))" > "$out/base.json"
   $PY -I "$DIR/glb_config.py" "$out/cru" "$out/ossos.json" "$out/base.json" "$out/config.json"
   $PY -I "$DIR/bicho_animado_rig.py" "$out/cru" "$out/ossos.json" "$out/config.json" "$out/rig.json"
   cfg() { node -e "const c=require('$out/config.json');console.log(c.$1 ?? '$2')"; }
-  $PY -I "$DIR/bicho_texturas.py" "$out/rig.json" "$out/tex" "$(cfg textura 640)"
-  node "$DIR/bicho_para_jogo.mjs" "$out/rig.json" "$out/tex/texturas.json" "$ROOT/src/creatures/imported/$id.js" "$(cfg triangulos 8000)" "$(cfg brilho 1)"
+  $PY -I "$DIR/bicho_texturas.py" "$out/rig.json" "$out/tex" "$(cfg textura 1024)"
+  node "$DIR/bicho_para_jogo.mjs" "$out/rig.json" "$out/tex/texturas.json" "$ROOT/src/creatures/imported/$id.js" "$(cfg triangulos 14000)" "$(cfg brilho 1)"
 done

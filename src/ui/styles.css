@@ -2405,3 +2405,32 @@ body.inv-open #ui > .hud, body.inv-open #ui > .hotbar, body.inv-open #ui > .hud-
 .hud-collect-track { width: min(220px, 40vw); height: 10px; border: 1px solid rgba(111, 224, 255, 0.7); background: rgba(4, 30, 46, 0.7); }
 .hud-collect-track i { display: block; height: 100%; background: linear-gradient(#5fe9ff, #1fa6c4); transform-origin: left; transition: transform 0.12s linear; }
 .hud-collect span { font: 700 16px var(--font-ui); color: #fff; text-shadow: 0 1px 3px #000; min-width: 3ch; }
+
+/* ---- menus do ARK Mobile (guia v2): tribo, grupos, doma, caderno, ELES, engramas ---- */
+.side-title { margin: 0 0 8px; font: 800 20px var(--font-ui); letter-spacing: 0.06em; color: #bff1ff; }
+.tribe-name { margin: 0 0 6px; font: 700 22px var(--font-ui); color: #fff; }
+.side-row, .doma-row, .group-row { padding: 7px 9px; margin-bottom: 5px; background: rgba(20, 90, 118, 0.45); border: 1px solid rgba(110, 215, 245, 0.28); font-size: 14px; display: grid; gap: 4px; }
+.doma-bar { height: 8px; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(110, 215, 245, 0.35); }
+.doma-bar i { display: block; height: 100%; background: #c38cff; transform-origin: left; }
+.group-btns { display: flex; flex-wrap: wrap; gap: 4px; }
+.group-btns button { padding: 4px 9px; font: 700 12px var(--font-ui); color: #fff; background: rgba(10, 110, 140, 0.8); border: 1px solid rgba(160, 235, 255, 0.5); cursor: pointer; }
+.notebook { width: 100%; height: 62%; min-height: 120px; resize: none; padding: 8px; font: 500 15px var(--font-ui); color: #eaf9ff; background: rgba(4, 30, 46, 0.7); border: 1px solid rgba(110, 215, 245, 0.4); }
+.ai-them .them-top { display: grid; grid-template-columns: 56px 1fr 56px; gap: 6px; align-items: center; margin: 4px 0 8px; }
+.them-slot { width: 56px; height: 56px; overflow: hidden; }
+.them-slot .eq-name { font-size: 9.5px !important; letter-spacing: 0; }
+.them-slot .is-icon { width: 70%; height: 70%; }
+.them-name { display: grid; gap: 1px; text-align: center; }
+.them-name b { font: 800 16px var(--font-ui); color: #fff; text-transform: uppercase; }
+.them-name span { font-size: 12px; opacity: 0.85; }
+.them-tame { color: #e9a4ff; }
+.them-anc-btn { margin-top: 8px; }
+.them-anc { margin-top: 6px; padding: 6px 8px; font-size: 12.5px; background: rgba(20, 90, 118, 0.45); }
+.eg-top { display: grid; gap: 6px; margin-bottom: 6px; }
+.eg-cats { display: flex; gap: 3px; }
+.eg-cat { flex: 1; height: 38px; display: grid; place-items: center; background: rgba(10, 70, 96, 0.7); border: 1px solid rgba(110, 215, 245, 0.35); color: #bff1ff; cursor: pointer; padding: 3px; }
+.eg-cat svg, .eg-cat .item-png { width: 26px; height: 26px; }
+.eg-cat.active { background: rgba(20, 130, 168, 0.95); border-color: #eaf9ff; }
+.eg-sum { opacity: 0.8; font-weight: 600; }
+.ark-inv .ai-points svg { color: #41f061; }
+
+.wheel-item.disabled { opacity: 0.35; filter: grayscale(1); pointer-events: none; }
