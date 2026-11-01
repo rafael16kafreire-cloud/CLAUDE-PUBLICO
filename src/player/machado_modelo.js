@@ -62,7 +62,7 @@ function materiais() {
   // pedra: cinza-azulada com manchas, riscos claros e grãos
   const pedra = canvasTex(256, (g, N) => {
     const r = rng(5);
-    g.fillStyle = '#6c7078';
+    g.fillStyle = '#585a5e';
     g.fillRect(0, 0, N, N);
     for (let i = 0; i < 160; i++) {
       const x = r() * N;
@@ -94,16 +94,16 @@ function materiais() {
   // fibra trançada: diagonais finas
   const fibra = canvasTex(128, (g, N) => {
     const r = rng(3);
-    g.fillStyle = '#b79c64';
+    g.fillStyle = '#8c7648';
     g.fillRect(0, 0, N, N);
     for (let i = -N; i < N * 2; i += 5) {
-      g.strokeStyle = `rgba(${95 + r() * 40},${72 + r() * 30},${36 + r() * 20},0.6)`;
+      g.strokeStyle = `rgba(${70 + r() * 30},${52 + r() * 24},${28 + r() * 16},0.6)`;
       g.lineWidth = 2;
       g.beginPath();
       g.moveTo(i, 0);
       g.lineTo(i + N * 0.6, N);
       g.stroke();
-      g.strokeStyle = 'rgba(230,208,150,0.4)';
+      g.strokeStyle = 'rgba(190,168,118,0.35)';
       g.lineWidth = 1;
       g.beginPath();
       g.moveTo(i + 2, 0);
@@ -143,73 +143,98 @@ function cabo(altura, topo) {
   return geo;
 }
 
-// Lâmina de sílex lascado: perfil de machado, com fio fino na frente e faces facetadas.
+// Cabeça de sílex lascado: cunha de verdade. Grossa atrás (onde encosta no cabo), abre em leque
+// e termina num fio fino e curvo na frente. Faces facetadas pelas lascas, cada uma com sua luz.
 function lamina(yc) {
-  const sh = new THREE.Shape();
-  // perfil visto de lado: x = frente(-)/trás(+), y = para cima
-  sh.moveTo(0.05, -0.045);
-  sh.lineTo(0.055, 0.0);
-  sh.lineTo(0.05, 0.05);
-  sh.lineTo(-0.01, 0.062);
-  sh.lineTo(-0.085, 0.092);
-  sh.lineTo(-0.118, 0.05);
-  sh.lineTo(-0.128, 0.0);
-  sh.lineTo(-0.115, -0.055);
-  sh.lineTo(-0.075, -0.09);
-  sh.lineTo(-0.005, -0.06);
-  sh.closePath();
-  const geo = new THREE.ExtrudeGeometry(sh, { depth: 0.034, bevelEnabled: true, bevelThickness: 0.014, bevelSize: 0.012, bevelSegments: 2, curveSegments: 1 });
-  geo.translate(0, 0, -0.017); // centra a espessura
-  geo.rotateY(Math.PI / 2); // espessura passa para o eixo X; frente fica em -Z
-  geo.translate(0, yc, 0);
-  // afina para o fio: quanto mais à frente (z negativo), mais fina a lâmina
-  const p = geo.attributes.position;
+  const NU = 13; // de trás para frente
+  const NV = 11; // de baixo para cima
   const r = rng(21);
-  for (let i = 0; i < p.count; i++) {
-    const z = p.getZ(i);
-    const k = THREE.MathUtils.clamp((-z - 0.01) / 0.11, 0, 1);
-    p.setX(i, p.getX(i) * (1 - 0.86 * k * k));
-  }
-  const ni = geo.toNonIndexed(); // faces separadas: cada lasca com sua luz
-  const q = ni.attributes.position;
   const jit = new Map();
-  for (let i = 0; i < q.count; i++) { // lascas: empurra cada ponto um pouquinho (igual para pontos iguais)
-    const key = `${q.getX(i).toFixed(4)},${q.getY(i).toFixed(4)},${q.getZ(i).toFixed(4)}`;
-    if (!jit.has(key)) jit.set(key, [(r() - 0.5) * 0.007, (r() - 0.5) * 0.007, (r() - 0.5) * 0.007]);
-    const j = jit.get(key);
-    q.setXYZ(i, q.getX(i) + j[0], q.getY(i) + j[1], q.getZ(i) + j[2]);
+  const J = (u, v, s) => {
+    const k = `${u},${v},${s}`;
+    if (!jit.has(k)) jit.set(k, [(r() - 0.5), (r() - 0.5), (r() - 0.5)]);
+    return jit.get(k);
+  };
+  const pt = (i, j, s) => {
+    const u = i / NU;
+    const v = j / NV;
+    const w = 2 * v - 1; // -1 (baixo) .. 1 (cima)
+    const hh = 0.032 + 0.058 * Math.pow(u, 0.85); // meia altura: abre em leque
+    const bulge = 0.036 * u * u * (1 - w * w); // o fio sai mais para a frente no meio (curvo)
+    const z = THREE.MathUtils.lerp(0.032, -0.15, u) - bulge + 0.012 * u * Math.abs(w) ** 3;
+    const y = yc + w * hh;
+    // espessura: grossa atrás e no meio, some no fio e nas pontas de cima/baixo
+    const t = (0.021 * Math.pow(1 - u, 1.15) + 0.0025) * Math.pow(Math.max(0, 1 - w * w), 0.55);
+    // lascas: ondas cruzadas + sorteio por ponto (igual nos dois lados do mesmo ponto)
+    const j3 = J(i, j, 0);
+    const fl = 0.0022 * Math.sin(u * 17 + w * 7 + 1.3) * (1 - u * 0.6) + 0.0016 * Math.sin(u * 9 - w * 13);
+    const x = s * (t + fl * (t > 0.004 ? 1 : 0.2));
+    return [x + j3[0] * 0.0014, y + j3[1] * 0.004, z + j3[2] * 0.004];
+  };
+  const P = [];
+  const idx = [];
+  const id = {};
+  const add = (i, j, s) => {
+    const k = `${i},${j},${s}`;
+    if (id[k] === undefined) { id[k] = P.length / 3; P.push(...pt(i, j, s)); }
+    return id[k];
+  };
+  const quad = (a, b, c, d, flip) => (flip ? idx.push(a, c, b, b, c, d) : idx.push(a, b, c, b, d, c));
+  for (const s of [-1, 1]) {
+    for (let i = 0; i < NU; i++) {
+      for (let j = 0; j < NV; j++) quad(add(i, j, s), add(i + 1, j, s), add(i, j + 1, s), add(i + 1, j + 1, s), s < 0);
+    }
   }
+  // fecha as bordas (atrás, fio, embaixo, em cima) ligando as duas faces
+  for (let j = 0; j < NV; j++) {
+    quad(add(0, j, -1), add(0, j + 1, -1), add(0, j, 1), add(0, j + 1, 1), false);
+    quad(add(NU, j, -1), add(NU, j, 1), add(NU, j + 1, -1), add(NU, j + 1, 1), false);
+  }
+  for (let i = 0; i < NU; i++) {
+    quad(add(i, 0, -1), add(i, 0, 1), add(i + 1, 0, -1), add(i + 1, 0, 1), false);
+    quad(add(i, NV, -1), add(i + 1, NV, -1), add(i, NV, 1), add(i + 1, NV, 1), false);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(P, 3));
+  geo.setIndex(idx);
+  const ni = geo.toNonIndexed();
   ni.computeVertexNormals();
-  // UV por posição (a textura de pedra não estica)
+  const q = ni.attributes.position;
   const uv = new Float32Array(q.count * 2);
   for (let i = 0; i < q.count; i++) {
-    uv[i * 2] = q.getZ(i) * 5 + q.getX(i) * 3;
-    uv[i * 2 + 1] = q.getY(i) * 5;
+    uv[i * 2] = q.getZ(i) * 6 + q.getX(i) * 4;
+    uv[i * 2 + 1] = q.getY(i) * 6;
   }
   ni.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
   return ni;
 }
 
-// Voltas de fibra: hélice em volta do cabo + duas voltas cruzadas pela cabeça.
-function amarracao(y0, y1) {
+// Amarração: voltas bem apertadas em volta do cabo e da base da cabeça, mais duas voltas cruzadas
+// por cima, e uma pontinha de corda sobrando.
+function amarracao(yc) {
   const g = new THREE.Group();
   const M = materiais();
+  const y0 = yc - 0.062;
+  const y1 = yc + 0.05;
   const pts = [];
-  const voltas = 8;
-  for (let i = 0; i <= voltas * 14; i++) {
-    const t = i / (voltas * 14);
+  const voltas = 13;
+  for (let i = 0; i <= voltas * 16; i++) {
+    const t = i / (voltas * 16);
     const a = t * voltas * Math.PI * 2;
-    pts.push(new THREE.Vector3(Math.cos(a) * 0.0285, y0 + (y1 - y0) * t, Math.sin(a) * 0.0285));
+    pts.push(new THREE.Vector3(Math.cos(a) * 0.031, y0 + (y1 - y0) * t + 0.0015 * Math.sin(a * 3), -0.002 + Math.sin(a) * 0.04));
   }
-  g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 140, 0.0056, 5, false), M.fibra));
-  for (const s of [-1, 1]) { // cruzadas passando pelos dois lados da lâmina
+  g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), voltas * 16, 0.0042, 5, false), M.fibra));
+  for (const s of [-1, 1]) { // voltas em X por cima da cabeça
     const c = [];
-    for (let i = 0; i <= 24; i++) {
-      const a = (i / 24) * Math.PI * 2;
-      c.push(new THREE.Vector3(Math.cos(a) * 0.04 * (0.6 + 0.4 * Math.abs(Math.sin(a))), (y0 + y1) / 2 + s * 0.016 + Math.sin(a * 2) * 0.012, Math.sin(a) * 0.05));
+    for (let i = 0; i <= 28; i++) {
+      const a = (i / 28) * Math.PI * 2;
+      c.push(new THREE.Vector3(Math.cos(a) * 0.033, yc + s * 0.02 * Math.cos(a) + s * 0.004, -0.002 + Math.sin(a) * 0.042));
     }
-    g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(c, true), 48, 0.0048, 5, true), M.fibra));
+    g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(c, true), 56, 0.0036, 5, true), M.fibra));
   }
+  // pontinha solta
+  const tail = new THREE.CatmullRomCurve3([new THREE.Vector3(0.03, y1, 0.0), new THREE.Vector3(0.05, y1 - 0.02, 0.012), new THREE.Vector3(0.056, y1 - 0.06, 0.02), new THREE.Vector3(0.05, y1 - 0.09, 0.016)]);
+  g.add(new THREE.Mesh(new THREE.TubeGeometry(tail, 12, 0.0035, 4, false), M.fibra));
   return g;
 }
 
@@ -217,11 +242,11 @@ export function makeAxe() {
   const M = materiais();
   const g = new THREE.Group();
   g.name = 'MachadoPedra';
-  const altura = 0.64;
-  const topo = 0.47;
-  const haste = new THREE.Mesh(cabo(altura, topo), M.madeira);
-  const head = new THREE.Mesh(lamina(topo - 0.02), M.pedra);
-  g.add(haste, head, amarracao(topo - 0.075, topo + 0.035).translateY(0));
+  const altura = 0.7;
+  const topo = 0.5; // altura do centro da cabeça
+  const haste = new THREE.Mesh(cabo(altura, topo + 0.03), M.madeira);
+  const head = new THREE.Mesh(lamina(topo), M.pedra);
+  g.add(haste, head, amarracao(topo));
   g.traverse((o) => { if (o.isMesh) o.castShadow = false; });
   return g;
 }
