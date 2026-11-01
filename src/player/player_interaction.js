@@ -195,6 +195,7 @@ export class PlayerInteraction {
 
   // Comida que o jogador tem para dar: a preferida; senão outra do mesmo tipo.
   _tameFoodFor(c) {
+    if (this.inv.count('racao') > 0) return 'racao'; // a Ração serve para qualquer bicho e é a melhor
     const fav = c.species.comida_preferida;
     if (this.inv.count(fav) > 0) return fav;
     const carn = c.species.dieta === 'carnivoro';

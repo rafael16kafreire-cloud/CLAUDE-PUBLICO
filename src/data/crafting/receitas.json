@@ -140,7 +140,12 @@
    "tempo": 5,
    "xp": 12,
    "categoria": "Estruturas",
-   "ingredientes": {"madeira": 30, "pedra": 30, "couro": 10, "fibra": 20},
+   "ingredientes": {
+    "madeira": 30,
+    "pedra": 30,
+    "couro": 10,
+    "fibra": 20
+   },
    "nivel": 1,
    "engrama": 0
   },
@@ -1149,6 +1154,22 @@
     "couro": 380,
     "fibra": 200,
     "lingote_metal": 50
+   }
+  },
+  {
+   "id": "racao",
+   "resultado": "racao",
+   "quantidade": 2,
+   "tempo": 5,
+   "xp": 4,
+   "categoria": "Cura",
+   "nivel": 15,
+   "engrama": 6,
+   "estacao": "pilao",
+   "ingredientes": {
+    "carne_assada": 1,
+    "baga_mejo": 10,
+    "fibra": 5
    }
   }
  ]

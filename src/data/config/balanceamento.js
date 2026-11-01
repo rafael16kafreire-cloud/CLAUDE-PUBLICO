@@ -269,6 +269,9 @@ export default {
     torpor_cai_seg: 0.03,      // acordado: torpor cai X do máximo por segundo
     desmaio_cai_seg: 0.0065,   // desmaiado: cai X do máximo por segundo (~2,5 min)
     comer_a_cada_seg: 7,       // come uma comida a cada X s (devagar, como no ARK)
+    racao_vale: 2,             // a Ração vale X comidas preferidas e não baixa a efetividade
+    efetividade_por_comida: 0.015, // cada mordida de comida preferida baixa a efetividade (ARK)
+    efetividade_outra_comida: 0.04, // comida que não é a preferida baixa mais
     comidas_base: 10,          // comidas preferidas para domar no nível 1
     comidas_por_nivel: 0.5,    // + X por nível (nível 30 pede ~25 comidas = 3 min: precisa de narcótico)
     comida_qualquer: 0.25,     // comida que não é a preferida vale isso

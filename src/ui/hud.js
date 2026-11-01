@@ -206,7 +206,8 @@ export class Hud {
       const pct = (c.tameProgress ?? 0) * 100;
       const eff = c.tameEff ?? 1;
       R.teff.textContent = `Efetividade da doma: ${(eff * 100).toFixed(1)}% (+${Math.floor(c.level * BALANCE.domar.bonus_niveis * eff)} Nv)`;
-      R.ttame.textContent = `Domando: ${pct.toFixed(1)}%`;
+      const seg = Math.round(c.tameTimeLeft ?? 0);
+      R.ttame.textContent = `Domando: ${pct.toFixed(1)}% · faltam ${Math.floor(seg / 60)}m${String(seg % 60).padStart(2, '0')}s`;
       R.ttamefill.style.transform = `scaleX(${Math.min(1, pct / 100).toFixed(3)})`;
     }
     const status = c.tamed ? 'Domado' : c.knockedOut ? 'Desmaiado' : (TEMPER[c.species.temperamento] ?? '');

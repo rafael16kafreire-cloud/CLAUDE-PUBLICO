@@ -128,7 +128,10 @@
    "comida": {
     "fome": 10,
     "vida": 19,
-    "enjoo": { "dano_seg": 1, "seg": 12 },
+    "enjoo": {
+     "dano_seg": 1,
+     "seg": 12
+    },
     "estraga_min": 10
    },
    "icone": {
@@ -153,6 +156,19 @@
     "forma": "carne",
     "cor": "#7a4422",
     "cor2": "#e8c898"
+   }
+  },
+  {
+   "id": "racao",
+   "nome": "Ração",
+   "tipo": "consumivel",
+   "peso": 0.1,
+   "pilha": 40,
+   "descricao": "Comida feita para domar (como a kibble do ARK). Vale 2 comidas preferidas e não baixa a efetividade da doma. Serve para qualquer bicho.",
+   "icone": {
+    "forma": "baga",
+    "cor": "#9a6a3a",
+    "cor2": "#d9b27a"
    }
   },
   {
