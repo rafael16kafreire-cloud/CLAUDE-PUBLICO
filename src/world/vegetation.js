@@ -85,6 +85,8 @@ const TYPES = {
   bananeira: { foot: 0.45, hi: P.makeBananaTree, lo: P.makeBananaTreeLow, collider: 0.22, shadow: false, scale: [0.85, 1.25], res: 'bananeira', maxDist: 110 },
   bananeira_vazia: { foot: 0.45, hi: P.makeBananaTreeEmpty, lo: P.makeBananaTreeEmptyLow, collider: 0.22, shadow: false, scale: [0.85, 1.25], res: 'planta', maxDist: 110 },
   samambaia: { hi: P.makeFern, collider: 0, shadow: false, scale: [0.8, 1.5], res: 'samambaia', maxDist: 34 },
+  // chão da selva cheio de plantinhas (só em manchas do mapa; não dá para colher, não tem colisão)
+  plantinha: { hi: P.makeFern, collider: 0, shadow: false, scale: [0.9, 1.4], res: null, maxDist: 60 },
   arbusto_mejo: { hi: () => vegGeometry('arbusto_bagas', 1.3), lo: P.makeMejoBush, mat: () => vegMaterial('arbusto_bagas', '#4b3a9a'), textured: true, collider: 0, shadow: false, scale: [0.8, 1.2], res: 'baga_mejo', maxDist: 75 },
   arbusto_escura: { hi: () => vegGeometry('arbusto_bagas', 1.3), lo: P.makeDarkBush, mat: () => vegMaterial('arbusto_bagas', '#1e1430'), textured: true, collider: 0, shadow: false, scale: [0.8, 1.2], res: 'baga_escura', maxDist: 75 },
   arbusto_frutas: { hi: () => vegGeometry('arbusto_bagas', 1.3), lo: P.makeFruitBush, mat: () => vegMaterial('arbusto_bagas', '#c0282a'), textured: true, collider: 0, shadow: false, scale: [0.8, 1.2], res: 'frutas', maxDist: 75 },
@@ -149,6 +151,7 @@ const ROCK_TOP = {
 };
 
 const CHUNK = 48;
+const SINK_S = 0.5; // segundos que o arbusto leva para afundar no chão depois de coletado
 
 class SpatialHash {
   constructor(cellSize) {
@@ -212,10 +215,10 @@ export class Vegetation {
       vertexColors: true,
       map: foliageTexture(),
       alphaTest: 0.42,
-    }), 0.012, 0.045, 1));
+    }), 0.012, 0.025, 0));
     // Modelos de média distância não têm recortes: material sem
     // "alphaTest" (a placa de vídeo descarta pixels escondidos antes).
-    this.materialSolid = addPlantDetail(addWind(new THREE.MeshLambertMaterial({ vertexColors: true, map: this.material.map }), 0.012, 0.045));
+    this.materialSolid = addPlantDetail(addWind(new THREE.MeshLambertMaterial({ vertexColors: true, map: this.material.map }), 0.012, 0.025));
 
     this._place(avoidPoints, seed);
     this._buildTypeMeshes(renderer);
@@ -233,6 +236,9 @@ export class Vegetation {
     const layers = [{ step: this.cfg.passo_m, biomas: this.cfg.biomas, under: false }];
     const sb = this.cfg.sub_bosque;
     if (sb) layers.push({ step: sb.passo_m, biomas: sb.biomas, under: true });
+    // chão cheio de plantinhas: grade fina, só nas manchas do mapa (ruído)
+    const ch = this.cfg.chao;
+    if (ch) layers.push({ step: ch.passo_m, biomas: ch.biomas, under: true, mancha: ch.mancha });
     const tmpM = new THREE.Matrix4();
     const q = new THREE.Quaternion();
     const s = new THREE.Vector3();
@@ -256,6 +262,7 @@ export class Vegetation {
         const r2 = rand();
         const r3 = rand();
         const r4 = rand();
+        if (layer.mancha && 0.5 + 0.5 * map.nRock(x * layer.mancha[0] + 71.3, z * layer.mancha[0] - 33.1) < layer.mancha[1]) continue; // fora das manchas
         const h = map.heightAt(x, z);
         const key = BIOME_KEYS[map.biomeAt(x, z)];
         // no mar só nasce coisa no fundo raso (dá para mergulhar até lá)
@@ -447,6 +454,7 @@ export class Vegetation {
   // Assim nunca há uma pausa grande quando o jogador anda ou vira (antes eram ~15 ms de uma vez
   // no computador, bem mais num celular). Com force = true faz tudo de uma vez.
   update(dt, camera, viewDistance, force = false) {
+    this.updateSinking(dt);
     this._last.t -= dt;
     if (force) this._job = null;
     if (this._job) {
@@ -620,7 +628,7 @@ export class Vegetation {
     const fx = dirX / len;
     const fz = dirZ / len;
     this.byHash.forEachNear(px, pz, reach + 3, (rec) => {
-      if (!rec.alive) return;
+      if (!rec.alive || rec.sinking !== undefined) return;
       const def = TYPES[rec.type];
       if (!def.res) return;
       const res = recursos.tipos[def.res];
@@ -672,6 +680,12 @@ export class Vegetation {
     if (res.esvazia && TYPES[res.esvazia]) {
       rec.type = res.esvazia;
       rec.cap = recursos.tipos[TYPES[res.esvazia].res]?.capacidade ?? 5;
+    } else if (res.colher && !res.so_ferramenta && !res.so_machado) {
+      // planta de colher (arbusto...): 100% coletada, afunda no chão em SINK_S e some (updateSinking)
+      rec.sinking = 0;
+      rec.respawnAt = performance.now() / 1000 + recursos.reaparece_min * 60;
+      (this.sinkList ??= []).push(rec);
+      return;
     } else {
       rec.alive = false;
       // árvore esgotada tomba de verdade (física em falling_trees.js)
@@ -680,6 +694,45 @@ export class Vegetation {
     rec.respawnAt = performance.now() / 1000 + recursos.reaparece_min * 60;
     if (!this.depleted.includes(rec)) this.depleted.push(rec);
     this._last.t = -1;
+  }
+
+  // Planta que acabou de ser coletada afunda no chão e some (SINK_S segundos).
+  // Mexe direto na matriz já enviada para a placa de vídeo (sem refazer a seleção).
+  updateSinking(dt) {
+    const list = this.sinkList;
+    if (!list?.length) return;
+    for (let i = list.length - 1; i >= 0; i--) {
+      const rec = list[i];
+      rec.sinking += dt;
+      const k = Math.min(1, rec.sinking / SINK_S);
+      const y = rec.y - k * k * (rec.scale * 1.7);
+      this.matrices[rec.id * 16 + 13] = y;
+      const ts = this.types[rec.type];
+      if (ts) {
+        for (const band of ['hi', 'lo']) {
+          const mesh = ts.meshes[band];
+          const sel = ts.sel?.[band];
+          if (!mesh || !sel) continue;
+          const n = ts.cnt?.[band] ?? 0;
+          for (let j = 0; j < n; j++) {
+            if (sel[j] === rec.id) {
+              mesh.instanceMatrix.array[j * 16 + 13] = y;
+              mesh.instanceMatrix.needsUpdate = true;
+              break;
+            }
+          }
+        }
+      }
+      if (k >= 1) {
+        // acabou: some de vez (e volta daqui a reaparece_min)
+        rec.alive = false;
+        rec.sinking = undefined;
+        this.matrices[rec.id * 16 + 13] = rec.y;
+        list.splice(i, 1);
+        if (!this.depleted.includes(rec)) this.depleted.push(rec);
+        this._last.t = -1;
+      }
+    }
   }
 
   // Esgota de vez (co-op: ao entrar numa partida em andamento).

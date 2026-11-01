@@ -319,6 +319,40 @@ export function samambaiaGigante({ seed = 1, low = false } = {}) {
 }
 
 // ------------------------------------------------------------
+// PLANTINHA: tufo rasteiro de folhas largas (o "chão cheio de plantinhas" da selva)
+// ------------------------------------------------------------
+export function plantinha({ seed = 1, brotos = 7, folhas = 5, tam = 0.55 } = {}) {
+  const M = new Malha(seed);
+  const r = M.r;
+  for (let b = 0; b < brotos; b++) {
+    // cada broto fica num ponto do tufo (um tufo cobre ~2 m² do chão)
+    const ba = r() * 6.28;
+    const bd = b === 0 ? 0 : 0.4 + r() * 1.3; // um tufo cobre ~8 m² do chão
+    const ox = Math.cos(ba) * bd;
+    const oz = Math.sin(ba) * bd;
+    for (let i = 0; i < folhas; i++) {
+      const a = (i / folhas) * 6.28 + r() * 0.7;
+      const L = tam * (0.7 + r() * 0.5);
+      const larg = L * (0.34 + r() * 0.1);
+      const subida = 0.28 + r() * 0.34; // folha mais deitada ou mais em pé
+      const dx = Math.cos(a);
+      const dz = Math.sin(a);
+      const base = [ox + dx * 0.03, 0.03, oz + dz * 0.03];
+      const meio = [ox + dx * L * 0.55, 0.03 + L * subida, oz + dz * L * 0.55];
+      const ponta = [ox + dx * L, 0.02 + L * subida * 0.9, oz + dz * L];
+      const sx = -dz * larg;
+      const sz = dx * larg;
+      const c = mix('musgo', 'folhaClara', 0.35 + r() * 0.6);
+      const c2 = mix('musgo', 'folhaClara', 0.1 + r() * 0.4);
+      // losango em duas metades (nervura no meio): bem pouco vento, só na ponta
+      M.tri(base, [meio[0] + sx, meio[1], meio[2] + sz], [meio[0] - sx, meio[1], meio[2] - sz], c2, 0, 0.25, 0.25);
+      M.tri([meio[0] + sx, meio[1], meio[2] + sz], ponta, [meio[0] - sx, meio[1], meio[2] - sz], c, 0.25, 0.5, 0.25);
+    }
+  }
+  return M.build();
+}
+
+// ------------------------------------------------------------
 // CAPIM / JUNCO / TABOA / MARGARIDA: tufos de lâminas (1 triângulo cada)
 // ------------------------------------------------------------
 export function capim({ alt = 0.8, laminas = 9, seed = 1, cores = ['musgo', 'folhaClara', 'capimSeco'], cabeca = null, flor = null, abre = 0.35, larg = 0.05 } = {}) {
@@ -564,7 +598,7 @@ export function materialLowPoly() {
         // >>> folhas: um pouco mais de luz ambiente (luz atravessando a folha)
         reflectedLight.indirectDiffuse *= 1.0 + 0.45 * clamp(vFolha, 0.0, 1.0);`);
   };
-  addWind(m, 0.012, 0.035, 1);
+  addWind(m, 0.012, 0.016, 0); // vento bem de leve e nada empurra as plantas do chão quando se passa por cima
   const k = m.customProgramCacheKey;
   m.customProgramCacheKey = () => `${k ? k() : ''}-lowpoly-veg1`;
   matVeg = m;
@@ -637,6 +671,7 @@ export function MODELOS_LOWPOLY(raizes) {
     arbusto_neve: par((x) => arbusto({ seed: 54, neve: true, folhas: ['musgoEscuro', 'pedraEscura'], raio: 0.6, ...x })),
     // capins, juncos e flores
     capim: so(() => capim({ alt: 0.8, laminas: 8, seed: 60 })),
+    plantinha: par((x) => plantinha({ seed: 70, brotos: x.low ? 4 : 7 })),
     capim_bq_a: so(() => capim({ alt: 0.9, laminas: 9, seed: 61 })),
     capim_bq_d: so(() => capim({ alt: 0.8, laminas: 8, seed: 62, cores: ['folhaClara', 'capimSeco', 'musgo'] })),
     margarida_bq: so(() => capim({ alt: 0.6, laminas: 7, seed: 63, flor: C('neve') })),

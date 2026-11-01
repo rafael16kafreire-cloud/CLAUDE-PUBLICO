@@ -77,6 +77,11 @@ export class Hud {
       </div>
 
       <p class="hud-levelup" data-ref="levelup" hidden>NOVO NÍVEL DISPONÍVEL! Acesse o inventário para aplicar!</p>
+      <!-- coleta contínua de uma planta (toque duplo): barra de progresso -->
+      <div class="hud-collect" data-ref="collect" hidden>
+        <div class="hud-collect-track"><i data-ref="collectFill"></i></div>
+        <span data-ref="collectPct">0%</span>
+      </div>
       <!-- chefe perto: nome e vida bem grandes no alto da tela -->
       <div class="hud-boss" data-ref="boss" hidden>
         <div class="hud-boss-name" data-ref="bossName"></div>
@@ -147,6 +152,14 @@ export class Hud {
     events.on(EV.INTERACT_PROMPT, (p) => this._showPrompt(p?.text ?? null, p?.key));
     // (nome do bioma na tela: desligado a pedido; o evento continua existindo)
     events.on(EV.PLAYER_HURT, () => this._hurt());
+    // barra de progresso da coleta contínua (pct null = some)
+    events.on(EV.COLLECT_PROGRESS, ({ pct }) => {
+      const R = this.refs;
+      R.collect.hidden = pct === null;
+      if (pct === null) return;
+      R.collectFill.style.transform = `scaleX(${pct.toFixed(3)})`;
+      R.collectPct.textContent = `${Math.round(pct * 100)}%`;
+    });
   }
 
   // Co-op: código e quantos jogadores (null = sozinho).

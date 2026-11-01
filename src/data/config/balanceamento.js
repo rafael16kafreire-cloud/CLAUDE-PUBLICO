@@ -313,6 +313,7 @@ export default {
   coleta: {
     intervalo_bater_seg: 0.36, // bater em árvore/pedra/planta (Atacar)
     intervalo_colher_seg: 0.36, // colher com a mão (Interagir: bagas, fibra...)
+    intervalo_auto_seg: 0.5,    // coleta contínua (toque duplo no Interagir): uma colheita a cada X s até 100%
   },
 
   combate: {

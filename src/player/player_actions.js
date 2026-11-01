@@ -28,6 +28,52 @@ export class PlayerActions {
     this.inv = inventory;
   }
 
+  // ---------------------------------------------------------
+  // Coleta contínua (toque duplo no Interagir, como no ARK Mobile): fica
+  // coletando a planta até 100% (barra de progresso). Andar, pular, bater ou
+  // se afastar cancela. No fim o arbusto afunda no chão e some.
+  // ---------------------------------------------------------
+  startAutoHarvest(rec) {
+    if (!rec || !rec.alive || rec.sinking !== undefined) return false;
+    this.auto = { rec, t: 0.15, cap0: Math.max(1, rec.cap) };
+    events.emit(EV.COLLECT_PROGRESS, { pct: 0 });
+    return true;
+  }
+
+  cancelAutoHarvest() {
+    if (!this.auto) return;
+    this.auto = null;
+    events.emit(EV.COLLECT_PROGRESS, { pct: null });
+  }
+
+  updateAutoHarvest(dt) {
+    const A = this.auto;
+    if (!A) return;
+    const p = this.player.position;
+    const v = this.player.velocity;
+    const rec = A.rec;
+    if (this.player.dead || !rec.alive || rec.sinking !== undefined
+      || Math.hypot(rec.x - p.x, rec.z - p.z) > 3.6 || Math.hypot(v.x, v.z) > 1.2 || v.y > 1) {
+      this.cancelAutoHarvest();
+      return;
+    }
+    const seg = BALANCE.coleta.intervalo_auto_seg ?? 0.5;
+    A.t -= dt;
+    if (A.t <= 0) {
+      A.t = seg;
+      this.harvest(rec, 'colher');
+    }
+    if (rec.sinking !== undefined || !rec.alive) {
+      // 100%: a barra fica cheia enquanto o arbusto afunda (0,5 s) e some junto com ele
+      events.emit(EV.COLLECT_PROGRESS, { pct: 1 });
+      this.auto = null;
+      setTimeout(() => events.emit(EV.COLLECT_PROGRESS, { pct: null }), 500);
+      return;
+    }
+    const feitos = A.cap0 - Math.max(0, rec.cap);
+    events.emit(EV.COLLECT_PROGRESS, { pct: Math.min(0.99, (feitos + 1 - Math.max(0, A.t) / seg) / A.cap0) });
+  }
+
   // Ferramenta em uso (ou mãos vazias).
   // alcance de ferramenta = braço + cabo (machado ~1,5 m, lança ~1,9 m); soco 1,1 m
   get tool() {

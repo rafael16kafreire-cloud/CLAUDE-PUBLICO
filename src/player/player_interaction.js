@@ -44,11 +44,24 @@ export class PlayerInteraction {
       this._setPrompt(this.target ? { text: this.target.text, key: this.target.key ?? 'interact' } : null);
     }
     if (this.actions) this.actions.harvestCooldown = Math.max(0, (this.actions.harvestCooldown ?? 0) - dt);
+    this._clock = (this._clock ?? 0) + dt;
+    this.actions?.updateAutoHarvest(dt);
+    if (input.wasPressed('attack') || input.wasPressed('jump')) this.actions?.cancelAutoHarvest();
     if (input.wasPressed('interact')) {
       const t = this._findTarget();
+      // toque duplo na mesma planta (0,45 s): coleta contínua até 100%
+      if (t?.kind === 'plant' && this._lastPlant === t.rec && this._clock - this._lastPlantT < 0.45 && t.rec.cap > 1) {
+        this._lastPlant = null;
+        this.actions.startAutoHarvest(t.rec);
+        return;
+      }
       // colher tem um tempinho entre uma e outra
       const wait = t?.kind === 'plant' && this.actions?.harvestCooldown > 0;
       if (t && t.key !== 'attack' && !wait) this._interact(t);
+      if (t?.kind === 'plant') {
+        this._lastPlant = t.rec;
+        this._lastPlantT = this._clock;
+      }
     }
   }
 
@@ -120,18 +133,7 @@ export class PlayerInteraction {
     // 5) Dica do que sai batendo (árvore, pedra, tronco, carcaça)
     const corpse = this.world.creatures?.findCorpse(p, f, 1.6);
     if (corpse) return { kind: 'hint', key: 'attack', text: `Bater: carne e couro (${corpse.species.nome})` };
-    const tool = this.actions.tool;
-    const hit = this.world.vegetation.findTarget(p.x, p.z, f.x, f.z, tool.alcance, false, p.y);
-    if (hit) {
-      const res = this.world.vegetation.resourceOf(hit);
-      // sem a ferramenta certa: sem aviso na tela (o golpe só mostra 0)
-      if (res.so_machado && tool.tipo !== 'machado') return null;
-      if (res.so_ferramenta && (tool.tipo === 'mao' || !res[tool.tipo])) return null;
-      const table = res[tool.tipo] ?? res.mao;
-      const names = Object.keys(table).slice(0, 2).map(itemName).join(' e ');
-      if (!names) return null;
-      return { kind: 'hint', key: 'attack', text: `${res.nome}: ${names}` };
-    }
+    // (sem dica de texto do que sai de árvore, pedra ou planta: como no ARK, só mira e bate)
     return null;
   }
 

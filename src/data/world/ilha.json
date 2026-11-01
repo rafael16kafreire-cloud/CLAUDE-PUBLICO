@@ -202,6 +202,8 @@
       "mar": { "concha": 0.03, "rocha_petroleo": 0.004 }
     },
     "_sub_bosque": "Plantas baixas do chão da mata, numa grade mais fina (passo_m menor).",
+    "_chao": "Chão cheio de plantinhas (como a selva do ARK): uma camada só disso, numa grade fina, só nas MANCHAS onde o ruído passa de mancha[1]. mancha = [escala do ruído, limite]: limite maior = manchas menores.",
+    "chao": { "passo_m": 2.5, "mancha": [0.0055, 0.42], "biomas": { "selva": { "plantinha": 0.9 }, "igapo": { "plantinha": 0.6 } } },
     "sub_bosque": {
       "passo_m": 3,
       "biomas": {

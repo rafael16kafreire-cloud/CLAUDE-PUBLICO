@@ -51,7 +51,7 @@ export class Grass {
     this.water = water;
     this.radius = 28;
     this.density = 1;
-    const material = addWind(new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }), 0.25, 0.05, 1);
+    const material = addWind(new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }), 0.07, 0.02, 0); // só o vento, bem de leve: ninguém empurra o mato ao passar
     material.userData.suave = true;
     // lâmina de um lado só desenhada dos dois lados: a luz não pode virar de cabeça para baixo atrás dela
     const prevCompile = material.onBeforeCompile;

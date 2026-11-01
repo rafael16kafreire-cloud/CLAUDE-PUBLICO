@@ -1,5 +1,5 @@
 {
- "_explicacao": "efeito = pedacinhos que voam ao bater (pedra, madeira, folha, cristal, obsidiana, agua). so_machado = só dá para tirar algo com machado (com a mão você se machuca). infinita = nunca acaba. O que cada planta/pedra dá quando você bate (mao = sem ferramenta, machado, picareta, lanca, clava) ou colhe com Interagir (colher). Valores = [mínimo, máximo] por golpe. capacidade = quantos golpes até acabar. esvazia = vira outro tipo quando acaba (ex.: arbusto sem bagas). Recursos voltam depois de 'reaparece_min' minutos, se você não estiver perto.",
+ "_explicacao": "efeito = pedacinhos que voam ao bater (pedra, madeira, folha, cristal, obsidiana, agua). so_machado = só dá para tirar algo com machado (com a mão você se machuca). infinita = nunca acaba. O que cada planta/pedra dá quando você bate (mao = sem ferramenta, machado, picareta, lanca, clava) ou colhe com Interagir (colher). Valores = [mínimo, máximo] por golpe. capacidade = quantos golpes até acabar. esvazia = vira outro tipo quando acaba (ex.: bananeira sem bananas). Planta de colher que acaba (arbustos) afunda no chão em 0,5 s e some. Recursos voltam depois de 'reaparece_min' minutos, se você não estiver perto.",
  "reaparece_min": 8,
  "tipos": {
   "arvore_mole": {
@@ -620,7 +620,6 @@
    "nome": "Arbusto de Baga-Mejo",
    "capacidade": 3,
    "xp": 1,
-   "esvazia": "arbusto",
    "mao": {
     "baga_mejo": [
      1,
@@ -646,7 +645,6 @@
    "nome": "Arbusto de Baga-Escura",
    "capacidade": 3,
    "xp": 1,
-   "esvazia": "arbusto",
    "mao": {
     "baga_escura": [
      1,
@@ -672,7 +670,6 @@
    "nome": "Arbusto de frutas",
    "capacidade": 3,
    "xp": 1,
-   "esvazia": "arbusto",
    "mao": {
     "fruta_rubra": [
      1,

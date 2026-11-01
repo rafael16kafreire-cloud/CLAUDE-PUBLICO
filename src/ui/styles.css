@@ -2399,3 +2399,9 @@ body.inv-open #ui > .hud, body.inv-open #ui > .hotbar, body.inv-open #ui > .hud-
 .bc-row { display: flex; justify-content: space-between; padding: 3px 8px; background: rgba(40, 120, 150, 0.22); border: 1px solid rgba(111, 224, 255, 0.18); font-size: 13px; }
 
 .tm-hint { margin-top: 4px; font-size: 12px; opacity: 0.85; text-align: center; }
+
+/* coleta contínua de planta: barra de progresso no meio, acima da dica */
+.hud-collect { position: absolute; left: 50%; bottom: calc(2vh + 150px); transform: translateX(-50%); display: flex; align-items: center; gap: 10px; pointer-events: none; }
+.hud-collect-track { width: min(220px, 40vw); height: 10px; border: 1px solid rgba(111, 224, 255, 0.7); background: rgba(4, 30, 46, 0.7); }
+.hud-collect-track i { display: block; height: 100%; background: linear-gradient(#5fe9ff, #1fa6c4); transform-origin: left; transition: transform 0.12s linear; }
+.hud-collect span { font: 700 16px var(--font-ui); color: #fff; text-shadow: 0 1px 3px #000; min-width: 3ch; }

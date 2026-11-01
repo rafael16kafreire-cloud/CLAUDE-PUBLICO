@@ -29,6 +29,7 @@ export const EV = {
   INVENTORY_CHANGED: 'inventory_changed', // { inventory }
   CRAFT_QUEUE: 'craft_queue',             // { queue }
   ITEM_GAINED: 'item_gained',             // { id, amount }
+  COLLECT_PROGRESS: 'collect_progress',   // { pct } coleta contínua de uma planta (0 a 1; null = acabou/cancelou)
   CRAFTED: 'crafted',                     // { id }  item ficou pronto
   STRUCTURE_USED: 'structure_used',       // { structure }  acendeu fogueira, dormiu...
   OPEN_CREATURE_MENU: 'open_creature_menu', // { creature }  menu do bicho domado
