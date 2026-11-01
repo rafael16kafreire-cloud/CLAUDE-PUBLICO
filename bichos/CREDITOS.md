@@ -10,7 +10,7 @@ Modelos de terceiros usados no jogo. Para CC BY 4.0 é obrigatório manter estes
 | barionix | Baryonix- Walkeri — add4d (AD&D 4D) — CC0 (domínio público) — https://sketchfab.com/3d-models/baryonix-walkeri-3e97de2fef8240edac9244c55ed6fcb3 |
 | bisao | Animated Free Bison — Anees Animates — CC BY 4.0 — https://sketchfab.com/3d-models/animated-free-bison-be2dcd97db1c4b9c91a7728d9bc89925 |
 | braquiossauro | Brachiosaurus Altithorax — paleo.parallax — CC BY 4.0 — https://sketchfab.com/3d-models/brachiosaurus-altithorax-224f71d98b7e4128a137c42368b286f6 |
-| carnotauro | Rigid Carnotaurus-Sastrei — Wormhole (olahamieholahamieh) — CC BY 4.0 — https://sketchfab.com/3d-models/rigid-carnotaurus-sastrei-232b60653c1740fa8570b6c90b377871 |
+| carnotauro | CARNOTAURUS DİNOSAUR — Cenker Turhan (cenkerturhan1) — CC BY 4.0 — https://sketchfab.com/3d-models/carnotaurus-dinosaur-548c9a0575b14deaae1f12ca9a6c31ca |
 | chefe_vulcao | European Dragon — Regina Cachoa — CC BY 4.0 — https://sketchfab.com/3d-models/european-dragon-82f393a2e6c048ad80c171ce3b3a7b87 |
 | deinosuchus | crocodile high quality — Beerus (beerusu798) — CC BY 4.0 — https://sketchfab.com/3d-models/crocodile-high-quality-a242e4634a234d3fb909c54b2c39d7b8 |
 | dimetrodonte | Dimetrodon — cp4096 — CC BY 4.0 — https://sketchfab.com/3d-models/dimetrodon-3ac7c6aada5e4c03849f9544bbc1afed |
@@ -43,7 +43,7 @@ Modelos de terceiros usados no jogo. Para CC BY 4.0 é obrigatório manter estes
 | chefe_mar | mosassauro | chefe — pele de abismo |
 | chefe_pantano | sarcosuchus | chefe — pele de musgo |
 | compsognato | raptor | escala ×0.31 |
-| dilofossauro | carnotauro | escala ×0.42 |
+| dilofossauro | carnotauro | CARNOTAURUS DİNOSAUR — Cenker Turhan (cenkerturhan1) — CC BY 4.0 — https://sketchfab.com/3d-models/carnotaurus-dinosaur-548c9a0575b14deaae1f12ca9a6c31ca |
 | diplodoco | argentinossauro | escala ×0.78 |
 | iguanodonte | parassauro | escala ×0.9 |
 | kentrossauro | estegossauro | escala ×0.44 |
