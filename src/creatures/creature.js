@@ -18,6 +18,7 @@ import { BALANCE } from '../core/balance.js';
 import { sound } from '../audio/audio.js';
 import { mulberry32 } from '../core/math.js';
 import { shakeAt } from '../world/materials.js';
+import { Inventory } from '../inventory/inventory.js';
 import { aplicarFeridas } from './wounds.js';
 import { ajustarSela, backSpot, buildSaddle, saddleFor } from './saddle.js';
 import { events, EV } from '../core/event_bus.js';
@@ -73,6 +74,12 @@ function solvePerna(u1, u2, T, prev) {
 const easeSwing = (w) => w * w * (3 - 2 * w);
 
 const FOOD_HIGH = new Set(['arvore_agar', 'arvore_dossel', 'arvore_media', 'acai', 'sumauma', 'pinheiro_neve', 'pinheiro', 'arvore_folhosa', 'arvore_folhosa2']);
+
+// comidas que cada dieta aceita para domar (além da Ração e da preferida)
+const COMIDA_DIETA = {
+  carnivoro: ['carne_crua', 'carne_assada'],
+  herbivoro: ['baga_mejo', 'fruta_rubra', 'fruta_azul', 'banana'],
+};
 
 export const CSTATE = {
   WANDER: 'vagar',
@@ -368,7 +375,7 @@ export class Creature {
   // Segundos que ainda faltam para domar, comendo o que está no prato
   // (ou a comida preferida, se o prato estiver vazio).
   get tameTimeLeft() {
-    const id = Object.keys(this.tameFood ?? {}).find((k) => this.tameFood[k] > 0) ?? this.species.comida_preferida;
+    const id = this.tameFoodNext() ?? this.species.comida_preferida;
     const faltam = Math.ceil(((1 - (this.tameProgress ?? 0)) * this.tameNeed) / this.foodValue(id) - 1e-6);
     return faltam * BALANCE.domar.comer_a_cada_seg;
   }
@@ -392,20 +399,43 @@ export class Creature {
     this.tamer = by;
     this.tameProgress = this.tameProgress ?? 0;
     this.tameEff = this.tameEff ?? 1; // efetividade: cai se apanhar desmaiado
-    this.tameFood = this.tameFood ?? {};
+    this.ensureInv();
     this._eatT = 1;
     sound.creature(this, 'dor');
     this.manager.onKnockOut?.(this, by);
   }
 
-  // Coloca comida no "prato" do bicho desmaiado (ele come aos poucos).
+  // Inventário do bicho (como no ARK): domando, a comida vai nele e ele come
+  // de lá; domado, carrega coisas (até o peso dele).
+  ensureInv() {
+    this.inv ??= new Inventory(BALANCE.domar.espacos_inventario);
+    return this.inv;
+  }
+
+  // Coloca comida no inventário do bicho desmaiado (ele come aos poucos).
   feed(id, qty) {
-    this.tameFood[id] = (this.tameFood[id] ?? 0) + qty;
+    this.ensureInv().add(id, qty);
+  }
+
+  // Quanto de cada comida ele tem no inventário (para a tela e os testes).
+  get tameFood() {
+    const out = {};
+    for (const s of this.inv?.slots ?? []) if (s && this.foodValue(s.id) > 0) out[s.id] = (out[s.id] ?? 0) + s.qty;
+    return out;
+  }
+
+  // Próxima comida que ele come do inventário: Ração, a preferida, depois as outras da dieta.
+  tameFoodNext() {
+    const tem = (id) => (this.inv?.count(id) ?? 0) > 0;
+    if (tem('racao')) return 'racao';
+    if (tem(this.species.comida_preferida)) return this.species.comida_preferida;
+    return COMIDA_DIETA[this.species.dieta === 'carnivoro' ? 'carnivoro' : 'herbivoro'].find(tem) ?? null;
   }
 
   foodValue(id) {
     if (id === 'racao') return BALANCE.domar.racao_vale;
     if (id === this.species.comida_preferida) return 1;
+    if (!COMIDA_DIETA[this.species.dieta === 'carnivoro' ? 'carnivoro' : 'herbivoro'].includes(id)) return 0;
     return BALANCE.domar.comida_qualquer;
   }
 
@@ -413,13 +443,21 @@ export class Creature {
     const D = BALANCE.domar;
     this.speed = 0;
     this.torpor -= this.stats.torpor * D.desmaio_cai_seg * dt;
-    // come uma comida do prato de tempos em tempos
+    // com sono acabando, come sozinho o Narcótico / Baga-Escura que estiver no inventário (como no ARK)
+    if (this.torpor < this.stats.torpor * 0.5 && this.inv) {
+      const sono = this.inv.count('narcotico') > 0 ? 'narcotico' : this.inv.count('baga_escura') > 0 ? 'baga_escura' : null;
+      if (sono) {
+        this.inv.remove(sono, 1);
+        this.torpor = Math.min(this.stats.torpor, this.torpor + this.stats.torpor * (sono === 'narcotico' ? D.narcotico_torpor : D.baga_escura_torpor));
+      }
+    }
+    // come uma comida do inventário de tempos em tempos
     this._eatT -= dt;
     if (this._eatT <= 0) {
       this._eatT = D.comer_a_cada_seg;
-      const id = Object.keys(this.tameFood).find((k) => this.tameFood[k] > 0);
+      const id = this.tameFoodNext();
       if (id) {
-        this.tameFood[id] -= 1;
+        this.inv.remove(id, 1);
         this.tameProgress = Math.min(1, this.tameProgress + this.foodValue(id) / this.tameNeed);
         if (this.tameProgress > 1 - 1e-6) this.tameProgress = 1; // 10 × 0,1 dá 0,9999999 (conta com vírgula)
         // como no ARK: cada mordida baixa um pouco a efetividade (a Ração não baixa)
@@ -458,7 +496,6 @@ export class Creature {
     this.owner = owner;
     this.follow = true;
     this.torpor = 0;
-    this.tameFood = {};
     this.home.set(this.pos.x, this.pos.z);
     this._setState(CSTATE.IDLE);
     this.idleFor = 2;

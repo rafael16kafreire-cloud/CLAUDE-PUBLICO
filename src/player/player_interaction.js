@@ -170,9 +170,9 @@ export class PlayerInteraction {
         const sleepy = this.inv.count('narcotico') > 0 ? 'narcotico' : this.inv.count('baga_escura') > 0 ? 'baga_escura' : null;
         if (sleepy) return { kind: 'tame-sleep', c, item: sleepy, text: `Dar ${itemName(sleepy)} (mais sono) · domando ${pct}%` };
       }
-      const food = this._tameFoodFor(c);
-      if (!food) return { kind: 'hint', key: 'interact', text: `Domando ${pct}% · precisa de ${itemName(fav)}${plate ? ` (comendo: ${plate})` : ''}` };
-      return { kind: 'tame-feed', c, food, text: `Dar ${itemName(food)} · domando ${pct}%${plate ? ` (no prato: ${plate})` : ''}` };
+      // como no ARK: a comida vai no inventário dele (Interagir abre o inventário do bicho)
+      void fav;
+      return { kind: 'creature-inv', c, text: `Inventário: ponha comida para domar · ${pct}%${plate ? ` (comida nele: ${plate})` : ''}` };
     }
     if (c.tamed && c.owner === this.player) {
       const rideable = c.species.pode_montar && !c.isBaby;
@@ -211,6 +211,11 @@ export class PlayerInteraction {
 
   _interact(target) {
     if (!target) return;
+    if (target.kind === 'creature-inv') {
+      events.emit(EV.OPEN_STORAGE, { box: { inv: target.c.ensureInv(), creature: target.c } });
+      this._timer = 0;
+      return;
+    }
     if (target.kind === 'tame-feed') {
       // põe no prato o que falta para domar (ele come aos poucos)
       const c = target.c;

@@ -765,7 +765,8 @@ function boot(hotData = {}) {
       hp: Math.round(c.health), name: c.name ?? null, adult: +c.adultScale.toFixed(4), saddled: !!c.saddled,
       saddle: c.saddleKind ?? null, imprint: c.imprint ?? 0, st: c.inherited ? c.stats : null, mut: c.mutations ?? 0,
       gestation: c.gestation > 0 ? Math.round(c.gestation) : 0, unborn: c.unborn ?? null, cor: c.cor ?? null,
-      opts: { followDist: c.followDist, targetRange: c.targetRange, aggression: c.aggression, wander: !!c.wander, neutered: !!c.neutered, mating: !!c.mating, parents: c.parents ?? null },
+      opts: { followDist: c.followDist, targetRange: c.targetRange, aggression: c.aggression, wander: !!c.wander, neutered: !!c.neutered, victimCollect: !!c.victimCollect, ignoreWhistle: !!c.ignoreWhistle, parents: c.parents ?? null },
+      inv: c.inv ? c.inv.toJSON() : null,
     };
   }
 
@@ -776,6 +777,7 @@ function boot(hotData = {}) {
     c.sex = t.sex ?? c.sex;
     c.imprint = t.imprint ?? 0;
     if (t.opts) Object.assign(c, t.opts);
+    if (t.inv) c.ensureInv().fromJSON(t.inv);
     c.mutations = t.mut ?? 0;
     if (t.st) c.applyStats(t.st);
     if ('cor' in t) aplicarCor(c, t.cor); // save antigo (sem cor): fica com a sorteada agora
@@ -1251,6 +1253,14 @@ function boot(hotData = {}) {
     sunGlare.update(dt, camera, world.sky, world, game.state === STATE.PLAYING && !world.cameraUnderwater, bright);
     if (game.state !== STATE.MENU) {
       hud.update(dt);
+      // inventário de um bicho aberto: a ficha (doma, torpor, vida) vai mudando
+      if (ctx.invScreen?.box?.creature && !ctx.invScreen.el.hidden) {
+        ctx.invScreen._boxT = (ctx.invScreen._boxT ?? 0) - dt;
+        if (ctx.invScreen._boxT <= 0) {
+          ctx.invScreen._boxT = 0.5;
+          ctx.invScreen.refresh();
+        }
+      }
       minimap.update(dt, player, camCtl.yaw);
       inspect.update(dt);
       // fantasma da peça de construção na mão

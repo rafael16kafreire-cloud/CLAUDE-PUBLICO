@@ -150,7 +150,8 @@ export class InventoryScreen {
             <div class="item-detail" data-ref="idetail"></div>
           </div>
           <div class="tab-body ai-rbody" data-tab-body="box" hidden>
-            <p class="muted box-help">Toque num item da mochila para guardar; toque num item do baú para pegar.</p>
+            <div class="box-creature" data-ref="boxCreature" hidden></div>
+            <p class="muted box-help" data-ref="boxHelp">Toque num item da mochila para guardar; toque num item do baú para pegar.</p>
             <div class="rd-actions"><button type="button" class="btn btn-small" id="box-all">Guardar tudo da mochila</button><button type="button" class="btn btn-small" id="box-take">Pegar tudo</button></div>
             <div class="inv-grid box-grid" data-ref="box"></div>
           </div>
@@ -289,6 +290,42 @@ export class InventoryScreen {
     this.refresh();
   }
 
+  // Inventário de um bicho (como o "Ele" do ARK): ficha com nome, nível,
+  // gênero e atributos em cima; domando, mostra a doma e o que ele come.
+  _renderBoxCreature() {
+    const R = this.refs;
+    const c = this.box?.creature;
+    R.boxCreature.hidden = !c;
+    if (!c) {
+      R.boxHelp.textContent = 'Toque num item da mochila para guardar; toque num item do baú para pegar.';
+      return;
+    }
+    const st = c.stats ?? {};
+    const linha = (rotulo, atual, max) => `<div class="bc-row"><span>${rotulo}</span><b>${atual}${max !== undefined ? ` / ${max}` : ''}</b></div>`;
+    const peso = c.inv ? Math.round(c.inv.weight() * 10) / 10 : 0;
+    const linhas = [
+      linha('Vida', Math.ceil(c.health), c.maxHealth),
+      linha('Estamina', Math.round(c.stamina ?? st.stamina), st.stamina),
+      linha('Peso', peso, st.peso),
+      linha('Dano de combate', `${Math.round(st.forca ?? 100)}%`),
+      linha('Velocidade', `${Math.round(st.velocidade ?? 100)}%`),
+      linha('Torpor', Math.round(c.torpor ?? 0), st.torpor),
+    ];
+    const taming = c.knockedOut && !c.tamed;
+    const titulo = c.tamed ? (c.name ?? c.species.nome) : `${c.species.nome} selvagem`;
+    let doma = '';
+    if (taming) {
+      const seg = Math.round(c.tameTimeLeft ?? 0);
+      doma = `<p class="bc-tame">Domando: ${Math.floor((c.tameProgress ?? 0) * 100)}% · efetividade ${Math.round((c.tameEff ?? 1) * 100)}% · faltam ${Math.floor(seg / 60)}m${String(seg % 60).padStart(2, '0')}s</p>`;
+    }
+    R.boxCreature.innerHTML = `<h3 class="bc-title">${titulo} - Nv ${c.level}</h3>
+      <p class="bc-sub">${c.sex ?? ''}${c.isBaby ? ` · ${c.stage}` : ''}${c.tamed ? '' : c.knockedOut ? ' · Inconsciente' : ''}</p>${doma}
+      <div class="bc-stats">${linhas.join('')}</div>`;
+    R.boxHelp.textContent = taming
+      ? `Ponha comida no inventário dele para domar (${ITEMS[c.species.comida_preferida]?.nome ?? 'comida'} é a preferida; a Ração é a melhor). Narcótico nele dá mais sono.`
+      : 'Toque num item da mochila para pôr no bicho; toque num item dele para pegar.';
+  }
+
   // move a pilha inteira da mochila para o baú
   _toBox(i) {
     const s = this.inv.slots[i];
@@ -314,6 +351,7 @@ export class InventoryScreen {
       g.innerHTML = '';
       return;
     }
+    this._renderBoxCreature();
     const slots = this.box.inv.slots;
     if (g.children.length !== slots.length) {
       g.innerHTML = '';

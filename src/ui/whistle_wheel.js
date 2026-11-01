@@ -86,7 +86,7 @@ export class WhistleWheel {
   // Bichos domados do jogador que escutam (perto)
   _near() {
     const p = this.player.position;
-    return this.creatures.tamedBy(this.player).filter((c) => !c.rider && Math.hypot(c.pos.x - p.x, c.pos.z - p.z) < RANGE);
+    return this.creatures.tamedBy(this.player).filter((c) => !c.rider && !c.ignoreWhistle && Math.hypot(c.pos.x - p.x, c.pos.z - p.z) < RANGE);
   }
 
   _aimed() {

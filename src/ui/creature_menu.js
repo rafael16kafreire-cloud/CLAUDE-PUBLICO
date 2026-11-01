@@ -26,6 +26,7 @@ const ICON = {
   unclaim: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M6 18 18 6" stroke="currentColor" stroke-width="2.4"/></svg>',
   spay: '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6.5" cy="17.5" r="2.6"/><circle cx="17.5" cy="17.5" r="2.6"/><path d="M8.4 15.6 18 4M15.6 15.6 6 4"/></svg>',
   kill: '<svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 3c-4 0-6.5 2.6-6.5 6 0 2 .9 3.4 2.2 4.2V16h8.6v-2.8c1.3-.8 2.2-2.2 2.2-4.2 0-3.4-2.5-6-6.5-6zM9.3 8.4a1.6 1.6 0 1 1 0 3.2 1.6 1.6 0 0 1 0-3.2zm5.4 0a1.6 1.6 0 1 1 0 3.2 1.6 1.6 0 0 1 0-3.2z"/><path d="M4 18.5 20 21M20 18.5 4 21" stroke="currentColor" stroke-width="1.8"/></svg>',
+  bag: '<svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M9 4a3 3 0 0 1 6 0v1h3.5l1.5 15H4L5.5 5H9zm1.6 1h2.8V4a1.4 1.4 0 0 0-2.8 0z"/></svg>',
   mount: '<svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M3 11.5c2-4.5 16-4.5 18 0-.5 2-3 3-9 3s-8.5-1-9-3zm4-4c.6-2.4 3-3 5-1.2 2-1.8 4.4-1.2 5 1.2-2.6-.8-7.4-.8-10 0zM8 14.6h1.6V20H8zm6.4 0H16V20h-1.6z"/></svg>',
 };
 
@@ -52,11 +53,13 @@ export class CreatureMenu {
           <div class="cmenu-row"><span>Alcance de alvo:</span><button type="button" class="ark-choice" data-opt="targetRange"></button></div>
           <div class="cmenu-row"><span>Agressividade:</span><button type="button" class="ark-choice" data-opt="aggression"></button></div>
           <label class="cmenu-row cmenu-check"><span>Vagar por perto (parado)</span><input type="checkbox" data-ref="wander"><i></i></label>
-          <label class="cmenu-row cmenu-check" data-ref="mateRow"><span>Permitir cruzar</span><input type="checkbox" data-ref="mating"><i></i></label>
+          <label class="cmenu-row cmenu-check"><span>Coletar itens das vítimas</span><input type="checkbox" data-ref="victim"><i></i></label>
+          <label class="cmenu-row cmenu-check"><span>Ignorar assovios em grupo</span><input type="checkbox" data-ref="ignoreWhistle"><i></i></label>
           <p class="cmenu-breed" data-ref="breed"></p>
           <div class="cmenu-row" data-ref="saddleRow"><span data-ref="saddleTxt">Sela:</span><button type="button" class="ark-choice" data-act="unsaddle">Tirar sela</button></div>
         </div>
         <div class="cmenu-actions">
+          <button type="button" class="ark-action" data-act="inv">${ICON.bag}<span>Inventário</span></button>
           <button type="button" class="ark-action" data-act="mount" data-ref="mount">${ICON.mount}<span>Montar</span></button>
           <button type="button" class="ark-action" data-act="unclaim">${ICON.unclaim}<span>Soltar</span></button>
           <button type="button" class="ark-action" data-act="spay" data-ref="spay">${ICON.spay}<span>Castrar</span></button>
@@ -80,12 +83,8 @@ export class CreatureMenu {
       this.c.wander = this.refs.wander.checked;
       if (!this.c.wander && !this.c.follow) this._stay();
     });
-    this.refs.mating.addEventListener('change', () => {
-      if (!this.c) return;
-      this.c.mating = this.refs.mating.checked;
-      if (!this.c.mating) this.c.mateProgress = 0;
-      this._render();
-    });
+    this.refs.victim.addEventListener('change', () => { if (this.c) this.c.victimCollect = this.refs.victim.checked; });
+    this.refs.ignoreWhistle.addEventListener('change', () => { if (this.c) this.c.ignoreWhistle = this.refs.ignoreWhistle.checked; });
     const name = this.refs.name;
     name.addEventListener('keydown', (e) => {
       e.stopPropagation();
@@ -139,13 +138,15 @@ export class CreatureMenu {
     }
     R.wander.checked = !!c.wander;
     // criação (como no ARK): permitir cruzar, barra de acasalamento, mutações, pais
-    R.mateRow.hidden = c.isBaby || !!c.neutered;
-    R.mating.checked = !!c.mating;
+    R.victim.checked = !!c.victimCollect;
+    R.ignoreWhistle.checked = !!c.ignoreWhistle;
     const info = [];
-    if (c.gestation > 0) info.push(`Prenhe: nasce em ${Math.ceil(c.gestation / 60)} min`);
-    else if (c.mating && c.sex === 'Fêmea' && (c.mateProgress ?? 0) > 0) info.push(`Acasalando: ${Math.round(c.mateProgress * 100)}%`);
-    else if (c.mating && c.sex === 'Fêmea' && c.age < (c.nextBreed ?? 0)) info.push(`Pode cruzar de novo em ${Math.ceil((c.nextBreed - c.age) / 60)} min`);
-    else if (c.mating) info.push(c.sex === 'Fêmea' ? 'Esperando um macho com "Permitir cruzar" perto' : 'Pronto para cruzar');
+    if (c.neutered) info.push('Castrado: não cruza');
+    else if (c.isBaby) info.push(`${c.stage}: ainda não cruza`);
+    else if (c.gestation > 0) info.push(`Prenhe: nasce em ${Math.ceil(c.gestation / 60)} min`);
+    else if (c.sex === 'Fêmea' && (c.mateProgress ?? 0) > 0) info.push(`Acasalando: ${Math.round(c.mateProgress * 100)}%`);
+    else if (c.sex === 'Fêmea' && c.age < (c.nextBreed ?? 0)) info.push(`Pode cruzar de novo em ${Math.ceil((c.nextBreed - c.age) / 60)} min`);
+    else info.push(c.sex === 'Fêmea' ? 'Cruza com um macho domado da espécie perto (castre para não cruzar)' : 'Cruza com uma fêmea domada da espécie perto');
     info.push(`Mutações: ${c.mutations ?? 0}/${BALANCE.cria.mutacao_limite}`);
     if (c.parents) info.push(`Mãe: ${c.parents.mae} · Pai: ${c.parents.pai}`);
     R.breed.textContent = info.join(' · ');
@@ -228,6 +229,10 @@ export class CreatureMenu {
       case 'mount':
         this.close();
         this.onMount?.(c);
+        return;
+      case 'inv':
+        this.close();
+        events.emit(EV.OPEN_STORAGE, { box: { inv: c.ensureInv(), creature: c } });
         return;
       case 'spay':
         c.neutered = true;

@@ -273,6 +273,7 @@ export default {
     torpor_cai_seg: 0.03,      // acordado: torpor cai X do máximo por segundo
     desmaio_cai_seg: 0.0065,   // desmaiado: cai X do máximo por segundo (~2,5 min)
     comer_a_cada_seg: 7,       // come uma comida a cada X s (devagar, como no ARK)
+    espacos_inventario: 30,    // espaços no inventário de cada bicho
     racao_vale: 2,             // a Ração vale X comidas preferidas e não baixa a efetividade
     efetividade_por_comida: 0.015, // cada mordida de comida preferida baixa a efetividade (ARK)
     efetividade_outra_comida: 0.04, // comida que não é a preferida baixa mais

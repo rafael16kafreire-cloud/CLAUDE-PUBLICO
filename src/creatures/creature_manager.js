@@ -233,10 +233,10 @@ export class CreatureManager {
       const dad = this.list.find((o) => o !== mom && o.species.id === mom.species.id && o.sex === 'Macho'
         && calm(o) && o.pos.distanceTo(mom.pos) < C.distancia_casal_m);
       if (!dad) continue;
-      // domados (como no ARK): os dois com "Permitir cruzar" ligado e perto;
+      // domados (como no ARK): macho e fêmea domados perto cruzam sozinhos (castrado não cruza);
       // a barra de acasalamento enche em cria.acasalar_seg e sai o ovo (ou a gestação)
       if (mom.tamed || dad.tamed) {
-        if (!mom.tamed || !dad.tamed || !mom.mating || !dad.mating || mom.gestation > 0 || mom.owner !== dad.owner) continue;
+        if (!mom.tamed || !dad.tamed || mom.gestation > 0 || mom.owner !== dad.owner) continue;
         mom.mateProgress = Math.min(1, (mom.mateProgress ?? 0) + 15 / BALANCE.cria.acasalar_seg);
         mom.mateWith = dad;
         if (mom.mateProgress < 1) continue;
@@ -662,6 +662,11 @@ export class CreatureManager {
     for (const [id, [a, b]] of Object.entries(c.species.loot ?? {})) {
       const n = a + Math.floor(this.rand() * (b - a + 1));
       if (n > 0) c.lootLeft[id] = Math.round(n * (1 + c.level * 0.02));
+    }
+    // domado com "Coletar itens das vítimas": o que sai da carcaça vai para o inventário dele
+    if (attacker?.tamed && attacker.victimCollect && attacker.ensureInv) {
+      for (const [id, n] of Object.entries(c.lootLeft)) attacker.ensureInv().add(id, n);
+      c.lootLeft = null;
     }
     events.emit(EV.CREATURE_KILLED, { creature: c, byPlayer: attacker === game.player });
     if (c.tamed && c.owner === game.player) {
