@@ -20,7 +20,12 @@ fi
 GAMEVER=$(node -e "console.log(require('$ROOT/package.json').version)")
 rm -rf "$OUT" "$APP"
 mkdir -p "$OUT" "$APP/resources"
-cp "$ROOT/dist/ilha-primordial.html" "$APP/resources/index.html"
+# biblioteca do Neutralino (só para o botão "FECHAR O APP" fechar a janela)
+if [ ! -f "$CACHE/neutralino.js" ]; then
+  (cd "$CACHE" && npm pack -q @neutralinojs/lib@$NEU > /dev/null && mkdir -p lib && tar xzf neutralinojs-lib-$NEU.tgz -C lib && cp lib/package/dist/neutralino.js neutralino.js)
+fi
+cp "$CACHE/neutralino.js" "$APP/resources/neutralino.js"
+sed 's#</head>#<script src="/neutralino.js"></script><script>try { Neutralino.init(); } catch (e) {}</script></head>#' "$ROOT/dist/ilha-primordial.html" > "$APP/resources/index.html"
 cp "$ROOT/pc/icon.png" "$APP/resources/icon.png"
 sed "s/__VERSAO__/$GAMEVER/" "$ROOT/pc/neutralino.config.json" > "$APP/neutralino.config.json"
 # resources.neu = pacote "asar" com a configuração e o jogo
@@ -35,8 +40,9 @@ ILHA PRIMORDIAL $GAMEVER - versão para PC (Windows 10/11, 64 bits)
    "Mais informações" e depois em "Executar assim mesmo" (o programa
    não tem assinatura digital paga, por isso o aviso).
 
-O jogo usa o navegador Edge que já vem no Windows (WebView2), com a
-placa de vídeo, numa janela própria. Se o Windows não tiver o WebView2,
+O jogo abre em tela cheia, como um app. Para sair: Esc (pausa) e
+"FECHAR O APP", ou Alt+F4. Ele usa o motor do Edge que já vem no
+Windows (WebView2), com a placa de vídeo, mas não abre o navegador. Se o Windows não tiver o WebView2,
 ele pede para instalar (é grátis, da Microsoft).
 TXT
 cd "$ROOT/build/pc"

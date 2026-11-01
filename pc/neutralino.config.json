@@ -5,7 +5,8 @@
   "documentRoot": "/resources/",
   "url": "/",
   "enableServer": true,
-  "enableNativeAPI": false,
+  "enableNativeAPI": true,
+  "nativeAllowList": ["app.exit"],
   "port": 0,
   "logging": { "enabled": false, "writeToLogFile": false },
   "modes": {
@@ -17,7 +18,7 @@
       "minHeight": 450,
       "center": true,
       "maximize": true,
-      "fullScreen": false,
+      "fullScreen": true,
       "resizable": true,
       "enableInspector": false,
       "icon": "/resources/icon.png"

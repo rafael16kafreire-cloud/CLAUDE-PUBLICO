@@ -427,7 +427,8 @@ function boot(hotData = {}) {
         ctx.help.open(0, 0, () => ctx.pause.show());
       },
       onQuitToMenu: () => toMenu(),
-      onCloseApp: androidApp?.exit ? () => androidApp.exit() : null,
+      // app do celular (Android) ou do PC (Neutralino): fecha o app
+      onCloseApp: androidApp?.exit ? () => androidApp.exit() : window.Neutralino?.app ? () => window.Neutralino.app.exit() : null,
       onSaveSlot: (n) => {
         const ok = saveSlot(n, gameSnapshot());
         events.emit(EV.MESSAGE, { text: ok ? `Jogo salvo no Espaço ${n}.` : 'Não deu para salvar (sem espaço no aparelho).', kind: ok ? 'gain' : 'warn' });
