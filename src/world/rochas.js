@@ -8,7 +8,7 @@
 // vegetação estica para 3 a 12 metros).
 // =============================================================
 import * as THREE from 'three';
-import { addWind, detailTexture } from './materials.js';
+import { addWind, addRelief, detailTexture } from './materials.js';
 
 function rnd(seed) {
   let s = seed >>> 0;
@@ -136,8 +136,9 @@ export function layeredRockMaterial() {
           #undef TRI
         }`);
   };
+  addRelief(mat, { amp: 0.28, freq: 0.7, fade: [60, 220] });
   addWind(mat, 0, 0);
-  mat.customProgramCacheKey = () => 'rocha-camadas1';
+  mat.customProgramCacheKey = () => 'rocha-camadas2';
   matRocha = mat;
   return mat;
 }

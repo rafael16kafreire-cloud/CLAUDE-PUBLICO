@@ -32,7 +32,7 @@ export const QUALITY_PRESETS = {
 
 const DEFAULTS = {
   version: SETTINGS_VERSION,
-  quality: 'media',        // baixa | media | alta
+  quality: (typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches) ? 'media' : 'alta', // baixa | media | alta (PC já começa em alta; o jogo desce sozinho se ficar lento)
   viewDistance: 180,       // metros
   sensitivity: 1.0,        // velocidade da câmera
   buttonOpacity: 0.7,      // 0.2 a 1.0

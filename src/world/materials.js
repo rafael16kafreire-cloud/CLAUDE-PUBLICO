@@ -131,7 +131,55 @@ export function makeTerrainMaterial() {
         if (vSnow > 0.45) diffuseColor.rgb = uSnowCol;`);
   };
   mat.customProgramCacheKey = () => 'terreno-lowpoly1';
-  return mat;
+  return addRelief(mat, { amp: 0.16, freq: 0.9, fade: [45, 140] });
+}
+
+
+// ----------------------------------------------------------
+// RELEVO procedural (chão, pedra, tronco): mexe na normal da superfície com um
+// ruído em 3 lados (não estica nas paredes), então a luz do sol marca grãos,
+// rachaduras e ondulações mesmo nas faces planas do estilo low-poly.
+//   amp:  altura do relevo em metros   freq: tamanho dos grãos (1/m)
+//   folha: true = o relevo some nas folhas (precisa do varying vFolha) – folha fica lisa
+// Some com a distância (nada de tremer de longe).
+// ----------------------------------------------------------
+export function addRelief(material, { amp = 0.1, freq = 1.2, folha = 0, fade = [35, 110] } = {}) {
+  const prev = material.onBeforeCompile;
+  material.onBeforeCompile = (shader, renderer) => {
+    prev?.(shader, renderer);
+    shader.uniforms.uReliefNoise = { value: detailTexture() };
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vRelW;')
+      .replace('#include <begin_vertex>', `#include <begin_vertex>
+        #ifdef USE_INSTANCING
+          vRelW = (modelMatrix * instanceMatrix * vec4(transformed, 1.0)).xyz;
+        #else
+          vRelW = (modelMatrix * vec4(transformed, 1.0)).xyz;
+        #endif`);
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vRelW;\nuniform sampler2D uReliefNoise;')
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+        {
+          vec3 rn = normalize(cross(dFdx(vRelW), dFdy(vRelW)));
+          vec3 rb = pow(abs(rn), vec3(4.0));
+          rb /= (rb.x + rb.y + rb.z);
+          #define RTRI(s) (texture2D(uReliefNoise, vRelW.zy * s).r * rb.x + texture2D(uReliefNoise, vRelW.xz * s).r * rb.y + texture2D(uReliefNoise, vRelW.xy * s).r * rb.z)
+          float rh = RTRI(${freq.toFixed(3)}) * 0.65 + RTRI(${(freq * 3.7).toFixed(3)}) * 0.35;
+          #undef RTRI
+          vec3 rsp = -vViewPosition;
+          vec3 rdx = dFdx(rsp);
+          vec3 rdy = dFdy(rsp);
+          vec3 rr1 = cross(rdy, normal);
+          vec3 rr2 = cross(normal, rdx);
+          float rdet = dot(rdx, rr1);
+          vec3 rgrad = sign(rdet) * (dFdx(rh) * rr1 + dFdy(rh) * rr2);
+          float rk = ${amp.toFixed(3)} ${folha ? '* (1.0 - clamp(vFolha, 0.0, 1.0))' : ''} * (1.0 - smoothstep(${fade[0].toFixed(1)}, ${fade[1].toFixed(1)}, length(vViewPosition)));
+          normal = normalize(abs(rdet) * normal - rk * rgrad);
+        }`);
+  };
+  const k = material.customProgramCacheKey;
+  material.customProgramCacheKey = () => `${k ? k.call(material) : ''}-relevo-${amp}-${freq}`;
+  return material;
 }
 
 // ----------------------------------------------------------

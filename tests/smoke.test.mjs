@@ -190,7 +190,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
       if (!best) return null;
       // tira as outras plantas de perto (o golpe acerta só a escolhida)
       for (const r of veg.recs) {
-        if (r !== best && r.alive && Math.hypot(r.x - best.x, r.z - best.z) < 7) { r.alive = false; r._testHidden = true; }
+        if (r !== best && r.alive && Math.hypot(r.x - best.x, r.z - best.z) < 7 + (r.r ?? 0) * 1.5) { r.alive = false; r._testHidden = true; }
       }
       const dist = (best.r ?? 0.3) + 0.9;
       const a = 0.7;
@@ -200,6 +200,12 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
       c.player.velocity.set(0, 0, 0);
       c.camCtl.yaw = Math.atan2(x - best.x, z - best.z); // olhando para a planta
       c.camCtl.pitch = -0.15;
+      veg.update(0, window.__ilha.game.camera, 180, true);
+      // a vegetação chega aos poucos: esconde de novo o que apareceu depois e volta ao ponto
+      for (const r of veg.recs) {
+        if (r !== best && r.alive && Math.hypot(r.x - best.x, r.z - best.z) < 7 + (r.r ?? 0) * 1.5) { r.alive = false; r._testHidden = true; }
+      }
+      c.player.position.set(x, c.world.heightAt(x, z), z);
       veg.update(0, window.__ilha.game.camera, 180, true);
       return { type: best.type, x: best.x, z: best.z };
     };

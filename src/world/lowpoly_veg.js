@@ -14,7 +14,7 @@
 // =============================================================
 import * as THREE from 'three';
 import { PALETA, mistura } from '../core/paleta.js';
-import { addWind } from './materials.js';
+import { addWind, addRelief } from './materials.js';
 
 function rnd(seed) {
   let s = (seed * 2654435761) >>> 0 || 1;
@@ -598,6 +598,7 @@ export function materialLowPoly() {
         // >>> folhas: um pouco mais de luz ambiente (luz atravessando a folha)
         reflectedLight.indirectDiffuse *= 1.0 + 0.45 * clamp(vFolha, 0.0, 1.0);`);
   };
+  addRelief(m, { amp: 0.08, freq: 2.4, folha: true, fade: [20, 60] }); // casca dos troncos e pedras com relevo
   addWind(m, 0.012, 0.016, 0); // vento bem de leve e nada empurra as plantas do chão quando se passa por cima
   const k = m.customProgramCacheKey;
   m.customProgramCacheKey = () => `${k ? k() : ''}-lowpoly-veg1`;

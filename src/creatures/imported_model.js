@@ -217,7 +217,7 @@ export function buildImportedModel(d, id) {
       // relevo da pele a partir da própria textura (escamas, rugas e placas ficam marcadas na luz)
       if (map && !m.normalMap) {
         mat.bumpMap = map;
-        mat.bumpScale = hdTextures() ? 2.2 : 1.6;
+        mat.bumpScale = hdTextures() ? 3.6 : 2.4;
       }
       mat.color.setScalar((d.brilho ?? 1) * (tinta?.brilho ?? 1)); // textura muito escura: clareia
       if (tinta && (tinta.materiais ?? [mi]).includes(mi)) mat.vertexColors = true;
