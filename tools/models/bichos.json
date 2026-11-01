@@ -679,6 +679,151 @@
     "copyright": "CC BY 4.0",
     "url": "https://sketchfab.com/3d-models/triceratops-829912188d2445ae8034d46ed75e3c68"
    }
+  },
+  "raptor": {
+   "credito": {
+    "title": "PBR Velociraptor (Animated)",
+    "author": "Ferocious Industries",
+    "copyright": "CC BY 4.0",
+    "url": "https://sketchfab.com/3d-models/pbr-velociraptor-animated-8f1744af7b0847a2aabe3df90be802f0"
+   },
+   "mapa": {
+    "hips": "Root_02",
+    "chest": "Spine_3_05",
+    "neck": "Neck_1_06",
+    "neck2": "Neck_2_07",
+    "head": "Head_09",
+    "jaw": "Jaw_1_014",
+    "tail1": "Tail_1_074",
+    "tail2": "Tail_4_077",
+    "tail3": "Tail_7_080",
+    "pernaE": "UpperLegL_089",
+    "pernaE_joelho": "LowerLegL_090",
+    "pernaE_pe": "AnkleL_091",
+    "pernaD": "UpperLegR_060",
+    "pernaD_joelho": "LowerLegR_061",
+    "pernaD_pe": "AnkleR_062",
+    "bracoE": "UpperArmL_039",
+    "bracoE_joelho": "LowerArmL_040",
+    "bracoE_pe": "HandL_041",
+    "bracoD": "UpperArmR_023",
+    "bracoD_joelho": "LowerArmR_024",
+    "bracoD_pe": "HandR_025"
+   },
+   "repouso": 438
+  },
+  "compsognato": {
+   "credito": {
+    "title": "PBR Velociraptor (Animated)",
+    "author": "Ferocious Industries",
+    "copyright": "CC BY 4.0",
+    "url": "https://sketchfab.com/3d-models/pbr-velociraptor-animated-8f1744af7b0847a2aabe3df90be802f0"
+   },
+   "mapa": {
+    "hips": "Root_02",
+    "chest": "Spine_3_05",
+    "neck": "Neck_1_06",
+    "neck2": "Neck_2_07",
+    "head": "Head_09",
+    "jaw": "Jaw_1_014",
+    "tail1": "Tail_1_074",
+    "tail2": "Tail_4_077",
+    "tail3": "Tail_7_080",
+    "pernaE": "UpperLegL_089",
+    "pernaE_joelho": "LowerLegL_090",
+    "pernaE_pe": "AnkleL_091",
+    "pernaD": "UpperLegR_060",
+    "pernaD_joelho": "LowerLegR_061",
+    "pernaD_pe": "AnkleR_062",
+    "bracoE": "UpperArmL_039",
+    "bracoE_joelho": "LowerArmL_040",
+    "bracoE_pe": "HandL_041",
+    "bracoD": "UpperArmR_023",
+    "bracoD_joelho": "LowerArmR_024",
+    "bracoD_pe": "HandR_025"
+   },
+   "repouso": 438
+  },
+  "trex": {
+   "credito": {
+    "title": "Animated Tyrannosaurus Rex Dinosaur Running Loop",
+    "author": "LasquetiSpice",
+    "copyright": "CC BY 4.0",
+    "url": "https://sketchfab.com/3d-models/animated-tyrannosaurus-rex-dinosaur-running-loop-38007d947ae74dea83988cb0b08ee053"
+   },
+   "mapa": {
+    "hips": "bn_Spine4_4",
+    "chest": "bn_Spine26_6",
+    "neck": "bn_Neck7_7",
+    "neck2": "bn_Neck18_8",
+    "head": "bn_Head10_10",
+    "jaw": "bn_Jaw11_11",
+    "tail1": "bn_Tail0167_67",
+    "tail2": "bn_Tail0470_70",
+    "tail3": "bn_Tail0773_73",
+    "pernaE": "bn_LeftUpLeg45_45",
+    "pernaE_joelho": "bn_LeftLeg46_46",
+    "pernaE_pe": "bn_LeftFoot47_47",
+    "pernaD": "bn_RightUpLeg56_56",
+    "pernaD_joelho": "bn_RightLeg57_57",
+    "pernaD_pe": "bn_RightFoot58_58",
+    "bracoE": "bn_LeftArm28_28",
+    "bracoE_joelho": "bn_LeftForeArm29_29",
+    "bracoE_pe": "bn_LeftHand30_30",
+    "bracoD": "bn_RightArm36_36",
+    "bracoD_joelho": "bn_RightForeArm37_37",
+    "bracoD_pe": "bn_RightHand38_38"
+   }
+  },
+  "pterodactilo": {
+   "credito": {
+    "title": "Pteranodon (Animated)",
+    "author": "oscar.lopez.riviello (Chistodrako)",
+    "copyright": "CC BY 4.0",
+    "url": "https://sketchfab.com/3d-models/pteranodon-animated-7d7683df41d1405283f160e81a5dff1b"
+   },
+   "mapa": {
+    "hips": "pelvis91_91",
+    "chest": "chest9_9",
+    "neck": "neck_0110_10",
+    "head": "head15_15",
+    "jaw": "jaw16_16",
+    "asaE": "LupperArm32_32",
+    "asaE_punho": "LforeArm33_33",
+    "asaD": "RupperArm62_62",
+    "asaD_punho": "RforeArm63_63",
+    "pernaE": "Lthigh92_92",
+    "pernaE_joelho": "Lknee93_93",
+    "pernaE_pe": "Lankle94_94",
+    "pernaD": "Rthigh110_110",
+    "pernaD_joelho": "Rknee111_111",
+    "pernaD_pe": "Rankle112_112"
+   }
+  },
+  "quetzalcoatlus": {
+   "credito": {
+    "title": "Pteranodon (Animated)",
+    "author": "oscar.lopez.riviello (Chistodrako)",
+    "copyright": "CC BY 4.0",
+    "url": "https://sketchfab.com/3d-models/pteranodon-animated-7d7683df41d1405283f160e81a5dff1b"
+   },
+   "mapa": {
+    "hips": "pelvis91_91",
+    "chest": "chest9_9",
+    "neck": "neck_0110_10",
+    "head": "head15_15",
+    "jaw": "jaw16_16",
+    "asaE": "LupperArm32_32",
+    "asaE_punho": "LforeArm33_33",
+    "asaD": "RupperArm62_62",
+    "asaD_punho": "RforeArm63_63",
+    "pernaE": "Lthigh92_92",
+    "pernaE_joelho": "Lknee93_93",
+    "pernaE_pe": "Lankle94_94",
+    "pernaD": "Rthigh110_110",
+    "pernaD_joelho": "Rknee111_111",
+    "pernaD_pe": "Rankle112_112"
+   }
   }
  }
 }

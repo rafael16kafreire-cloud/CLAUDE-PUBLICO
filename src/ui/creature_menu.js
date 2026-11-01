@@ -12,6 +12,7 @@
 import { events, EV } from '../core/event_bus.js';
 import { itemName } from '../items/items.js';
 import { CSTATE } from '../creatures/creature.js';
+import { nomeCor } from '../creatures/cores.js';
 
 const OPTS = {
   followDist: [['curto', 'Curta'], ['medio', 'Média'], ['longo', 'Longa']],
@@ -118,6 +119,8 @@ export class CreatureMenu {
     extras.push(c.species.nome, c.sex);
     if (c.isBaby) extras.push(`filhote · impressão ${Math.round((c.imprint ?? 0) * 100)}%`);
     if (c.neutered) extras.push('castrado');
+    const cores = nomeCor(c.cor);
+    if (cores) extras.push(`cores: ${cores}`);
     extras.push(`vida ${Math.ceil(c.health)}/${c.maxHealth}`);
     R.sub.textContent = extras.join(' · ');
     R.follow.textContent = c.follow ? 'Seguindo' : 'Parado';

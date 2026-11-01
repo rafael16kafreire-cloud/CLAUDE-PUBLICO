@@ -72,11 +72,16 @@ def main(cru, molde_path, base_path, out):
         for suf, b in zip(('', '_joelho', '_pe'), trio):
             if b in idx:
                 m[n + suf] = idx[b]
+    # esqueleto próprio do autor: "mapa" em bichos.json (_glb) diz o nome de cada osso
+    for k, nome in cfg.pop('mapa', {}).items():
+        m[k] = idx.get(nome)
+        if m[k] is None:
+            print('osso não achado:', nome)
     cfg['ossos'] = {k: v for k, v in m.items() if v is not None and k in want | {'jaw', 'neck2'}}
     acoes = meta.get('acoes', {})
     cfg['clipes'] = {papel: {'acao': a, 'loop': loop} for papel, (a, loop) in CLIPES.items() if a in acoes}
     cfg.setdefault('giro', 'y180')
-    cfg['repouso'] = 'ligacao'
+    cfg.setdefault('repouso', 'ligacao')
     json.dump(cfg, open(out, 'w'), indent=1, ensure_ascii=False)
     faltam = sorted(want - set(cfg['ossos']))
     print('ossos', len(cfg['ossos']), 'faltam', faltam, 'clipes', list(cfg['clipes']))

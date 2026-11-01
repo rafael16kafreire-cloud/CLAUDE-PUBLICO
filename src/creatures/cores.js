@@ -1,38 +1,36 @@
 // =============================================================
 // CORES DOS BICHOS – cada bicho selvagem nasce com uma combinação de
-// cores própria (costas e barriga), como acontece no ARK: a maioria
-// tem tons naturais (marrom, verde, cinza, areia) e alguns saem com
-// cor forte (vermelho, azul-turquesa, roxo, laranja, preto).
+// cores própria (costas e barriga), com as cores de bicho do ARK
+// (Marrom-Escuro Dino, Verde-Escuro Dino...): a maioria tons naturais,
+// alguns com cor forte (vermelho, azul) e, bem raro, albino.
 // Feito no desenho do corpo: a cor nova troca o tom mas mantém o
 // claro/escuro da pele (escamas, listras e relevo continuam).
 // Cada bicho colorido ganha uma cópia do material com 3 números.
 // O filhote herda cada região do pai ou da mãe.
 // =============================================================
 import * as THREE from 'three';
-import { PALETA_HEX, misturaHex } from '../core/paleta.js';
 
-// [costas, barriga] — misturas da paleta (core/paleta.js), para os bichos combinarem com o mundo low-poly
-const H = (a, b, t) => misturaHex(a, b, t);
-const NATURAL = [
-  [H('marrom', 'terraEscura', 0.2), H('areia', 'capimSeco', 0.4)], // marrom e creme
-  [H('musgo', 'musgoEscuro', 0.3), H('capimSeco', 'areia', 0.5)], // verde-musgo
-  [H('pedra', 'pedraEscura', 0.3), H('pedraClara', 'areia', 0.3)], // cinza
-  [H('madeira', 'marrom', 0.3), H('areia', 'neve', 0.2)], // areia
-  [H('musgoEscuro', 'terraEscura', 0.3), H('folhaClara', 'capimSeco', 0.5)], // verde-escuro
-  [H('ferrugem', 'marrom', 0.4), H('areia', 'madeira', 0.3)], // ferrugem
-  [H('terraEscura', 'marrom', 0.4), H('madeira', 'areia', 0.4)], // chocolate
-  [H('capimSeco', 'marrom', 0.35), H('areia', 'neve', 0.3)], // pardo
-];
-const VIVA = [
-  [PALETA_HEX.ferrugem, H('solLaranja', 'areia', 0.5)], // vermelho-ferrugem
-  [H('agua', 'musgo', 0.25), H('pedraClara', 'agua', 0.3)], // azul-esverdeado
-  [H('ceuNoite', 'ferrugem', 0.35), H('pedraClara', 'ferrugem', 0.2)], // roxo-escuro
-  [PALETA_HEX.solLaranja, H('areia', 'neve', 0.3)], // laranja
-  [H('ceuNoite', 'pedraEscura', 0.4), PALETA_HEX.pedra], // preto
-  [PALETA_HEX.agua, H('pedraClara', 'neve', 0.3)], // azul-aço
-  [PALETA_HEX.folhaClara, H('capimSeco', 'solLaranja', 0.3)], // verde-folha com barriga amarela
-  [H('neve', 'pedraClara', 0.3), PALETA_HEX.neve], // quase branco
-];
+// Cores de bicho do ARK (id, nome e cor sRGB, da lista "Color IDs" da wiki do ARK).
+// Cada bicho sorteia uma cor para as costas e outra para a barriga.
+export const CORES_ARK = {
+  8: ['Cinza-Claro', '#C8CACA'], 9: ['Marrom-Claro', '#786759'], 13: ['Cinza-Escuro', '#7B7B7B'],
+  14: ['Preto', '#3B3B3B'], 15: ['Marrom', '#593A2A'], 17: ['Vermelho-Escuro', '#812118'],
+  19: ['Vermelho-Claro Dino', '#FFA8A8'], 20: ['Vermelho-Escuro Dino', '#592B2B'],
+  21: ['Laranja-Claro Dino', '#FFB694'], 22: ['Laranja-Escuro Dino', '#88532F'],
+  23: ['Amarelo-Claro Dino', '#CACAA0'], 24: ['Amarelo-Escuro Dino', '#94946C'],
+  26: ['Verde-Médio Dino', '#799479'], 27: ['Verde-Escuro Dino', '#224122'],
+  28: ['Azul-Claro Dino', '#D9E0FF'], 29: ['Azul-Escuro Dino', '#394263'],
+  31: ['Roxo-Escuro Dino', '#403459'], 32: ['Marrom-Claro Dino', '#FFE0BA'],
+  33: ['Marrom-Médio Dino', '#948575'], 34: ['Marrom-Escuro Dino', '#594E41'],
+  35: ['Cinza-Mais-Escuro Dino', '#595959'], 36: ['Albino Dino', '#FFFFFF'],
+  12: ['Vermelho-Claro', '#FF756C'], 10: ['Laranja-Claro', '#FFB46C'],
+  53: ['Azul-Médio Dino', '#5FA4EA'], 54: ['Azul-Profundo Dino', '#4568D4'],
+};
+// costas: tons mais escuros; barriga: mais claros (como a maioria dos bichos do ARK)
+const COSTAS = [9, 13, 14, 15, 17, 20, 22, 24, 26, 27, 29, 31, 33, 34, 35];
+const BARRIGA = [8, 19, 21, 23, 26, 28, 32, 33, 24, 13];
+const VIVA = [12, 10, 53, 54, 17, 31];
+const hexDe = (id) => CORES_ARK[id][1];
 
 const LUM = new THREE.Vector3(0.2126, 0.7152, 0.0722);
 const _c = new THREE.Color();
@@ -44,16 +42,22 @@ function tom(hex) {
   return [_c.r / l, _c.g / l, _c.b / l, Math.min(2.4, Math.max(0.25, Math.pow(l / 0.12, 0.5)))];
 }
 
-/** Sorteia as cores de um bicho selvagem. rand() = 0..1. Devolve null (cor original) ou {a, b, k}. */
+/** Sorteia as cores de um bicho selvagem (cores do ARK). rand() = 0..1. Devolve null (cor original) ou {a, b, k, ids}. */
 export function sortearCor(rand) {
   const r = rand();
-  if (r < 0.3) return null; // ~30% com a cor original do modelo
-  const viva = r > 0.82;
-  const lista = viva ? VIVA : NATURAL;
-  const par = lista[Math.floor(rand() * lista.length)];
-  // às vezes a barriga vem de outra combinação (mistura de regiões, como no ARK)
-  const outra = rand() < 0.25 ? lista[Math.floor(rand() * lista.length)] : par;
-  return { a: par[0], b: outra[1], k: +(viva ? 0.78 + rand() * 0.14 : 0.5 + rand() * 0.25).toFixed(2) };
+  if (r < 0.2) return null; // ~20% com a cor original do modelo
+  const pega = (l) => l[Math.floor(rand() * l.length)];
+  const viva = r > 0.9; // raro: cor forte nas costas
+  const albino = r > 0.995;
+  const ca = albino ? 36 : viva ? pega(VIVA) : pega(COSTAS);
+  const cb = albino ? 36 : pega(BARRIGA);
+  return { a: hexDe(ca), b: hexDe(cb), k: +(viva || albino ? 0.85 : 0.6 + rand() * 0.25).toFixed(2), ids: [ca, cb] };
+}
+
+/** Nome das cores do bicho (ex.: "Marrom-Escuro Dino / Amarelo-Claro Dino"), ou null. */
+export function nomeCor(cor) {
+  if (!cor?.ids) return null;
+  return cor.ids.map((id) => CORES_ARK[id]?.[0] ?? `cor ${id}`).join(' / ');
 }
 
 /** Filhote: cada região vem do pai ou da mãe. */
@@ -62,7 +66,9 @@ export function herdarCor(mae, pai, rand) {
   const p = pai ?? null;
   if (!m && !p) return null;
   if (!m || !p) return rand() < 0.5 ? (m ?? p) : null;
-  return { a: (rand() < 0.5 ? m : p).a, b: (rand() < 0.5 ? m : p).b, k: rand() < 0.5 ? m.k : p.k };
+  const ca = rand() < 0.5 ? m : p;
+  const cb = rand() < 0.5 ? m : p;
+  return { a: ca.a, b: cb.b, k: rand() < 0.5 ? m.k : p.k, ids: ca.ids && cb.ids ? [ca.ids[0], cb.ids[1]] : undefined };
 }
 
 // material.clone() do three NÃO copia o onBeforeCompile (o desenho da pele, as feridas...): copia à mão

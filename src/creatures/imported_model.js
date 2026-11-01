@@ -33,11 +33,17 @@ import reidodo from './imported/reidodo.js';
 import sauropelta from './imported/sauropelta.js';
 import terizinossauro from './imported/terizinossauro.js';
 import triceratops from './imported/triceratops.js';
+import raptor from './imported/raptor.js';
+import compsognato from './imported/compsognato.js';
+import trex from './imported/trex.js';
+import pterodactilo from './imported/pterodactilo.js';
+import quetzalcoatlus from './imported/quetzalcoatlus.js';
 
 // bichos com modelo .glb (bichos/modelos, convertidos por tools/models/bichos_glb.sh);
 // os outros são feitos por código (creature_builder.js)
 export const IMPORTED = {
   anquilossauro, argentavis, argentinossauro, braquiossauro, carnotauro, deinosuchus, dilofossauro, dimetrodonte, diplodoco, dodo, espinossauro, estegossauro, galimimo, iguanodonte, kentrossauro, mamute, mosassauro, moschops, paquirrinossauro, parassauro, reidodo, sauropelta, terizinossauro, triceratops,
+  raptor, compsognato, trex, pterodactilo, quetzalcoatlus,
 };
 
 function bytes(b64) {
