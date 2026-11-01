@@ -326,21 +326,6 @@
    }
   },
   {
-   "id": "sela",
-   "resultado": "sela",
-   "quantidade": 1,
-   "tempo": 5,
-   "xp": 15,
-   "categoria": "Ferramentas",
-   "nivel": 18,
-   "engrama": 9,
-   "ingredientes": {
-    "couro": 110,
-    "fibra": 65,
-    "madeira": 20
-   }
-  },
-  {
    "id": "forja",
    "resultado": "forja",
    "quantidade": 1,
@@ -1126,37 +1111,6 @@
    "estacao": "bancada"
   },
   {
-   "id": "sela_media",
-   "resultado": "sela_media",
-   "quantidade": 1,
-   "tempo": 5,
-   "xp": 20,
-   "categoria": "Ferramentas",
-   "nivel": 16,
-   "engrama": 12,
-   "ingredientes": {
-    "couro": 140,
-    "fibra": 80,
-    "madeira": 25
-   }
-  },
-  {
-   "id": "sela_grande",
-   "resultado": "sela_grande",
-   "quantidade": 1,
-   "tempo": 12,
-   "xp": 40,
-   "categoria": "Ferramentas",
-   "nivel": 74,
-   "engrama": 40,
-   "estacao": "bancada",
-   "ingredientes": {
-    "couro": 380,
-    "fibra": 200,
-    "lingote_metal": 50
-   }
-  },
-  {
    "id": "racao",
    "resultado": "racao",
    "quantidade": 2,
@@ -1170,6 +1124,420 @@
     "carne_assada": 1,
     "baga_mejo": 10,
     "fibra": 5
+   }
+  },
+  {
+   "id": "sela_raptor",
+   "resultado": "sela_raptor",
+   "quantidade": 1,
+   "tempo": 5,
+   "xp": 15,
+   "categoria": "Ferramentas",
+   "nivel": 18,
+   "engrama": 9,
+   "ingredientes": {
+    "couro": 110,
+    "fibra": 65,
+    "madeira": 20
+   }
+  },
+  {
+   "id": "sela_galimimo",
+   "resultado": "sela_galimimo",
+   "quantidade": 1,
+   "tempo": 5,
+   "xp": 20,
+   "categoria": "Ferramentas",
+   "nivel": 17,
+   "engrama": 12,
+   "ingredientes": {
+    "couro": 140,
+    "fibra": 80,
+    "madeira": 25
+   }
+  },
+  {
+   "id": "sela_paquicefalossauro",
+   "resultado": "sela_paquicefalossauro",
+   "quantidade": 1,
+   "tempo": 5,
+   "xp": 15,
+   "categoria": "Ferramentas",
+   "nivel": 20,
+   "engrama": 9,
+   "ingredientes": {
+    "couro": 110,
+    "fibra": 65,
+    "madeira": 20
+   }
+  },
+  {
+   "id": "sela_parassauro",
+   "resultado": "sela_parassauro",
+   "quantidade": 1,
+   "tempo": 5,
+   "xp": 20,
+   "categoria": "Ferramentas",
+   "nivel": 19,
+   "engrama": 12,
+   "ingredientes": {
+    "couro": 140,
+    "fibra": 80,
+    "madeira": 25
+   }
+  },
+  {
+   "id": "sela_triceratops",
+   "resultado": "sela_triceratops",
+   "quantidade": 1,
+   "tempo": 5,
+   "xp": 20,
+   "categoria": "Ferramentas",
+   "nivel": 20,
+   "engrama": 12,
+   "ingredientes": {
+    "couro": 140,
+    "fibra": 80,
+    "madeira": 25
+   }
+  },
+  {
+   "id": "sela_estegossauro",
+   "resultado": "sela_estegossauro",
+   "quantidade": 1,
+   "tempo": 5,
+   "xp": 20,
+   "categoria": "Ferramentas",
+   "nivel": 16,
+   "engrama": 12,
+   "ingredientes": {
+    "couro": 140,
+    "fibra": 80,
+    "madeira": 25
+   }
+  },
+  {
+   "id": "sela_anquilossauro",
+   "resultado": "sela_anquilossauro",
+   "quantidade": 1,
+   "tempo": 5,
+   "xp": 20,
+   "categoria": "Ferramentas",
+   "nivel": 17,
+   "engrama": 12,
+   "ingredientes": {
+    "couro": 140,
+    "fibra": 80,
+    "madeira": 25
+   }
+  },
+  {
+   "id": "sela_sauropelta",
+   "resultado": "sela_sauropelta",
+   "quantidade": 1,
+   "tempo": 5,
+   "xp": 20,
+   "categoria": "Ferramentas",
+   "nivel": 18,
+   "engrama": 12,
+   "ingredientes": {
+    "couro": 140,
+    "fibra": 80,
+    "madeira": 25
+   }
+  },
+  {
+   "id": "sela_braquiossauro",
+   "resultado": "sela_braquiossauro",
+   "quantidade": 1,
+   "tempo": 12,
+   "xp": 40,
+   "categoria": "Ferramentas",
+   "nivel": 77,
+   "engrama": 40,
+   "estacao": "bancada",
+   "ingredientes": {
+    "couro": 380,
+    "fibra": 200,
+    "lingote_metal": 50
+   }
+  },
+  {
+   "id": "sela_argentinossauro",
+   "resultado": "sela_argentinossauro",
+   "quantidade": 1,
+   "tempo": 12,
+   "xp": 40,
+   "categoria": "Ferramentas",
+   "nivel": 78,
+   "engrama": 40,
+   "estacao": "bancada",
+   "ingredientes": {
+    "couro": 380,
+    "fibra": 200,
+    "lingote_metal": 50
+   }
+  },
+  {
+   "id": "sela_carnotauro",
+   "resultado": "sela_carnotauro",
+   "quantidade": 1,
+   "tempo": 5,
+   "xp": 20,
+   "categoria": "Ferramentas",
+   "nivel": 16,
+   "engrama": 12,
+   "ingredientes": {
+    "couro": 140,
+    "fibra": 80,
+    "madeira": 25
+   }
+  },
+  {
+   "id": "sela_trex",
+   "resultado": "sela_trex",
+   "quantidade": 1,
+   "tempo": 12,
+   "xp": 40,
+   "categoria": "Ferramentas",
+   "nivel": 75,
+   "engrama": 40,
+   "estacao": "bancada",
+   "ingredientes": {
+    "couro": 380,
+    "fibra": 200,
+    "lingote_metal": 50
+   }
+  },
+  {
+   "id": "sela_titanoboa",
+   "resultado": "sela_titanoboa",
+   "quantidade": 1,
+   "tempo": 12,
+   "xp": 40,
+   "categoria": "Ferramentas",
+   "nivel": 76,
+   "engrama": 40,
+   "estacao": "bancada",
+   "ingredientes": {
+    "couro": 380,
+    "fibra": 200,
+    "lingote_metal": 50
+   }
+  },
+  {
+   "id": "sela_deinosuchus",
+   "resultado": "sela_deinosuchus",
+   "quantidade": 1,
+   "tempo": 12,
+   "xp": 40,
+   "categoria": "Ferramentas",
+   "nivel": 77,
+   "engrama": 40,
+   "estacao": "bancada",
+   "ingredientes": {
+    "couro": 380,
+    "fibra": 200,
+    "lingote_metal": 50
+   }
+  },
+  {
+   "id": "sela_espinossauro",
+   "resultado": "sela_espinossauro",
+   "quantidade": 1,
+   "tempo": 12,
+   "xp": 40,
+   "categoria": "Ferramentas",
+   "nivel": 78,
+   "engrama": 40,
+   "estacao": "bancada",
+   "ingredientes": {
+    "couro": 380,
+    "fibra": 200,
+    "lingote_metal": 50
+   }
+  },
+  {
+   "id": "sela_pterodactilo",
+   "resultado": "sela_pterodactilo",
+   "quantidade": 1,
+   "tempo": 5,
+   "xp": 15,
+   "categoria": "Ferramentas",
+   "nivel": 18,
+   "engrama": 9,
+   "ingredientes": {
+    "couro": 110,
+    "fibra": 65,
+    "madeira": 20
+   }
+  },
+  {
+   "id": "sela_quetzalcoatlus",
+   "resultado": "sela_quetzalcoatlus",
+   "quantidade": 1,
+   "tempo": 12,
+   "xp": 40,
+   "categoria": "Ferramentas",
+   "nivel": 75,
+   "engrama": 40,
+   "estacao": "bancada",
+   "ingredientes": {
+    "couro": 380,
+    "fibra": 200,
+    "lingote_metal": 50
+   }
+  },
+  {
+   "id": "sela_mamute",
+   "resultado": "sela_mamute",
+   "quantidade": 1,
+   "tempo": 5,
+   "xp": 20,
+   "categoria": "Ferramentas",
+   "nivel": 18,
+   "engrama": 12,
+   "ingredientes": {
+    "couro": 140,
+    "fibra": 80,
+    "madeira": 25
+   }
+  },
+  {
+   "id": "sela_argentavis",
+   "resultado": "sela_argentavis",
+   "quantidade": 1,
+   "tempo": 5,
+   "xp": 20,
+   "categoria": "Ferramentas",
+   "nivel": 19,
+   "engrama": 12,
+   "ingredientes": {
+    "couro": 140,
+    "fibra": 80,
+    "madeira": 25
+   }
+  },
+  {
+   "id": "sela_reidodo",
+   "resultado": "sela_reidodo",
+   "quantidade": 1,
+   "tempo": 5,
+   "xp": 20,
+   "categoria": "Ferramentas",
+   "nivel": 20,
+   "engrama": 12,
+   "ingredientes": {
+    "couro": 140,
+    "fibra": 80,
+    "madeira": 25
+   }
+  },
+  {
+   "id": "sela_terizinossauro",
+   "resultado": "sela_terizinossauro",
+   "quantidade": 1,
+   "tempo": 5,
+   "xp": 20,
+   "categoria": "Ferramentas",
+   "nivel": 16,
+   "engrama": 12,
+   "ingredientes": {
+    "couro": 140,
+    "fibra": 80,
+    "madeira": 25
+   }
+  },
+  {
+   "id": "sela_barionix",
+   "resultado": "sela_barionix",
+   "quantidade": 1,
+   "tempo": 5,
+   "xp": 20,
+   "categoria": "Ferramentas",
+   "nivel": 17,
+   "engrama": 12,
+   "ingredientes": {
+    "couro": 140,
+    "fibra": 80,
+    "madeira": 25
+   }
+  },
+  {
+   "id": "sela_suchomimo",
+   "resultado": "sela_suchomimo",
+   "quantidade": 1,
+   "tempo": 5,
+   "xp": 20,
+   "categoria": "Ferramentas",
+   "nivel": 18,
+   "engrama": 12,
+   "ingredientes": {
+    "couro": 140,
+    "fibra": 80,
+    "madeira": 25
+   }
+  },
+  {
+   "id": "sela_giganotossauro",
+   "resultado": "sela_giganotossauro",
+   "quantidade": 1,
+   "tempo": 12,
+   "xp": 40,
+   "categoria": "Ferramentas",
+   "nivel": 77,
+   "engrama": 40,
+   "estacao": "bancada",
+   "ingredientes": {
+    "couro": 380,
+    "fibra": 200,
+    "lingote_metal": 50
+   }
+  },
+  {
+   "id": "sela_sarcosuchus",
+   "resultado": "sela_sarcosuchus",
+   "quantidade": 1,
+   "tempo": 12,
+   "xp": 40,
+   "categoria": "Ferramentas",
+   "nivel": 78,
+   "engrama": 40,
+   "estacao": "bancada",
+   "ingredientes": {
+    "couro": 380,
+    "fibra": 200,
+    "lingote_metal": 50
+   }
+  },
+  {
+   "id": "sela_edmontossauro",
+   "resultado": "sela_edmontossauro",
+   "quantidade": 1,
+   "tempo": 5,
+   "xp": 20,
+   "categoria": "Ferramentas",
+   "nivel": 16,
+   "engrama": 12,
+   "ingredientes": {
+    "couro": 140,
+    "fibra": 80,
+    "madeira": 25
+   }
+  },
+  {
+   "id": "sela_paraceraterio",
+   "resultado": "sela_paraceraterio",
+   "quantidade": 1,
+   "tempo": 5,
+   "xp": 20,
+   "categoria": "Ferramentas",
+   "nivel": 17,
+   "engrama": 12,
+   "ingredientes": {
+    "couro": 140,
+    "fibra": 80,
+    "madeira": 25
    }
   }
  ]

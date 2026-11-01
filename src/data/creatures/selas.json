@@ -1,0 +1,32 @@
+{
+ "_explicacao": "Uma sela para cada bicho montável (como no ARK: 'Sela de T-Rex'). nome = nome do item; couro/pano = cores da sela; estilo = formato: leve (corredores pequenos, só a sela), padrao (sela com manta), placas (guardas de metal nas laterais, para bichos com espinhos/placas), plataforma (plataforma de madeira com grade, gigantes), cesto (cesto alto de madeira com cordas, para elefantes e dinos de carga), cobra (sela baixa e larga com cintas, répteis compridos), voo (arreio de aves e pterossauros: cintas e argolas). porte = pequena|media|grande (decide o preço e o tamanho).",
+ "selas": {
+  "raptor":            {"nome": "Sela de Raptor",           "porte": "pequena", "estilo": "leve",       "couro": "#7a4a2a", "pano": "#b0402c"},
+  "galimimo":          {"nome": "Sela de Galimimo",         "porte": "media",   "estilo": "leve",       "couro": "#8a6a3a", "pano": "#d8b050"},
+  "paquicefalossauro": {"nome": "Sela de Paquicefalossauro","porte": "pequena", "estilo": "leve",       "couro": "#6e4a30", "pano": "#4a6a8a"},
+  "parassauro":        {"nome": "Sela de Parassauro",       "porte": "media",   "estilo": "padrao",     "couro": "#6a3e20", "pano": "#3a7a5a"},
+  "triceratops":       {"nome": "Sela de Triceratops",      "porte": "media",   "estilo": "padrao",     "couro": "#5e3a22", "pano": "#a02e22"},
+  "estegossauro":      {"nome": "Sela de Estegossauro",     "porte": "media",   "estilo": "placas",     "couro": "#5a4030", "pano": "#c8782a"},
+  "anquilossauro":     {"nome": "Sela de Anquilossauro",    "porte": "media",   "estilo": "placas",     "couro": "#4e3a2c", "pano": "#6a6e74"},
+  "sauropelta":        {"nome": "Sela de Sauropelta",       "porte": "media",   "estilo": "placas",     "couro": "#5a4630", "pano": "#7a8a4a"},
+  "braquiossauro":     {"nome": "Sela de Braquiossauro",    "porte": "grande",  "estilo": "plataforma", "couro": "#5a3418", "pano": "#2e5a8a"},
+  "argentinossauro":   {"nome": "Sela de Argentinossauro",  "porte": "grande",  "estilo": "plataforma", "couro": "#4e2e16", "pano": "#8a2e22"},
+  "carnotauro":        {"nome": "Sela de Carnotauro",       "porte": "media",   "estilo": "padrao",     "couro": "#6a2e1c", "pano": "#2a2a2e"},
+  "trex":              {"nome": "Sela de T-Rex",            "porte": "grande",  "estilo": "plataforma", "couro": "#5a3a20", "pano": "#9a2a1c"},
+  "titanoboa":         {"nome": "Sela de Titanoboa",        "porte": "grande",  "estilo": "cobra",      "couro": "#4a5a30", "pano": "#2e4a2a"},
+  "deinosuchus":       {"nome": "Sela de Deinosuchus",      "porte": "grande",  "estilo": "cobra",      "couro": "#4a4a34", "pano": "#3a5a3a"},
+  "espinossauro":      {"nome": "Sela de Espinossauro",     "porte": "grande",  "estilo": "plataforma", "couro": "#4a3a2a", "pano": "#1e6a7a"},
+  "pterodactilo":      {"nome": "Sela de Pteranodonte",     "porte": "pequena", "estilo": "voo",        "couro": "#7a5a3a", "pano": "#3a8aa8"},
+  "quetzalcoatlus":    {"nome": "Sela de Quetzalcoatlus",   "porte": "grande",  "estilo": "voo",        "couro": "#6a4a2a", "pano": "#a83a3a"},
+  "mamute":            {"nome": "Sela de Mamute",           "porte": "media",   "estilo": "cesto",      "couro": "#6a4a30", "pano": "#c8c0a8"},
+  "argentavis":        {"nome": "Sela de Argentavis",       "porte": "media",   "estilo": "voo",        "couro": "#6a5a3a", "pano": "#c89a2a"},
+  "reidodo":           {"nome": "Sela de Rei-dodô",         "porte": "media",   "estilo": "cesto",      "couro": "#6a3a5a", "pano": "#e0b84a"},
+  "terizinossauro":    {"nome": "Sela de Terizinossauro",   "porte": "media",   "estilo": "padrao",     "couro": "#5a4a2a", "pano": "#7a3a6a"},
+  "barionix":          {"nome": "Sela de Barionix",         "porte": "media",   "estilo": "padrao",     "couro": "#4a5a4a", "pano": "#2a6a6a"},
+  "suchomimo":         {"nome": "Sela de Suchomimo",        "porte": "media",   "estilo": "padrao",     "couro": "#5a5a3a", "pano": "#4a7a8a"},
+  "giganotossauro":    {"nome": "Sela de Giganotossauro",   "porte": "grande",  "estilo": "plataforma", "couro": "#4a3018", "pano": "#7a1e1e"},
+  "sarcosuchus":       {"nome": "Sela de Sarcosuchus",      "porte": "grande",  "estilo": "cobra",      "couro": "#5a4a2a", "pano": "#4a6a3a"},
+  "edmontossauro":     {"nome": "Sela de Edmontossauro",    "porte": "media",   "estilo": "cesto",      "couro": "#6a4a2a", "pano": "#5a8a4a"},
+  "paraceraterio":     {"nome": "Sela de Paraceratério",    "porte": "media",   "estilo": "cesto",      "couro": "#6a5a4a", "pano": "#a8a090"}
+ }
+}

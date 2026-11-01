@@ -1592,6 +1592,357 @@
     "cor": "#5a3418",
     "cor2": "#a8acb4"
    }
+  },
+  {
+   "id": "sela_raptor",
+   "nome": "Sela de Raptor",
+   "tipo": "consumivel",
+   "peso": 20.0,
+   "pilha": 1,
+   "descricao": "Sela de Raptor: sela leve para corredores. Só serve nesse bicho. Com ela na mão, Interagir no bicho domado.",
+   "icone": {
+    "forma": "sela",
+    "cor": "#7a4a2a",
+    "cor2": "#b0402c"
+   }
+  },
+  {
+   "id": "sela_galimimo",
+   "nome": "Sela de Galimimo",
+   "tipo": "consumivel",
+   "peso": 20.0,
+   "pilha": 1,
+   "descricao": "Sela de Galimimo: sela leve para corredores. Só serve nesse bicho. Com ela na mão, Interagir no bicho domado.",
+   "icone": {
+    "forma": "sela",
+    "cor": "#8a6a3a",
+    "cor2": "#d8b050"
+   }
+  },
+  {
+   "id": "sela_paquicefalossauro",
+   "nome": "Sela de Paquicefalossauro",
+   "tipo": "consumivel",
+   "peso": 20.0,
+   "pilha": 1,
+   "descricao": "Sela de Paquicefalossauro: sela leve para corredores. Só serve nesse bicho. Com ela na mão, Interagir no bicho domado.",
+   "icone": {
+    "forma": "sela",
+    "cor": "#6e4a30",
+    "cor2": "#4a6a8a"
+   }
+  },
+  {
+   "id": "sela_parassauro",
+   "nome": "Sela de Parassauro",
+   "tipo": "consumivel",
+   "peso": 20.0,
+   "pilha": 1,
+   "descricao": "Sela de Parassauro: sela reforçada com manta. Só serve nesse bicho. Com ela na mão, Interagir no bicho domado.",
+   "icone": {
+    "forma": "sela",
+    "cor": "#6a3e20",
+    "cor2": "#3a7a5a"
+   }
+  },
+  {
+   "id": "sela_triceratops",
+   "nome": "Sela de Triceratops",
+   "tipo": "consumivel",
+   "peso": 20.0,
+   "pilha": 1,
+   "descricao": "Sela de Triceratops: sela reforçada com manta. Só serve nesse bicho. Com ela na mão, Interagir no bicho domado.",
+   "icone": {
+    "forma": "sela",
+    "cor": "#5e3a22",
+    "cor2": "#a02e22"
+   }
+  },
+  {
+   "id": "sela_estegossauro",
+   "nome": "Sela de Estegossauro",
+   "tipo": "consumivel",
+   "peso": 20.0,
+   "pilha": 1,
+   "descricao": "Sela de Estegossauro: sela com guardas de metal nos lados. Só serve nesse bicho. Com ela na mão, Interagir no bicho domado.",
+   "icone": {
+    "forma": "sela",
+    "cor": "#5a4030",
+    "cor2": "#c8782a"
+   }
+  },
+  {
+   "id": "sela_anquilossauro",
+   "nome": "Sela de Anquilossauro",
+   "tipo": "consumivel",
+   "peso": 20.0,
+   "pilha": 1,
+   "descricao": "Sela de Anquilossauro: sela com guardas de metal nos lados. Só serve nesse bicho. Com ela na mão, Interagir no bicho domado.",
+   "icone": {
+    "forma": "sela",
+    "cor": "#4e3a2c",
+    "cor2": "#6a6e74"
+   }
+  },
+  {
+   "id": "sela_sauropelta",
+   "nome": "Sela de Sauropelta",
+   "tipo": "consumivel",
+   "peso": 20.0,
+   "pilha": 1,
+   "descricao": "Sela de Sauropelta: sela com guardas de metal nos lados. Só serve nesse bicho. Com ela na mão, Interagir no bicho domado.",
+   "icone": {
+    "forma": "sela",
+    "cor": "#5a4630",
+    "cor2": "#7a8a4a"
+   }
+  },
+  {
+   "id": "sela_braquiossauro",
+   "nome": "Sela de Braquiossauro",
+   "tipo": "consumivel",
+   "peso": 20.0,
+   "pilha": 1,
+   "descricao": "Sela de Braquiossauro: plataforma de madeira com grade. Só serve nesse bicho. Com ela na mão, Interagir no bicho domado.",
+   "icone": {
+    "forma": "sela",
+    "cor": "#5a3418",
+    "cor2": "#2e5a8a"
+   }
+  },
+  {
+   "id": "sela_argentinossauro",
+   "nome": "Sela de Argentinossauro",
+   "tipo": "consumivel",
+   "peso": 20.0,
+   "pilha": 1,
+   "descricao": "Sela de Argentinossauro: plataforma de madeira com grade. Só serve nesse bicho. Com ela na mão, Interagir no bicho domado.",
+   "icone": {
+    "forma": "sela",
+    "cor": "#4e2e16",
+    "cor2": "#8a2e22"
+   }
+  },
+  {
+   "id": "sela_carnotauro",
+   "nome": "Sela de Carnotauro",
+   "tipo": "consumivel",
+   "peso": 20.0,
+   "pilha": 1,
+   "descricao": "Sela de Carnotauro: sela reforçada com manta. Só serve nesse bicho. Com ela na mão, Interagir no bicho domado.",
+   "icone": {
+    "forma": "sela",
+    "cor": "#6a2e1c",
+    "cor2": "#2a2a2e"
+   }
+  },
+  {
+   "id": "sela_trex",
+   "nome": "Sela de T-Rex",
+   "tipo": "consumivel",
+   "peso": 20.0,
+   "pilha": 1,
+   "descricao": "Sela de T-Rex: plataforma de madeira com grade. Só serve nesse bicho. Com ela na mão, Interagir no bicho domado.",
+   "icone": {
+    "forma": "sela",
+    "cor": "#5a3a20",
+    "cor2": "#9a2a1c"
+   }
+  },
+  {
+   "id": "sela_titanoboa",
+   "nome": "Sela de Titanoboa",
+   "tipo": "consumivel",
+   "peso": 20.0,
+   "pilha": 1,
+   "descricao": "Sela de Titanoboa: sela baixa e larga, presa com cintas. Só serve nesse bicho. Com ela na mão, Interagir no bicho domado.",
+   "icone": {
+    "forma": "sela",
+    "cor": "#4a5a30",
+    "cor2": "#2e4a2a"
+   }
+  },
+  {
+   "id": "sela_deinosuchus",
+   "nome": "Sela de Deinosuchus",
+   "tipo": "consumivel",
+   "peso": 20.0,
+   "pilha": 1,
+   "descricao": "Sela de Deinosuchus: sela baixa e larga, presa com cintas. Só serve nesse bicho. Com ela na mão, Interagir no bicho domado.",
+   "icone": {
+    "forma": "sela",
+    "cor": "#4a4a34",
+    "cor2": "#3a5a3a"
+   }
+  },
+  {
+   "id": "sela_espinossauro",
+   "nome": "Sela de Espinossauro",
+   "tipo": "consumivel",
+   "peso": 20.0,
+   "pilha": 1,
+   "descricao": "Sela de Espinossauro: plataforma de madeira com grade. Só serve nesse bicho. Com ela na mão, Interagir no bicho domado.",
+   "icone": {
+    "forma": "sela",
+    "cor": "#4a3a2a",
+    "cor2": "#1e6a7a"
+   }
+  },
+  {
+   "id": "sela_pterodactilo",
+   "nome": "Sela de Pteranodonte",
+   "tipo": "consumivel",
+   "peso": 20.0,
+   "pilha": 1,
+   "descricao": "Sela de Pteranodonte: arreio de voo com cintas e argolas. Só serve nesse bicho. Com ela na mão, Interagir no bicho domado.",
+   "icone": {
+    "forma": "sela",
+    "cor": "#7a5a3a",
+    "cor2": "#3a8aa8"
+   }
+  },
+  {
+   "id": "sela_quetzalcoatlus",
+   "nome": "Sela de Quetzalcoatlus",
+   "tipo": "consumivel",
+   "peso": 20.0,
+   "pilha": 1,
+   "descricao": "Sela de Quetzalcoatlus: arreio de voo com cintas e argolas. Só serve nesse bicho. Com ela na mão, Interagir no bicho domado.",
+   "icone": {
+    "forma": "sela",
+    "cor": "#6a4a2a",
+    "cor2": "#a83a3a"
+   }
+  },
+  {
+   "id": "sela_mamute",
+   "nome": "Sela de Mamute",
+   "tipo": "consumivel",
+   "peso": 20.0,
+   "pilha": 1,
+   "descricao": "Sela de Mamute: cesto alto de madeira preso com cordas. Só serve nesse bicho. Com ela na mão, Interagir no bicho domado.",
+   "icone": {
+    "forma": "sela",
+    "cor": "#6a4a30",
+    "cor2": "#c8c0a8"
+   }
+  },
+  {
+   "id": "sela_argentavis",
+   "nome": "Sela de Argentavis",
+   "tipo": "consumivel",
+   "peso": 20.0,
+   "pilha": 1,
+   "descricao": "Sela de Argentavis: arreio de voo com cintas e argolas. Só serve nesse bicho. Com ela na mão, Interagir no bicho domado.",
+   "icone": {
+    "forma": "sela",
+    "cor": "#6a5a3a",
+    "cor2": "#c89a2a"
+   }
+  },
+  {
+   "id": "sela_reidodo",
+   "nome": "Sela de Rei-dodô",
+   "tipo": "consumivel",
+   "peso": 20.0,
+   "pilha": 1,
+   "descricao": "Sela de Rei-dodô: cesto alto de madeira preso com cordas. Só serve nesse bicho. Com ela na mão, Interagir no bicho domado.",
+   "icone": {
+    "forma": "sela",
+    "cor": "#6a3a5a",
+    "cor2": "#e0b84a"
+   }
+  },
+  {
+   "id": "sela_terizinossauro",
+   "nome": "Sela de Terizinossauro",
+   "tipo": "consumivel",
+   "peso": 20.0,
+   "pilha": 1,
+   "descricao": "Sela de Terizinossauro: sela reforçada com manta. Só serve nesse bicho. Com ela na mão, Interagir no bicho domado.",
+   "icone": {
+    "forma": "sela",
+    "cor": "#5a4a2a",
+    "cor2": "#7a3a6a"
+   }
+  },
+  {
+   "id": "sela_barionix",
+   "nome": "Sela de Barionix",
+   "tipo": "consumivel",
+   "peso": 20.0,
+   "pilha": 1,
+   "descricao": "Sela de Barionix: sela reforçada com manta. Só serve nesse bicho. Com ela na mão, Interagir no bicho domado.",
+   "icone": {
+    "forma": "sela",
+    "cor": "#4a5a4a",
+    "cor2": "#2a6a6a"
+   }
+  },
+  {
+   "id": "sela_suchomimo",
+   "nome": "Sela de Suchomimo",
+   "tipo": "consumivel",
+   "peso": 20.0,
+   "pilha": 1,
+   "descricao": "Sela de Suchomimo: sela reforçada com manta. Só serve nesse bicho. Com ela na mão, Interagir no bicho domado.",
+   "icone": {
+    "forma": "sela",
+    "cor": "#5a5a3a",
+    "cor2": "#4a7a8a"
+   }
+  },
+  {
+   "id": "sela_giganotossauro",
+   "nome": "Sela de Giganotossauro",
+   "tipo": "consumivel",
+   "peso": 20.0,
+   "pilha": 1,
+   "descricao": "Sela de Giganotossauro: plataforma de madeira com grade. Só serve nesse bicho. Com ela na mão, Interagir no bicho domado.",
+   "icone": {
+    "forma": "sela",
+    "cor": "#4a3018",
+    "cor2": "#7a1e1e"
+   }
+  },
+  {
+   "id": "sela_sarcosuchus",
+   "nome": "Sela de Sarcosuchus",
+   "tipo": "consumivel",
+   "peso": 20.0,
+   "pilha": 1,
+   "descricao": "Sela de Sarcosuchus: sela baixa e larga, presa com cintas. Só serve nesse bicho. Com ela na mão, Interagir no bicho domado.",
+   "icone": {
+    "forma": "sela",
+    "cor": "#5a4a2a",
+    "cor2": "#4a6a3a"
+   }
+  },
+  {
+   "id": "sela_edmontossauro",
+   "nome": "Sela de Edmontossauro",
+   "tipo": "consumivel",
+   "peso": 20.0,
+   "pilha": 1,
+   "descricao": "Sela de Edmontossauro: cesto alto de madeira preso com cordas. Só serve nesse bicho. Com ela na mão, Interagir no bicho domado.",
+   "icone": {
+    "forma": "sela",
+    "cor": "#6a4a2a",
+    "cor2": "#5a8a4a"
+   }
+  },
+  {
+   "id": "sela_paraceraterio",
+   "nome": "Sela de Paraceratério",
+   "tipo": "consumivel",
+   "peso": 20.0,
+   "pilha": 1,
+   "descricao": "Sela de Paraceratério: cesto alto de madeira preso com cordas. Só serve nesse bicho. Com ela na mão, Interagir no bicho domado.",
+   "icone": {
+    "forma": "sela",
+    "cor": "#6a5a4a",
+    "cor2": "#a8a090"
+   }
   }
  ]
 }

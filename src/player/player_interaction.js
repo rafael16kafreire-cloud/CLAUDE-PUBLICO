@@ -8,7 +8,7 @@
 import * as THREE from 'three';
 import { BALANCE } from '../core/balance.js';
 import { events, EV } from '../core/event_bus.js';
-import { saddleFor } from '../creatures/saddle.js';
+import { saddleFor, saddleFits } from '../creatures/saddle.js';
 import { ITEMS, itemName } from '../items/items.js';
 import { sound } from '../audio/audio.js';
 import { game } from '../core/game_manager.js';
@@ -16,7 +16,6 @@ import { game } from '../core/game_manager.js';
 const REACH = 2.4;        // alcance para objetos (m)
 const WATER_REACH = 3.2;  // alcance para beber (m)
 
-const SADDLES = ['sela', 'sela_media', 'sela_grande'];
 
 export class PlayerInteraction {
   constructor(player, world, cameraCtl, actions, inventory) {
@@ -185,9 +184,9 @@ export class PlayerInteraction {
       }
       // sela: com a sela do porte certo na mão, Interagir põe a sela
       const held = this.inv.equipped?.id;
-      if (rideable && !c.saddled && BALANCE.sela.precisa && SADDLES.includes(held)) {
+      if (rideable && !c.saddled && BALANCE.sela.precisa && typeof held === 'string' && held.startsWith('sela')) {
         const need = saddleFor(c);
-        if (held !== need) return { kind: 'hint', key: 'interact', text: `${c.species.nome} precisa de ${itemName(need)}` };
+        if (!saddleFits(c, held)) return { kind: 'hint', key: 'interact', text: `${c.species.nome} precisa de ${itemName(need)}` };
         return { kind: 'saddle', c, item: held, text: `Pôr a ${itemName(held)} em ${c.name ?? c.species.nome}` };
       }
       const ride = rideable ? (c.saddled || !BALANCE.sela.precisa ? (game.isTouch ? ' · segure para montar' : ' · F: montar') : ' · sem sela') : '';

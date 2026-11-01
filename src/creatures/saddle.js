@@ -12,6 +12,17 @@
 import * as THREE from 'three';
 import { BALANCE } from '../core/balance.js';
 import SELA from './imported/sela_modelo.js';
+import selasJson from '../data/creatures/selas.json';
+
+// Uma sela para cada bicho (cores e formato em data/creatures/selas.json)
+const SELAS = selasJson.selas;
+const PORTE = { pequena: 'sela', media: 'sela_media', grande: 'sela_grande' };
+const matCache = new Map();
+function lambert(cor) {
+  if (!matCache.has(cor)) matCache.set(cor, new THREE.MeshLambertMaterial({ color: cor }));
+  return matCache.get(cor);
+}
+
 
 const LEATHER = new THREE.MeshLambertMaterial({ color: '#6e4426' });
 const LEATHER_DARK = new THREE.MeshLambertMaterial({ color: '#4a2c18' });
@@ -83,10 +94,22 @@ export function bodyLength(c) {
 }
 
 // Qual sela serve para este bicho.
-export function saddleFor(c) {
+export function tierOf(c) {
+  const d = SELAS[c.species.id];
+  if (d) return PORTE[d.porte];
   const L = bodyLength(c);
   const T = BALANCE.sela.porte_m;
   return L < T[0] ? 'sela' : L < T[1] ? 'sela_media' : 'sela_grande';
+}
+
+// A sela certa é a do próprio bicho ("Sela de T-Rex"); espécie sem sela própria usa a do porte.
+export function saddleFor(c) {
+  return SELAS[c.species.id] ? `sela_${c.species.id}` : tierOf(c);
+}
+
+// A sela guardada serve neste bicho? (as 3 selas antigas dos saves velhos valem pelo porte)
+export function saddleFits(c, item) {
+  return item === saddleFor(c) || item === tierOf(c);
 }
 
 // Onde a sela fica no modelo (unidades do modelo): no meio do TRONCO, em cima das
@@ -149,7 +172,12 @@ function box(w, h, d, x, y, z, mat) {
 
 // Monta a sela no espaço do modelo (unidades do modelo, antes da escala).
 // geo = geometria do bicho (para medir largura/altura das costas).
-export function buildSaddle(c, kind) {
+export function buildSaddle(c, kindIn) {
+  const kind = tierOf(c); // tamanho pelo porte do bicho
+  const D = SELAS[c.species.id] ?? { estilo: kind === 'sela_grande' ? 'plataforma' : 'padrao' };
+  const estilo = D.estilo;
+  const COURO = D.couro ? lambert(D.couro) : SELA_COURO;
+  const PANO = D.pano ? lambert(D.pano) : CLOTH;
   const geo = c.mesh.geometry;
   if (!geo.boundingBox) geo.computeBoundingBox();
   const bb = geo.boundingBox;
@@ -168,7 +196,7 @@ export function buildSaddle(c, kind) {
   const pw = Math.max(0.26 * s, Math.min(width * 0.4, maxW, (spot.trunk * 0.5) / (SELA.l / SELA.w)));
   // a sela (modelo): escala pela largura; a frente (o "chifre") aponta para a cabeça
   const f = pw / SELA.w;
-  const model = new THREE.Mesh(selaGeometry(), SELA_COURO);
+  const model = new THREE.Mesh(selaGeometry(), COURO);
   model.scale.setScalar(f);
   model.position.set(0, back - 0.02 * s, 0);
   model.castShadow = true;
@@ -176,11 +204,58 @@ export function buildSaddle(c, kind) {
   c._seatLift = SELA.seat * f; // o jogador senta em cima do assento
   const len2 = SELA.l * f;
   // manta de pano por baixo da sela (uma caixa fina: não pesa)
-  g.add(box(pw * 1.22, 0.025 * s, len2 * 1.1, 0, back - 0.004 * s, 0, CLOTH));
-  if (kind === 'sela_grande') {
+  g.add(box(pw * 1.22 * (estilo === 'cobra' ? 1.5 : 1), 0.025 * s, len2 * 1.1, 0, back - 0.004 * s, 0, PANO));
+  const sy = back + SELA.seat * f * 0.7; // altura do assento
+  const post = (x, z, h) => g.add(box(0.05 * s, h, 0.05 * s, x, sy + h / 2, z, WOOD));
+  if (estilo === 'plataforma') {
     // plataforma de madeira com grade (como as selas de gigantes do ARK)
-    g.add(box(pw * 1.15, 0.06 * s, len2 * 1.2, 0, back + SELA.seat * f * 0.7, 0, WOOD));
-    for (const side of [-1, 1]) g.add(box(0.05 * s, 0.35 * s, len2 * 1.2, side * pw * 0.57, back + SELA.seat * f * 0.7 + 0.17 * s, 0, WOOD));
+    g.add(box(pw * 1.15, 0.06 * s, len2 * 1.2, 0, sy, 0, WOOD));
+    for (const side of [-1, 1]) g.add(box(0.05 * s, 0.35 * s, len2 * 1.2, side * pw * 0.57, sy + 0.17 * s, 0, WOOD));
+    g.add(box(pw * 1.15, 0.3 * s, 0.05 * s, 0, sy + 0.15 * s, -len2 * 0.6, WOOD)); // grade da frente
+    g.add(box(pw * 1.15, 0.3 * s, 0.05 * s, 0, sy + 0.15 * s, len2 * 0.6, WOOD)); // e de trás
+  } else if (estilo === 'cesto') {
+    // cesto alto de madeira (mamute, dinos de carga): postes, travessas e cordas
+    const h = 0.55 * s;
+    g.add(box(pw * 1.3, 0.06 * s, len2 * 1.25, 0, sy, 0, WOOD));
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) post(sx * pw * 0.64, sz * len2 * 0.62, h);
+    for (const side of [-1, 1]) {
+      g.add(box(0.04 * s, 0.05 * s, len2 * 1.3, side * pw * 0.64, sy + h, 0, WOOD));
+      g.add(box(0.03 * s, 0.2 * s, len2 * 1.2, side * pw * 0.64, sy + h * 0.5, 0, PANO));
+    }
+    for (const sz of [-1, 1]) g.add(box(pw * 1.3, 0.04 * s, 0.04 * s, 0, sy + h, sz * len2 * 0.62, WOOD));
+  } else if (estilo === 'placas') {
+    // guardas de metal nos lados (bichos com placas e espinhos)
+    for (const side of [-1, 1]) {
+      const pl = box(0.05 * s, 0.34 * s, len2 * 1.05, side * pw * 0.62, back + 0.12 * s, 0, IRON);
+      pl.rotation.z = side * 0.35;
+      g.add(pl);
+      for (const sz of [-0.35, 0, 0.35]) {
+        const sp = new THREE.Mesh(new THREE.ConeGeometry(0.05 * s, 0.16 * s, 5), IRON);
+        sp.position.set(side * pw * 0.72, back + 0.3 * s, sz * len2);
+        sp.rotation.z = -side * 0.5;
+        g.add(sp);
+      }
+    }
+  } else if (estilo === 'cobra') {
+    // sela baixa e larga: duas cintas largas por cima e estribo de corda de cada lado
+    for (const sz of [-0.55, 0.55]) g.add(box(pw * 1.55, 0.03 * s, 0.1 * s, 0, back + 0.01 * s, sz * len2, COURO));
+    for (const side of [-1, 1]) g.add(box(0.03 * s, 0.03 * s, len2 * 1.1, side * pw * 0.78, back + 0.015 * s, 0, ROPE));
+  } else if (estilo === 'voo') {
+    // arreio de voo: cintas cruzadas no peito, argolas de ferro e apoio para os pés
+    for (const sz of [-0.5, 0.5]) g.add(box(pw * 1.35, 0.03 * s, 0.07 * s, 0, back + 0.012 * s, sz * len2, PANO));
+    for (const side of [-1, 1]) {
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.05 * s, 0.01 * s, 5, 10), IRON);
+      ring.position.set(side * pw * 0.7, back + 0.04 * s, len2 * 0.3);
+      ring.rotation.y = Math.PI / 2;
+      g.add(ring);
+      g.add(box(0.12 * s, 0.02 * s, 0.1 * s, side * pw * 0.75, back - 0.12 * s, 0.05 * s, WOOD)); // estribo
+    }
+  } else if (estilo === 'padrao') {
+    // cilhas largas de couro (a sela costurada na manta) e estribo de ferro de cada lado
+    for (const side of [-1, 1]) {
+      g.add(box(0.025 * s, 0.14 * s, 0.07 * s, side * pw * 0.7, back - 0.07 * s, 0, COURO));
+      g.add(box(0.1 * s, 0.015 * s, 0.07 * s, side * pw * 0.72, back - 0.15 * s, 0, IRON));
+    }
   }
   // Presa no corpo: a sela acompanha o quadril (giro e balanço) e, a cada quadro, a altura
   // dela é refeita pela pele do bicho ali (as animações levantam e abaixam o dorso): ela
