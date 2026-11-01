@@ -43,6 +43,7 @@
   },
   {
    "id": "parassauro",
+   "ajuste_chao": 0.17,
    "comprimento_m": [9, 10],
    "nome": "Parassauro",
    "dieta": "herbivoro",
@@ -84,6 +85,7 @@
   },
   {
    "id": "galimimo",
+   "ajuste_chao": 0.03,
    "comprimento_m": [5.5, 6.5],
    "nome": "Galimimo",
    "dieta": "herbivoro",
@@ -526,6 +528,7 @@
   },
   {
    "id": "carnotauro",
+   "ajuste_chao": 0.1,
    "comprimento_m": [7.5, 8],
    "nome": "Carnotauro",
    "dieta": "carnivoro",
@@ -707,6 +710,7 @@
   },
   {
    "id": "espinossauro",
+   "ajuste_chao": 0.04,
    "comprimento_m": [14, 18],
    "nome": "Espinossauro",
    "dieta": "carnivoro",
@@ -1063,6 +1067,7 @@
   },
   {
    "id": "dilofossauro",
+   "ajuste_chao": 0.04,
    "comprimento_m": [3.0, 3.5],
    "nome": "Dilofossauro",
    "dieta": "carnivoro",
@@ -1107,6 +1112,7 @@
   },
   {
    "id": "iguanodonte",
+   "ajuste_chao": 0.09,
    "comprimento_m": [8, 9],
    "nome": "Iguanodonte",
    "dieta": "herbivoro",
@@ -1381,6 +1387,7 @@
   },
   {
    "id": "terizinossauro",
+   "ajuste_chao": 0.1,
    "comprimento_m": [9, 10],
    "nome": "Terizinossauro",
    "dieta": "herbivoro",
@@ -1428,6 +1435,7 @@
   },
   {
    "id": "barionix",
+   "ajuste_chao": 0.09,
    "comprimento_m": [7.5, 10],
    "nome": "Barionix",
    "dieta": "carnivoro",
@@ -1474,6 +1482,7 @@
   },
   {
    "id": "suchomimo",
+   "ajuste_chao": 0.09,
    "comprimento_m": [9, 11],
    "nome": "Suchomimo",
    "dieta": "carnivoro",
@@ -1520,6 +1529,7 @@
   },
   {
    "id": "giganotossauro",
+   "ajuste_chao": 0.12,
    "comprimento_m": [12, 13],
    "nome": "Giganotossauro",
    "dieta": "carnivoro",

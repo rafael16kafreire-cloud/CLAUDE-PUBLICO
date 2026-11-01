@@ -1839,6 +1839,8 @@ export class Creature {
       return;
     }
     m.position.copy(this.pos);
+    // pés no chão: alguns modelos ficam alguns cm no ar (ajuste medido por espécie, em m)
+    if (this.species.ajuste_chao && !this.flies && !this.aquatic) m.position.y -= this.species.ajuste_chao * this.scale;
     // voador pousado: peito alto, apoiado nas asas dobradas
     this._standUp = (this._standUp ?? 0) + ((this.landed ? 0.12 : 0) - (this._standUp ?? 0)) * Math.min(1, dt * 3);
     const ko = this.koAnim ?? 0;
