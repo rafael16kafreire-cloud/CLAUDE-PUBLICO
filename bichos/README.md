@@ -92,3 +92,19 @@ encurta a cauda, aumenta a cabeça e fecha a boca. Depois é rigado e animado co
 | edmontossauro | coleta de frutas/sementes em quantidade, alarme do bando (rugido) |
 | lystrosaurus | bichinho de colo (variante pequena do Moschops): bônus de experiência |
 | moschops | coleta de cogumelos/raízes, cabeçada derruba pedra |
+
+## Argentavis novo (troca do modelo antigo)
+
+O modelo antigo da águia tinha nomes de assets de jogo (`CH_NPC_MOB_GEagle_A02_MI`), sinal de que foi extraído de um jogo,
+então foi trocado pela Osprey do Pigcraft (CC BY, gerada com IA pelo autor). Ela vem parada, sem esqueleto:
+
+1. malha reduzida sem estragar a textura: `gltf-transform weld` + `simplify`, depois `blender/reduzir_assar.py` (40 mil triângulos, cor assada);
+2. esqueleto de ave: `node ave.mjs config/argentavis_rig.json` (posições dos ossos no config; `--medir` ajuda a posicioná-los);
+3. animações (todas novas): `node completar.mjs completar/argentavis.mjs` — parado/andar/dormir com asas dobradas, voar, planar, atacar com as garras etc.
+
+## Revisão geral das animações
+
+- bípedes: menos mergulho ao comer/atacar/rugir; dormir com o pescoço de lado
+- pesos da pele: à frente do crânio (presas, chifres) só segue a cabeça; atrás do quadril só segue a cauda
+- pteranodonte: voo nivelado (`nivelar` no completar.mjs); carnotauro trocado pelo modelo do Cenker Turhan
+- `refazer.sh` regera todos os bichos com esqueleto automático

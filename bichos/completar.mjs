@@ -4,7 +4,7 @@
 // Uso:
 //   node completar.mjs modelos/trex.glb --ossos          lista os ossos (nome, pai, posição em metros)
 //   node completar.mjs completar/trex.mjs                  gera as animações descritas no arquivo
-// O arquivo de descrição exporta: { modelo, vars? (constantes usadas dentro de f), saida, clipes: [{ nome, base, baseVel?, dur, fixo?: {osso: [clipe, tempo]}, nivelar?: [osso, altura], f(t, d, u) }], material?(THREE, mat) }
+// O arquivo de descrição exporta: { modelo, remover? (clipes a tirar), vars? (constantes usadas dentro de f), saida, clipes: [{ nome, base, baseVel?, dur, fixo?: {osso: [clipe, tempo]}, nivelar?: [osso, altura], f(t, d, u) }], material?(THREE, mat) }
 //   f devolve { 'osso': [graus X, graus Y, graus Z] ou quatérnio [x, y, z, w], ..., $pos: { 'osso': [dx, dy, dz] metros } }
 //   u = utilidades: u.s(x) suaviza 0..1, u.e(t, a, b) rampa suave entre os tempos a e b, u.sin(t, período)
 import { createRequire } from 'node:module'; import { readFileSync, writeFileSync } from 'node:fs';
@@ -32,7 +32,7 @@ window.ossos = () => { const out = [], v = new THREE.Vector3(), mx = new THREE.A
   const pc = gl.animations.find(a => a.name === (window.CLIPE || 'parado')) || gl.animations[0]; mx.clipAction(pc).play(); mx.setTime(0); gl.scene.updateMatrixWorld(true);
   gl.scene.traverse(o => { if (o.isBone) { o.getWorldPosition(v); out.push([o.name, o.parent?.isBone ? o.parent.name : '-', v.toArray().map(x => +x.toFixed(2))]); } });
   return { ossos: out, anims: gl.animations.map(a => a.name + ' ' + a.duration.toFixed(2)) }; };
-window.gerar = async (clipes, matSrc, V = {}) => {
+window.gerar = async (clipes, matSrc, V = {}, remover = []) => {
   const sc = gl.scene, fps = 30;
   // nós animados (todos os que aparecem em alguma trilha) + ossos usados nas descrições
   const nodes = new Map();
@@ -94,7 +94,7 @@ window.gerar = async (clipes, matSrc, V = {}) => {
   if (matSrc) { const fm = eval('(' + matSrc + ')'); const vis = new Set(); sc.traverse(o => { if (o.isMesh) for (const m of [].concat(o.material)) if (!vis.has(m)) { vis.add(m); fm(THREE, m, o); } }); }
   for (const [o, [rp, rq, rs]] of rest0) { o.position.copy(rp); o.quaternion.copy(rq); o.scale.copy(rs); }
   const nomesNovos = new Set(novos.map(c => c.name));
-  const clips = [...gl.animations.filter(c => !nomesNovos.has(c.name)), ...novos];
+  const clips = [...gl.animations.filter(c => !nomesNovos.has(c.name) && !(remover || []).includes(c.name)), ...novos];
   const data = await new GLTFExporter().parseAsync(sc.children.length === 1 ? sc.children[0] : sc, { binary: true, animations: clips });
   const a = new Uint8Array(data); let s = ''; for (let i = 0; i < a.length; i += 0x8000) s += String.fromCharCode(...a.subarray(i, i + 0x8000));
   return { b64: btoa(s), anims: clips.map(c => c.name + ' ' + c.duration.toFixed(1)) };
@@ -110,7 +110,7 @@ if (dump) {
   for (const [n, pai, pos] of r.ossos) console.log(n.padEnd(34), pai.padEnd(34), pos.join(' '));
 } else {
   const clipes = desc.clipes.map(c => ({ ...c, f: c.f.toString() }));
-  const r = await p.evaluate(([c, m, v]) => window.gerar(c, m, v), [clipes, desc.material ? desc.material.toString() : null, desc.vars || {}]);
+  const r = await p.evaluate(([c, m, v, rm]) => window.gerar(c, m, v, rm), [clipes, desc.material ? desc.material.toString() : null, desc.vars || {}, desc.remover || []]);
   writeFileSync(resolve(dirname(arg), desc.saida || desc.modelo), Buffer.from(r.b64, 'base64'));
   console.log('animações:', r.anims.join(', '));
 }

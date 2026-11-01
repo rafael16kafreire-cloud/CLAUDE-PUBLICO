@@ -5,7 +5,7 @@ Modelos de terceiros usados no jogo. Para CC BY 4.0 é obrigatório manter estes
 | Bicho | Modelo — autor — licença — link |
 |---|---|
 | anquilossauro | Dino - Ankylosaurus — pikabobalex — CC BY 4.0 — https://sketchfab.com/3d-models/dino-ankylosaurus-55b9adcbcf7846e8a833bfc77eaf3d3f |
-| argentavis | White Eagle Animation Fast Fly — GremorySaiyan — CC BY 4.0 — https://sketchfab.com/3d-models/white-eagle-animation-fast-fly-30203bf39e5145f19c79e83c550139d3 |
+| argentavis | Osprey – Flying Raptor Rigged Bird — Pigcraft (s8819296) — CC BY 4.0 (gerado com IA pelo autor) — https://sketchfab.com/3d-models/osprey-flying-raptor-rigged-bird-9e65ce0542a24ea388e81e3e6e9c9054 (esqueleto e animações feitos neste projeto: ave.mjs + completar/argentavis.mjs) |
 | argentinossauro | Argentinosaurus Huinculensis — Nobilis 2 (nobilishornet2) — CC BY 4.0 — https://sketchfab.com/3d-models/argentinosaurus-huinculensis-0709f00fbe75454686e56eb5391eec44 |
 | barionix | Baryonix- Walkeri — add4d (AD&D 4D) — CC0 (domínio público) — https://sketchfab.com/3d-models/baryonix-walkeri-3e97de2fef8240edac9244c55ed6fcb3 |
 | bisao | Animated Free Bison — Anees Animates — CC BY 4.0 — https://sketchfab.com/3d-models/animated-free-bison-be2dcd97db1c4b9c91a7728d9bc89925 |
