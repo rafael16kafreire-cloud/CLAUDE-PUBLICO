@@ -232,8 +232,13 @@ export class Player {
     this.facing = this.firstPerson ? cam.yaw : c.yaw;
     // atacar montado: o bicho ataca o que estiver na frente dele
     this._attackTimer -= dt;
-    if (input.wasPressed('attack') && this._attackTimer <= 0 && c.damage > 0) {
+    if (input.wasPressed('attack') && this._attackTimer <= 0 && (c.damage > 0 || BALANCE.montaria.coleta[c.species.id])) {
       this._attackTimer = this.world.creatures?.riderAttack(c, this) ?? 1;
+    }
+    // especial do bicho (Q / arrastar para baixo): investida, bote...
+    this._skillTimer = (this._skillTimer ?? 0) - dt;
+    if (input.wasPressed('ammo') && this._skillTimer <= 0) {
+      this._skillTimer = this.world.creatures?.mountSkill(c, this) ?? 1;
     }
     const body = this.world.waterAt(this.position.x, this.position.z);
     this.headUnderwater = !!body && this.position.y + this.eyeHeight < body.level - 0.05;

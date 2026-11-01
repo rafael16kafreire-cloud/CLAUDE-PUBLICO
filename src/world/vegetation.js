@@ -604,7 +604,8 @@ export class Vegetation {
   // Planta na frente do jogador (dirX, dirZ = para onde olha).
   // py = altura dos pés de quem procura (não alcança coisa muito acima ou
   // abaixo, ex.: concha no fundo do mar nadando na superfície).
-  findTarget(px, pz, dirX, dirZ, reach, needColher = false, py = null) {
+  // aceita(chave do recurso) = só considera esses (ex.: bicho montado que só coleta árvores)
+  findTarget(px, pz, dirX, dirZ, reach, needColher = false, py = null, aceita = null) {
     let best = null;
     let bestScore = Infinity;
     const len = Math.hypot(dirX, dirZ) || 1;
@@ -616,6 +617,7 @@ export class Vegetation {
       if (!def.res) return;
       const res = recursos.tipos[def.res];
       if (needColher && !res.colher) return;
+      if (aceita && !aceita(def.res)) return;
       if (py !== null && Math.abs(rec.y - py) > 4.5) return;
       let cx = rec.x;
       let cz = rec.z;

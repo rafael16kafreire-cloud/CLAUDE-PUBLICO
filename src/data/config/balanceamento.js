@@ -220,6 +220,65 @@ export default {
   },
 
   // ---------------------------------------------------------
+  // Bichos montados (como no ARK): atacando sem bicho na frente, cada
+  // espécie coleta o que sabe (coleta) e rende mais (rende = vezes);
+  // area = quantas plantas/pedras pega de uma vez. O que coleta vai para
+  // o inventário do bicho. especial = tecla Q (celular: arrastar para baixo).
+  // ---------------------------------------------------------
+  montaria: {
+    coleta: {
+      triceratops:      { modo: 'colher', alvos: ['plantas'], rende: 3, area: 3 },
+      paquirrinossauro: { modo: 'colher', alvos: ['plantas'], rende: 3, area: 2 },
+      estegossauro:     { modo: 'colher', alvos: ['plantas'], rende: 2, area: 3 },
+      kentrossauro:     { modo: 'colher', alvos: ['plantas'], rende: 2, area: 2 },
+      parassauro:       { modo: 'colher', alvos: ['plantas'], rende: 2, area: 2 },
+      iguanodonte:      { modo: 'colher', alvos: ['plantas'], rende: 2, area: 2 },
+      edmontossauro:    { modo: 'colher', alvos: ['plantas'], rende: 2, area: 2 },
+      moschops:         { modo: 'colher', alvos: ['plantas'], rende: 2, area: 1 },
+      anquilossauro:    { modo: 'picareta', alvos: ['pedras'], rende: 3, area: 1 },
+      sauropelta:       { modo: 'picareta', alvos: ['pedras'], rende: 2, area: 1 },
+      mamute:           { modo: 'machado', alvos: ['arvores'], rende: 4, area: 1 },
+      paraceraterio:    { modo: 'machado', alvos: ['arvores', 'plantas'], rende: 3, area: 2 },
+      terizinossauro:   { modo: 'machado', alvos: ['arvores', 'plantas'], rende: 3, area: 2 },
+      braquiossauro:    { modo: 'machado', alvos: ['arvores', 'plantas'], rende: 2, area: 4 },
+      diplodoco:        { modo: 'machado', alvos: ['arvores', 'plantas'], rende: 2, area: 4 },
+      argentinossauro:  { modo: 'machado', alvos: ['arvores', 'plantas'], rende: 2, area: 5 },
+      // carnívoros: tiram muito mais carne e couro das carcaças
+      trex:             { carcaca: 4 },
+      giganotossauro:   { carcaca: 4 },
+      espinossauro:     { carcaca: 3 },
+      carnotauro:       { carcaca: 3 },
+      barionix:         { carcaca: 3 },
+      suchomimo:        { carcaca: 3 },
+      raptor:           { carcaca: 2 },
+      dilofossauro:     { carcaca: 2 },
+      argentavis:       { carcaca: 3 },
+      deinosuchus:      { carcaca: 3 },
+      sarcosuchus:      { carcaca: 3 },
+    },
+    // tipo de recurso (recursos.json) de cada grupo de alvos
+    grupos: {
+      plantas: ['arbusto', 'baga_mejo', 'baga_escura', 'frutas', 'bananeira', 'planta', 'samambaia', 'samambaia_gigante', 'junco'],
+      pedras: ['rochedo', 'pedra', 'ferro', 'metal', 'obsidiana', 'cristal', 'petroleo'],
+      arvores: ['arvore', 'arvore_mole', 'arvore_gigante', 'palmeira', 'tronco'],
+    },
+    // especiais: investida (corre para a frente quebrando plantas e árvores e
+    // acertando bichos), bote (pulo curto que morde forte)
+    especiais: {
+      triceratops:      { tipo: 'investida', vel: 16, seg: 0.8, dano: 2, stamina: 35, espera: 4 },
+      paquirrinossauro: { tipo: 'investida', vel: 14, seg: 0.7, dano: 2, stamina: 30, espera: 4 },
+      paquicefalossauro:{ tipo: 'investida', vel: 13, seg: 0.6, dano: 2.5, stamina: 25, espera: 3 },
+      mamute:           { tipo: 'investida', vel: 12, seg: 0.9, dano: 1.5, stamina: 40, espera: 5 },
+      estegossauro:     { tipo: 'investida', vel: 10, seg: 0.6, dano: 1.5, stamina: 30, espera: 4 },
+      raptor:           { tipo: 'bote', vel: 18, seg: 0.35, dano: 2.5, stamina: 20, espera: 2.5 },
+      compsognato:      { tipo: 'bote', vel: 12, seg: 0.3, dano: 2, stamina: 10, espera: 2 },
+      dilofossauro:     { tipo: 'bote', vel: 14, seg: 0.35, dano: 2, stamina: 15, espera: 2.5 },
+      carnotauro:       { tipo: 'investida', vel: 17, seg: 0.6, dano: 2, stamina: 30, espera: 4 },
+      trex:             { tipo: 'investida', vel: 12, seg: 0.6, dano: 1.8, stamina: 40, espera: 5 },
+    },
+  },
+
+  // ---------------------------------------------------------
   // Chefes (Mamute de Gelo, Rei do Abismo, Senhor do Pântano): moram num
   // covil fixo; vida, dano e o que deixam estão em criaturas.json
   // ---------------------------------------------------------

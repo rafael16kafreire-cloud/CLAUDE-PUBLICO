@@ -103,6 +103,7 @@ export class CreatureManager {
     const ctx = { player, players, world: this.world, camPos: camera.position };
     for (const c of this.list) {
       c.update(dt, ctx);
+      if (c.dash) this._updateDash(c, dt);
       // Sombra só para as que estão perto.
       const dCam = c.pos.distanceTo(camera.position);
       c.mesh.castShadow = dCam < 32;
@@ -765,8 +766,140 @@ export class CreatureManager {
     if (best) {
       this.hit(mount, best, mount.damage);
       this.defendOwner(rider, best);
+    } else {
+      this.mountHarvest(mount, rider, head, reach);
     }
     return sp.intervalo_ataque ?? 1.2;
+  }
+
+  // Montado, sem bicho na frente: o bicho coleta o que sabe (BALANCE.montaria).
+  // O que sai vai para o inventário do bicho (como no ARK).
+  mountHarvest(mount, rider, head, reach, maxArea = null) {
+    const M = BALANCE.montaria;
+    const cfg = M.coleta[mount.species.id];
+    if (!cfg) return 0;
+    const fx = -Math.sin(mount.yaw);
+    const fz = -Math.cos(mount.yaw);
+    const got = {};
+    let n = 0;
+    // carnívoro: carcaça na frente rende muito mais carne e couro
+    if (cfg.carcaca) {
+      const corpse = this.findCorpse(mount.pos, new THREE.Vector3(fx, 0, fz), reach + mount.radius);
+      if (corpse) {
+        for (let k = 0; k < cfg.carcaca && corpse.lootLeft; k++) {
+          for (const [id, q] of Object.entries(this.harvestCorpse(corpse, 'machado'))) got[id] = (got[id] ?? 0) + q;
+        }
+        this.world.effects?.burst(corpse.center(), 'sangue', 6, 2);
+        sound.play('carne', corpse.center());
+        n = 1;
+      }
+    }
+    if (cfg.modo) {
+      const veg = this.world.vegetation;
+      const ok = new Set(cfg.alvos.flatMap((g) => M.grupos[g] ?? []));
+      const area = maxArea ?? cfg.area ?? 1;
+      const vistos = new Set();
+      for (let k = 0; k < area; k++) {
+        // procura em leque na frente do bicho (cada vez um pouco para o lado)
+        const ang = (k % 2 ? 1 : -1) * Math.ceil(k / 2) * 0.35;
+        const dx = fx * Math.cos(ang) - fz * Math.sin(ang);
+        const dz = fz * Math.cos(ang) + fx * Math.sin(ang);
+        // do meio do corpo até um pouco depois da cabeça (bicho comprido alcança o que está do lado do pescoço)
+        const rec = veg.findTarget(mount.pos.x, mount.pos.z, dx, dz, mount.bodyFront * mount.scale + reach, false, mount.pos.y, (key) => ok.has(key));
+        if (!rec || vistos.has(rec)) continue;
+        vistos.add(rec);
+        const res = veg.resourceOf(rec);
+        if (!res || !ok.has(res.key)) continue;
+        const table = res[cfg.modo] ?? res.mao;
+        if (!table) continue;
+        for (const [id, range] of Object.entries(table)) {
+          const [a, b] = Array.isArray(range) ? range : [range, range];
+          const q = Math.round((a + Math.floor(Math.random() * (b - a + 1))) * cfg.rende);
+          if (q > 0) got[id] = (got[id] ?? 0) + q;
+        }
+        veg.consume(rec);
+        const kind = M.grupos.pedras.includes(res.key) ? 'pedra' : M.grupos.arvores.includes(res.key) ? 'madeira' : 'folha';
+        const at = new THREE.Vector3(rec.x, mount.pos.y + 1.2, rec.z);
+        this.world.effects?.burst(at, kind, 8, 2.6);
+        sound.play(kind === 'folha' ? 'folhas' : kind, at);
+        n++;
+      }
+    }
+    if (n) {
+      const inv = mount.ensureInv();
+      const texto = [];
+      for (const [id, q] of Object.entries(got)) {
+        const add = inv.add(id, q);
+        if (add > 0) texto.push(`+${add} ${itemName(id)}`);
+        if (add < q) events.emit(EV.MESSAGE, { text: `Inventário de ${mount.name ?? mount.species.nome} cheio!`, kind: 'warn' });
+      }
+      if (texto.length && rider === game.player) events.emit(EV.MESSAGE, { text: `${texto.join(', ')} (no ${mount.name ?? mount.species.nome})`, kind: 'gain' });
+      rider?.stats?.addXP?.(0.2 * n);
+    }
+    return n;
+  }
+
+  // Especial do bicho montado (tecla Q): investida ou bote. Devolve a espera até o próximo.
+  mountSkill(mount, rider) {
+    const E = BALANCE.montaria.especiais[mount.species.id];
+    if (!E) {
+      if (rider === game.player) events.emit(EV.MESSAGE, { text: `${mount.species.nome} não tem habilidade especial.`, kind: 'info' });
+      return 1;
+    }
+    if ((mount.stamina ?? 0) < E.stamina) {
+      if (rider === game.player) events.emit(EV.MESSAGE, { text: `${mount.name ?? mount.species.nome} está sem fôlego.`, kind: 'warn' });
+      return 0.5;
+    }
+    mount.stamina -= E.stamina;
+    mount.dash = { t: E.seg, vel: E.vel, dano: E.dano, tipo: E.tipo, rider, acertou: new Set(), passo: 0 };
+    mount.attackAnim = 1;
+    sound.creature(mount, E.tipo === 'bote' ? 'ataque' : 'rugido');
+    return E.espera;
+  }
+
+  // Investida/bote em andamento: anda rápido para a frente, acerta bichos e quebra o que estiver no caminho.
+  _updateDash(c, dt) {
+    const D = c.dash;
+    D.t -= dt;
+    if (D.t <= 0 || !c.alive) {
+      c.dash = null;
+      return;
+    }
+    const fx = -Math.sin(c.yaw);
+    const fz = -Math.cos(c.yaw);
+    const nx = c.pos.x + fx * D.vel * dt;
+    const nz = c.pos.z + fz * D.vel * dt;
+    if (!this.world.waterAt(nx, nz)) {
+      c.pos.x = nx;
+      c.pos.z = nz;
+    }
+    const head = new THREE.Vector3(c.pos.x + fx * c.bodyFront * c.scale, c.pos.y, c.pos.z + fz * c.bodyFront * c.scale);
+    const pt = new THREE.Vector3();
+    for (const o of this.list) {
+      if (o === c || !o.alive || D.acertou.has(o) || (o.tamed && o.owner === D.rider)) continue;
+      o.closestBodyPoint(head.x, head.z, pt);
+      if (Math.hypot(pt.x - head.x, pt.z - head.z) > c.radius + 1) continue;
+      D.acertou.add(o);
+      this.hit(c, o, c.damage * D.dano);
+      if (D.tipo === 'bote') D.t = Math.min(D.t, 0.05); // bote para no primeiro que morde
+    }
+    // investida quebra plantas e árvores no caminho (vão para o inventário do bicho)
+    D.passo -= dt;
+    if (D.tipo === 'investida' && D.passo <= 0) {
+      D.passo = 0.12;
+      const cfg = BALANCE.montaria.coleta[c.species.id];
+      if (cfg?.modo) this.mountHarvest(c, D.rider, head, c.radius + 1.5, 2);
+      else this._breakInPath(c, head);
+    }
+  }
+
+  // Investida de bicho que não coleta: só derruba plantas pequenas do caminho.
+  _breakInPath(c, head) {
+    const veg = this.world.vegetation;
+    const rec = veg.findTarget(head.x, head.z, -Math.sin(c.yaw), -Math.cos(c.yaw), c.radius + 1, true, c.pos.y);
+    if (!rec) return;
+    veg.consume(rec);
+    this.world.effects?.burst(new THREE.Vector3(rec.x, c.pos.y + 1, rec.z), 'folha', 8, 2.4);
   }
 
   // Bichos domados por este jogador.
