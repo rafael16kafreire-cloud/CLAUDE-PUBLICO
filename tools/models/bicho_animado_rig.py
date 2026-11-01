@@ -187,8 +187,13 @@ def main(folder, bones_path, cfg_path, out):
     fps_in = meta.get('fps', 30)
     clipes = {}
     for role, cc in cfg.get('clipes', {}).items():
-        a = cc.get('de', 0)
-        b = cc.get('ate', len(frames) - 1)
+        if 'acao' in cc:  # .glb: a animação pelo nome (parado, andar, atacar...)
+            if cc['acao'] not in meta.get('acoes', {}):
+                continue
+            a, b = meta['acoes'][cc['acao']]
+        else:
+            a = cc.get('de', 0)
+            b = cc.get('ate', len(frames) - 1)
         idx = np.arange(a, b + 1e-9, fps_in / FPS_OUT).round().astype(int)
         idx = idx[idx < len(frames)]
         nb = len(order)

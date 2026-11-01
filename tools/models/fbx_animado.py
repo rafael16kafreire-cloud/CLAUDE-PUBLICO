@@ -26,12 +26,46 @@ FPS = 30
 def main(src, out, opc):
     os.makedirs(out, exist_ok=True)
     bpy.ops.wm.read_factory_settings(use_empty=True)
+    glb = src.lower().endswith(('.glb', '.gltf'))
     if src.lower().endswith('.stl'):
         bpy.ops.wm.stl_import(filepath=src)
+    elif glb:
+        bpy.ops.import_scene.gltf(filepath=src)
     else:
         bpy.ops.wm.fbx_import(filepath=src)
     arm = next((o for o in bpy.data.objects if o.type == 'ARMATURE'), None)  # sem esqueleto: modelo estático (o jogo encaixa o dele)
+    meshes = [o for o in bpy.data.objects if o.type == 'MESH']
+    if glb:  # só as malhas presas no esqueleto (o importador cria esferas de enfeite para os ossos)
+        meshes = [o for o in meshes if any(md.type == 'ARMATURE' for md in o.modifiers)] or meshes
+        for o in list(bpy.data.objects):
+            if o.type == 'MESH' and o not in meshes:
+                bpy.data.objects.remove(o)
+    if len(meshes) > 1:  # .glb com várias partes: junta numa malha só (os grupos de ossos continuam)
+        bpy.ops.object.select_all(action='DESELECT')
+        for o in meshes:
+            o.select_set(True)
+        bpy.context.view_layer.objects.active = meshes[0]
+        bpy.ops.object.join()
     mesh = next(o for o in bpy.data.objects if o.type == 'MESH')
+    if glb:  # texturas embutidas no .glb: salva a cor de cada material num arquivo
+        tex = dict(opc.get('texturas') or {})
+        for m in mesh.data.materials:
+            if not m or m.name in tex or not m.use_nodes:
+                continue
+            bsdf = next((n for n in m.node_tree.nodes if n.type == 'BSDF_PRINCIPLED'), None)
+            link = bsdf and bsdf.inputs['Base Color'].links
+            node = link[0].from_node if link else None
+            while node is not None and node.type != 'TEX_IMAGE' and node.inputs and node.inputs[0].links:
+                node = node.inputs[0].links[0].from_node
+            if node is None or node.type != 'TEX_IMAGE' or not node.image:
+                continue
+            path = os.path.join(out, f'cor_{len(tex)}.png')
+            img = node.image
+            img.filepath_raw = path
+            img.file_format = 'PNG'
+            img.save()
+            tex[m.name] = path
+        opc['texturas'] = tex
     bones = list(arm.data.bones) if arm else []
     nj = len(bones)
     idx = {b.name: i for i, b in enumerate(bones)}
@@ -107,17 +141,41 @@ def main(src, out, opc):
         P[sel, 1] = yp + ny[sel]
     # ---------- animação: matriz de cada osso no mundo, quadro a quadro ----------
     sc = bpy.context.scene
+    sc.render.fps = FPS
     f0, f1 = int(sc.frame_start), int(sc.frame_end)
-    act = bpy.data.actions[0] if bpy.data.actions else None
-    if act:
-        f0, f1 = int(act.frame_range[0]), int(act.frame_range[1])
-    if not act:  # sem animação: só a pose de ligação
-        f1 = f0
+    acts = list(bpy.data.actions) if (glb and arm) else ([bpy.data.actions[0]] if bpy.data.actions else [])
     frames = []
-    for f in (range(f0, f1 + 1) if arm else []):
-        sc.frame_set(f)
-        bpy.context.view_layer.update()
-        frames.append(np.array([row(arm.matrix_world @ arm.pose.bones[b.name].matrix) for b in bones]))
+    acoes = {}
+    if arm and glb and acts:
+        # .glb com várias animações (parado, andar, correr...): uma atrás da
+        # outra na mesma lista de quadros; "acoes" guarda onde cada uma fica
+        if arm.animation_data is None:
+            arm.animation_data_create()
+        for tr in list(arm.animation_data.nla_tracks):
+            arm.animation_data.nla_tracks.remove(tr)
+        for act in acts:
+            arm.animation_data.action = act
+            slots = getattr(act, 'slots', None)
+            if slots:
+                arm.animation_data.action_slot = slots[0]
+            a0, a1 = int(round(act.frame_range[0])), int(round(act.frame_range[1]))
+            start = len(frames)
+            for f in range(a0, a1 + 1):
+                sc.frame_set(f)
+                bpy.context.view_layer.update()
+                frames.append(np.array([row(arm.matrix_world @ arm.pose.bones[b.name].matrix) for b in bones]))
+            acoes[act.name] = [start, len(frames) - 1]
+        f0, f1 = 0, len(frames) - 1
+    else:
+        act = acts[0] if acts else None
+        if act:
+            f0, f1 = int(act.frame_range[0]), int(act.frame_range[1])
+        if not act:  # sem animação: só a pose de ligação
+            f1 = f0
+        for f in (range(f0, f1 + 1) if arm else []):
+            sc.frame_set(f)
+            bpy.context.view_layer.update()
+            frames.append(np.array([row(arm.matrix_world @ arm.pose.bones[b.name].matrix) for b in bones]))
     frames = np.array(frames) if frames else np.zeros((1, 0, 4, 4))
 
     np.savez(os.path.join(out, 'cru.npz'), P=P, UV=UV, F=F, MID=MID, JI=JI, JW=JW,
@@ -126,7 +184,7 @@ def main(src, out, opc):
                'malhas': ([{'nome': m.name if m else f'material{i}', 'diffuseColor': (opc.get('texturas') or {}).get(m.name if m else '', None), 'normal': None, 'opacity': None}
                            for i, m in enumerate(d.materials)]
                           or [{'nome': 'cor', 'diffuseColor': (opc.get('texturas') or {}).get('*'), 'normal': None, 'opacity': None}]),
-               'clip': 'Base Stack', 'fps': FPS, 'ossos': [b.name for b in bones], 'quadros_de_para': [f0, f1]},
+               'clip': 'Base Stack', 'fps': FPS, 'ossos': [b.name for b in bones], 'pais': parents.tolist(), 'quadros_de_para': [f0, f1], 'acoes': acoes},
               open(os.path.join(out, 'cru.json'), 'w'), indent=1)
     print(os.path.basename(src), 'vértices', len(P), 'triângulos', len(F), 'ossos', nj, 'quadros', len(frames), 'tamanho', (P.max(0) - P.min(0)).round(2).tolist())
 
