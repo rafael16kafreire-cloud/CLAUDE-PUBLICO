@@ -347,7 +347,8 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   const noWood = await page.evaluate(() => ({ palha: window.__t.count('palha'), madeira: window.__t.count('madeira') }));
   check('Coleta: árvore só com machado (soco não dá nada)', noWood.palha === 0 && noWood.madeira === 0, JSON.stringify(noWood));
   // palha com a mão: folhas da palmeira (praia)
-  await page.evaluate(() => { const s = window.__ilha.ctx.world.respawnPoint('sul').position; window.__t.faceRec('coqueiro', { x: s.x, z: s.z }); });
+  // sem bicho na frente (lystrosaurus anda na praia): o soco tem que pegar a palmeira
+  await page.evaluate(() => { window.__ilha.ctx.creatures.clear(); const s = window.__ilha.ctx.world.respawnPoint('sul').position; window.__t.faceRec('coqueiro', { x: s.x, z: s.z }); });
   await frames(page, 6);
   for (let i = 0; i < 4; i++) {
     await page.evaluate(() => { window.__ilha.ctx.player.stats.stamina = 100; window.__ilha.ctx.player.stats.exhausted = false; window.__ilha.ctx.player.stats.health = 100; });
@@ -358,7 +359,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   const thatch = await page.evaluate(() => ({ palha: window.__t.count('palha'), madeira: window.__t.count('madeira') }));
   check('Coleta: socar palmeira dá palha', thatch.palha >= 4, `${JSON.stringify(tree)} ${JSON.stringify(thatch)}`);
   // árvore fina (sub-bosque): o soco rende 1 madeira + 1 palha por golpe e custa 5% da vida
-  await page.evaluate(() => { window.__t.faceRec(['arvore_media', 'media_a', 'media_b', 'arvore_folhosa', 'arvore_folhosa2']); const st = window.__ilha.ctx.player.stats; st.health = st.max.health; });
+  await page.evaluate(() => { window.__ilha.ctx.creatures.clear(); window.__t.faceRec(['arvore_media', 'media_a', 'media_b', 'arvore_folhosa', 'arvore_folhosa2']); const st = window.__ilha.ctx.player.stats; st.health = st.max.health; });
   await frames(page, 6);
   const thin0 = await page.evaluate(() => ({ h: window.__ilha.ctx.player.stats.health, m: window.__t.count('madeira'), p: window.__t.count('palha') }));
   await page.evaluate(() => { window.__ilha.ctx.player.stats.stamina = 100; window.__ilha.ctx.player.stats.exhausted = false; });
