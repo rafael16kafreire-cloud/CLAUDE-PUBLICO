@@ -765,7 +765,7 @@ function boot(hotData = {}) {
       hp: Math.round(c.health), name: c.name ?? null, adult: +c.adultScale.toFixed(4), saddled: !!c.saddled,
       saddle: c.saddleKind ?? null, imprint: c.imprint ?? 0, st: c.inherited ? c.stats : null, mut: c.mutations ?? 0,
       gestation: c.gestation > 0 ? Math.round(c.gestation) : 0, unborn: c.unborn ?? null, cor: c.cor ?? null,
-      opts: { followDist: c.followDist, targetRange: c.targetRange, aggression: c.aggression, wander: !!c.wander, neutered: !!c.neutered },
+      opts: { followDist: c.followDist, targetRange: c.targetRange, aggression: c.aggression, wander: !!c.wander, neutered: !!c.neutered, mating: !!c.mating, parents: c.parents ?? null },
     };
   }
 

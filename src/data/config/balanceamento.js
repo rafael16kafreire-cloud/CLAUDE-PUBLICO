@@ -190,7 +190,11 @@ export default {
     gestacao_min: 5,           // mamífero: filhote nasce depois de X min
     mamiferos: ['mamute'],
     chance_maior: 0.55,        // cada atributo do filhote: chance de vir o MAIOR dos pais
-    mutacao: 0.03,             // chance de um atributo vir 10% maior (mutação)
+    // mutação (como no ARK): 3 sorteios por filhote; cada um que sai dá +2 pontos
+    // num atributo (+2 níveis) e às vezes muda uma cor. Para quando o casal soma 20.
+    mutacao: 0.025,
+    mutacao_limite: 20,
+    acasalar_seg: 60,          // casal com "Permitir cruzar" perto: tempo para acasalar
     cuidado_min: 2,            // filhote domado pede carinho a cada X min
     impressao_por_cuidado: 0.2, // cada carinho dá 20% de impressão
     bonus_impressao: 0.3,      // 100% de impressão = +30% de vida e dano

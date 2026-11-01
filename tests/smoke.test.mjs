@@ -998,6 +998,25 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     return out;
   });
   check('Tamanhos reais: espino 14–18 m, deinosuchus 10–12, titanoboa 12–14, T-rex < 13', v07.sizesOk, JSON.stringify(v07.sizes));
+  // criação de domados (como no ARK): só com "Permitir cruzar" nos dois; a barra enche e sai o ovo
+  const cria = await page.evaluate(() => {
+    const c = window.__ilha.ctx; const m = c.creatures; const p = c.player.position;
+    const a = m.spawn('parassauro', p.x + 220, p.z, 5); const b = m.spawn('parassauro', p.x + 224, p.z, 5);
+    for (const x of [a, b]) { x.tamed = true; x.owner = c.player; x.follow = false; x.nextBreed = 0; x.age = 1; x._setState('parado'); x.idleFor = 1e9; }
+    a.sex = 'Fêmea'; b.sex = 'Macho';
+    const ovos0 = c.world.structures.filter((s) => s.type === 'ovo' && !s.removed).length;
+    for (let i = 0; i < 6; i++) m.tryBreed([c.player]);
+    const semPermissao = c.world.structures.filter((s) => s.type === 'ovo' && !s.removed).length - ovos0;
+    a.mating = true; b.mating = true;
+    const r0 = m.rand; m.rand = () => 0.001; // força as mutações
+    for (let i = 0; i < 6; i++) m.tryBreed([c.player]);
+    m.rand = r0;
+    const ovo = c.world.structures.filter((s) => s.type === 'ovo' && !s.removed).at(-1);
+    const out = { semPermissao, ovo: !!ovo && c.world.structures.filter((s) => s.type === 'ovo' && !s.removed).length - ovos0, mut: ovo?.gene?.mut, nivel: ovo?.nivel };
+    m.clear();
+    return out;
+  });
+  check('Criação: domados só cruzam com "Permitir cruzar"; ovo com mutação (+2 níveis cada)', cria.semPermissao === 0 && cria.ovo === 1 && cria.mut === 3 && cria.nivel === 11, JSON.stringify(cria));
   check('Ciclo de vida: nasce filhote, cresce e o velho morre', v07.baby && v07.grew && v07.oldDies, JSON.stringify({ b: v07.baby, g: v07.grew, o: v07.oldDies }));
   check('Chão: gravetos e pedrinhas para pegar', v07.ground.gravetos > 500 && v07.ground.pedrinhas > 300, JSON.stringify(v07.ground));
   check('Stamina 100 e habilidades como no ARK (+10 vida, +10 peso)', v07.stamina === 100 && v07.skills.vida === 10 && v07.skills.peso === 110, JSON.stringify(v07));

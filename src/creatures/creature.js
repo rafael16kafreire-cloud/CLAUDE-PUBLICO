@@ -327,6 +327,12 @@ export class Creature {
     this.damage = this.baseDamage * this.growth;
   }
 
+  // Fase de crescimento (como no ARK): Bebê, Juvenil, Adolescente, Adulto
+  get stage() {
+    const g = this.growth ?? 1;
+    return g >= 1 ? 'Adulto' : g < 0.5 ? 'Bebê' : g < 0.8 ? 'Juvenil' : 'Adolescente';
+  }
+
   get isBaby() {
     return this.growth < 1;
   }

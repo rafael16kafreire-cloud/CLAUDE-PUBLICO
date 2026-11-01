@@ -17,7 +17,7 @@ import { IMPORTED, buildImportedModel } from './imported_model.js';
 import { buildSpeciesModel, createSkinnedMesh } from './creature_builder.js';
 import { makeCreatureMaterial } from './creature_material.js';
 import { Creature, CSTATE } from './creature.js';
-import { aplicarCor, herdarCor, sortearCor } from './cores.js';
+import { aplicarCor, herdarCor, mutarCor, sortearCor } from './cores.js';
 import { sound } from '../audio/audio.js';
 import { settings } from '../core/settings.js';
 
@@ -232,16 +232,22 @@ export class CreatureManager {
       if (mom.sex !== 'Fêmea' || !calm(mom)) continue;
       const dad = this.list.find((o) => o !== mom && o.species.id === mom.species.id && o.sex === 'Macho'
         && calm(o) && o.pos.distanceTo(mom.pos) < C.distancia_casal_m);
-      if (!dad || this.rand() > C.chance_cria) continue;
-      // domados: só cruzam parados (sem seguir); ovo ou gestação
+      if (!dad) continue;
+      // domados (como no ARK): os dois com "Permitir cruzar" ligado e perto;
+      // a barra de acasalamento enche em cria.acasalar_seg e sai o ovo (ou a gestação)
       if (mom.tamed || dad.tamed) {
-        if (!mom.tamed || !dad.tamed || mom.follow || dad.follow || mom.gestation > 0) continue;
+        if (!mom.tamed || !dad.tamed || !mom.mating || !dad.mating || mom.gestation > 0 || mom.owner !== dad.owner) continue;
+        mom.mateProgress = Math.min(1, (mom.mateProgress ?? 0) + 15 / BALANCE.cria.acasalar_seg);
+        mom.mateWith = dad;
+        if (mom.mateProgress < 1) continue;
+        mom.mateProgress = 0;
         this.breedTamed(mom, dad, players);
         const wait = () => 60 * (C.intervalo_cria_min[0] + this.rand() * (C.intervalo_cria_min[1] - C.intervalo_cria_min[0]));
         mom.nextBreed = mom.age + wait();
         dad.nextBreed = dad.age + wait();
         return null;
       }
+      if (this.rand() > C.chance_cria) continue;
       const a = this.rand() * Math.PI * 2;
       const d = mom.radius + 1;
       const baby = this.spawn(mom.species.id, mom.pos.x + Math.sin(a) * d, mom.pos.z + Math.cos(a) * d, Math.max(1, Math.round((mom.level + dad.level) / 2)));
@@ -278,20 +284,27 @@ export class CreatureManager {
       const lo = Math.min(mom.stats[k], dad.stats[k]);
       st[k] = this.rand() < B.chance_maior ? hi : lo;
     }
-    if (this.rand() < B.mutacao) {
-      const keys = ['vida', 'forca', 'stamina', 'peso', 'velocidade'];
+    let cor = herdarCor(mom.cor, dad.cor, this.rand);
+    const inc = mom.species.ark_por_nivel ?? {};
+    const keys = ['vida', 'forca', 'stamina', 'peso'];
+    const base = (mom.mutations ?? 0) + (dad.mutations ?? 0);
+    for (let i = 0; i < 3; i++) {
+      if (base + mut >= B.mutacao_limite || this.rand() >= B.mutacao) continue;
       const k = keys[Math.floor(this.rand() * keys.length)];
-      st[k] = Math.round(st[k] * 1.1);
-      mut = 1;
+      st[k] = Math.round(st[k] * (1 + 2 * (inc[k] || 0.1))); // +2 pontos nesse atributo
+      if (this.rand() < 0.5) cor = mutarCor(cor, this.rand);
+      mut++;
     }
-    return { st, mut: (mom.mutations ?? 0) + (dad.mutations ?? 0) + mut, cor: herdarCor(mom.cor, dad.cor, this.rand) };
+    return { st, mut: base + mut, novas: mut, cor };
   }
 
   // Casal domado: ovo (choca no chão) ou gestação (mamífero).
   breedTamed(mom, dad, players) {
     const B = BALANCE.cria;
     const gene = this.inheritStats(mom, dad);
-    const level = Math.max(1, Math.round((mom.level + dad.level) / 2));
+    const level = Math.max(1, Math.round((mom.level + dad.level) / 2)) + 2 * gene.novas; // cada mutação = +2 níveis
+    gene.mae = mom.name ?? mom.species.nome;
+    gene.pai = dad.name ?? dad.species.nome;
     const name = mom.name ?? mom.species.nome;
     if (B.mamiferos.includes(mom.species.id)) {
       mom.gestation = B.gestacao_min * 60;
@@ -314,6 +327,7 @@ export class CreatureManager {
     if (gene?.st) baby.applyStats(gene.st);
     if (gene && 'cor' in gene) aplicarCor(baby, gene.cor);
     baby.mutations = gene?.mut ?? 0;
+    baby.parents = gene?.mae ? { mae: gene.mae, pai: gene.pai } : null;
     baby.age = 0;
     baby.setGrowth(0.3);
     baby.tamed = true;
@@ -323,7 +337,7 @@ export class CreatureManager {
     baby.imprint = 0;
     baby.careT = 20; // logo pede o primeiro carinho
     baby._setState(CSTATE.IDLE);
-    events.emit(EV.MESSAGE, { text: `Nasceu um filhote de ${baby.species.nome}!${baby.mutations ? ` (mutações: ${baby.mutations})` : ''}`, kind: 'gain' });
+    events.emit(EV.MESSAGE, { text: `Nasceu um filhote de ${baby.species.nome}!${gene?.novas ? ` Mutação nova (+${2 * gene.novas} níveis)!` : ''}`, kind: 'gain' });
     return baby;
   }
 

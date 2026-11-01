@@ -60,6 +60,15 @@ export function nomeCor(cor) {
   return cor.ids.map((id) => CORES_ARK[id]?.[0] ?? `cor ${id}`).join(' / ');
 }
 
+/** Mutação de cor (como no ARK): troca a cor de uma região por qualquer cor da lista. */
+export function mutarCor(cor, rand) {
+  const ids = Object.keys(CORES_ARK).map(Number);
+  const novo = ids[Math.floor(rand() * ids.length)];
+  const base = cor?.ids ? [...cor.ids] : [COSTAS[0], BARRIGA[0]];
+  base[rand() < 0.5 ? 0 : 1] = novo;
+  return { a: hexDe(base[0]), b: hexDe(base[1]), k: cor?.k ?? 0.75, ids: base };
+}
+
 /** Filhote: cada região vem do pai ou da mãe. */
 export function herdarCor(mae, pai, rand) {
   const m = mae ?? null;

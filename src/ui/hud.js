@@ -198,7 +198,7 @@ export class Hud {
     R.thp.textContent = c.alive ? `${Math.ceil(c.health)}/${c.maxHealth}` : 'Abatido';
     const ratio = Math.max(0, c.health / c.maxHealth);
     R.tfill.style.transform = `scaleX(${ratio.toFixed(3)})`;
-    R.tsex.textContent = `Gênero: ${c.sex ?? '?'}${c.isBaby ? ' · Filhote' : ''}`;
+    R.tsex.textContent = `Gênero: ${c.sex ?? '?'}${c.isBaby ? ` · ${c.stage}` : ''}`;
     const taming = c.knockedOut && !c.tamed;
     R.tmeter.hidden = !taming;
     R.teff.hidden = !taming;

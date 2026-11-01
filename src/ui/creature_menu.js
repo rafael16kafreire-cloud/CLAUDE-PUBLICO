@@ -13,6 +13,7 @@ import { events, EV } from '../core/event_bus.js';
 import { itemName } from '../items/items.js';
 import { CSTATE } from '../creatures/creature.js';
 import { nomeCor } from '../creatures/cores.js';
+import { BALANCE } from '../core/balance.js';
 
 const OPTS = {
   followDist: [['curto', 'Curta'], ['medio', 'Média'], ['longo', 'Longa']],
@@ -51,6 +52,8 @@ export class CreatureMenu {
           <div class="cmenu-row"><span>Alcance de alvo:</span><button type="button" class="ark-choice" data-opt="targetRange"></button></div>
           <div class="cmenu-row"><span>Agressividade:</span><button type="button" class="ark-choice" data-opt="aggression"></button></div>
           <label class="cmenu-row cmenu-check"><span>Vagar por perto (parado)</span><input type="checkbox" data-ref="wander"><i></i></label>
+          <label class="cmenu-row cmenu-check" data-ref="mateRow"><span>Permitir cruzar</span><input type="checkbox" data-ref="mating"><i></i></label>
+          <p class="cmenu-breed" data-ref="breed"></p>
           <div class="cmenu-row" data-ref="saddleRow"><span data-ref="saddleTxt">Sela:</span><button type="button" class="ark-choice" data-act="unsaddle">Tirar sela</button></div>
         </div>
         <div class="cmenu-actions">
@@ -76,6 +79,12 @@ export class CreatureMenu {
       if (!this.c) return;
       this.c.wander = this.refs.wander.checked;
       if (!this.c.wander && !this.c.follow) this._stay();
+    });
+    this.refs.mating.addEventListener('change', () => {
+      if (!this.c) return;
+      this.c.mating = this.refs.mating.checked;
+      if (!this.c.mating) this.c.mateProgress = 0;
+      this._render();
     });
     const name = this.refs.name;
     name.addEventListener('keydown', (e) => {
@@ -117,7 +126,7 @@ export class CreatureMenu {
     R.title.textContent = `${(c.name ?? c.species.nome).toUpperCase()} - NV ${c.level}`;
     const extras = [];
     extras.push(c.species.nome, c.sex);
-    if (c.isBaby) extras.push(`filhote · impressão ${Math.round((c.imprint ?? 0) * 100)}%`);
+    if (c.isBaby) extras.push(`${c.stage.toLowerCase()} · impressão ${Math.round((c.imprint ?? 0) * 100)}%`);
     if (c.neutered) extras.push('castrado');
     const cores = nomeCor(c.cor);
     if (cores) extras.push(`cores: ${cores}`);
@@ -129,6 +138,17 @@ export class CreatureMenu {
       b.textContent = this._label(opt, c[opt] ?? (opt === 'aggression' ? 'neutro' : 'medio'));
     }
     R.wander.checked = !!c.wander;
+    // criação (como no ARK): permitir cruzar, barra de acasalamento, mutações, pais
+    R.mateRow.hidden = c.isBaby || !!c.neutered;
+    R.mating.checked = !!c.mating;
+    const info = [];
+    if (c.gestation > 0) info.push(`Prenhe: nasce em ${Math.ceil(c.gestation / 60)} min`);
+    else if (c.mating && c.sex === 'Fêmea' && (c.mateProgress ?? 0) > 0) info.push(`Acasalando: ${Math.round(c.mateProgress * 100)}%`);
+    else if (c.mating && c.sex === 'Fêmea' && c.age < (c.nextBreed ?? 0)) info.push(`Pode cruzar de novo em ${Math.ceil((c.nextBreed - c.age) / 60)} min`);
+    else if (c.mating) info.push(c.sex === 'Fêmea' ? 'Esperando um macho com "Permitir cruzar" perto' : 'Pronto para cruzar');
+    info.push(`Mutações: ${c.mutations ?? 0}/${BALANCE.cria.mutacao_limite}`);
+    if (c.parents) info.push(`Mãe: ${c.parents.mae} · Pai: ${c.parents.pai}`);
+    R.breed.textContent = info.join(' · ');
     R.saddleRow.hidden = !c.saddled;
     R.saddleTxt.textContent = c.saddled ? `Sela: ${itemName(c.saddleKind ?? 'sela')}` : 'Sela:';
     const rideable = c.species.pode_montar && !c.isBaby;
