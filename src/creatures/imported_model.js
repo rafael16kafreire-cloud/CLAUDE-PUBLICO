@@ -46,6 +46,9 @@ import sarcosuchus from './imported/sarcosuchus.js';
 import edmontossauro from './imported/edmontossauro.js';
 import lystrosaurus from './imported/lystrosaurus.js';
 import paraceraterio from './imported/paraceraterio.js';
+import chefe_gelo from './imported/chefe_gelo.js';
+import chefe_mar from './imported/chefe_mar.js';
+import chefe_pantano from './imported/chefe_pantano.js';
 
 // bichos com modelo .glb (bichos/modelos, convertidos por tools/models/bichos_glb.sh);
 // os outros são feitos por código (creature_builder.js)
@@ -53,6 +56,7 @@ export const IMPORTED = {
   anquilossauro, argentavis, argentinossauro, braquiossauro, carnotauro, deinosuchus, dilofossauro, dimetrodonte, diplodoco, dodo, espinossauro, estegossauro, galimimo, iguanodonte, kentrossauro, mamute, mosassauro, moschops, paquirrinossauro, parassauro, reidodo, sauropelta, terizinossauro, triceratops,
   raptor, compsognato, trex, pterodactilo, quetzalcoatlus, piranha,
   barionix, suchomimo, giganotossauro, sarcosuchus, edmontossauro, lystrosaurus, paraceraterio,
+  chefe_gelo, chefe_mar, chefe_pantano,
 };
 
 function bytes(b64) {

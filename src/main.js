@@ -367,6 +367,7 @@ function boot(hotData = {}) {
     minimap.el.addEventListener('click', () => mapScreen.toggle(player, camCtl.yaw));
     const debug = new DebugOverlay(ui, renderer);
     const creatures = new CreatureManager(world, scene);
+    hud.creatures = creatures; // barra de vida do chefe
     world.creatures = creatures;
     const hands = new PlayerHands(camera);
     player.onGather = () => hands.gather();

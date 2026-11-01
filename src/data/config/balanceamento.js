@@ -214,6 +214,16 @@ export default {
   },
 
   // ---------------------------------------------------------
+  // Chefes (Mamute de Gelo, Rei do Abismo, Senhor do Pântano): moram num
+  // covil fixo; vida, dano e o que deixam estão em criaturas.json
+  // ---------------------------------------------------------
+  chefes: {
+    aparece_m: 200,            // aparece quando alguém chega a essa distância do covil
+    renascer_min: 30,          // depois de morto, volta em X minutos
+    nivel: 100,                // nível mostrado
+  },
+
+  // ---------------------------------------------------------
   // Morte e renascimento
   // ---------------------------------------------------------
   morte: {

@@ -77,6 +77,11 @@ export class Hud {
       </div>
 
       <p class="hud-levelup" data-ref="levelup" hidden>NOVO NÍVEL DISPONÍVEL! Acesse o inventário para aplicar!</p>
+      <!-- chefe perto: nome e vida bem grandes no alto da tela -->
+      <div class="hud-boss" data-ref="boss" hidden>
+        <div class="hud-boss-name" data-ref="bossName"></div>
+        <div class="hud-boss-track"><i data-ref="bossFill"></i></div>
+      </div>
 
       <div class="hud-left touch-only">
         <button type="button" class="corner-btn ark-btn hud-bag" data-action="inventory" aria-label="Inventário"><span class="ab-ico">${ICONS.backpack}</span></button>
@@ -226,6 +231,21 @@ export class Hud {
     p.hidden = false;
   }
 
+  // Chefe vivo a até 90 m: mostra a barra de vida dele
+  _updateBoss() {
+    const R = this.refs;
+    const p = this.player.position;
+    let boss = null;
+    for (const c of this.creatures?.list ?? []) {
+      if (c.species.chefe && c.alive && Math.hypot(c.pos.x - p.x, c.pos.z - p.z) < 90) boss = c;
+    }
+    R.boss.hidden = !boss;
+    if (!boss) return;
+    const nome = `${boss.species.nome} - Nv ${boss.level}`;
+    if (R.bossName.textContent !== nome) R.bossName.textContent = nome;
+    R.bossFill.style.transform = `scaleX(${Math.max(0, boss.health / boss.maxHealth)})`;
+  }
+
   update(dt) {
     this._timer -= dt;
     if (this._timer > 0) return;
@@ -233,6 +253,7 @@ export class Hud {
 
     const st = this.player.stats;
     this.refs.levelup.hidden = !(st.points > 0);
+    this._updateBoss();
     for (const b of BARS) {
       const r = this.rows[b.key];
       let value = st[b.key];

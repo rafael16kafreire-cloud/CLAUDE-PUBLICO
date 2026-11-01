@@ -789,3 +789,7 @@ MODELS.sarcosuchus = { ...MODELS.deinosuchus };
 MODELS.edmontossauro = { ...MODELS.parassauro };
 MODELS.lystrosaurus = { ...MODELS.moschops };
 MODELS.paraceraterio = { ...MODELS.mamute };
+// chefes (bichos/modelos/chefe_*.glb): molde do bicho de que vieram
+MODELS.chefe_gelo = { ...MODELS.mamute };
+MODELS.chefe_mar = { ...MODELS.mosassauro };
+MODELS.chefe_pantano = { ...MODELS.deinosuchus };

@@ -150,6 +150,7 @@ export class CreatureManager {
       if (this._swampT <= 0) {
         this._swampT = 4;
         for (const p of alivePlayers) this.ensureSwampResidents(p.position);
+        this.ensureBosses(alivePlayers);
       }
     }
   }
@@ -334,6 +335,68 @@ export class CreatureManager {
     const a = this.rand() * Math.PI * 2;
     const d = mom.radius + 1;
     return this.hatch(mom.species.id, mom.pos.x + Math.sin(a) * d, mom.pos.z + Math.cos(a) * d, u?.level ?? mom.level, u?.gene, mom.owner);
+  }
+
+  // ---------------------------------------------------------
+  // Chefes: cada um mora num covil fixo do seu bioma (gelo na neve, mar no
+  // mar fundo perto da costa, pântano no meio do maior pântano). Aparece
+  // quando alguém chega perto; morto, só volta depois de chefes.renascer_min.
+  // ---------------------------------------------------------
+  covil(id) {
+    this._covis ??= {};
+    if (id in this._covis) return this._covis[id];
+    const w = this.world;
+    const half = w.map?.half ?? 2000;
+    const r = mulberry32(((w.seed ?? 1) * 7919 + id.length * 104729) >>> 0);
+    let best = null;
+    if (id === 'chefe_pantano') {
+      const parts = w.layout.pantano?.partes ?? [];
+      const p = parts.reduce((a, b) => (!a || b.raio_m > a.raio_m ? b : a), null);
+      if (p) best = { x: p.x, z: p.z };
+    } else {
+      let melhor = -Infinity;
+      for (let k = 0; k < 4000; k++) {
+        const x = (r() * 2 - 1) * half;
+        const z = (r() * 2 - 1) * half;
+        let nota;
+        if (id === 'chefe_mar') {
+          const agua = w.waterAt(x, z);
+          if (!agua || agua.id !== 'mar' || agua.level - w.heightAt(x, z) < 10) continue;
+          nota = -Math.hypot(x, z); // o mar fundo mais perto da ilha
+        } else {
+          if (w.biomeKeyAt(x, z) !== 'neve' || w.waterAt(x, z)) continue;
+          nota = r();
+        }
+        if (w.allRespawnPoints?.some((q) => Math.hypot(q.position.x - x, q.position.z - z) < 150)) continue;
+        if (nota > melhor) { melhor = nota; best = { x, z }; }
+      }
+    }
+    this._covis[id] = best;
+    return best;
+  }
+
+  ensureBosses(players) {
+    const C = BALANCE.chefes;
+    if (!C) return;
+    this._chefes ??= {};
+    for (const sp of Object.values(SPECIES)) {
+      if (!sp.chefe) continue;
+      const atual = this._chefes[sp.id];
+      if (atual) {
+        if (atual.alive) continue;
+        if (!atual.morto) atual.morto = this.clock; // acabou de morrer: conta o tempo para voltar
+        if (this.clock - atual.morto < C.renascer_min * 60) continue;
+        if (this.list.includes(atual)) continue;
+      }
+      const lugar = this.covil(sp.id);
+      if (!lugar || !players.some((p) => Math.hypot(p.position.x - lugar.x, p.position.z - lugar.z) < C.aparece_m)) continue;
+      if (this.list.some((c) => c.species.id === sp.id && c.alive)) continue;
+      const c = this.spawn(sp.id, lugar.x, lugar.z, C.nivel);
+      if (!c) continue;
+      c.home.set(lugar.x, lugar.z);
+      this._chefes[sp.id] = c;
+      events.emit(EV.MESSAGE, { text: `${sp.nome} está por perto!`, kind: 'warn' });
+    }
   }
 
   // Moradores do pântano: perto do pântano sempre tem jacaré gigante

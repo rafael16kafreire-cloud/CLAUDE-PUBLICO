@@ -2450,3 +2450,9 @@ body .hud-gauges, body.is-touch .hud-gauges, body.is-touch:not(.touch-botoes) .h
 .hud-gauges .stat-food, .hud-gauges .stat-water { align-self: stretch; }
 /* dica de interação acima do painel de barras (não cobre a Vida) */
 :root, body, body.is-touch, body:not(.is-touch) { --prompt-bottom: calc(2vh + 112px); }
+
+/* barra de vida do chefe (alto da tela) */
+.hud-boss { position: absolute; top: 46px; left: 50%; transform: translateX(-50%); width: min(520px, 70vw); text-align: center; pointer-events: none; }
+.hud-boss-name { font-family: var(--font-display); font-weight: 700; font-size: 18px; letter-spacing: 0.06em; color: #ffd9c2; text-shadow: 0 2px 4px #000; text-transform: uppercase; }
+.hud-boss-track { margin-top: 4px; height: 12px; border: 1px solid rgba(255, 210, 190, 0.6); background: rgba(20, 6, 6, 0.65); }
+.hud-boss-track i { display: block; height: 100%; background: linear-gradient(#e0473a, #8f1c14); transform-origin: left; }
