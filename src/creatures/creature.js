@@ -642,7 +642,13 @@ export class Creature {
     // alguém chegar perto fazendo barulho (correndo acorda de longe, agachado quase não acorda)
     // ou se apanharem (takeDamage). Carnívoros com fome continuam caçando.
     const noite = !!ctx.world.sky?.isNight;
-    if (this.state === CSTATE.SLEEP) {
+    if (this.state === CSTATE.SLEEP && sp.covil_lava) {
+      // chefe dormindo no covil: só acorda com alguém perto (ou se apanhar)
+      if (dPlayer > BALANCE.chefes.acorda_m + this.radius) return;
+      this._setState(CSTATE.IDLE);
+      this.idleFor = 0.5;
+      sound.creature(this, 'rugido');
+    } else if (this.state === CSTATE.SLEEP) {
       const ouve = player.running ? 16 : player.crouching ? 3 : 7;
       if (!noite || dPlayer < ouve + this.radius) {
         this._setState(CSTATE.IDLE);

@@ -286,6 +286,8 @@ export default {
     aparece_m: 200,            // aparece quando alguém chega a essa distância do covil
     renascer_min: 30,          // depois de morto, volta em X minutos
     nivel: 100,                // nível mostrado
+    acorda_m: 35,              // o dragão dorme na lava até alguém chegar a X m
+    lava_dano_seg: 20,         // pisar na lava tira X de vida por segundo
   },
 
   // ---------------------------------------------------------

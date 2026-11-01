@@ -1955,7 +1955,8 @@
     "dura_seg": 2.5,
     "espera_seg": 9
    },
-   "comprimento_m": [16, 18]
+   "comprimento_m": [16, 18],
+   "covil_lava": true
   }
  ]
 }

@@ -112,6 +112,11 @@ export class CreatureManager {
       c.mesh.visible = dCam < (settings.quality?.drawCreatures ?? 110) || c === player.riding || c.rider === player;
     }
     this._separate();
+    if (this.lava) {
+      this._updateLava(dt, players);
+      // dragão dormindo fica deitado DENTRO da lava
+      for (const c of this.list) if (c.species.covil_lava && c.state === CSTATE.SLEEP) c.pos.y = this.lava.y - 0.4;
+    }
 
     // Remove mortas antigas e as que ficaram longe.
     const despawn = this.cfg.raio_despawn_m;
@@ -376,7 +381,7 @@ export class CreatureManager {
       if (p) best = { x: p.x, z: p.z };
     } else {
       let melhor = -Infinity;
-      for (let k = 0; k < 4000; k++) {
+      for (let k = 0; k < 12000; k++) {
         const x = (r() * 2 - 1) * half;
         const z = (r() * 2 - 1) * half;
         let nota;
@@ -385,22 +390,113 @@ export class CreatureManager {
           if (!agua || agua.id !== 'mar' || agua.level - w.heightAt(x, z) < 10) continue;
           nota = -Math.hypot(x, z); // o mar fundo mais perto da ilha
         } else {
-          // os outros: um ponto seco do bioma do chefe (gelo na neve, dragão na serra)
+          // os outros: um ponto seco do bioma do chefe (gelo na neve, dragão no topo da serra)
           if (w.biomeKeyAt(x, z) !== (SPECIES[id]?.biomas?.[0] ?? 'neve') || w.waterAt(x, z)) continue;
-          nota = r();
+          if (SPECIES[id]?.covil_lava) {
+            // dragão: um topo alto e mais plano (a cratera de lava cabe sem pico no meio)
+            let lo = Infinity;
+            let hi = -Infinity;
+            for (let a = 0; a < 8; a++) {
+              const h = w.heightAt(x + Math.cos(a * 0.785) * 14, z + Math.sin(a * 0.785) * 14);
+              lo = Math.min(lo, h);
+              hi = Math.max(hi, h);
+            }
+            const h0 = w.heightAt(x, z);
+            if (hi - lo > 9 || Math.abs(h0 - (hi + lo) / 2) > 5) continue; // precisa ser um topo quase plano
+            nota = h0;
+          } else {
+            nota = r();
+          }
         }
         if (w.allRespawnPoints?.some((q) => Math.hypot(q.position.x - x, q.position.z - z) < 150)) continue;
         if (nota > melhor) { melhor = nota; best = { x, z }; }
       }
     }
     this._covis[id] = best;
+    if (best && SPECIES[id]?.covil_lava) this._makeLava(best);
     return best;
+  }
+
+  // Poça de lava no topo da serra (covil do dragão): disco de lava que brilha,
+  // pedras escuras em volta e fumaça; quem pisa na lava se queima.
+  _makeLava(lugar) {
+    const w = this.world;
+    // cratera de ~14 m no topo: a lava fica no meio da altura do terreno (pontas de pedra
+    // saem da lava como ilhas) e pedras grandes na borda escondem os degraus
+    const R = 14;
+    let lo = Infinity;
+    let hi = -Infinity;
+    for (let a = 0; a < 24; a++) for (const f of [0.35, 0.7, 1]) {
+      const h = w.heightAt(lugar.x + Math.cos(a * 0.262) * R * f, lugar.z + Math.sin(a * 0.262) * R * f);
+      lo = Math.min(lo, h);
+      hi = Math.max(hi, h);
+    }
+    const y = lo + (hi - lo) * 0.55;
+    const g = new THREE.Group();
+    g.name = 'Lava';
+    const mat = new THREE.MeshBasicMaterial({ color: '#ff5a14' });
+    const disco = new THREE.Mesh(new THREE.CircleGeometry(R, 28), mat);
+    disco.rotation.x = -Math.PI / 2;
+    disco.position.set(lugar.x, y, lugar.z);
+    g.add(disco);
+    // manchas mais claras e borda de pedra escura
+    const claro = new THREE.Mesh(new THREE.CircleGeometry(R * 0.55, 20), new THREE.MeshBasicMaterial({ color: '#ffc04a' }));
+    claro.rotation.x = -Math.PI / 2;
+    claro.position.set(lugar.x + R * 0.15, y + 0.03, lugar.z - R * 0.1);
+    g.add(claro);
+    const pedra = new THREE.MeshLambertMaterial({ color: '#2a2422', flatShading: true });
+    for (let k = 0; k < 26; k++) {
+      const a = (k / 26) * Math.PI * 2;
+      const bx = lugar.x + Math.cos(a) * (R + 1);
+      const bz = lugar.z + Math.sin(a) * (R + 1);
+      const chao = w.heightAt(bx, bz);
+      // pedra alta o bastante para ir do chão até acima da lava
+      const s = Math.min(5, Math.max(2.2, (y - chao) * 0.7 + 1.5)) * (0.85 + ((k * 37) % 7) * 0.05);
+      const m = new THREE.Mesh(new THREE.IcosahedronGeometry(s, 0), pedra);
+      m.position.set(bx, (chao + y) / 2, bz);
+      m.rotation.set(k, k * 2, k * 3);
+      m.castShadow = true;
+      g.add(m);
+    }
+    const luz = new THREE.PointLight('#ff6a20', 3, R * 4, 1.5);
+    luz.position.set(lugar.x, y + 3, lugar.z);
+    g.add(luz);
+    this.scene.add(g);
+    this.lava = { x: lugar.x, z: lugar.z, r: R, y, mat, luz, t: 0 };
+  }
+
+  // Lava: brilho pulsando, fumaça e fogo de vez em quando, e queima quem pisa
+  _updateLava(dt, players) {
+    const L = this.lava;
+    L.t += dt;
+    const p = 0.5 + 0.5 * Math.sin(L.t * 1.7);
+    L.mat.color.setRGB(1, 0.3 + p * 0.12, 0.06);
+    L.luz.intensity = 2.5 + p * 1.5;
+    L._fx = (L._fx ?? 0) - dt;
+    const perto = players.some((q) => Math.hypot(q.position.x - L.x, q.position.z - L.z) < 120);
+    if (perto && L._fx <= 0) {
+      L._fx = 0.35;
+      const a = Math.random() * Math.PI * 2;
+      const r = Math.random() * L.r;
+      const at = new THREE.Vector3(L.x + Math.cos(a) * r, L.y + 0.3, L.z + Math.sin(a) * r);
+      this.world.effects?.burst(at, Math.random() < 0.5 ? 'fogo' : 'fumaca', 3, 1.4);
+    }
+    for (const q of players) {
+      if (q.dead || q.riding) continue;
+      if (Math.hypot(q.position.x - L.x, q.position.z - L.z) < L.r && q.position.y < L.y + 1.2) {
+        q.stats?.damage?.(BALANCE.chefes.lava_dano_seg * dt, 'lava');
+        if (q === game.player && !(L._aviso > 0)) events.emit(EV.MESSAGE, { text: 'Lava! Saia daí!', kind: 'warn' });
+        L._aviso = 2;
+      }
+    }
+    L._aviso = (L._aviso ?? 0) - dt;
   }
 
   ensureBosses(players) {
     const C = BALANCE.chefes;
     if (!C) return;
     this._chefes ??= {};
+    for (const sp of Object.values(SPECIES)) if (sp.covil_lava) this.covil(sp.id); // a lava já existe antes do dragão
     for (const sp of Object.values(SPECIES)) {
       if (!sp.chefe) continue;
       const atual = this._chefes[sp.id];
@@ -416,6 +512,11 @@ export class CreatureManager {
       const c = this.spawn(sp.id, lugar.x, lugar.z, C.nivel);
       if (!c) continue;
       c.home.set(lugar.x, lugar.z);
+      if (sp.covil_lava) {
+        // dorme dentro da lava até alguém chegar perto (ou bater nele)
+        c.landed = true;
+        c._setState(CSTATE.SLEEP);
+      }
       this._chefes[sp.id] = c;
       events.emit(EV.MESSAGE, { text: `${sp.nome} está por perto!`, kind: 'warn' });
     }

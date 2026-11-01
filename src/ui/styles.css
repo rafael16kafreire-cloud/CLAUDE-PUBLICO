@@ -2369,92 +2369,18 @@ body.inv-open #ui > .hud, body.inv-open #ui > .hotbar, body.inv-open #ui > .hud-
 .xp-track { height: 3px; border: 0; background: rgba(10, 8, 6, 0.45); border-radius: 2px; }
 .xp-track i { background: var(--p-neve); opacity: 0.8; }
 .hud-clock, .hud-temp b { font-family: var(--font-nordica); letter-spacing: 0.08em; }
-.hud-gauges {
-  flex-direction: column;
-  align-items: stretch;
-  gap: 5px;
-  width: 210px;
-  padding: 7px 10px 6px;
-  border-radius: 10px;
-  background: linear-gradient(180deg, rgba(14, 12, 10, 0.28), rgba(14, 12, 10, 0.42));
-}
-body.is-touch .hud-gauges { width: 180px; }
-.hud-gauges .stat {
-  display: grid;
-  grid-template-columns: 52px 1fr 30px;
-  align-items: center;
-  gap: 6px;
-  width: auto;
-  height: 10px;
-}
-.hud-gauges .stat .rot {
-  font: 700 9.5px var(--font-nordica);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgba(236, 228, 212, 0.85);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
-  white-space: nowrap;
-}
-.hud-gauges .stat .track {
-  position: relative;
-  inset: auto;
-  height: 5px;
-  border-radius: 3px;
-  overflow: hidden;
-  background: rgba(10, 8, 6, 0.5);
-  -webkit-mask: none;
-  mask: none;
-  box-shadow: inset 0 0 0 1px rgba(236, 228, 212, 0.08);
-}
-.hud-gauges .stat .fill {
-  position: absolute;
-  inset: 0;
-  height: 100%;
-  background: var(--c);
-  transform-origin: left center;
-  transform: scaleX(var(--v, 1));
-  transition: transform 0.25s;
-  border-radius: 3px;
-}
-.hud-gauges .stat .num {
-  position: static;
-  transform: none;
-  text-align: right;
-  font: 700 10px var(--font-nordica);
-  color: rgba(236, 228, 212, 0.9);
-  text-shadow: 0 1px 2px #000;
-}
-/* cores das barras (paleta) */
-.hud-gauges .stat-health { --c: #b0533a; }
-.hud-gauges .stat-stamina { --c: var(--p-sol); }
-.hud-gauges .stat-food { --c: var(--p-capim); }
-.hud-gauges .stat-water { --c: #6a90a8; }
-.hud-gauges .stat-oxygen { --c: var(--p-neve); }
-.hud-gauges .stat-xp { --c: var(--p-neve); }
-.hud-gauges .stat-weight { --c: var(--p-madeira); }
-.hud-gauges .stat.low { --c: #d0583a; }
-.hud-gauges .stat.low .rot { color: #f0a080; }
+/* status: ícones do ARK Mobile (sem o painel de barras com nome da etapa 5) */
+.hud-gauges .stat .rot { display: none; }
 
 /* aviso de nível, mensagens e dicas na mesma letra */
 .hud-levelup { font-family: var(--font-nordica) !important; letter-spacing: 0.12em !important; color: #e8c890 !important; }
 .prompt { font-family: var(--font-nordica); letter-spacing: 0.06em; background: rgba(14, 12, 10, 0.5); border: 0; }
 .msg { font-family: var(--font-nordica); letter-spacing: 0.04em; }
-/* (tema nórdico) vence as regras antigas do HUD do ARK, que tinham seletor mais forte */
-body .hud-gauges, body.is-touch .hud-gauges, body.is-touch:not(.touch-botoes) .hud-gauges, body:not(.is-touch) .hud-gauges {
-  align-items: stretch;
-  gap: 5px;
-  bottom: calc(2vh + var(--safe-b, 0px));
-}
-.hud-gauges .stat, .hud-gauges .stat-food, .hud-gauges .stat-water { width: auto; height: 10px; opacity: 1; }
-.hud-gauges .stat .num { display: block; }
-.hud-gauges .stat-food, .hud-gauges .stat-water { align-self: stretch; }
-/* dica de interação acima do painel de barras (não cobre a Vida) */
-:root, body, body.is-touch, body:not(.is-touch) { --prompt-bottom: calc(2vh + 112px); }
 
 /* barra de vida do chefe (alto da tela) */
-.hud-boss { position: absolute; top: 46px; left: 50%; transform: translateX(-50%); width: min(520px, 70vw); text-align: center; pointer-events: none; }
-.hud-boss-name { font-family: var(--font-display); font-weight: 700; font-size: 18px; letter-spacing: 0.06em; color: #ffd9c2; text-shadow: 0 2px 4px #000; text-transform: uppercase; }
-.hud-boss-track { margin-top: 4px; height: 12px; border: 1px solid rgba(255, 210, 190, 0.6); background: rgba(20, 6, 6, 0.65); }
+.hud-boss { position: absolute; top: 40px; left: 50%; transform: translateX(-50%); width: min(300px, 42vw); text-align: center; pointer-events: none; }
+.hud-boss-name { font-family: var(--font-display); font-weight: 700; font-size: 12px; letter-spacing: 0.05em; color: #ffd9c2; text-shadow: 0 2px 4px #000; text-transform: uppercase; }
+.hud-boss-track { margin-top: 2px; height: 6px; border: 1px solid rgba(255, 210, 190, 0.6); background: rgba(20, 6, 6, 0.65); }
 .hud-boss-track i { display: block; height: 100%; background: linear-gradient(#e0473a, #8f1c14); transform-origin: left; }
 
 /* menu do bicho: criação */
