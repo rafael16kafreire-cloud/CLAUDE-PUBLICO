@@ -8,11 +8,15 @@ def load(p):
     return json.load(open(R + p))
 itens = load('items/itens.json'); rec = load('crafting/receitas.json')
 base = {x['id']: x for x in rec['receitas']}
-tier = {'pequena': base['sela'], 'media': base['sela_media'], 'grande': base['sela_grande']}
+# modelos de preço: as 3 selas antigas (ou, se já foram trocadas, a de um bicho de cada porte)
+tier = {k: base.get(a) or base[b] for k, a, b in (('pequena', 'sela', 'sela_raptor'), ('media', 'sela_media', 'sela_parassauro'), ('grande', 'sela_grande', 'sela_braquiossauro'))}
+# o nível ficou deslocado por bicho: volta ao nível-base do porte
+for k in tier:
+    tier[k] = dict(tier[k]); tier[k]['nivel'] = {'pequena': 18, 'media': 16, 'grande': 74}[k]
 desc = {
  'leve': 'sela leve para corredores',
  'padrao': 'sela reforçada com manta',
- 'placas': 'sela com guardas de metal nos lados',
+ 'arreio': 'arreio de tiras de couro, com a almofada no ombro',
  'plataforma': 'plataforma de madeira com grade',
  'cesto': 'cesto alto de madeira preso com cordas',
  'cobra': 'sela baixa e larga, presa com cintas',

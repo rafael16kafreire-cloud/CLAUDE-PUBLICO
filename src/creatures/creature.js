@@ -20,7 +20,7 @@ import { mulberry32 } from '../core/math.js';
 import { shakeAt } from '../world/materials.js';
 import { Inventory } from '../inventory/inventory.js';
 import { aplicarFeridas } from './wounds.js';
-import { ajustarSela, backSpot, buildSaddle, saddleFor } from './saddle.js';
+import { ajustarSela, backSpot, buildSaddle, saddleFor, seatShift } from './saddle.js';
 import { events, EV } from '../core/event_bus.js';
 
 // O que cada herbívoro come (tipos de vegetação). Bicho alto (pescoço
@@ -285,7 +285,7 @@ export class Creature {
   // Onde o jogador senta (altura e quanto para a frente/trás, em metros).
   get seat() {
     const sp = backSpot(this);
-    return { y: (sp.y + (this.saddled ? (this._seatLift ?? 0.15 / this.adultScale) : 0)) * this.scale, z: sp.z * this.scale };
+    return { y: (sp.y + (this.saddled ? (this._seatLift ?? 0.15 / this.adultScale) : 0)) * this.scale, z: (sp.z - (this.saddled ? seatShift(this) : 0)) * this.scale };
   }
 
   // Sela que serve neste bicho (pelo porte).

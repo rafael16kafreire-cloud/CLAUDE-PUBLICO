@@ -108,6 +108,13 @@ export function saddleFor(c) {
 }
 
 // A sela guardada serve neste bicho? (as 3 selas antigas dos saves velhos valem pelo porte)
+// Quanto a sela anda para a frente (em m do modelo): o arreio de bichos com placas nas costas
+// fica no ombro, na frente das placas (como no ARK).
+export function seatShift(c) {
+  const f = SELAS[c.species.id]?.frente ?? 0;
+  return f ? f * backSpot(c).trunk : 0;
+}
+
 export function saddleFits(c, item) {
   return item === saddleFor(c) || item === tierOf(c);
 }
@@ -189,7 +196,8 @@ export function buildSaddle(c, kindIn) {
   const len = Math.max(0.9 * s, Math.min(spot.trunk * 0.6, 2.4 * s));
   const g = new THREE.Group();
   g.name = 'Sela';
-  g.position.z = spot.z;
+  const shift = seatShift(c);
+  g.position.z = spot.z - shift;
   // tamanho da sela pelo lugar onde ela vai: ~40% da largura do tronco, sem passar de metade
   // do comprimento dele (a sela tem 1,32× mais comprida que larga) e com mínimo/máximo em metros
   const maxW = kind === 'sela_grande' ? 2.2 * s : kind === 'sela_media' ? 1.0 * s : 0.7 * s;
@@ -223,19 +231,10 @@ export function buildSaddle(c, kindIn) {
       g.add(box(0.03 * s, 0.2 * s, len2 * 1.2, side * pw * 0.64, sy + h * 0.5, 0, PANO));
     }
     for (const sz of [-1, 1]) g.add(box(pw * 1.3, 0.04 * s, 0.04 * s, 0, sy + h, sz * len2 * 0.62, WOOD));
-  } else if (estilo === 'placas') {
-    // guardas de metal nos lados (bichos com placas e espinhos)
-    for (const side of [-1, 1]) {
-      const pl = box(0.05 * s, 0.34 * s, len2 * 1.05, side * pw * 0.62, back + 0.12 * s, 0, IRON);
-      pl.rotation.z = side * 0.35;
-      g.add(pl);
-      for (const sz of [-0.35, 0, 0.35]) {
-        const sp = new THREE.Mesh(new THREE.ConeGeometry(0.05 * s, 0.16 * s, 5), IRON);
-        sp.position.set(side * pw * 0.72, back + 0.3 * s, sz * len2);
-        sp.rotation.z = -side * 0.5;
-        g.add(sp);
-      }
-    }
+  } else if (estilo === 'arreio') {
+    // arreio de couro (estegossauro, anquilossauro...): só uma almofada baixa e as fivelas;
+    // as tiras em volta do corpo são feitas mais abaixo (ficam coladas na pele)
+    for (const side of [-1, 1]) g.add(box(0.045 * s, 0.05 * s, 0.07 * s, side * pw * 0.66, back + 0.02 * s, 0, IRON));
   } else if (estilo === 'cobra') {
     // sela baixa e larga: duas cintas largas por cima e estribo de corda de cada lado
     for (const sz of [-0.55, 0.55]) g.add(box(pw * 1.55, 0.03 * s, 0.1 * s, 0, back + 0.01 * s, sz * len2, COURO));
@@ -272,7 +271,8 @@ export function buildSaddle(c, kindIn) {
     const ph = bindPos(hips);
     const pc = chest ? bindPos(chest) : null;
     // meio entre o quadril e o peito: é onde fica o tronco de verdade
-    const zs = ph && pc ? ph.z * 0.6 + pc.z * 0.4 : spot.z;
+    let zs = ph && pc ? ph.z * 0.6 + pc.z * 0.4 : spot.z;
+    zs -= shift;
     g.position.z = zs;
     // vértices do tronco ali perto (pose de ligação), para medir a altura das costas
     const pos = geo.attributes.position;
@@ -308,6 +308,33 @@ export function buildSaddle(c, kindIn) {
     }
     const girth = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(ringPts, true), 28, ropeR, 5, true), ROPE);
     g.add(girth);
+    if (estilo === 'arreio') {
+      // tiras largas de couro em volta do tronco (por cima das costas, pelos lados e por baixo da barriga)
+      for (const k of [-1.5, -0.75, 0.75, 1.5]) {
+        const dz = k * len2 * 0.5;
+        let hw = 0;
+        let bt = Infinity;
+        let tp = -Infinity;
+        for (let i = 0; i < pos.count; i++) {
+          if (Math.abs(pos.getZ(i) - (zs + dz)) < spot.trunk * 0.05 && pos.getY(i) > spot.belly * 0.98) {
+            hw = Math.max(hw, Math.abs(pos.getX(i)));
+            bt = Math.min(bt, pos.getY(i));
+            if (Math.abs(pos.getX(i)) < spot.w * 0.2) tp = Math.max(tp, pos.getY(i));
+          }
+        }
+        hw = Math.min(hw || spot.w / 2, spot.w / 2) * 1.0 + ropeR * 1.5;
+        bt = Number.isFinite(bt) ? bt : spot.belly;
+        const topY = Number.isFinite(tp) ? Math.min(tp, back + 0.05 * s) : back;
+        const cyy = (topY + bt) / 2;
+        const ryy = (topY - bt) / 2 + ropeR * 1.5;
+        const pts = [];
+        for (let q = 0; q < 20; q++) {
+          const aa = (q / 20) * Math.PI * 2;
+          pts.push(new THREE.Vector3(Math.cos(aa) * hw, cyy + Math.sin(aa) * ryy, dz));
+        }
+        g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, true), 28, ropeR * 1.7, 5, true), lambert(D.tira ?? '#b8742e')));
+      }
+    }
     // cabresto: argola em volta da cabeça (presa ao osso da cabeça) e corda até a sela
     const headBone = c.bones?.head;
     const hk = headBone ? sk.bones.indexOf(headBone) : -1;

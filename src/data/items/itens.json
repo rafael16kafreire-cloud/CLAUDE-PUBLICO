@@ -1664,7 +1664,7 @@
    "tipo": "consumivel",
    "peso": 20.0,
    "pilha": 1,
-   "descricao": "Sela de Estegossauro: sela com guardas de metal nos lados. Só serve nesse bicho. Com ela na mão, Interagir no bicho domado.",
+   "descricao": "Sela de Estegossauro: arreio de tiras de couro, com a almofada no ombro. Só serve nesse bicho. Com ela na mão, Interagir no bicho domado.",
    "icone": {
     "forma": "sela",
     "cor": "#5a4030",
@@ -1677,7 +1677,7 @@
    "tipo": "consumivel",
    "peso": 20.0,
    "pilha": 1,
-   "descricao": "Sela de Anquilossauro: sela com guardas de metal nos lados. Só serve nesse bicho. Com ela na mão, Interagir no bicho domado.",
+   "descricao": "Sela de Anquilossauro: arreio de tiras de couro, com a almofada no ombro. Só serve nesse bicho. Com ela na mão, Interagir no bicho domado.",
    "icone": {
     "forma": "sela",
     "cor": "#4e3a2c",
@@ -1690,7 +1690,7 @@
    "tipo": "consumivel",
    "peso": 20.0,
    "pilha": 1,
-   "descricao": "Sela de Sauropelta: sela com guardas de metal nos lados. Só serve nesse bicho. Com ela na mão, Interagir no bicho domado.",
+   "descricao": "Sela de Sauropelta: arreio de tiras de couro, com a almofada no ombro. Só serve nesse bicho. Com ela na mão, Interagir no bicho domado.",
    "icone": {
     "forma": "sela",
     "cor": "#5a4630",
