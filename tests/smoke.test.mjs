@@ -893,7 +893,8 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     window.__prey = c.creatures.spawn('dodo', x + 68, z + 14, 1);
   });
   let fight = null;
-  for (let i = 0; i < 8 && !fight?.dead; i++) {
+  // caçar é sorteado a cada instante (balanceamento.js > brigas): dá até ~1 min
+  for (let i = 0; i < 15 && !fight?.dead; i++) {
     await gameWait(page, 4000);
     fight = await page.evaluate(() => ({ dead: !window.__prey.alive, pred: window.__pred.state, prey: window.__prey.state, eating: window.__pred.state === 'comer' }));
   }
@@ -1288,6 +1289,9 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   await page.screenshot({ path: `${SHOTS}/20-cel-tela-inicial.png` });
   await page.tap('#btn-play');
   await page.waitForFunction(() => window.__ilha?.game?.state === 'playing' && !!window.__ilha.ctx, null, { timeout: 240000 }); // a ilha agora é gerada ao clicar em Entrar
+  // sem bichos selvagens nos testes do celular: com os números do ARK, piranha e mosassauro
+  // na beira do mar matam o jogador no meio do teste (a tela de morte cobre os menus)
+  await page.evaluate(() => { const c = window.__ilha.ctx.creatures; c.enabled = false; c.clear(); });
   await frames(page, 30);
   const touchVisible = await page.evaluate(() => !document.querySelector('.tc').hidden);
   check('Celular: controles de toque aparecem', touchVisible);
