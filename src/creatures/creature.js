@@ -369,7 +369,7 @@ export class Creature {
   // (ou a comida preferida, se o prato estiver vazio).
   get tameTimeLeft() {
     const id = Object.keys(this.tameFood ?? {}).find((k) => this.tameFood[k] > 0) ?? this.species.comida_preferida;
-    const faltam = Math.ceil(((1 - (this.tameProgress ?? 0)) * this.tameNeed) / this.foodValue(id));
+    const faltam = Math.ceil(((1 - (this.tameProgress ?? 0)) * this.tameNeed) / this.foodValue(id) - 1e-6);
     return faltam * BALANCE.domar.comer_a_cada_seg;
   }
 
@@ -421,6 +421,7 @@ export class Creature {
       if (id) {
         this.tameFood[id] -= 1;
         this.tameProgress = Math.min(1, this.tameProgress + this.foodValue(id) / this.tameNeed);
+        if (this.tameProgress > 1 - 1e-6) this.tameProgress = 1; // 10 × 0,1 dá 0,9999999 (conta com vírgula)
         // como no ARK: cada mordida baixa um pouco a efetividade (a Ração não baixa)
         if (id !== 'racao') {
           const perda = id === this.species.comida_preferida ? D.efetividade_por_comida : D.efetividade_outra_comida;

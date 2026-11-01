@@ -214,7 +214,7 @@ export class PlayerInteraction {
     if (target.kind === 'tame-feed') {
       // põe no prato o que falta para domar (ele come aos poucos)
       const c = target.c;
-      const left = Math.max(1, Math.ceil(((1 - (c.tameProgress ?? 0)) * c.tameNeed) / c.foodValue(target.food)));
+      const left = Math.max(1, Math.ceil(((1 - (c.tameProgress ?? 0)) * c.tameNeed) / c.foodValue(target.food) - 1e-6));
       const plate = c.tameFood[target.food] ?? 0;
       const n = Math.min(this.inv.count(target.food), Math.max(1, left - plate));
       this.inv.remove(target.food, n);
