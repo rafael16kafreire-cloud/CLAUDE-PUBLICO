@@ -5,6 +5,7 @@
 #  - exporta .glb parado
 # Uso: blender -b -P preparar.py -- entrada saida.glb [max_triangulos]
 #      (opcional) REMOVER="nome1,nome2" para tirar peças extras
+#      (opcional) REMOVER_MAT="pedra,base" tira as faces cujo material contém esses textos
 #      (opcional) GIRAR="x,-90" gira a malha (graus) em volta de um eixo antes de exportar (modelo deitado)
 #      (opcional) DEFORMAR=script.py roda um script com a malha final em 'obj' (ex.: remodelar um bicho)
 import bpy, sys, os
@@ -54,6 +55,14 @@ tris = sum(len(p.vertices) - 2 for p in obj.data.polygons)
 if maxtris and tris > maxtris:
     m = obj.modifiers.new('reduzir', 'DECIMATE'); m.ratio = maxtris / tris
     bpy.ops.object.modifier_apply(modifier=m.name)
+if os.environ.get('REMOVER_MAT'):
+    import bmesh
+    alvo = [r.strip().lower() for r in os.environ['REMOVER_MAT'].split(',') if r.strip()]
+    idx = {i for i, s in enumerate(obj.material_slots) if s.material and any(a in s.material.name.lower() for a in alvo)}
+    bm = bmesh.new(); bm.from_mesh(obj.data)
+    bmesh.ops.delete(bm, geom=[f for f in bm.faces if f.material_index in idx], context='FACES')
+    bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context='VERTS')
+    bm.to_mesh(obj.data); bm.free()
 if os.environ.get('GIRAR'):
     import math, mathutils
     for par in os.environ['GIRAR'].split(';'):

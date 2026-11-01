@@ -8,6 +8,6 @@
  "rugido": "baixo",
  "cabeca": 0.1,
  "braco": 0.03,
- "fonte": "Rigid Carnotaurus-Sastrei — Wormhole (olahamieholahamieh) — CC BY 4.0 — https://sketchfab.com/3d-models/rigid-carnotaurus-sastrei-232b60653c1740fa8570b6c90b377871",
- "preparo": "REMOVER=\"object_82,object_11,icosphere\""
+ "fonte": "CARNOTAURUS DİNOSAUR — Cenker Turhan (cenkerturhan1) — CC BY 4.0 — https://sketchfab.com/3d-models/carnotaurus-dinosaur-548c9a0575b14deaae1f12ca9a6c31ca",
+ "preparo": "REMOVER_MAT=\"sasso\" (tira a pedra) — 30000 triângulos"
 }

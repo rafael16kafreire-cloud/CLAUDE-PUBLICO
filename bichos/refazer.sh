@@ -22,7 +22,7 @@ quer dimetrodonte && P $FONTES/dime_cp.glb dimetrodonte
 quer galimimo && P $FONTES/galimimo_skinny.glb galimimo
 quer terizinossauro && REMOVER="babys,icosphere" P $FONTES/terizino_freddy.glb terizinossauro
 quer parassauro && REMOVER="object_9,object_11,icosphere" P $FONTES/parasauro_htqj.glb parassauro
-quer carnotauro && REMOVER="object_82,object_11,icosphere" P $FONTES/carno_wormhole.glb carnotauro
+quer carnotauro && REMOVER_MAT="sasso" P $FONTES/carno_cenker.glb carnotauro 30000
 quer espinossauro && P $FONTES/espino_pebegou.glb espinossauro
 quer dodo && REMOVER="sphere.001_0,sphere.002,icosphere" P $FONTES/dodo_bluemesh.glb dodo
 quer moschops && DEFORMAR=blender/moschops.py P $FONTES/dime_cp.glb moschops 30000
