@@ -1072,7 +1072,8 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
     return { ko: d.knockedOut, need: d.tameNeed, plate: d.tameFood.baga_mejo };
   });
   let tame1 = null;
-  for (let i = 0; i < 6 && !tame1?.tamed; i++) {
+  // come 1 a cada comer_a_cada_seg (7 s): 10 comidas = 70 s
+  for (let i = 0; i < 22 && !tame1?.tamed; i++) {
     await gameWait(page, 4000);
     tame1 = await page.evaluate(() => ({ tamed: !!window.__pet.tamed, pct: window.__pet.tameProgress, st: window.__pet.state }));
   }
