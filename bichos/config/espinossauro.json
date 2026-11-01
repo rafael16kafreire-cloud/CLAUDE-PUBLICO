@@ -1,0 +1,3 @@
+{ "nome": "espinossauro", "titulo": "Espinossauro", "modelo": "../teste/espinossauro_parado.glb",
+  "comprimento": 16, "rot": [0, 0, 0], "tipo": "bipede", "ataque": "mordida", "rugido": "baixo", "cabeca": 0.12, "braco": 0.09,
+  "fonte": "Spinosaurus — Pedro B. Goulart (Pebegou) — CC BY 4.0 — https://sketchfab.com/3d-models/spinosaurus-2a325726dd7b4a7c888277f262fd09bc" }

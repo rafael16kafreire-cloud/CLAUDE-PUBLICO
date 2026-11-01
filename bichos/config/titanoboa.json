@@ -1,0 +1,6 @@
+{ "nome": "titanoboa", "entrada": "../teste/titanoboa_anim.glb", "saida": "../modelos/titanoboa.glb", "comprimento": 13,
+  "osso_cabeca": "Bone086_85", "osso_cauda": "Bone084_end_0",
+  "animacoes": { "parado": "parado", "andar": "andar", "correr": "correr", "nadar": "nadar", "nadar_rapido": "nadar_rapido",
+                 "atacar": "atacar", "rugir": "rugir", "comer": "comer", "dormir": "dormir", "morrer": "morrer" },
+  "preparo": "node completar.mjs completar/titanoboa.mjs (cria as animações em teste/titanoboa_anim.glb a partir de originais/titanoboa_kenchoo.glb)",
+  "fonte": "Snake Titanoboa by Dino Raul — kenchoo — CC BY-NC 4.0 (uso NÃO comercial) — https://sketchfab.com/3d-models/snake-titanoboa-by-dino-raul-ce8d56f440ea4259b3e328eb9a1a90ca" }

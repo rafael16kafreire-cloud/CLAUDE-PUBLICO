@@ -1,0 +1,5 @@
+{ "nome": "bisao", "entrada": "../originais/bisao_anees.glb", "saida": "../modelos/bisao.glb", "comprimento": 4.6,
+  "osso_cabeca": "Bone.005_05", "osso_cauda": "Bone.009_027",
+  "animacoes": { "andar": "Armature|ArmatureAction" },
+  "preparo": "node adaptar.mjs config/bisao.json && node completar.mjs completar/bisao.mjs",
+  "fonte": "Animated Free Bison — Anees Animates — CC BY 4.0 — https://sketchfab.com/3d-models/animated-free-bison-be2dcd97db1c4b9c91a7728d9bc89925" }

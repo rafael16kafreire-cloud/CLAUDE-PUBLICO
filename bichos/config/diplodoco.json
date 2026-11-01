@@ -1,0 +1,12 @@
+{
+ "nome": "diplodoco",
+ "base": "../modelos/argentinossauro.glb",
+ "saida": "../modelos/diplodoco.glb",
+ "escala": 0.78,
+ "cor": [
+  0.75,
+  1.05,
+  0.75
+ ],
+ "variante_de": "argentinossauro"
+}

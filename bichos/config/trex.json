@@ -1,0 +1,5 @@
+{ "nome": "trex", "entrada": "../originais/trex_lasquetispice.glb", "saida": "../modelos/trex.glb", "comprimento": 12,
+  "osso_cabeca": "bn_Head.10_10", "osso_cauda": "bn_Tail04.70_70",
+  "animacoes": { "parado": "idle", "andar": { "de": "run", "velocidade": 0.5 }, "correr": "run", "atacar": "bite", "rugir": "roar",
+                 "atacar_cauda": "attack_tail" },
+  "fonte": "Animated Tyrannosaurus Rex Dinosaur Running Loop — LasquetiSpice — CC BY 4.0 — https://sketchfab.com/3d-models/animated-tyrannosaurus-rex-dinosaur-running-loop-38007d947ae74dea83988cb0b08ee053" }

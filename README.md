@@ -4,6 +4,11 @@ Jogo 3D de sobrevivência com dinossauros. Sozinho (offline) ou em **co-op onlin
 Roda no celular (Android como app ou no navegador) e no PC.
 Visual estilizado, feito para ser leve.
 
+**Pastas de modelos (vindas da branch de modelos 3D)**
+- [`bichos/`](bichos) – bichos low-poly em `.glb` com esqueleto e 8 animações (parado, andar, correr, atacar, rugir, comer, dormir, morrer); visualizador em `bichos/index.html`.
+- [`construcao-lowpoly/`](construcao-lowpoly) – kit de peças 3D low-poly para construção (estilo nórdico).
+- [`prompts_dinos/`](prompts_dinos) – prompts dos bichos para a IA do Blender.
+
 **Versão 0.12.0** – mata mais viva, ataque com peso, mapa e córregos
 - **Soco e coleta a cada 360 ms.** **Árvores só com machado** (soco machuca e não dá nada;
   palha com a mão vem das palmeiras e plantas). **Raízes da sumaúma** com colisão própria:

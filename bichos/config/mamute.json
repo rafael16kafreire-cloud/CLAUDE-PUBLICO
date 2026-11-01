@@ -1,0 +1,2 @@
+{ "nome": "mamute", "titulo": "Mamute-lanoso", "modelo": "../teste/mamute_parado.glb", "comprimento": 7, "rot": [0, 90, 0], "tipo": "quadrupede", "ataque": "presas", "cabeca": 0.15,
+  "fonte": "3D High-poly Baby Woolly Mammoth — SDPM Esare (sdpm) — CC BY 4.0 — https://sketchfab.com/3d-models/3d-high-poly-baby-woolly-mammoth-fce1c86ccedf47a5b9627098be6719d5" }

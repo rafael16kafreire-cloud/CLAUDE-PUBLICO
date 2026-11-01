@@ -1,0 +1,4 @@
+{ "nome": "chefe_vulcao", "entrada": "../originais/chefe_vulcao_regina.glb", "saida": "../modelos/chefe_vulcao.glb", "comprimento": 20,
+  "osso_cabeca": "DEF-neck.002_010", "osso_cauda": "DEF-tail.003_0154",
+  "animacoes": { "parado": "Idle Stand", "andar": "Walk", "correr": "Run", "voar": "Fly", "sentado": "Idle Sit" },
+  "fonte": "European Dragon — Regina Cachoa — CC BY 4.0 — https://sketchfab.com/3d-models/european-dragon-82f393a2e6c048ad80c171ce3b3a7b87" }

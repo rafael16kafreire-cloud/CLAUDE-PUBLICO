@@ -1,0 +1,20 @@
+Crie no Blender um animal marinho **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com escamas, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+
+ESPÉCIE: Piranha-gigante. Peixe de 0,4 m, corpo alto e achatado de lado, mandíbula de baixo saliente com dentes triangulares. Cores: costas cinza-esverdeado, barriga e garganta vermelhas, pintas prateadas.
+
+MALHA: entre 1.000 e 2.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
+
+TEXTURA: uma textura pintada (Base Color) de 256×256, salva em JPG, com todos os detalhes da espécie bem visíveis nesse tamanho (escamas, padrão de cor, barriga mais clara, olhos e dentes). Normal Map opcional com metade desse tamanho. Material único (Principled BSDF), sem transparência. UV aberta sem sobreposição, aproveitando bem a textura.
+
+POSIÇÃO: em pose neutra, na horizontal como se estivesse nadando, centro do corpo em Z = 0, olhando para -Y, em tamanho real (metros). Aplique Ctrl+A → All Transforms antes de exportar.
+
+ESQUELETO (Armature): ossos de corpo (3 a 5 ao longo do eixo), cabeça, mandíbula, nadadeiras (peitorais, e cauda com 2 ossos). Skinning com pesos limpos, sem a malha rasgar ou afundar ao dobrar.
+
+ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
+- `parado`: flutua parado, nadadeiras/cauda se mexendo de leve (loop).
+- `nadar`: nadando devagar (loop).
+- `nadar_rapido`: nadando rápido (loop).
+- `atacar`: mordidas rápidas (sem loop).
+- `morrer`: vira de barriga para cima (sem loop).
+
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: piranha.glb

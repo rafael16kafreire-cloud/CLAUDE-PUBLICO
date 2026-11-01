@@ -1,0 +1,13 @@
+{
+ "nome": "carnotauro",
+ "titulo": "Carnotauro",
+ "modelo": "../teste/carnotauro_parado.glb",
+ "comprimento": 7.8,
+ "tipo": "bipede",
+ "ataque": "mordida",
+ "rugido": "baixo",
+ "cabeca": 0.1,
+ "braco": 0.03,
+ "fonte": "CARNOTAURUS DİNOSAUR — Cenker Turhan (cenkerturhan1) — CC BY 4.0 — https://sketchfab.com/3d-models/carnotaurus-dinosaur-548c9a0575b14deaae1f12ca9a6c31ca",
+ "preparo": "REMOVER_MAT=\"sasso\" (tira a pedra) — 30000 triângulos"
+}

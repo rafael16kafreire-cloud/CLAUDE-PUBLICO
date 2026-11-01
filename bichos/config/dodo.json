@@ -1,0 +1,13 @@
+{
+ "nome": "dodo",
+ "titulo": "Dodô",
+ "modelo": "../teste/dodo_parado.glb",
+ "comprimento": 1,
+ "tipo": "bipede",
+ "ataque": "mordida",
+ "rugido": "cima",
+ "cabeca": 0.3,
+ "braco": 0.15,
+ "fonte": "Dodo [ Extinct Bird ] — BlueMesh — CC BY 4.0 — https://sketchfab.com/3d-models/dodo-extinct-bird-68f873e9f9144fc4b99a8f7475bf336d",
+ "preparo": "REMOVER=\"sphere.001_0,sphere.002,icosphere\""
+}
