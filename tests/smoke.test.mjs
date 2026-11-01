@@ -1435,8 +1435,9 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   await gwait(800);
   await page.evaluate(() => window.__resetRec());
   await touch('touchStart', [{ x: 120, y: 300, id: 1 }]);
-  await gwait(40); await touch('touchMove', [{ x: 122, y: 262, id: 1 }]);
-  await gwait(40); await touch('touchMove', [{ x: 122, y: 238, id: 1 }]);
+  // o pulo pede um arrasto rápido de mais de 95 px (menos sensível desde a v0.89.1)
+  await gwait(40); await touch('touchMove', [{ x: 122, y: 250, id: 1 }]);
+  await gwait(40); await touch('touchMove', [{ x: 122, y: 190, id: 1 }]);
   await gwait(900);
   await touch('touchEnd', []);
   await gwait(500);
@@ -1629,10 +1630,12 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   // raptor do anfitrião ataca o convidado
   await A.evaluate(() => { const c = window.__ilha.ctx; const b = [...window.__ilha.net.remotes.values()][0] ?? { position: { x: 0, y: 0, z: 0 } }; c.creatures.spawn('raptor', b.position.x + 6, b.position.z, 3); });
   const h0 = await B.evaluate(() => window.__ilha.ctx.player.stats.health);
-  await gameWait(A, 4000);
+  // raptor com os números do ARK (15 de dano, 9,9 m/s): 2,5 s já basta e não mata o convidado
+  await gameWait(A, 2500);
   await gameWait(B, 600);
   const h1 = await B.evaluate(() => window.__ilha.ctx.player.stats.health);
   check('Co-op: predador do anfitrião ataca o convidado', h1 < h0, `${h0} -> ${h1.toFixed(0)}`);
+  await A.evaluate(() => window.__ilha.ctx.creatures.clear());
   await B.screenshot({ path: `${SHOTS}/30-coop-convidado.png` });
   await A.screenshot({ path: `${SHOTS}/31-coop-anfitriao.png` });
   await A.evaluate(() => window.__ilha.net.leave());

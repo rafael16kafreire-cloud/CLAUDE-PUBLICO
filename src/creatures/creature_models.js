@@ -779,3 +779,13 @@ MODELS.mosassauro = {
   ],
   extras: [],
 };
+
+// bichos novos com modelo .glb (bichos/modelos): o molde (ossos e tamanho de referência)
+// vem de um bicho parecido; o tamanho de verdade vem de comprimento_m em criaturas.json
+MODELS.barionix = { ...MODELS.espinossauro };
+MODELS.suchomimo = { ...MODELS.espinossauro };
+MODELS.giganotossauro = { ...MODELS.trex };
+MODELS.sarcosuchus = { ...MODELS.deinosuchus };
+MODELS.edmontossauro = { ...MODELS.parassauro };
+MODELS.lystrosaurus = { ...MODELS.moschops };
+MODELS.paraceraterio = { ...MODELS.mamute };

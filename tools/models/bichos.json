@@ -832,6 +832,78 @@
     "copyright": "CC BY 4.0",
     "url": "https://sketchfab.com/3d-models/piranha-cde3fbf23ed64366b5eb953a0bb27510"
    }
+  },
+  "barionix": {
+   "credito": {
+    "title": "Baryonix- Walkeri",
+    "author": "add4d (AD&D 4D)",
+    "copyright": "CC0 (domínio público)",
+    "url": "https://sketchfab.com/3d-models/baryonix-walkeri-3e97de2fef8240edac9244c55ed6fcb3"
+   }
+  },
+  "suchomimo": {
+   "credito": {
+    "title": "Baryonix- Walkeri",
+    "author": "add4d (AD&D 4D)",
+    "copyright": "CC0 (domínio público)",
+    "url": "https://sketchfab.com/3d-models/baryonix-walkeri-3e97de2fef8240edac9244c55ed6fcb3"
+   }
+  },
+  "giganotossauro": {
+   "credito": {
+    "title": "Giger walk (Giganotosaurus)",
+    "author": "PusztaiAndras (PAndras)",
+    "copyright": "CC BY 4.0",
+    "url": "https://sketchfab.com/3d-models/giger-walk-a4eca4b015f5407e90120836ff77e661"
+   }
+  },
+  "sarcosuchus": {
+   "credito": {
+    "title": "Sarcosuchus imperator",
+    "author": "Nobilis 2 (nobilishornet2)",
+    "copyright": "CC BY 4.0",
+    "url": "https://sketchfab.com/3d-models/sarcosuchus-imperator-949509fcbf104ac983ec0d61b07121e7"
+   }
+  },
+  "edmontossauro": {
+   "credito": {
+    "title": "Edmontosaurus",
+    "author": "CGreature (Modbuff)",
+    "copyright": "CC BY 4.0",
+    "url": "https://sketchfab.com/3d-models/edmontosaurus-b278ec123e054751a7937f8937949e80"
+   }
+  },
+  "lystrosaurus": {
+   "credito": {
+    "title": "Remodelado a partir de: Dimetrodon",
+    "author": "cp4096",
+    "copyright": "CC BY 4.0",
+    "url": "https://sketchfab.com/3d-models/dimetrodon-3ac7c6aada5e4c03849f9544bbc1afed"
+   }
+  },
+  "megaterio": {
+   "credito": {
+    "title": "Animated Megatherium (Free)",
+    "author": "Anees Animates",
+    "copyright": "CC BY 4.0",
+    "url": "https://sketchfab.com/3d-models/animated-megatherium-free-ec0cb6a41c2e498780136e3d89fa1516"
+   }
+  },
+  "paraceraterio": {
+   "credito": {
+    "title": "Paraceratherium",
+    "author": "CGreature (Modbuff)",
+    "copyright": "CC BY 4.0",
+    "url": "https://sketchfab.com/3d-models/paraceratherium-1fe3e31ff42c4217ae40c69462ee4bb1"
+   }
+  },
+  "bisao": {
+   "credito": {
+    "title": "Animated Free Bison",
+    "author": "Anees Animates",
+    "copyright": "CC BY 4.0",
+    "url": "https://sketchfab.com/3d-models/animated-free-bison-be2dcd97db1c4b9c91a7728d9bc89925"
+   }
   }
  }
 }
