@@ -93,3 +93,22 @@ export const PASSIVAS = Object.freeze({
 
 // Espécies fora do ARK base e a referência usada [CUSTOM]
 export const CUSTOM_REF = Object.freeze({ edmontossauro: 'parassauro', sauropelta: 'anquilossauro', argentinossauro: 'braquiossauro', suchomimo: 'barionix', braquiossauro: 'brontosaurus', reidodo: 'dodorex' });
+
+// UMA habilidade especial por dinossauro (tecla Q). 'dash' = investida/bote de balanceamento.js (montaria.especiais).
+// Quem não aparece aqui não tem especial.
+export const ESPECIAL = Object.freeze({
+  raptor: 'dash',            // Bote: pula, morde e arranca um pedaço (sangra)
+  compsognato: 'dash', dilofossauro: 'dash',            // bote
+  triceratops: 'dash', paquirrinossauro: 'dash', paquicefalossauro: 'dash',   // investida (carga / ram)
+  trex: 'rugido',            // medo_rex
+  parassauro: 'rugido', edmontossauro: 'rugido',
+  carnotauro: 'cabecada',    // sangramento + empurrão
+  kentrossauro: 'golpe_cauda', // empala
+  estegossauro: 'placas',
+  mamute: 'pisao',
+  barionix: 'cauda', suchomimo: 'cauda', deinosuchus: 'cauda',
+  sarcosuchus: 'rolamento',
+  espinossauro: 'garras',
+  giganotossauro: 'pisao',
+  terizinossauro: 'mordida',
+});

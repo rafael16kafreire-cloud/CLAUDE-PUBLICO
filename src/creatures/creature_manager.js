@@ -25,7 +25,7 @@ import { BREEDING as BR, criaDe } from './breeding_config.js';
 import { podeReproduzir, inheritStats as herdarStats, rollMutations, litterSize, cooldownSeconds, semSexo, podeBotar } from './reproducao.js';
 import { aplicarTemperamentos } from './temperamentos.js';
 import { aplicarHabilidades, habilidadesDeCavaleiro, rexRoarAffects, rexRoarCooldown, rugidoDeBando, proximaPlaca, boaTorpor, podeUsar } from './habilidades.js';
-import { EFEITOS, PASSIVAS } from './habilidades_dados.js';
+import { EFEITOS, PASSIVAS, ESPECIAL } from './habilidades_dados.js';
 aplicarTemperamentos(data.especies);
 aplicarHabilidades(data.especies);
 export const SPECIES = Object.fromEntries(data.especies.map((s) => [s.id, s]));
@@ -1027,7 +1027,7 @@ export class CreatureManager {
     if (!basica || (sp.habilidades?.length ?? 0) < 2 || this.rand() > 0.35) return ret;
     const agua = !!this.world.waterAt(c.pos.x, c.pos.z);
     c._abCd ??= {};
-    const cand = sp.habilidades.slice(1).filter((a) => a.tipo === 'ataque' && a.dano > 0 && !a.staminaPorSeg && a.efeitos.length
+    const cand = sp.habilidades.slice(1).filter((a) => a.id === ESPECIAL[sp.id] && a.tipo === 'ataque' && a.dano > 0 && !a.staminaPorSeg && a.efeitos.length
       && (c.stamina ?? 0) >= a.stamina && !((c._abCd[a.id] ?? 0) > c.time) && (!a.requisitos.agua || agua) && (!a.requisitos.terra || !agua) && !a.requisitos.ar);
     if (!cand.length) return ret;
     const ab = cand[Math.floor(this.rand() * cand.length)];
@@ -1063,32 +1063,19 @@ export class CreatureManager {
     this.dots = this.dots.filter((d) => d.t > 0 && (d.alvo === game.player ? !d.alvo.dead : d.alvo.alive !== false));
   }
 
-  // Cavaleiro: escolhe e usa a habilidade (Q). Devolve a espera até a próxima.
+  // Cavaleiro: usa a habilidade especial da espécie (Q). Cada dinossauro tem UMA só.
+  // Devolve a espera até a próxima.
   mountSkill(mount, rider) {
-    const dash = BALANCE.montaria.especiais[mount.species.id];
-    const lista = habilidadesDeCavaleiro(mount.species.id);
-    const n = lista.length + (dash ? 1 : 0);
-    if (!n) {
+    const alvo = ESPECIAL[mount.species.id];
+    if (!alvo) {
       if (rider === game.player) events.emit(EV.MESSAGE, { text: `${mount.species.nome} não tem habilidade especial.`, kind: 'info' });
       return 1;
     }
-    mount._skillSel = (mount._skillSel ?? 0) % n;
-    const sel = mount._skillSel;
-    // touch (sem tecla para trocar): a escolha avança sozinha a cada uso
-    if (rider === game.player && game.isTouch) mount._skillSel = (sel + 1) % n;
-    if (dash && sel === 0) return this._dashSkill(mount, rider, dash);
-    return this.usarHabilidade(mount, lista[sel - (dash ? 1 : 0)], rider);
-  }
-
-  // Troca a habilidade escolhida (tecla G).
-  nextSkill(mount, rider) {
-    const dash = BALANCE.montaria.especiais[mount.species.id];
-    const lista = habilidadesDeCavaleiro(mount.species.id);
-    const n = lista.length + (dash ? 1 : 0);
-    if (n < 2) return;
-    mount._skillSel = ((mount._skillSel ?? 0) + 1) % n;
-    const ab = dash && mount._skillSel === 0 ? { nome: dash.tipo === 'bote' ? 'Bote' : 'Investida' } : lista[mount._skillSel - (dash ? 1 : 0)];
-    if (rider === game.player) events.emit(EV.MESSAGE, { text: `Habilidade: ${ab.nome}`, kind: 'info' });
+    if (alvo === 'dash') {
+      const dash = BALANCE.montaria.especiais[mount.species.id];
+      return dash ? this._dashSkill(mount, rider, dash) : 1;
+    }
+    return this.usarHabilidade(mount, habilidadesDeCavaleiro(mount.species.id)[0], rider);
   }
 
   _dashSkill(mount, rider, E) {
@@ -1097,7 +1084,7 @@ export class CreatureManager {
       return 0.5;
     }
     mount.stamina -= E.stamina;
-    mount.dash = { t: E.seg, vel: E.vel, dano: E.dano, tipo: E.tipo, rider, acertou: new Set(), passo: 0 };
+    mount.dash = { t: E.seg, vel: E.vel, dano: E.dano, tipo: E.tipo, rider, acertou: new Set(), passo: 0, sangra: E.sangra ?? 0 };
     mount.attackAnim = 1;
     sound.creature(mount, E.tipo === 'bote' ? 'ataque' : 'rugido');
     return E.espera;
@@ -1283,6 +1270,7 @@ export class CreatureManager {
       if (Math.hypot(pt.x - head.x, pt.z - head.z) > c.radius + 1) continue;
       D.acertou.add(o);
       this.hit(c, o, c.damage * D.dano);
+      if (D.sangra) this.addDot(o, D.sangra, 5, c); // arranca um pedaço: sangra
       if (D.tipo === 'bote') D.t = Math.min(D.t, 0.05); // bote para no primeiro que morde
     }
     // investida quebra plantas e árvores no caminho (vão para o inventário do bicho)

@@ -1,5 +1,5 @@
 // Regras puras das habilidades (sem three.js) – testadas em tests/progression.test.mjs.
-import { HABILIDADES, EFEITOS, PASSIVAS } from './habilidades_dados.js';
+import { HABILIDADES, EFEITOS, PASSIVAS, ESPECIAL } from './habilidades_dados.js';
 
 export const habilidadesDe = (id) => HABILIDADES[id] ?? [];
 export const habilidade = (id, abId) => habilidadesDe(id).find((a) => a.id === abId) ?? null;
@@ -91,8 +91,10 @@ export function aplicarHabilidades(especies) {
   }
 }
 
-// Habilidades que o cavaleiro aciona com Q (ou a habilidade escolhida): as que têm efeito no jogo.
-const IMPLEMENTADAS = new Set(['rugido', 'rugido_bando', 'placas', 'intimidar']);
+// A habilidade especial (Q) da espécie: UMA só. Devolve [] se não tem ou se é a investida/bote ('dash').
 export function habilidadesDeCavaleiro(id) {
-  return habilidadesDe(id).slice(1).filter((a) => (a.tipo === 'ataque' && a.dano > 0 && !a.staminaPorSeg) || IMPLEMENTADAS.has(a.id));
+  const alvo = ESPECIAL[id];
+  if (!alvo || alvo === 'dash') return [];
+  const ab = habilidadesDe(id).find((a) => a.id === alvo);
+  return ab ? [ab] : [];
 }

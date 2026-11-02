@@ -223,7 +223,7 @@ export default {
       paquicefalossauro:{ tipo: 'investida', vel: 13, seg: 0.6, dano: 2.5, stamina: 25, espera: 3 },
       mamute:           { tipo: 'investida', vel: 12, seg: 0.9, dano: 1.5, stamina: 40, espera: 5 },
       estegossauro:     { tipo: 'investida', vel: 10, seg: 0.6, dano: 1.5, stamina: 30, espera: 4 },
-      raptor:           { tipo: 'bote', vel: 18, seg: 0.35, dano: 2.5, stamina: 20, espera: 2.5 },
+      raptor:           { tipo: 'bote', vel: 18, seg: 0.35, dano: 2.5, stamina: 20, espera: 2.5, sangra: 0.04 }, // pula, morde e arranca um pedaço (sangra 4% em 5 s)
       compsognato:      { tipo: 'bote', vel: 12, seg: 0.3, dano: 2, stamina: 10, espera: 2 },
       dilofossauro:     { tipo: 'bote', vel: 14, seg: 0.35, dano: 2, stamina: 15, espera: 2.5 },
       carnotauro:       { tipo: 'investida', vel: 17, seg: 0.6, dano: 2, stamina: 30, espera: 4 },
