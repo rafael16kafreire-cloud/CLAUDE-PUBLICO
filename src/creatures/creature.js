@@ -382,11 +382,12 @@ export class Creature {
 
   get tameNeed() {
     const D = BALANCE.domar;
-    return Math.max(1, Math.round(D.comidas_base + D.comidas_por_nivel * (this.level - 1)));
+    // k_doma da espécie (data/creatures/criaturas.json): quanto mais alto, mais comida para domar
+    return Math.max(1, Math.round((D.comidas_base + D.comidas_por_nivel * (this.level - 1)) * (this.species.k_doma ?? 1)));
   }
 
   addTorpor(amount, by) {
-    if (!this.alive || this.tamed || amount <= 0) return;
+    if (!this.alive || this.tamed || amount <= 0 || this.species.imune_torpor) return; // chefes não desmaiam
     this.torpor = Math.min(this.stats.torpor, this.torpor + amount);
     if (this.torpor >= this.stats.torpor && this.state !== CSTATE.KO) this._knockOut(by);
   }
