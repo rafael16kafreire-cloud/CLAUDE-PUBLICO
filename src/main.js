@@ -79,7 +79,7 @@ function boot(hotData = {}) {
   canvas.id = 'game';
   // visual levemente pixelado (estilo low-poly): a imagem é desenhada com menos pixels
   // (pixel ratio 0,75 a 1, ver settings.js) e ampliada SEM borrar
-  canvas.style.imageRendering = 'pixelated';
+  canvas.style.imageRendering = 'auto'; // suave (antes 'pixelated': a imagem ampliada ficava em blocos)
   app.appendChild(canvas);
   // qualidade alta: bordas lisas (antialias) e sombra suave
   const high = hdTextures();

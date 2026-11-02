@@ -13,19 +13,21 @@ const SETTINGS_VERSION = 3;
 // Predefinições de qualidade gráfica.
 // lodHi/lodLo: até onde as plantas aparecem detalhadas / simples
 // (depois disso viram "cartões" leves). grassRadius: raio do mato.
-// pixelRatio 0,75 a 1: visual levemente pixelado (low-poly) e mais leve no celular.
+// pixelRatio: quantos pixels da tela de verdade o jogo desenha (1 = pixels do CSS; o máximo vale o
+// da tela do aparelho). Antes era 0,75 a 1 de propósito (visual pixelado), mas no estilo realista isso
+// só deixava tudo em blocos e as bordas serrilhadas.
 // post: 'none' (nada), 'grade' (cor), 'full' (cor + bloom leve), 'cinema' (alta: oclusão + bloom).
 export const QUALITY_PRESETS = {
   baixa: {
-    pixelRatio: 0.75, shadows: false, shadowMap: 512, shadowRange: 40, viewDistance: 115,
+    pixelRatio: 1.0, shadows: false, shadowMap: 512, shadowRange: 40, viewDistance: 115,
     lodHi: 14, lodLo: 40, grassRadius: 16, grassDensity: 0.55, creatures: 18, drawCreatures: 70, post: 'none',
   },
   media: {
-    pixelRatio: 0.9, shadows: true, shadowMap: 2048, shadowRange: 48, viewDistance: 180,
+    pixelRatio: 1.5, shadows: true, shadowMap: 2048, shadowRange: 48, viewDistance: 180,
     lodHi: 28, lodLo: 80, grassRadius: 26, grassDensity: 0.9, creatures: 32, drawCreatures: 110, post: 'full',
   },
   alta: {
-    pixelRatio: 1.0, shadows: true, shadowMap: 4096, shadowRange: 80, viewDistance: 320,
+    pixelRatio: 2.0, shadows: true, shadowMap: 4096, shadowRange: 80, viewDistance: 320,
     lodHi: 120, lodLo: 240, grassRadius: 55, grassDensity: 1.6, creatures: 45, drawCreatures: 190, post: 'cinema',
   },
 };

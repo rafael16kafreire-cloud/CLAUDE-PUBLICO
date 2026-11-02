@@ -1476,8 +1476,10 @@ export class Creature {
     // longe da câmera: anima menos vezes
     const camDist = ctx.camPos.distanceTo(this.pos);
     this._animSkip = (this._animSkip ?? 0) + 1;
-    if (camDist > 80 && this._animSkip % 3 !== 0) return;
-    const adt = camDist > 80 ? dt * 3 : dt;
+    // longe (>130 m) anima 1 quadro em cada 2 (antes: >80 m e 1 em cada 3, o que deixava picotado)
+    const pula = camDist > 130 ? 2 : 1;
+    if (pula > 1 && this._animSkip % pula !== 0) return;
+    const adt = dt * pula;
     const k = (rate) => Math.min(1, adt * rate);
 
     A.turn += (clamp(yawVel, -2, 2) - A.turn) * k(5);
