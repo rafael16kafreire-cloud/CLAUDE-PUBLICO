@@ -156,7 +156,28 @@ export function makeTerrainMaterialRealista() {
       .replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nattribute float aDirt;\nvarying float vDirt;\nattribute float aSnow;\nvarying float vSnow;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvDirt = aDirt;\nvSnow = aSnow;');
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nvarying float vDirt;\nuniform sampler2D detailMap;\nuniform sampler2D dirtMap;\nuniform sampler2D dirtNormal;\nuniform vec3 dirtAvg;\nvarying float vSnow;\nuniform sampler2D snowMap;\nuniform sampler2D snowNormal;\nuniform sampler2D rockMap;\nuniform sampler2D leafMap;')
+      .replace('#include <common>', `#include <common>\nvarying vec3 vWPos;\nvarying float vDirt;\nuniform sampler2D detailMap;\nuniform sampler2D dirtMap;\nuniform sampler2D dirtNormal;\nuniform vec3 dirtAvg;\nvarying float vSnow;\nuniform sampler2D snowMap;\nuniform sampler2D snowNormal;\nuniform sampler2D rockMap;\nuniform sampler2D leafMap;
+        vec4 hash4nt(vec2 p) { return fract(sin(vec4(1.0 + dot(p, vec2(37.0, 17.0)), 2.0 + dot(p, vec2(11.0, 47.0)), 3.0 + dot(p, vec2(41.0, 29.0)), 4.0 + dot(p, vec2(23.0, 31.0)))) * 103.0); }
+        // textura SEM repetição visível: cada ladrilho sorteia um deslocamento e os 4 vizinhos se misturam
+        vec3 texNoTile(sampler2D smp, vec2 uv) {
+          vec2 iuv = floor(uv);
+          vec2 f = fract(uv);
+          vec2 ddx = dFdx(uv);
+          vec2 ddy = dFdy(uv);
+          vec3 res = vec3(0.0);
+          float wsum = 0.0;
+          for (int j = 0; j <= 1; j++) {
+            for (int i = 0; i <= 1; i++) {
+              vec2 g = vec2(float(i), float(j));
+              vec4 o = hash4nt(iuv + g);
+              vec2 r = g - f + o.xy;
+              float w = exp(-6.0 * dot(r, r));
+              res += w * textureGrad(smp, uv + o.zw, ddx, ddy).rgb;
+              wsum += w;
+            }
+          }
+          return res / wsum;
+        }`)
       .replace('#include <color_fragment>', `#include <color_fragment>
         float dNear = texture2D(detailMap, vWPos.xz * 0.23).r;
         float dFar = texture2D(detailMap, vWPos.xz * 0.019).r;
@@ -168,13 +189,13 @@ export function makeTerrainMaterialRealista() {
         diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(1.25, 1.0, 0.7), spots * 0.35);
         if (vDirt > 0.01) {
           // 1 repetição a cada ~2,8 m, girada numa segunda escala para não "quadricular"
-          vec2 uvA = vWPos.xz * 0.36;
+          vec2 uvA = vWPos.xz * 0.25;
           vec2 uvB = vec2(vWPos.z, -vWPos.x) * 0.11 + 0.31;
-          vec3 dA = texture2D(dirtMap, uvA).rgb;
-          vec3 dB = texture2D(dirtMap, uvB).rgb;
+          vec3 dA = texNoTile(dirtMap, uvA);
+          vec3 dB = texNoTile(dirtMap, uvB * 1.7);
           vec3 dc = mix(dA, dB, 0.35 * dFar);
           // relevo falso: o normal map clareia o lado virado para o sol
-          vec3 nm = texture2D(dirtNormal, uvA).xyz * 2.0 - 1.0;
+          vec3 nm = texNoTile(dirtNormal, uvA) * 2.0 - 1.0;
           float relief = 1.0 + dot(nm.xy, vec2(0.55, -0.45)) * 0.55;
           // padrão da terra com o brilho/tom do bioma
           float lumB = dot(diffuseColor.rgb, vec3(0.333));
@@ -187,15 +208,18 @@ export function makeTerrainMaterialRealista() {
           if (vDirt > 0.9) {
             float patchN = texture2D(detailMap, vWPos.xz * 0.006 + 0.13).r * 0.6 + dMid * 0.4;
             float leafK = smoothstep(0.42, 0.62, patchN);
-            vec3 lc = texture2D(leafMap, vWPos.xz * 0.28).rgb * 0.65 + texture2D(leafMap, vWPos.zx * 0.083 + 0.4).rgb * 0.35;
+            vec3 lc = texNoTile(leafMap, vWPos.xz * 0.28) * 0.65 + texNoTile(leafMap, vWPos.zx * 0.083 + 0.4) * 0.35;
             diffuseColor.rgb = mix(diffuseColor.rgb, lc * 0.85 * relief, leafK * 0.85);
             // folhas secas coloridas no chão da mata (laranja, ferrugem e rosa), como no ARK
+            float macro = texture2D(detailMap, vWPos.xz * 0.011 + 0.2).r * 0.6 + texture2D(detailMap, vWPos.zx * 0.027).r * 0.4;
+            diffuseColor.rgb *= mix(vec3(0.82, 0.8, 0.78), vec3(1.2, 1.12, 1.0), macro);
             float lt = texture2D(detailMap, vWPos.xz * 0.9).r;
             float lt2 = texture2D(detailMap, vWPos.xz * 0.33 + 0.3).r;
             vec3 litter = mix(vec3(0.55, 0.24, 0.13), vec3(0.74, 0.5, 0.2), lt2);
             litter = mix(litter, vec3(0.6, 0.26, 0.36), step(0.78, lt) * 0.7);
             float lk = smoothstep(0.55, 0.7, lt) * (1.0 - leafK * 0.75) * (1.0 - smoothstep(14.0, 40.0, length(vViewPosition)) * 0.6);
-            diffuseColor.rgb = mix(diffuseColor.rgb, litter * relief * 0.9, lk * 0.55);
+            diffuseColor.rgb = mix(diffuseColor.rgb, litter * relief * 0.9, lk * 0.75);
+            diffuseColor.rgb *= 1.22; // chão da mata mais claro (ARK)
           }
         }
         if (vDirt < -0.01) {

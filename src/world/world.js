@@ -11,9 +11,8 @@ import { buildTerrain, updateTerrain } from './terrain.js';
 import { WaterSystem } from './water.js';
 import { Vegetation } from './vegetation.js';
 import { Grass as GrassLP } from './grass.js';
-import { Grass as GrassR } from './grass_realista.js';
 import { REALISTA } from '../core/estilo_mundo.js';
-const Grass = REALISTA ? GrassR : GrassLP;
+const Grass = GrassLP; // (a grama realista antiga travava: o capim leve + folhas largas fazem o chão do ARK)
 import { LightShafts } from './light_shafts.js';
 import { Snowfall } from './snowfall.js';
 import { Atmosfera } from './atmosfera.js';

@@ -159,7 +159,7 @@ if (REALISTA) {
   Object.assign(TYPES.arbusto_escura, hosta(9, 0.8, 53));
   Object.assign(TYPES.arbusto_frutas, hosta(9, 0.8, 53));
   Object.assign(TYPES.arbusto, hosta(9, 0.8, 53));
-  Object.assign(TYPES.plantinha, hosta(5, 0.42, 71));
+  Object.assign(TYPES.plantinha, { hi: () => makeHostaClump({ n: 12, tam: 0.26, seed: 71, baixo: true, espalha: 0.6 }), lo: () => makeHostaClump({ n: 8, tam: 0.26, seed: 71, baixo: true, espalha: 0.6 }), mat: matHosta, loMat: matHosta, textured: true }); // plantinha do chão: ~14 cm de altura, como no ARK
   Object.assign(TYPES.samambaia, fronde(7, 0.95, 61));
   Object.assign(TYPES.bananeira, banana(true, 5));
   Object.assign(TYPES.bananeira_vazia, banana(false, 5));

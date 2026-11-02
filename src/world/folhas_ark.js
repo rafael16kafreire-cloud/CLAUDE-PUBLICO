@@ -44,9 +44,9 @@ function texHosta() {
     g.save();
     g.clip(path);
     const gr = g.createLinearGradient(0, N, 0, 0);
-    gr.addColorStop(0, '#2a6a3a');
-    gr.addColorStop(0.45, '#3f8a4c');
-    gr.addColorStop(1, '#2f7442');
+    gr.addColorStop(0, '#347a42');
+    gr.addColorStop(0.45, '#52a85a');
+    gr.addColorStop(1, '#3c8650');
     g.fillStyle = gr;
     g.fillRect(0, 0, N, N);
     // mancha clara no meio e borda mais escura
@@ -300,7 +300,7 @@ class Montador {
 const ANG = 2.39996; // ângulo dourado
 
 // Touceira de folhas largas (arbusto de baga / planta do chão). n folhas, tamanho em metros.
-export function makeHostaClump({ n = 8, tam = 0.7, seed = 1, baixo = false } = {}) {
+export function makeHostaClump({ n = 8, tam = 0.7, seed = 1, baixo = false, espalha = 0 } = {}) {
   const r = rng(seed);
   const M = new Montador();
   for (let k = 0; k < n; k++) {
@@ -308,10 +308,14 @@ export function makeHostaClump({ n = 8, tam = 0.7, seed = 1, baixo = false } = {
     const fora = k / n; // as de fora mais abertas e baixas
     const L = tam * (0.8 + 0.5 * r()) * (1 - fora * 0.1);
     const v = 0.78 + r() * 0.3;
+    // espalha > 0: vira um canteiro de várias plantinhas lado a lado (uma instância cobre o chão)
+    const ra = espalha * Math.sqrt(r());
+    const ox = Math.sin(yaw * 3.7) * ra;
+    const oz = Math.cos(yaw * 3.7) * ra;
     M.folha({
-      x0: Math.sin(yaw) * 0.04, y0: 0.04, z0: Math.cos(yaw) * 0.04,
+      x0: ox + Math.sin(yaw) * 0.04, y0: 0.02, z0: oz + Math.cos(yaw) * 0.04,
       yaw, elev: 0.5 + fora * 0.45 + r() * 0.25, L, W: L * 0.78, queda: 0.7 + r() * 0.5, calha: 0.22,
-      segs: baixo ? [2, 3] : [3, 5], cor: [v, v * (0.95 + r() * 0.1), v * 0.9], giro: (r() - 0.5) * 0.6,
+      segs: baixo ? (espalha ? [1, 2] : [2, 3]) : [3, 5], cor: [v, v * (0.95 + r() * 0.1), v * 0.9], giro: (r() - 0.5) * 0.6,
     });
   }
   return M.geometria();

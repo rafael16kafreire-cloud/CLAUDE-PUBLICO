@@ -11,6 +11,8 @@ import { addWind } from './materials.js';
 import { makeMiniPlant } from './props.js';
 import { capim, samambaia } from './lowpoly_veg.js';
 import { PALETA } from '../core/paleta.js';
+import { REALISTA } from '../core/estilo_mundo.js';
+import { makeHostaClump, matHosta } from './folhas_ark.js';
 
 // normal de cada vértice puxada para cima (k = 0 normal da face, 1 = para cima)
 function normaisParaCima(g, k) {
@@ -32,8 +34,9 @@ const CELL = 1.25;
 // espaçados, chão aparecendo), sem o tapete de relva e sem as plantinhas miúdas.
 // tint: multiplica a cor da paleta de cada lâmina (1 = cor da paleta).
 const BY_BIOME = {
-  [BIOME.JUNGLE]: { capim: 0.16, folha: 0.1, broto: 0.06, flor: 0.0, tint: [0.95, 1.0, 0.95] },
-  [BIOME.IGAPO]: { capim: 0.2, folha: 0.08, broto: 0.06, flor: 0.0, tint: [0.95, 0.98, 0.92] },
+  // realista: o chão da mata é forrado de plantas de folha larga (como no ARK), com um pouco de capim
+  [BIOME.JUNGLE]: REALISTA ? { capim: 0.22, folha: 0.55, broto: 0.0, flor: 0.0, tint: [0.95, 1.0, 0.95] } : { capim: 0.16, folha: 0.1, broto: 0.06, flor: 0.0, tint: [0.95, 1.0, 0.95] },
+  [BIOME.IGAPO]: REALISTA ? { capim: 0.25, folha: 0.5, broto: 0.0, flor: 0.0, tint: [0.95, 0.98, 0.92] } : { capim: 0.2, folha: 0.08, broto: 0.06, flor: 0.0, tint: [0.95, 0.98, 0.92] },
   [BIOME.SWAMP]: { capim: 0.24, folha: 0.03, broto: 0.03, flor: 0.0, tint: [1.0, 0.98, 0.9] },
   [BIOME.BEACH]: { capim: 0.05, folha: 0.0, broto: 0.0, flor: 0.0, tint: [1.08, 1.02, 0.9] },
   // montanha (serra / cordilheira): sem capim, só neve e pedra
@@ -67,7 +70,9 @@ export class Grass {
     this.kinds = {
       capim: this._mesh(tufo({ alt: 0.55, laminas: 6, seed: 101 }), material, 5200, 'Capim'),
       capim2: this._mesh(tufo({ alt: 0.75, laminas: 5, seed: 102, cores: ['folhaClara', 'capimSeco', 'musgo'] }), material, 4200, 'Capim 2'),
-      folha: this._mesh(normaisParaCima(samambaia({ tam: 0.45, seed: 103, folhas: 5 }), 0.6), material, 2600, 'Folhagem'),
+      folha: REALISTA
+        ? this._mesh(makeHostaClump({ n: 10, tam: 0.24, seed: 103, baixo: true, espalha: 0.5 }), matHosta(), 6000, 'Folhagem')
+        : this._mesh(normaisParaCima(samambaia({ tam: 0.45, seed: 103, folhas: 5 }), 0.6), material, 2600, 'Folhagem'),
       broto: this._mesh(tufo({ alt: 0.35, laminas: 4, seed: 104, cores: ['musgoEscuro', 'musgo'] }), material, 1800, 'Brotos'),
       flor: this._mesh(tufo({ alt: 0.45, laminas: 5, seed: 105, flor: PALETA.neve }), material, 1500, 'Flores'),
       relva: this._mesh(tufo({ alt: 0.25, laminas: 4, seed: 106 }), material, 5200, 'Relva'),
