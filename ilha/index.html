@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Isla — ilha jogável</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0b1418; font-family: system-ui, sans-serif; color: #eef; }
+  canvas { display: block; }
+  #hud { position: fixed; left: 16px; bottom: 16px; width: 260px; pointer-events: none; }
+  .barra { height: 12px; background: #0008; border: 1px solid #fff3; border-radius: 6px; overflow: hidden; margin-top: 6px; }
+  .barra > div { height: 100%; width: 100%; transition: width .15s; }
+  #vida > div { background: linear-gradient(90deg, #c2352c, #e8653c); }
+  #folego > div { background: linear-gradient(90deg, #d8b23c, #f0d36a); }
+  #hud small { opacity: .8; font-size: 12px; }
+  #alvo { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); padding: 6px 14px; background: #0009; border-radius: 8px; font-size: 14px; display: none; text-align: center; }
+  #alvo .barra { width: 220px; margin: 6px auto 0; }
+  #alvo .barra > div { background: #c2352c; }
+  #relogio { position: fixed; top: 16px; right: 16px; background: #0008; padding: 6px 10px; border-radius: 8px; font-size: 13px; }
+  #ajuda { position: fixed; top: 16px; left: 16px; background: #0009; padding: 10px 14px; border-radius: 8px; font-size: 13px; line-height: 1.6; max-width: 320px; }
+  #ajuda b { color: #f0d36a; }
+  #mira { position: fixed; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px; border-radius: 50%; background: #fff9; pointer-events: none; }
+  #carregando { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #0b1418; z-index: 10; gap: 14px; }
+  #carregando h1 { margin: 0; font-size: 42px; letter-spacing: 6px; }
+  #carregando .barra { width: min(420px, 80vw); height: 10px; }
+  #carregando .barra > div { width: 0; background: #4fa36a; }
+  #morte { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: #400a; font-size: 38px; z-index: 5; }
+  #log { position: fixed; right: 16px; bottom: 16px; width: 300px; font-size: 13px; text-align: right; pointer-events: none; }
+  #log div { background: #0008; margin-top: 4px; padding: 3px 8px; border-radius: 6px; animation: some 6s forwards; }
+  @keyframes some { 0%, 80% { opacity: 1 } 100% { opacity: 0 } }
+  #iniciar { padding: 10px 26px; font-size: 18px; border-radius: 8px; border: 0; background: #4fa36a; color: #fff; cursor: pointer; display: none; }
+</style>
+</head>
+<body>
+<div id="carregando"><h1>ISLA</h1><div id="msg">carregando a ilha…</div><div class="barra"><div id="prog"></div></div><button id="iniciar">Entrar na ilha</button></div>
+<div id="ajuda"><b>WASD</b> andar · <b>Shift</b> correr · <b>Espaço</b> pular<br><b>Mouse</b> olhar (clique na tela) · <b>Clique</b> atacar<br><b>H</b> esconder ajuda · <b>T</b> avançar a hora</div>
+<div id="relogio"></div>
+<div id="alvo"><span id="alvoNome"></span><div class="barra"><div id="alvoVida"></div></div></div>
+<div id="mira"></div>
+<div id="hud"><small>Vida</small><div class="barra" id="vida"><div></div></div><small>Fôlego</small><div class="barra" id="folego"><div></div></div></div>
+<div id="log"></div>
+<div id="morte">Você morreu… voltando à praia</div>
+
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
+import { Sky } from 'three/addons/objects/Sky.js';
+import { ImprovedNoise } from 'three/addons/math/ImprovedNoise.js';
+
+/* ================= configuração ================= */
+const MODELOS = '../bichos/modelos/';
+// tipo: terra | agua | ar · dieta: herb | carn · grupo: quantos juntos · onde: praia | campo | floresta | montanha
+const ESPECIES = [
+  { id: 'dodo',            nome: 'Dodô',            tipo: 'terra', dieta: 'herb', qtd: 8, grupo: 4, vida: 30,   onde: 'praia' },
+  { id: 'galimimo',        nome: 'Galimimo',        tipo: 'terra', dieta: 'herb', qtd: 6, grupo: 3, vida: 120,  onde: 'campo', medroso: true },
+  { id: 'parassauro',      nome: 'Parassauro',      tipo: 'terra', dieta: 'herb', qtd: 6, grupo: 3, vida: 350,  onde: 'campo', medroso: true },
+  { id: 'triceratops',     nome: 'Tricerátops',     tipo: 'terra', dieta: 'herb', qtd: 4, grupo: 2, vida: 600,  onde: 'campo', bravo: true, dano: 25 },
+  { id: 'estegossauro',    nome: 'Estegossauro',    tipo: 'terra', dieta: 'herb', qtd: 3, grupo: 3, vida: 700,  onde: 'campo', bravo: true, dano: 30 },
+  { id: 'anquilossauro',   nome: 'Anquilossauro',   tipo: 'terra', dieta: 'herb', qtd: 2, grupo: 1, vida: 800,  onde: 'montanha', bravo: true, dano: 30 },
+  { id: 'bisao',           nome: 'Bisão-gigante',   tipo: 'terra', dieta: 'herb', qtd: 6, grupo: 6, vida: 300,  onde: 'campo', bravo: true, dano: 20 },
+  { id: 'megaterio',       nome: 'Megatério',       tipo: 'terra', dieta: 'herb', qtd: 2, grupo: 1, vida: 900,  onde: 'floresta', bravo: true, dano: 35 },
+  { id: 'mamute',          nome: 'Mamute',          tipo: 'terra', dieta: 'herb', qtd: 3, grupo: 3, vida: 900,  onde: 'montanha', bravo: true, dano: 35 },
+  { id: 'argentinossauro', nome: 'Argentinossauro', tipo: 'terra', dieta: 'herb', qtd: 2, grupo: 2, vida: 4000, onde: 'campo', bravo: true, dano: 80 },
+  { id: 'compsognato',     nome: 'Compsognato',     tipo: 'terra', dieta: 'carn', qtd: 6, grupo: 6, vida: 25,   onde: 'floresta', dano: 4,  aggro: 18 },
+  { id: 'raptor',          nome: 'Raptor',          tipo: 'terra', dieta: 'carn', qtd: 6, grupo: 3, vida: 150,  onde: 'floresta', dano: 15, aggro: 35 },
+  { id: 'carnotauro',      nome: 'Carnotauro',      tipo: 'terra', dieta: 'carn', qtd: 2, grupo: 1, vida: 500,  onde: 'campo', dano: 35, aggro: 45 },
+  { id: 'trex',            nome: 'T-Rex',           tipo: 'terra', dieta: 'carn', qtd: 1, grupo: 1, vida: 1500, onde: 'montanha', dano: 70, aggro: 55 },
+  { id: 'deinosuchus',     nome: 'Deinosuchus',     tipo: 'terra', dieta: 'carn', qtd: 2, grupo: 1, vida: 600,  onde: 'praia', dano: 40, aggro: 20 },
+  { id: 'piranha',         nome: 'Piranha',         tipo: 'agua',  dieta: 'carn', qtd: 10, grupo: 5, vida: 15,  dano: 5, aggro: 14 },
+  { id: 'mosassauro',      nome: 'Mosassauro',      tipo: 'agua',  dieta: 'carn', qtd: 2, grupo: 1, vida: 2000, dano: 90, aggro: 40, fundo: true },
+  { id: 'pteranodonte',    nome: 'Pteranodonte',    tipo: 'ar',    dieta: 'carn', qtd: 4, grupo: 1, vida: 120 },
+  { id: 'argentavis',      nome: 'Argentavis',      tipo: 'ar',    dieta: 'carn', qtd: 2, grupo: 1, vida: 300 },
+];
+const ILHA = 900, RES = 256, NIVEL_AGUA = 0, DIA_SEG = 8 * 60;   // tamanho (m), resolução do terreno, duração do dia (s)
+
+/* ================= cena ================= */
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+renderer.setSize(innerWidth, innerHeight);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.55;
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
+const cena = new THREE.Scene();
+cena.fog = new THREE.Fog(0xa9c4cf, 120, 650);
+const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.2, 2500);
+addEventListener('resize', () => { renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); });
+
+const ceu = new Sky(); ceu.scale.setScalar(5000); cena.add(ceu);
+const U = ceu.material.uniforms; U.turbidity.value = 6; U.rayleigh.value = 1.6; U.mieCoefficient.value = 0.004; U.mieDirectionalG.value = 0.8;
+const sol = new THREE.DirectionalLight(0xfff0d8, 2.6); sol.castShadow = true;
+sol.shadow.mapSize.set(2048, 2048); Object.assign(sol.shadow.camera, { left: -70, right: 70, top: 70, bottom: -70, near: 1, far: 600 }); sol.shadow.bias = -0.0006;
+cena.add(sol, sol.target);
+const hemi = new THREE.HemisphereLight(0xcfe6ff, 0x4a5a32, 0.9); cena.add(hemi);
+
+/* ================= terreno ================= */
+const ruido = new ImprovedNoise();
+function fbm(x, z, oit = 5) { let a = 0, f = 1 / 220, amp = 1; for (let i = 0; i < oit; i++) { a += ruido.noise(x * f, 3.7, z * f) * amp; f *= 2.05; amp *= 0.5; } return a; }
+// altura "bruta": ilha redonda com litoral irregular, colinas, um vulcão ao norte e uma lagoa
+function alturaBruta(x, z) {
+  const r = Math.hypot(x, z) / (ILHA * 0.5);
+  const borda = 1 - THREE.MathUtils.smoothstep(r + fbm(x + 500, z) * 0.18, 0.55, 0.95);
+  let h = -18 + borda * (22 + fbm(x, z) * 26 + Math.max(0, fbm(x * 1.7, z * 1.7 - 300)) * 30);
+  const dv = Math.hypot(x - 40, z + 230);                                   // vulcão
+  h += 75 * Math.exp(-(dv * dv) / (2 * 75 * 75)) * borda - 30 * Math.exp(-(dv * dv) / (2 * 14 * 14));
+  const dl = Math.hypot(x + 150, z - 120); h -= 14 * Math.exp(-(dl * dl) / (2 * 40 * 40));   // lagoa
+  return h;
+}
+const N = RES + 1, passo = ILHA / RES, ALT = new Float32Array(N * N);
+for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) ALT[j * N + i] = alturaBruta(-ILHA / 2 + i * passo, -ILHA / 2 + j * passo);
+function altura(x, z) {        // interpolação bilinear do mapa de alturas (o mesmo que é desenhado)
+  const fx = (x + ILHA / 2) / passo, fz = (z + ILHA / 2) / passo;
+  const i = Math.max(0, Math.min(N - 2, Math.floor(fx))), j = Math.max(0, Math.min(N - 2, Math.floor(fz)));
+  const u = Math.min(1, Math.max(0, fx - i)), v = Math.min(1, Math.max(0, fz - j));
+  const a = ALT[j * N + i], b = ALT[j * N + i + 1], c = ALT[(j + 1) * N + i], d = ALT[(j + 1) * N + i + 1];
+  return a * (1 - u) * (1 - v) + b * u * (1 - v) + c * (1 - u) * v + d * u * v;
+}
+function inclinacao(x, z) { const e = 1.5; return Math.hypot(altura(x + e, z) - altura(x - e, z), altura(x, z + e) - altura(x, z - e)) / (2 * e); }
+{
+  const g = new THREE.PlaneGeometry(ILHA, ILHA, RES, RES); g.rotateX(-Math.PI / 2);
+  const pos = g.attributes.position, cor = new Float32Array(pos.count * 3), c = new THREE.Color();
+  const areia = new THREE.Color(0xd8c48e), grama = new THREE.Color(0x5f8a3a), grama2 = new THREE.Color(0x3f6b2c), terra = new THREE.Color(0x6e5a3c),
+        rocha = new THREE.Color(0x6d6a63), cinza = new THREE.Color(0x3a3634), fundo = new THREE.Color(0x8a7a58), neve = new THREE.Color(0xe9eef0);
+  for (let k = 0; k < pos.count; k++) {
+    const x = pos.getX(k), z = pos.getZ(k), h = altura(x, z); pos.setY(k, h);
+    const s = inclinacao(x, z), dv = Math.hypot(x - 40, z + 230), n = fbm(x * 3, z * 3, 2);
+    if (h < NIVEL_AGUA - 1) c.copy(fundo);
+    else if (h < 2.2 + n) c.copy(areia);
+    else { c.copy(grama).lerp(grama2, THREE.MathUtils.clamp(0.5 + n, 0, 1)); if (h > 30) c.lerp(terra, THREE.MathUtils.smoothstep(h, 30, 45)); }
+    if (s > 0.55) c.lerp(rocha, THREE.MathUtils.smoothstep(s, 0.55, 0.9));
+    if (dv < 90 && h > 35) c.lerp(cinza, THREE.MathUtils.smoothstep(h, 35, 55));
+    if (h > 70 && dv > 90) c.lerp(neve, 0.6);
+    cor.set([c.r, c.g, c.b], k * 3);
+  }
+  g.setAttribute('color', new THREE.BufferAttribute(cor, 3)); g.computeVertexNormals();
+  const chao = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95 }));
+  chao.receiveShadow = true; cena.add(chao);
+  // brilho de lava na cratera
+  const lava = new THREE.Mesh(new THREE.CircleGeometry(16, 32), new THREE.MeshBasicMaterial({ color: 0xff5a1a }));
+  lava.rotation.x = -Math.PI / 2; lava.position.set(40, altura(40, -230) + 1.5, -230); cena.add(lava);
+  const luzLava = new THREE.PointLight(0xff6a20, 600, 120, 1.5); luzLava.position.set(40, altura(40, -230) + 10, -230); cena.add(luzLava);
+}
+// água
+const agua = new THREE.Mesh(new THREE.PlaneGeometry(6000, 6000, 1, 1), new THREE.MeshStandardMaterial({ color: 0x1f6f88, roughness: 0.15, metalness: 0.1, transparent: true, opacity: 0.82 }));
+agua.rotation.x = -Math.PI / 2; agua.position.y = NIVEL_AGUA; cena.add(agua);
+
+/* ================= vegetação e pedras ================= */
+const aleat = (() => { let s = 12345; return () => (s = (s * 16807) % 2147483647) / 2147483647; })();
+function pontoTerra(minH, maxH, maxS = 0.45, tentativas = 200) {
+  for (let t = 0; t < tentativas; t++) {
+    const x = (aleat() - 0.5) * ILHA * 0.95, z = (aleat() - 0.5) * ILHA * 0.95, h = altura(x, z);
+    if (h > minH && h < maxH && inclinacao(x, z) < maxS && Math.hypot(x - 40, z + 230) > 70) return new THREE.Vector3(x, h, z);
+  }
+  return null;
+}
+{
+  const tronco = new THREE.CylinderGeometry(0.25, 0.45, 1, 6); tronco.translate(0, 0.5, 0);
+  const copa = new THREE.ConeGeometry(1, 1, 7); copa.translate(0, 0.5, 0);
+  const folha = new THREE.IcosahedronGeometry(1, 1);
+  const matT = new THREE.MeshStandardMaterial({ color: 0x5a3f28, roughness: 1 }), matC = new THREE.MeshStandardMaterial({ color: 0x2f5a2a, roughness: 0.9 }),
+        matF = new THREE.MeshStandardMaterial({ color: 0x4a7a30, roughness: 0.9, flatShading: true });
+  const Q = 1400, it = new THREE.InstancedMesh(tronco, matT, Q), ic1 = new THREE.InstancedMesh(copa, matC, Q), ic2 = new THREE.InstancedMesh(copa, matC, Q), ifo = new THREE.InstancedMesh(folha, matF, Q);
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(); let k = 0;
+  window.ARVORES = [];
+  for (let n = 0; n < Q; n++) {
+    const p = pontoTerra(3, 58, 0.5); if (!p) continue;
+    const dens = fbm(p.x * 2 + 900, p.z * 2, 2); if (dens < -0.05 && aleat() > 0.15) continue;   // manchas de floresta
+    const alt = 7 + aleat() * 9, pinho = p.y > 22 || aleat() < 0.4; q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), aleat() * 6.28);
+    m.compose(p, q, sc.set(1, alt * (pinho ? 0.45 : 0.6), 1)); it.setMatrixAt(k, m);
+    if (pinho) { m.compose(p.clone().setY(p.y + alt * 0.3), q, sc.set(alt * 0.28, alt * 0.55, alt * 0.28)); ic1.setMatrixAt(k, m);
+      m.compose(p.clone().setY(p.y + alt * 0.62), q, sc.set(alt * 0.2, alt * 0.42, alt * 0.2)); ic2.setMatrixAt(k, m); ifo.setMatrixAt(k, m.makeScale(0, 0, 0)); }
+    else { m.compose(p.clone().setY(p.y + alt * 0.65), q, sc.set(alt * 0.3, alt * 0.24, alt * 0.3)); ifo.setMatrixAt(k, m);
+      ic1.setMatrixAt(k, m.makeScale(0, 0, 0)); ic2.setMatrixAt(k, m); }
+    ARVORES.push(p); k++;
+  }
+  for (const im of [it, ic1, ic2, ifo]) { im.count = k; im.castShadow = true; im.receiveShadow = true; cena.add(im); }
+  const pedra = new THREE.DodecahedronGeometry(1, 0), ip = new THREE.InstancedMesh(pedra, new THREE.MeshStandardMaterial({ color: 0x77736a, roughness: 1, flatShading: true }), 500);
+  let kp = 0;
+  for (let n = 0; n < 500; n++) { const p = pontoTerra(1, 80, 1.2); if (!p) continue; const s = 0.6 + aleat() ** 3 * 5;
+    q.setFromEuler(new THREE.Euler(aleat() * 3, aleat() * 3, aleat() * 3)); m.compose(p.setY(p.y + s * 0.2), q, sc.set(s, s * 0.7, s)); ip.setMatrixAt(kp++, m); }
+  ip.count = kp; ip.castShadow = ip.receiveShadow = true; cena.add(ip);
+}
+
+/* ================= jogador ================= */
+const jogador = { pos: new THREE.Vector3(), vel: new THREE.Vector3(), yaw: 0, pitch: -0.15, vida: 100, folego: 100, noChao: true, morto: false, golpe: 0, invul: 0 };
+const boneco = new THREE.Group(); cena.add(boneco);
+{
+  const pele = new THREE.MeshStandardMaterial({ color: 0xc89a74, roughness: 0.8 }), roupa = new THREE.MeshStandardMaterial({ color: 0x6b5638, roughness: 0.9 }),
+        calca = new THREE.MeshStandardMaterial({ color: 0x3d3a33, roughness: 0.9 });
+  const parte = (g, m, x, y, z) => { const o = new THREE.Mesh(g, m); o.position.set(x, y, z); o.castShadow = true; boneco.add(o); return o; };
+  parte(new THREE.CapsuleGeometry(0.28, 0.55, 4, 8), roupa, 0, 1.2, 0);
+  parte(new THREE.SphereGeometry(0.2, 12, 10), pele, 0, 1.78, 0);
+  const perna = () => { const g = new THREE.CapsuleGeometry(0.11, 0.6, 4, 6); g.translate(0, -0.38, 0); return g; };
+  const braco = () => { const g = new THREE.CapsuleGeometry(0.08, 0.5, 4, 6); g.translate(0, -0.3, 0); return g; };
+  boneco.pernaE = parte(perna(), calca, 0.13, 0.85, 0); boneco.pernaD = parte(perna(), calca, -0.13, 0.85, 0);
+  boneco.bracoE = parte(braco(), pele, 0.36, 1.48, 0); boneco.bracoD = parte(braco(), pele, -0.36, 1.48, 0);
+  const lanca = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.8, 6), new THREE.MeshStandardMaterial({ color: 0x7a5a3a }));
+  lanca.rotation.x = Math.PI / 2; lanca.position.set(0, -0.55, 0.5); boneco.bracoD.add(lanca);
+}
+function nascer() {
+  for (let t = 0; t < 400; t++) { const a = aleat() * 6.28, r = ILHA * (0.3 + aleat() * 0.15), x = Math.cos(a) * r, z = Math.sin(a) * r, h = altura(x, z);
+    if (h > 1 && h < 4) { jogador.pos.set(x, h, z); jogador.yaw = Math.atan2(-x, -z); break; } }
+  Object.assign(jogador, { vida: 100, folego: 100, morto: false, invul: 3 }); jogador.vel.set(0, 0, 0);
+}
+
+/* ================= entrada ================= */
+const teclas = {}; let ajudaVisivel = true, horaExtra = 0;
+addEventListener('keydown', e => { teclas[e.code] = true;
+  if (e.code === 'KeyH') { ajudaVisivel = !ajudaVisivel; document.getElementById('ajuda').style.display = ajudaVisivel ? '' : 'none'; }
+  if (e.code === 'KeyT') horaExtra += DIA_SEG / 8; });
+addEventListener('keyup', e => { teclas[e.code] = false; });
+renderer.domElement.addEventListener('click', () => { if (document.pointerLockElement !== renderer.domElement) renderer.domElement.requestPointerLock(); else atacarJogador(); });
+addEventListener('mousemove', e => { if (document.pointerLockElement !== renderer.domElement) return;
+  jogador.yaw -= e.movementX * 0.0025; jogador.pitch = THREE.MathUtils.clamp(jogador.pitch - e.movementY * 0.0022, -1.2, 0.6); });
+let arrastando = false, ux = 0, uy = 0;     // sem pointer lock (ex.: celular/tablet): arrastar para olhar
+renderer.domElement.addEventListener('pointerdown', e => { arrastando = true; ux = e.clientX; uy = e.clientY; });
+addEventListener('pointerup', () => arrastando = false);
+addEventListener('pointermove', e => { if (!arrastando || document.pointerLockElement) return;
+  jogador.yaw -= (e.clientX - ux) * 0.005; jogador.pitch = THREE.MathUtils.clamp(jogador.pitch - (e.clientY - uy) * 0.004, -1.2, 0.6); ux = e.clientX; uy = e.clientY; });
+
+const logEl = document.getElementById('log');
+function aviso(t) { const d = document.createElement('div'); d.textContent = t; logEl.appendChild(d); setTimeout(() => d.remove(), 6000); }
+
+/* ================= bichos ================= */
+const loader = new GLTFLoader(), BASE = {}, bichos = [];
+const prog = document.getElementById('prog'), msg = document.getElementById('msg');
+async function carregarTudo() {
+  let feitos = 0;
+  await Promise.all(ESPECIES.map(async sp => {
+    try {
+      const gl = await loader.loadAsync(MODELOS + sp.id + '.glb');
+      gl.scene.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; o.frustumCulled = false; } });
+      const caixa = new THREE.Box3().setFromObject(gl.scene), tam = caixa.getSize(new THREE.Vector3());
+      BASE[sp.id] = { cena: gl.scene, clipes: gl.animations, comp: Math.max(tam.z, tam.x * 0.6), alt: tam.y };
+    } catch (e) { console.warn('não carregou', sp.id, e); }
+    feitos++; prog.style.width = (100 * feitos / ESPECIES.length) + '%'; msg.textContent = `carregando bichos… ${feitos}/${ESPECIES.length}`;
+  }));
+}
+function clipe(b, ...nomes) { for (const n of nomes) { const a = b.acoes[n]; if (a) return a; } return null; }
+class Bicho {
+  constructor(sp, pos) {
+    const base = BASE[sp.id]; this.sp = sp; this.base = base;
+    this.obj = SkeletonUtils.clone(base.cena); cena.add(this.obj);
+    this.mixer = new THREE.AnimationMixer(this.obj); this.acoes = {};
+    for (const c of base.clipes) this.acoes[c.name] = this.mixer.clipAction(c);
+    this.pos = pos.clone(); this.casa = pos.clone(); this.dir = aleat() * 6.28; this.alvo = null;
+    this.vida = this.vidaMax = sp.vida; this.estado = 'parado'; this.tempo = 2 + aleat() * 4; this.atual = null; this.irritado = 0; this.cooldown = 0;
+    const L = base.comp; this.raio = Math.max(0.4, L * 0.3);
+    this.vAndar = Math.min(5, 0.9 + L * 0.22); this.vCorrer = Math.min(15, 3.5 + L * 0.8);
+    if (sp.tipo === 'ar') { this.alt = 30 + aleat() * 40; this.ang = aleat() * 6.28; this.giro = 40 + aleat() * 60; this.centro = pos.clone(); }
+    if (sp.tipo === 'agua') { this.prof = sp.fundo ? -6 : -1.5; }
+    this.tocar(sp.tipo === 'ar' ? 'voar' : sp.tipo === 'agua' ? 'nadar' : 'parado');
+  }
+  tocar(nome, vez = false) {
+    const a = clipe(this, nome, ...(nome === 'nadar' ? ['andar', 'parado'] : nome === 'nadar_rapido' ? ['nadar', 'correr'] : nome === 'correr' ? ['andar'] : nome === 'planar' ? ['voar'] : ['parado']));
+    if (!a || a === this.atual) return;
+    a.reset(); a.setLoop(vez ? THREE.LoopOnce : THREE.LoopRepeat); a.clampWhenFinished = vez; a.play();
+    if (this.atual) a.crossFadeFrom(this.atual, 0.35, false);
+    this.atual = a;
+  }
+  levarDano(d, deQuem) {
+    if (this.vida <= 0) return;
+    this.vida -= d; this.irritado = 20;
+    if (this.vida <= 0) { this.vida = 0; this.estado = 'morto'; this.tocar('morrer', true); this.tempo = 40; aviso(`${this.sp.nome} morreu`); return; }
+    if (this.sp.dieta === 'herb' && !this.sp.bravo) { this.estado = 'fugir'; this.tempo = 8; }
+  }
+  update(dt, noite) {
+    const sp = this.sp, distJ = this.pos.distanceTo(jogador.pos);
+    if (distJ < 260) this.mixer.update(dt);
+    this.cooldown -= dt; this.irritado -= dt;
+    if (this.estado === 'morto') { this.tempo -= dt; if (this.tempo < 0) this.renascer(); this.aplicar(); return; }
+    if (sp.tipo === 'ar') return this.voar(dt, distJ);
+    let vel = 0;
+    // decisões
+    const ameaça = !jogador.morto && ((sp.dieta === 'carn' && distJ < (sp.aggro || 30)) || (sp.bravo && this.irritado > 0 && distJ < 40));
+    const noAgua = jogador.pos.y < NIVEL_AGUA - 0.3;
+    if (ameaça && !(sp.tipo === 'agua' && !noAgua) && !(sp.tipo === 'terra' && noAgua && sp.id !== 'deinosuchus')) {
+      this.estado = 'cacar';
+    } else if (this.estado === 'cacar') { this.estado = 'parado'; this.tempo = 2; }
+    if (sp.dieta === 'herb' && !sp.bravo && distJ < 14 && this.estado !== 'fugir' && sp.medroso) { this.estado = 'fugir'; this.tempo = 5; }
+    this.tempo -= dt;
+    if (this.estado === 'cacar') {
+      const d = jogador.pos.clone().sub(this.pos); this.dir = Math.atan2(d.x, d.z);
+      const alcance = this.raio + 1.6;
+      if (distJ > alcance) { vel = sp.tipo === 'agua' ? this.vCorrer * 0.8 : this.vCorrer; this.tocar(sp.tipo === 'agua' ? 'nadar_rapido' : 'correr'); }
+      else if (this.cooldown <= 0) { this.tocar('atacar', true); this.cooldown = 1.6; setTimeout(() => { if (this.vida > 0 && this.pos.distanceTo(jogador.pos) < alcance + 1) danoJogador(sp.dano || 10, sp.nome); }, 500); }
+    } else if (this.estado === 'fugir') {
+      const d = this.pos.clone().sub(jogador.pos); this.dir = Math.atan2(d.x, d.z); vel = this.vCorrer; this.tocar('correr');
+      if (this.tempo < 0) { this.estado = 'parado'; this.tempo = 3; }
+    } else if (this.estado === 'andar') {
+      const d = this.alvo.clone().sub(this.pos); d.y = 0;
+      if (d.length() < 2 || this.tempo < 0) { this.estado = aleat() < 0.5 ? 'parado' : (sp.tipo === 'agua' ? 'parado' : 'comer'); this.tempo = 3 + aleat() * 6; }
+      else { this.dir = Math.atan2(d.x, d.z); vel = this.vAndar; this.tocar(sp.tipo === 'agua' ? 'nadar' : 'andar'); }
+    } else if (this.estado === 'dormir') {
+      this.tocar('dormir'); if (!noite || this.irritado > 0) { this.estado = 'parado'; this.tempo = 1; }
+    } else { // parado / comer
+      this.tocar(sp.tipo === 'agua' ? 'nadar' : this.estado === 'comer' ? 'comer' : 'parado');
+      if (this.tempo < 0) {
+        if (noite && sp.dieta === 'herb' && sp.tipo === 'terra' && aleat() < 0.7) { this.estado = 'dormir'; }
+        else { this.estado = 'andar'; this.tempo = 25; this.alvo = this.novoAlvo(); }
+      }
+    }
+    // movimento
+    if (vel > 0) {
+      const nx = this.pos.x + Math.sin(this.dir) * vel * dt, nz = this.pos.z + Math.cos(this.dir) * vel * dt, nh = altura(nx, nz);
+      const ok = sp.tipo === 'agua' ? nh < this.prof - 1 : (nh > 0.6 || (sp.id === 'deinosuchus' && nh > -3)) && inclinacao(nx, nz) < 1.1;
+      if (ok && Math.hypot(nx, nz) < ILHA * 0.7) { this.pos.x = nx; this.pos.z = nz; }
+      else if (this.estado === 'andar') { this.alvo = this.novoAlvo(); }
+      else if (this.estado === 'fugir') this.dir += 1.2;
+    }
+    this.pos.y = sp.tipo === 'agua' ? Math.max(altura(this.pos.x, this.pos.z) + 1, this.prof) : Math.max(altura(this.pos.x, this.pos.z), sp.id === 'deinosuchus' ? -1.2 : -99);
+    this.aplicar(dt);
+  }
+  novoAlvo() {
+    for (let t = 0; t < 30; t++) {
+      const a = aleat() * 6.28, r = 10 + aleat() * 50, p = this.casa.clone().add(new THREE.Vector3(Math.cos(a) * r, 0, Math.sin(a) * r)), h = altura(p.x, p.z);
+      if (this.sp.tipo === 'agua' ? h < this.prof - 2 : h > 1 && inclinacao(p.x, p.z) < 0.8) return p;
+    }
+    return this.casa.clone();
+  }
+  voar(dt, distJ) {
+    const planando = Math.sin(performance.now() / 4000 + this.giro) > 0.2;
+    this.tocar(planando ? 'planar' : 'voar');
+    this.ang += dt * (planando ? 9 : 12) / this.giro;
+    this.pos.set(this.centro.x + Math.cos(this.ang) * this.giro, 0, this.centro.z + Math.sin(this.ang) * this.giro);
+    this.pos.y = Math.max(altura(this.pos.x, this.pos.z), 0) + this.alt + Math.sin(this.ang * 3) * 4;
+    this.dir = Math.atan2(-Math.sin(this.ang), Math.cos(this.ang));
+    this.obj.position.copy(this.pos); this.obj.rotation.set(0, this.dir, -0.3);
+  }
+  aplicar(dt = 0) {
+    this.obj.position.copy(this.pos);
+    const alvoRot = this.dir; let d = alvoRot - this.obj.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d));
+    this.obj.rotation.y += d * Math.min(1, dt * 4);
+  }
+  renascer() { this.vida = this.vidaMax; this.estado = 'parado'; this.tempo = 3; this.pos.copy(this.casa); this.atual = null; this.mixer.stopAllAction(); this.tocar('parado'); }
+}
+function povoar() {
+  for (const sp of ESPECIES) {
+    if (!BASE[sp.id]) continue;
+    let resto = sp.qtd;
+    while (resto > 0) {
+      let centro = null;
+      if (sp.tipo === 'agua') { for (let t = 0; t < 300 && !centro; t++) { const x = (aleat() - 0.5) * ILHA * 1.1, z = (aleat() - 0.5) * ILHA * 1.1; if (altura(x, z) < (sp.fundo ? -12 : -4)) centro = new THREE.Vector3(x, 0, z); } }
+      else if (sp.tipo === 'ar') centro = new THREE.Vector3((aleat() - 0.5) * ILHA * 0.6, 0, (aleat() - 0.5) * ILHA * 0.6);
+      else { const faixa = { praia: [0.8, 4], campo: [3, 25], floresta: [4, 35], montanha: [20, 60] }[sp.onde] || [2, 30]; centro = pontoTerra(...faixa, 0.5, 400); }
+      if (!centro) break;
+      const n = Math.min(resto, sp.grupo);
+      for (let i = 0; i < n; i++) {
+        const p = centro.clone().add(new THREE.Vector3((aleat() - 0.5) * 12, 0, (aleat() - 0.5) * 12)); p.y = altura(p.x, p.z);
+        bichos.push(new Bicho(sp, p));
+      }
+      resto -= n;
+    }
+  }
+}
+
+/* ================= combate ================= */
+function danoJogador(d, deQuem) {
+  if (jogador.morto || jogador.invul > 0) return;
+  jogador.vida -= d; aviso(`${deQuem} te atacou (−${d})`);
+  if (jogador.vida <= 0) { jogador.vida = 0; jogador.morto = true; document.getElementById('morte').style.display = 'flex';
+    setTimeout(() => { document.getElementById('morte').style.display = 'none'; nascer(); }, 3000); }
+}
+function atacarJogador() {
+  if (jogador.morto || jogador.golpe > 0) return;
+  jogador.golpe = 0.5;
+  const frente = new THREE.Vector3(Math.sin(jogador.yaw + Math.PI), 0, Math.cos(jogador.yaw + Math.PI));
+  let melhor = null, md = 1e9;
+  for (const b of bichos) { if (b.vida <= 0) continue; const d = b.pos.clone().sub(jogador.pos); d.y = 0; const dist = d.length() - b.raio;
+    if (dist < 3.2 && d.normalize().dot(frente) > 0.3 && dist < md) { md = dist; melhor = b; } }
+  if (melhor) melhor.levarDano(20 + Math.round(aleat() * 10), 'jogador');
+}
+let alvoHud = null;
+function atualizaAlvo() {
+  const frente = new THREE.Vector3(Math.sin(jogador.yaw + Math.PI), 0, Math.cos(jogador.yaw + Math.PI));
+  let melhor = null, md = 1e9;
+  for (const b of bichos) { if (b.sp.tipo === 'ar') continue; const d = b.pos.clone().sub(jogador.pos); d.y = 0; const dist = d.length() - b.raio;
+    if (dist < 30 && d.normalize().dot(frente) > 0.7 && dist < md) { md = dist; melhor = b; } }
+  const el = document.getElementById('alvo');
+  if (melhor) { el.style.display = 'block'; document.getElementById('alvoNome').textContent = `${melhor.sp.nome}${melhor.vida <= 0 ? ' (morto)' : melhor.sp.dieta === 'carn' ? ' — carnívoro' : ''}`;
+    document.getElementById('alvoVida').style.width = (100 * melhor.vida / melhor.vidaMax) + '%'; }
+  else el.style.display = 'none';
+}
+
+/* ================= laço ================= */
+const relogio = new THREE.Clock(); let tempoJogo = DIA_SEG * 0.3;
+const vidaEl = document.querySelector('#vida > div'), folegoEl = document.querySelector('#folego > div'), relEl = document.getElementById('relogio');
+function passo(dt) {
+  tempoJogo += dt;
+  // ---- sol e céu
+  const fase = ((tempoJogo + horaExtra) % DIA_SEG) / DIA_SEG, ang = fase * Math.PI * 2 - Math.PI / 2;
+  const dirSol = new THREE.Vector3(Math.cos(ang) * 0.6, Math.sin(ang), Math.cos(ang) * 0.8).normalize();
+  U.sunPosition.value.copy(dirSol);
+  const dia = THREE.MathUtils.smoothstep(dirSol.y, -0.08, 0.2), noite = dirSol.y < -0.05;
+  sol.intensity = 2.6 * dia + 0.05; hemi.intensity = 0.25 + 0.75 * dia;
+  sol.color.setHSL(0.09, 0.6, 0.55 + 0.4 * THREE.MathUtils.smoothstep(dirSol.y, 0, 0.4));
+  cena.fog.color.setRGB(0.66 * dia + 0.04, 0.77 * dia + 0.05, 0.81 * dia + 0.09);
+  renderer.toneMappingExposure = 0.25 + 0.3 * dia;
+  const h24 = (fase * 24 + 6) % 24; relEl.textContent = `${noite ? '🌙' : '☀️'} ${String(Math.floor(h24)).padStart(2, '0')}:${String(Math.floor((h24 % 1) * 60)).padStart(2, '0')}`;
+  // ---- jogador
+  jogador.invul -= dt; jogador.golpe -= dt;
+  if (!jogador.morto) {
+    const chaoH = altura(jogador.pos.x, jogador.pos.z), nadando = chaoH < NIVEL_AGUA - 1.2;
+    const fr = new THREE.Vector3(-Math.sin(jogador.yaw), 0, -Math.cos(jogador.yaw)), di = new THREE.Vector3(-fr.z, 0, fr.x);
+    const mv = new THREE.Vector3(); if (teclas.KeyW) mv.add(fr); if (teclas.KeyS) mv.sub(fr); if (teclas.KeyD) mv.add(di); if (teclas.KeyA) mv.sub(di);
+    const correndo = teclas.ShiftLeft && jogador.folego > 1 && mv.lengthSq() > 0;
+    const v = nadando ? 2.6 : correndo ? 8.5 : 4.2;
+    if (mv.lengthSq()) { mv.normalize().multiplyScalar(v); boneco.rotation.y = Math.atan2(mv.x, mv.z); }
+    jogador.folego = THREE.MathUtils.clamp(jogador.folego + (correndo ? -18 : 10) * dt, 0, 100);
+    jogador.vel.x = mv.x; jogador.vel.z = mv.z;
+    if (nadando) { jogador.vel.y = 0; jogador.pos.y = NIVEL_AGUA - 1.2; }
+    else { jogador.vel.y -= 22 * dt; if (teclas.Space && jogador.noChao) { jogador.vel.y = 8; jogador.noChao = false; } }
+    const nx = jogador.pos.x + jogador.vel.x * dt, nz = jogador.pos.z + jogador.vel.z * dt;
+    if (inclinacao(nx, nz) < 1.3 && Math.hypot(nx, nz) < ILHA * 0.62) { jogador.pos.x = nx; jogador.pos.z = nz; }
+    if (!nadando) { jogador.pos.y += jogador.vel.y * dt; const hc = altura(jogador.pos.x, jogador.pos.z); if (jogador.pos.y <= hc) { jogador.pos.y = hc; jogador.vel.y = 0; jogador.noChao = true; } }
+    jogador.vida = Math.min(100, jogador.vida + 1.5 * dt);
+    // animação do boneco
+    const passoT = performance.now() / (correndo ? 110 : 170), mov = mv.lengthSq() > 0 ? 1 : 0;
+    boneco.pernaE.rotation.x = Math.sin(passoT) * 0.7 * mov; boneco.pernaD.rotation.x = -Math.sin(passoT) * 0.7 * mov;
+    boneco.bracoE.rotation.x = -Math.sin(passoT) * 0.5 * mov;
+    boneco.bracoD.rotation.x = jogador.golpe > 0 ? -1.6 + (0.5 - jogador.golpe) * 5 : Math.sin(passoT) * 0.5 * mov;
+  }
+  boneco.position.copy(jogador.pos); boneco.visible = !jogador.morto;
+  vidaEl.style.width = jogador.vida + '%'; folegoEl.style.width = jogador.folego + '%';
+  // ---- câmera em 3ª pessoa
+  const alvoCam = jogador.pos.clone().add(new THREE.Vector3(0, 1.7, 0));
+  const off = new THREE.Vector3(Math.sin(jogador.yaw) * Math.cos(jogador.pitch), -Math.sin(jogador.pitch) + 0.2, Math.cos(jogador.yaw) * Math.cos(jogador.pitch)).multiplyScalar(6.5);
+  const cp = alvoCam.clone().add(off); cp.y = Math.max(cp.y, altura(cp.x, cp.z) + 0.6);
+  camera.position.lerp(cp, Math.min(1, dt * 10)); camera.lookAt(alvoCam);
+  // ---- sombra segue o jogador
+  sol.position.copy(jogador.pos).addScaledVector(dirSol, 250); sol.target.position.copy(jogador.pos);
+  // ---- bichos
+  for (const b of bichos) b.update(dt, noite);
+  atualizaAlvo();
+}
+function laco() { const dt = Math.min(0.05, relogio.getDelta()); passo(dt); renderer.render(cena, camera); requestAnimationFrame(laco); }
+
+/* ================= início ================= */
+nascer();
+await carregarTudo();
+povoar();
+msg.textContent = `${bichos.length} bichos na ilha`;
+const btn = document.getElementById('iniciar'); btn.style.display = 'block';
+btn.onclick = () => { document.getElementById('carregando').style.display = 'none'; renderer.domElement.requestPointerLock?.(); aviso('Bem-vindo à Isla! Cuidado com os carnívoros.'); };
+window.__ilha = { bichos, jogador, passo, cena, camera, renderer };
+laco();
+</script>
+</body>
+</html>
