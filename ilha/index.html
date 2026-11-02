@@ -387,7 +387,7 @@ function atualizaAlvo() {
 /* ================= laço ================= */
 const relogio = new THREE.Clock(); let tempoJogo = DIA_SEG * 0.3;
 const vidaEl = document.querySelector('#vida > div'), folegoEl = document.querySelector('#folego > div'), relEl = document.getElementById('relogio');
-function passo(dt) {
+function quadro(dt) {
   tempoJogo += dt;
   // ---- sol e céu
   const fase = ((tempoJogo + horaExtra) % DIA_SEG) / DIA_SEG, ang = fase * Math.PI * 2 - Math.PI / 2;
@@ -435,7 +435,7 @@ function passo(dt) {
   for (const b of bichos) b.update(dt, noite);
   atualizaAlvo();
 }
-function laco() { const dt = Math.min(0.05, relogio.getDelta()); passo(dt); renderer.render(cena, camera); requestAnimationFrame(laco); }
+function laco() { const dt = Math.min(0.05, relogio.getDelta()); quadro(dt); renderer.render(cena, camera); requestAnimationFrame(laco); }
 
 /* ================= início ================= */
 nascer();
@@ -444,7 +444,7 @@ povoar();
 msg.textContent = `${bichos.length} bichos na ilha`;
 const btn = document.getElementById('iniciar'); btn.style.display = 'block';
 btn.onclick = () => { document.getElementById('carregando').style.display = 'none'; renderer.domElement.requestPointerLock?.(); aviso('Bem-vindo à Isla! Cuidado com os carnívoros.'); };
-window.__ilha = { bichos, jogador, passo, cena, camera, renderer };
+window.__ilha = { bichos, jogador, passo: quadro, cena, camera, renderer };
 laco();
 </script>
 </body>
