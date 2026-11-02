@@ -295,6 +295,7 @@ export default {
     racao_vale: 2,             // a Ração vale X comidas preferidas e não baixa a efetividade
     efetividade_por_comida: 0.015, // cada mordida de comida preferida baixa a efetividade (ARK)
     efetividade_outra_comida: 0.04, // comida que não é a preferida baixa mais
+    velocidade_doma: 1,        // TAMING_SPEED_MULT: 2 = doma duas vezes mais rápida
     comidas_base: 10,          // comidas preferidas para domar no nível 1
     comidas_por_nivel: 0.5,    // + X por nível (nível 30 pede ~25 comidas = 3 min: precisa de narcótico)
     comida_qualquer: 0.25,     // comida que não é a preferida vale isso
@@ -372,6 +373,8 @@ export default {
   dificuldade: {
     zona_segura_m: 70,         // carnívoros não nascem perto das praias de renascer e dos sacos de dormir
     inicio_tranquilo_min: 5,   // depois de nascer/renascer: poucos carnívoros e fracos
+    nivel_max_selvagem: 150,   // nível máximo de um bicho selvagem (ARK oficial: 150)
+    nivel_passo: 5,            // níveis selvagens em múltiplos de 5
     nivel_max_inicio: 6,       // nível máximo dos bichos nesse começo
     peso_carnivoros: 0.6,      // 1 = normal; menor = menos carnívoros
     max_carnivoros_perto: 4,   // carnívoros vivos por perto a cada 20 bichos (qualidade alta, 45 bichos: 9)

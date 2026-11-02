@@ -236,7 +236,7 @@ export class Creature {
       // stamina, oxigênio, comida, peso, dano e velocidade. Cada ponto soma
       // uma fração do valor do nível 1 (oxigênio, comida e velocidade não
       // mudam nada aqui). O torpor sobe com todos os níveis.
-      const pts = { vida: 0, stamina: 0, oxigenio: 0, comida: 0, peso: 0, forca: 0, velocidade: 0 };
+      const pts = { vida: 0, stamina: 0, oxigenio: 0, comida: 0, peso: 0, forca: 0 }; // velocidade NÃO sobe no selvagem
       const keys = Object.keys(pts);
       for (let i = 0; i < L; i++) pts[keys[Math.floor(r() * keys.length)]]++;
       this.levelPoints = pts;
@@ -244,7 +244,7 @@ export class Creature {
         vida: Math.round(vida * (1 + inc.vida * pts.vida)),
         forca: Math.round(forca * (1 + inc.forca * pts.forca)),
         peso: Math.round(pick('peso', [sp.carga ?? 20, sp.carga ?? 20]) * (1 + inc.peso * pts.peso)),
-        stamina: Math.round(MV.STAMINA_BASE * (1 + MV.STAMINA_PER_LEVEL * L)), // movimento_config.js
+        stamina: Math.round(MV.STAMINA_BASE * (1 + (inc.stamina ?? 0.1) * pts.stamina)), // +10% da base por ponto
         velocidade: Math.round(pick('velocidade', [100, 100])),
         torpor: Math.round(pick('torpor', [100, 100]) * (1 + inc.torpor * L)),
       };
@@ -388,7 +388,7 @@ export class Creature {
   get tameNeed() {
     const D = BALANCE.domar;
     // k_doma da espécie (data/creatures/criaturas.json): quanto mais alto, mais comida para domar
-    return Math.max(1, Math.round((D.comidas_base + D.comidas_por_nivel * (this.level - 1)) * (this.species.k_doma ?? 1)));
+    return Math.max(1, Math.round((D.comidas_base + D.comidas_por_nivel * (this.level - 1)) * (this.species.k_doma ?? 1) / (D.velocidade_doma ?? 1)));
   }
 
   addTorpor(amount, by) {

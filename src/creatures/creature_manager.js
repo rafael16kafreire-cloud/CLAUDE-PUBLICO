@@ -61,6 +61,14 @@ export class CreatureManager {
     return this.models[id];
   }
 
+  // Nível selvagem: de 1 até o máximo, em múltiplos de 'passo' (ARK: 150 de 5 em 5); puxa para os baixos.
+  _wildLevel(max) {
+    const step = BALANCE.dificuldade.nivel_passo ?? 5;
+    const n = Math.floor(max / step);
+    const k = 1 + Math.floor(Math.pow(this.rand(), 1.6) * n);
+    return Math.max(1, k * step);
+  }
+
   // Cria uma criatura. level = nível (1 a 30), opcional.
   spawn(id, x, z, level) {
     const species = SPECIES[id];
@@ -214,8 +222,8 @@ export class CreatureManager {
       let size = Math.min(cap - alive, gmin + Math.floor(this.rand() * (gmax - gmin + 1)));
       if (isCarn(species)) size = Math.min(size, carnCap - carnAlive);
       if (size <= 0) continue;
-      const maxLvl = early ? D.nivel_max_inicio : 30;
-      const level = 1 + Math.floor(Math.pow(this.rand(), 1.7) * (maxLvl - 1));
+      const maxLvl = early ? D.nivel_max_inicio : D.nivel_max_selvagem;
+      const level = early ? 1 + Math.floor(Math.pow(this.rand(), 1.7) * (maxLvl - 1)) : this._wildLevel(maxLvl);
       for (let i = 0; i < size; i++) {
         const ox = x + (this.rand() - 0.5) * 8 * Math.max(1, species.raio);
         const oz = z + (this.rand() - 0.5) * 8 * Math.max(1, species.raio);
@@ -605,7 +613,7 @@ export class CreatureManager {
         const w = this.world.waterAt(x, z);
         if (!w || w.level - this.world.heightAt(x, z) < (k < 30 ? 0.7 : 0.3)) continue;
         if (this.world.allRespawnPoints.some((q) => Math.hypot(q.position.x - x, q.position.z - z) < D.zona_segura_m)) continue;
-        const lvl = early ? 1 + Math.floor(this.rand() * D.nivel_max_inicio) : 1 + Math.floor(Math.pow(this.rand(), 1.6) * 29);
+        const lvl = early ? 1 + Math.floor(this.rand() * D.nivel_max_inicio) : this._wildLevel(D.nivel_max_selvagem);
         this.spawn(id, x, z, lvl);
         break;
       }
