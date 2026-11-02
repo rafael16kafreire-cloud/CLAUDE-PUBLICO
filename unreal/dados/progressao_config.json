@@ -1,0 +1,177 @@
+{
+ "ANTI_FARM_FACTOR": 0.5,
+ "ANTI_FARM_MAX": 20,
+ "ANTI_FARM_WINDOW_S": 60,
+ "ATTRIBUTES": {
+  "vida": {
+   "alias": "vida",
+   "base": 100,
+   "porPonto": 10,
+   "limite": null,
+   "unidade": ""
+  },
+  "stamina": {
+   "alias": "stamina",
+   "base": 100,
+   "porPonto": 10,
+   "limite": null,
+   "unidade": ""
+  },
+  "oxigenio": {
+   "alias": "folego",
+   "base": 100,
+   "porPonto": 10,
+   "limite": null,
+   "unidade": "s"
+  },
+  "comida": {
+   "alias": "fome",
+   "base": 100,
+   "porPonto": 10,
+   "limite": null,
+   "unidade": ""
+  },
+  "agua": {
+   "alias": "sede",
+   "base": 100,
+   "porPonto": 10,
+   "limite": null,
+   "unidade": ""
+  },
+  "peso": {
+   "alias": "peso",
+   "base": 200,
+   "porPonto": 10,
+   "limite": null,
+   "unidade": "kg"
+  },
+  "dano": {
+   "alias": "forca",
+   "base": 100,
+   "porPonto": 5,
+   "limite": null,
+   "unidade": "%"
+  },
+  "velocidade": {
+   "alias": "velocidade",
+   "base": 100,
+   "porPonto": 2,
+   "limite": 50,
+   "unidade": "%"
+  },
+  "fortitude": {
+   "alias": "fortitude",
+   "base": 0,
+   "porPonto": 2,
+   "limite": null,
+   "unidade": "°C"
+  },
+  "criacao": {
+   "alias": "criacao",
+   "base": 100,
+   "porPonto": 10,
+   "limite": null,
+   "unidade": "%"
+  }
+ },
+ "ATTR_POINTS_PER_LEVEL": 1,
+ "DEBUG_MODE": true,
+ "ENGRAM_POINTS_BASE": 3,
+ "ENGRAM_POINTS_LEVEL_DIV": 25,
+ "ENGRAM_POINTS_START": 8,
+ "ENGRAM_POOL_TARGET": 650,
+ "ENGRAM_STATIONS": {
+  "mao": "Mãos",
+  "bancada": "Bancada",
+  "forja": "Forja",
+  "pilao": "Pilão"
+ },
+ "ENGRAM_TIERS": {
+  "1": {
+   "nome": "Pedra / Início",
+   "custo": [
+    1,
+    3
+   ],
+   "niveis": [
+    1,
+    14
+   ]
+  },
+  "2": {
+   "nome": "Madeira",
+   "custo": [
+    3,
+    6
+   ],
+   "niveis": [
+    10,
+    34
+   ]
+  },
+  "3": {
+   "nome": "Metal",
+   "custo": [
+    6,
+    12
+   ],
+   "niveis": [
+    30,
+    64
+   ]
+  },
+  "4": {
+   "nome": "Eletricidade",
+   "custo": [
+    12,
+    20
+   ],
+   "niveis": [
+    60,
+    100
+   ]
+  }
+ },
+ "KILL_CLASS_GRANDE_MIN_M": 10,
+ "KILL_CLASS_MEDIO_MIN_M": 3,
+ "MAX_LEVEL": 100,
+ "OXYGEN_DRAIN_PER_SECOND": 1,
+ "START_LEVEL": 1,
+ "VERSAO_PROGRESSAO": 1,
+ "XP_BASE": 10,
+ "XP_CRAFT_PER_SECOND": 0.8,
+ "XP_EXPONENT": 1.8,
+ "XP_FIRST_TIME_BONUS": 25,
+ "XP_GLOBAL_MULT": 1,
+ "XP_KILL_BY_TAMED_SHARE": 0.5,
+ "XP_KILL_CLASS_MULT": {
+  "pequeno": 2,
+  "medio": 4,
+  "grande": 8,
+  "boss": 100
+ },
+ "XP_RESOURCE": {
+  "graveto": 1,
+  "fibra": 1,
+  "palha": 1,
+  "baga_stim": 1,
+  "baga_amar": 1,
+  "baga_mejo": 1,
+  "baga_escura": 1,
+  "fruta_rubra": 1,
+  "fruta_azul": 1,
+  "banana": 1,
+  "pedra": 2,
+  "pedrinha": 2,
+  "madeira": 3,
+  "silex": 5,
+  "minerio_ferro": 8,
+  "lingote_metal": 8,
+  "obsidiana": 8,
+  "cristal": 8,
+  "petroleo": 8,
+  "perola_silica": 8
+ },
+ "XP_RESOURCE_DEFAULT": 1,
+ "XP_TAME_PER_LEVEL": 10
+}

@@ -25,8 +25,10 @@ você baixa (clona) o repositório no seu PC e copia o que quer para o projeto.
 | `bichos/modelos/` | 44 modelos .glb de dinossauros (com esqueleto e animações) |
 | `construcao-lowpoly/modelos/` | 62 peças de construção .glb + `custos.json` |
 | `modelos_originais/` | modelos convertidos do jogo (bichos, neve, plantas) |
-| `src/progression/` | regras de XP, níveis, engramas (JS, fácil de ler) |
-| `src/creatures/` | temperamentos, habilidades, reprodução (JS, fácil de ler) |
+| `unreal/codigo/GUIA_DOS_SISTEMAS.md` | **comece por aqui**: todos os sistemas explicados e como refazer no Unreal |
+| `unreal/codigo/INDICE_DO_CODIGO.md` | cada arquivo de código: o que faz, o que exporta |
+| `unreal/codigo/fonte/` | cópia de todo o código do jogo (JavaScript) |
+| `unreal/dados/*.json` | todos os números: balanceamento, estamina, progressão, criação, IA, mundo |
 
 ## 3) Como importar no Unreal
 
