@@ -40,7 +40,7 @@ constrói uma base, doma e monta dinossauros e enfrenta chefões.
 - **Cenário:** realista. Chão com texturas de foto misturadas por altura e inclinação (areia, grama, folhas de floresta, rocha;
   cinza vulcânica perto do vulcão). Árvores e arbustos como *billboards* em cruz feitos a partir de modelos CC0 (Poly Haven),
   pedras escaneadas simplificadas, mar com reflexo, neblina e céu com ciclo de dia e noite.
-- **Interface:** identidade própria do Isla (ver seção 9), nunca imitando a interface de outro jogo.
+- **Interface:** organização igual às imagens de referência, com desenho próprio do Isla (ver seção 9).
 
 ## 3. Recursos (21)
 
@@ -272,44 +272,96 @@ Roda de comandos (segurar o botão): **Seguir**, **Ficar parado**, **Passivo**, 
   **montanhas** (Anquilossauro, Mamute, T-Rex, minério e cristal), **lagoa e rios** (Barionix, Suchomimo, piranhas),
   **pântano** (Sarcosuchus, Titanoboa), **mar** (mosassauros, piranhas, petróleo, pérolas),
   **vulcão ao norte** (cratera com lava, obsidiana, arena do Chefe do Vulcão), **pico gelado** (Chefe do Gelo).
+- Vegetação por região: **coqueiros/palmeiras** nas praias, mangue nas margens e no pântano, árvores de copa larga e samambaias nas florestas, 
+  **árvores gigantes** (tipo sequoia, 40–60 m, de onde se tira muita madeira) nas florestas altas, pinheiros e árvores secas nas montanhas, 
+  árvores cobertas de neve no pico gelado. Troncos caídos, pedras e conchas espalhados na areia.
 - Ciclo de dia e noite: **8 minutos** por dia completo **(inicial)**; à noite os herbívoros dormem e os carnívoros caçam mais.
 - Quantidade inicial por espécie (protótipo): Dodô 8, Galimimo 6, Parassauro 6, Tricerátops 4, Estegossauro 3, Anquilossauro 2, Bisão 6, Megatério 2,
   Mamute 3, Argentinossauro 2, Compsognato 6, Raptor 6, Carnotauro 2, T-Rex 1, Deinosuchus 2, Piranha 10, Mosassauro 2, Pteranodonte 4, Argentavis 2.
 
 ## 9. Interfaces (telas)
 
-Identidade visual própria: painéis de madeira escura e pedra, molduras de couro, ícones desenhados em traço de carvão e destaques em âmbar.
-Tudo legível em celular (botões de no mínimo 48 px), com versão para mouse e teclado.
+A **organização** das telas segue as imagens de referência em `Ark IMAGENS CLAUDE/`: mesmas telas, mesma posição dos blocos,
+mesmas abas e botões. O **desenho** é do Isla: painéis translúcidos escuros com moldura fina, cantos chanfrados,
+textura leve de pedra e destaques em âmbar; ícones próprios em traço simples; fonte limpa em caixa alta nos títulos.
+Não usar arquivos, ícones, logos ou arte de outro jogo. Tudo legível em celular (alvos de toque de no mínimo 48 px).
 
-1. **Tela inicial:** logo ISLA, Jogar, Continuar, Opções, Créditos (lista do `CREDITOS.md`, obrigatória pela licença CC BY).
-2. **Carregamento:** barra de progresso e dicas.
-3. **HUD (em jogo):**
-   - barras de Vida e Fôlego no canto inferior esquerdo; Comida, Água e Oxigênio aparecem quando ficam baixas;
-   - relógio com sol/lua; bússola no topo;
-   - **barra rápida de 10 espaços** embaixo (itens equipáveis);
-   - nome e vida do alvo no topo central ("Tricerátops — herbívoro");
-   - avisos à direita ("Raptor te atacou −15", "Novo nível disponível!");
-   - celular: **joystick à esquerda**, botões à direita (pular, atacar/usar, agachar, montar), arrastar na tela para olhar.
-4. **Inventário:** grade de itens com busca e filtros; à direita o personagem com equipamentos (cabeça, peito, mãos, pernas, pés, escudo);
-   painel de atributos (seção 7.1) com botão **+** para gastar pontos; peso atual/máximo; nível e XP.
-5. **Receitas (árvore de conhecimento):** grade por nível com cadeado nas bloqueadas; ao tocar mostra custo e o que libera; pontos disponíveis.
-6. **Fabricação:** na mão (receitas simples) e em estações (Pilão, Forja, Bancada); fila de fabricação com tempo.
-7. **Construção:** roda de peças por categoria (Fundação, Parede, Teto/Telhado, Escada/Rampa, Ponte, Muralha, Portão),
-   seletor de material e tamanho (P/M/G, normal/grande/gigante), peça fantasma verde/vermelha, botões girar e confirmar, custo na tela.
-8. **Bicho domado:** nome, nível, atributos do bicho para evoluir, inventário do bicho, botão de sela, comando atual.
-9. **Domando:** barra de "domando", barra de Torpor, comida preferida e efetividade.
-10. **Roda de comandos** (seção 5.4).
-11. **Mapa:** mapa da ilha com regiões, marcadores e posição dos domados.
-12. **Pausa:** Continuar, Opções, Salvar jogo, Voltar ao menu principal.
-13. **Opções**, com abas:
-    - **Áudio:** geral, música, efeitos, bichos.
-    - **Gráficos:** qualidade, distância de visão, sombras, grama, FPS 30/60.
-    - **Interface:** tamanho do HUD, mostrar números de dano, idioma.
-    - **Jogabilidade:** câmera 1ª/3ª pessoa, sensibilidade, inverter eixo.
-    - **Controles** (celular), com gestos configuráveis:
-      deslizar da borda abre a roda de ações; deslizar para cima pula/voa/sobe; deslizar para baixo recarrega/pousa/desce;
-      tocar e segurar no item da barra transfere o item; tocar duas vezes no chão corre.
-14. **Morte:** "Você morreu", escolher onde renascer (praia ou camas).
+### 9.1 HUD (em jogo, celular em modo paisagem)
+- **Câmera:** 1ª pessoa mostrando as mãos/ferramenta na frente (padrão) ou 3ª pessoa atrás do personagem (alternar nas opções e com um botão).
+- **Topo, centro:** avisos curtos em verde, ex.: "NOVO NÍVEL DISPONÍVEL! Abra o inventário para gastar o ponto".
+- **Topo, esquerda:** botão do inventário (mochila) e botão de comandos dos domados.
+- **Esquerda, embaixo:** joystick de movimento (aparece onde o polegar toca).
+- **Direita, embaixo:** grade de botões de ação (atacar/usar, pular, agachar, montar/desmontar, construir) e, acima, a barra rápida.
+- **Embaixo, centro:** **barra rápida de 10 espaços** com os itens equipáveis (no PC: teclas 1–0).
+- **Direita, vertical:** ícones pequenos de estado que acendem quando algo fica baixo: comida, água, oxigênio, peso, frio/calor.
+- **Barras:** vida e fôlego sempre visíveis; nome e vida do alvo no topo quando mira num bicho.
+- **Mira** pequena no centro; ao olhar para recurso/item aparece "Coletar", "Pegar", "Abrir".
+
+### 9.2 Inventário (tela cheia, 3 colunas)
+- **Abas no topo da coluna esquerda:** INVENTÁRIO e FABRICAÇÃO. Fileira de botões de filtro (todos, recursos, ferramentas, consumíveis, estruturas) e busca.
+- **Coluna esquerda:** grade de itens do jogador; cada espaço mostra ícone, quantidade e barra de durabilidade.
+- **Coluna do meio — VOCÊ:** nível, XP atual/necessário, pontos para gastar, e a lista de atributos com valor atual/máximo e botão **+**:
+  Vida, Fôlego, Oxigênio, Comida, Água, Peso, Dano corpo a corpo, Velocidade de movimento, Resistência (frio/calor), Fortaleza, Torpor.
+- **Coluna direita:** o personagem em 3D girável, com os espaços de equipamento em volta (cabeça, peito, mãos, pernas, pés, escudo).
+- **Embaixo:** a mesma barra rápida do HUD, para arrastar itens; contador de moedas/fichas à esquerda dela **(opcional)**.
+- **Canto superior direito:** botão **X** para fechar.
+- Quando aberto perto de um baú, bicho domado ou estação, a coluna direita vira o inventário desse lugar para arrastar itens de um lado para o outro.
+
+### 9.3 Receitas (árvore de conhecimento)
+- **Topo:** título RECEITAS e fileira de abas por categoria (ferramentas, armas, roupas, estruturas, selas, estações, consumíveis, cadeado = bloqueadas).
+- **Centro:** linhas numeradas por **nível** (1, 2, 3, 4…) com os ícones das receitas daquele nível; bloqueadas aparecem em silhueta escura.
+- **Ao tocar numa receita:** custo em pontos, materiais, onde fabricar e botão **Aprender**.
+- **Embaixo:** "PONTOS DISPONÍVEIS: N" e a barra rápida.
+
+### 9.4 Pausa
+- Fundo do jogo escurecido e quatro botões grandes empilhados no centro: **RESUMIR**, **OPÇÕES**, **SALVAR JOGO**, **VOLTAR AO MENU PRINCIPAL**.
+
+### 9.5 Opções
+- **Coluna esquerda (abas):** ÁUDIO, GRÁFICOS, INTERFACE, JOGABILIDADE, CONTROLES.
+- **Topo direito:** botão desfazer/restaurar padrão e botão **X**.
+- **Painel direito:** conteúdo da aba.
+  - Áudio: geral, música, efeitos, ambiente, bichos.
+  - Gráficos: qualidade, distância de visão, sombras, grama, água, FPS 30/60, escala de resolução.
+  - Interface: tamanho e transparência do HUD, mostrar números de dano, idioma.
+  - Jogabilidade: 1ª/3ª pessoa, sensibilidade, inverter eixo Y, mira automática.
+  - **Controles (celular):** título "CONTROLES BÁSICOS" e uma lista; cada linha mostra o **gesto** (com desenho do gesto) à direita e as **ações** à esquerda:
+    - deslizar a partir da borda → abre a roda de ações/comandos;
+    - deslizar para cima → pular · voar (montado) · subir;
+    - deslizar para baixo → recarregar · pousar (montado);
+    - tocar → usar / coletar · atacar / atirar · ativar;
+    - tocar e segurar → olhar em volta · abrir inventário · montar/desmontar;
+    - tocar duas vezes e segurar → repetir coleta · mirar com arco · disparo de torreta (montado);
+    - tocar duas vezes num item do inventário → transferir item · mover para a barra rápida;
+    - na tela do inventário, tocar e segurar no chão → andar; tocar duas vezes → correr.
+  - Controles (PC): tabela de teclas editável (WASD, Shift, Espaço, C, E, F, I, Q, Tab, 1–0, mouse).
+
+### 9.6 Roda de comandos dos domados
+- Aparece no centro da tela, circular, dividida em fatias; o centro tem um ícone do bicho selecionado.
+- Fatias: **Seguir (um)**, **Seguir (todos)**, **Parar (um)**, **Parar (todos)**, **Passivo**, **Neutro**, **Agressivo**, **Atacar meu alvo**,
+  **Pousar (voadores)**, **Expressões** (acenar, dançar…), e uma fatia para trocar entre "um bicho" e "todos por perto".
+- Escolher arrastando o dedo/mouse até a fatia e soltando.
+
+### 9.7 Construção
+- Ao escolher uma peça na barra rápida aparece a peça fantasma (verde = pode, vermelha = não pode) com o custo ao lado.
+- Roda de peças por categoria (Fundação, Parede, Teto/Telhado, Escada/Rampa, Ponte, Muralha, Portão), seletor de material e de tamanho
+  (P/M/G; normal/grande/gigante), botões girar 90°, confirmar e cancelar.
+
+### 9.8 Bicho domado
+- Igual ao inventário: coluna esquerda = inventário do jogador; meio = atributos do bicho (nível, vida, fôlego, comida, peso, dano, velocidade)
+  com **+** para evoluir; direita = o bicho em 3D com o espaço da sela e o inventário dele. Mostra nome (editável), dono e comando atual.
+
+### 9.9 Domando
+- Ao olhar um bicho desacordado: barra **Domando %**, barra de **Torpor**, comida preferida, efetividade e tempo estimado.
+
+### 9.10 Mapa
+- Mapa da ilha desenhado à mão em **pergaminho** (terra cor de areia, mar verde-azulado, curvas de nível nas montanhas),
+  com **grade de coordenadas de 10 a 90** nas bordas, posição do jogador, marcadores pessoais, camas e domados.
+
+### 9.11 Outras telas
+- **Inicial:** logo ISLA sobre uma praia, Jogar, Continuar, Opções, Créditos.
+- **Carregamento:** imagem da ilha, barra de progresso e dicas.
+- **Morte:** "VOCÊ MORREU", lista de onde renascer (praias da ilha ou camas) e botão Renascer.
+- **Créditos:** lista do `bichos/CREDITOS.md`.
 
 ## 10. O que já está pronto no repositório
 
