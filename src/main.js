@@ -484,6 +484,15 @@ function boot(hotData = {}) {
         for (const st of hotData.world.structures ?? []) world.addStructure(st);
       }
       for (const t of hotData.tamed ?? []) restoreTamed(t);
+      // tempo com o jogo fechado (por timestamp): ovos chocam, filhotes crescem, gestação anda
+      const fora = hotData.salvoEm ? (Date.now() - hotData.salvoEm) / 1000 : 0;
+      if (fora > 2) {
+        for (const st of [...world.structures]) {
+          if (st.type !== 'ovo' || !st.advance) continue;
+          if (st.advance(fora).destroyed) world.removeStructure(st);
+        }
+        for (const c of ctx.creatures.tamedBy(player)) c.advanceOffline(fora);
+      }
     }
 
     hud.setVisible(false);
@@ -775,6 +784,7 @@ function boot(hotData = {}) {
       hp: Math.round(c.health), name: c.name ?? null, adult: +c.adultScale.toFixed(4), saddled: !!c.saddled,
       saddle: c.saddleKind ?? null, imprint: c.imprint ?? 0, st: c.inherited ? c.stats : null, mut: c.mutations ?? 0,
       gestation: c.gestation > 0 ? Math.round(c.gestation) : 0, unborn: c.unborn ?? null, cor: c.cor ?? null,
+      cria: { matAge: Math.round(c.matAge ?? 0), matureS: c.matureS, imprintable: !!c.imprintable, careT: Math.round(c.careT ?? 0), careWindow: Math.round(c.careWindow ?? 0), wantsCare: !!c.wantsCare, cooldownAte: c.cooldownAte ?? 0, mM: c.mutM ?? 0, mP: c.mutP ?? 0 },
       opts: { followDist: c.followDist, targetRange: c.targetRange, aggression: c.aggression, wander: !!c.wander, neutered: !!c.neutered, victimCollect: !!c.victimCollect, ignoreWhistle: !!c.ignoreWhistle, parents: c.parents ?? null },
       inv: c.inv ? c.inv.toJSON() : null,
     };
@@ -797,7 +807,13 @@ function boot(hotData = {}) {
     }
     if (t.adult) c.adultScale = t.adult;
     c.age = t.age ?? 0;
+    if (t.cria) {
+      c.matAge = t.cria.matAge; c.matureS = t.cria.matureS ?? c.matureS; c.imprintable = t.cria.imprintable;
+      c.careT = t.cria.careT; c.careWindow = t.cria.careWindow; c.wantsCare = t.cria.wantsCare;
+      c.cooldownAte = t.cria.cooldownAte; c.mutM = t.cria.mM; c.mutP = t.cria.mP;
+    }
     c.setGrowth(t.growth ?? 1);
+    if (c.growth < 1) c.maturation = Math.min(1, (c.matAge ?? 0) / c.matureS);
     c.health = Math.min(c.maxHealth, t.hp ?? c.maxHealth);
     c.yaw = t.yaw ?? 0;
     c.tamed = true;
@@ -815,6 +831,7 @@ function boot(hotData = {}) {
       player: ctx.player.toJSON(),
       yaw: ctx.camCtl.yaw,
       inventory: ctx.inventory.toJSON(),
+      salvoEm: Date.now(),
       world: { time: ctx.world.time, day: ctx.world.day, structures: ctx.world.structures.filter((st) => !st.removed).map((st) => st.toJSON()) },
       tamed: ctx.creatures.tamedBy(ctx.player).map(tamedJSON),
     };

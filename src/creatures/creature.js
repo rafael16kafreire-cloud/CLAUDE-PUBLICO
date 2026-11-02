@@ -8,6 +8,8 @@
 //                (revida = ataca de volta; senão foge)
 //   medroso    – fogem quando alguém chega perto
 // =============================================================
+import { BREEDING as BR, criaDe } from './breeding_config.js';
+import { stageFromMaturation, imprintGain } from './reproducao.js';
 import { decideReaction, decideTamed, modoDe, ehPerigoso, HERBIVOROS_NUNCA_FOGEM } from './temperamentos.js';
 import * as THREE from 'three';
 import { ClipPlayer } from './clip_player.js';
@@ -154,6 +156,8 @@ export class Creature {
     // um dia morre de velhice. Bicho selvagem já nasce com alguma idade.
     const C = BALANCE.criaturas;
     this.growth = 1;
+    this.maturation = 1;
+    this.matureS = BALANCE.criaturas.crescer_min * 60;
     this.lifespan = 60 * (C.vida_media_min[0] + rand() * (C.vida_media_min[1] - C.vida_media_min[0]));
     this.age = rand() * 0.6 * this.lifespan;
     this.nextBreed = C.intervalo_cria_min[0] * 60 * rand();
@@ -273,7 +277,7 @@ export class Creature {
   // Vida, dano e velocidade a partir dos atributos (+ bônus da impressão).
   _deriveStats() {
     const ratio = this.maxHealth ? this.health / this.maxHealth : 1;
-    const imp = 1 + (this.imprint ?? 0) * BALANCE.cria.bonus_impressao;
+    const imp = 1 + (this.imprint ?? 0) * BR.IMPRINT_STAT_BONUS;
     this.maxHealth = Math.round(this.stats.vida * imp * (0.25 + 0.75 * (this.growth ?? 1)));
     this.health = Math.max(1, Math.round(this.maxHealth * ratio));
     this.baseDamage = this.species.dano * this.stats.forca / 100 * imp;
@@ -316,14 +320,33 @@ export class Creature {
     }
   }
 
-  // Filhote domado: carinho/comida aumenta a impressão (fica mais forte).
+  // Filhote domado: o pedido de impressão (a cada 8 h, janela de 4 h) é atendido com carinho/ração/passeio.
+  // Cada atendimento soma 100 / pedidos_totais (pedidos = maturação / 8 h). Perder um não pune.
   care() {
     if (!this.wantsCare) return false;
     this.wantsCare = false;
-    this.careT = BALANCE.cria.cuidado_min * 60;
-    this.imprint = Math.min(1, (this.imprint ?? 0) + BALANCE.cria.impressao_por_cuidado);
+    this.careWindow = 0;
+    this.careT = BR.IMPRINT_INTERVAL_S;
+    this.imprint = Math.min(1, (this.imprint ?? 0) + imprintGain(this.matureS));
     this._deriveStats();
+    events.emit(EV.IMPRINT_DONE, { id: this.id, imprint: this.imprint });
     return true;
+  }
+
+  // Maturação 0..1 → crescimento visual (0,3 → 1) e estágio.
+  _matura() {
+    const mat = Math.min(1, (this.matAge ?? 0) / this.matureS);
+    const antes = this.stage;
+    this.maturation = mat;
+    const g = 0.3 + 0.7 * mat;
+    if (g - this.growth > 0.005 || mat >= 1) this.setGrowth(mat >= 1 ? 1 : g);
+    if (this.stage !== antes) events.emit(EV.MATURATION_STAGE_CHANGED, { id: this.id, stage: this.stage });
+  }
+
+  // Tempo com o jogo fechado: o filhote continua crescendo, a gestação continua.
+  advanceOffline(sec) {
+    if (this.growth < 1) { this.matAge = (this.matAge ?? 0) + sec; this._matura(); }
+    if (this.gestation > 0) this.gestation = Math.max(0.001, this.gestation - sec);
   }
 
   // Filhote: tamanho, força e vida crescem junto (0.3 = recém-nascido, 1 = adulto)
@@ -332,7 +355,7 @@ export class Creature {
     this.growth = clamp(g, 0.2, 1);
     this.scale = this.adultScale * this.growth;
     this.mesh.scale.setScalar(this.scale);
-    const imp = 1 + (this.imprint ?? 0) * BALANCE.cria.bonus_impressao;
+    const imp = 1 + (this.imprint ?? 0) * BR.IMPRINT_STAT_BONUS;
     this.maxHealth = Math.max(1, Math.round(this.stats.vida * imp * (0.25 + 0.75 * this.growth)));
     this.health = Math.max(1, this.maxHealth * ratio);
     this.damage = this.baseDamage * this.growth;
@@ -340,8 +363,8 @@ export class Creature {
 
   // Fase de crescimento (como no ARK): Bebê, Juvenil, Adolescente, Adulto
   get stage() {
-    const g = this.growth ?? 1;
-    return g >= 1 ? 'Adulto' : g < 0.5 ? 'Bebê' : g < 0.8 ? 'Juvenil' : 'Adolescente';
+    const st = stageFromMaturation(this.maturation ?? 1);
+    return { baby: 'Bebê', juvenile: 'Juvenil', adolescent: 'Adolescente', adult: 'Adulto' }[st];
   }
 
   get isBaby() {
@@ -566,14 +589,24 @@ export class Creature {
     if (!this.netControlled && !this.species.ambiente) {
       this.age += this.tamed && this.growth >= 1 ? dt * 0.25 : dt; // domado adulto vive bem mais
       if (this.growth < 1) {
-        const g = Math.min(1, 0.3 + 0.7 * this.age / (BALANCE.criaturas.crescer_min * 60));
-        if (g - this.growth > 0.01 || g === 1) this.setGrowth(g);
-        // filhote domado pede carinho de tempos em tempos (impressão)
-        if (this.tamed && !this.wantsCare) {
-          this.careT = (this.careT ?? BALANCE.cria.cuidado_min * 60) - dt;
-          if (this.careT <= 0) {
-            this.wantsCare = true;
-            events.emit(EV.MESSAGE, { text: `Filhote de ${this.species.nome} quer carinho! (Interagir nele)`, kind: 'info' });
+        // maturação por tempo real de jogo (matureS: Rex 92 h 35 min); filhote domado nascido de ovo usa o tempo do ARK
+        this.matAge = (this.matAge ?? 0) + dt;
+        this._matT = (this._matT ?? 0) + dt;
+        if (this._matT >= 1) { this._matT = 0; this._matura(); }
+        // filhote domado: pedido de impressão a cada 8 h (janela de 4 h)
+        if (this.tamed && this.imprintable) {
+          if (this.wantsCare) {
+            this.careWindow = (this.careWindow ?? 0) - dt;
+            if (this.careWindow <= 0) this.wantsCare = false; // perdeu este: sem punição
+          } else {
+            this.careT = (this.careT ?? BR.IMPRINT_INTERVAL_S) - dt;
+            if (this.careT <= 0) {
+              this.wantsCare = true;
+              this.careWindow = BR.IMPRINT_WINDOW_S;
+              this.careT = BR.IMPRINT_INTERVAL_S;
+              events.emit(EV.IMPRINT_REQUEST, { id: this.id });
+              events.emit(EV.MESSAGE, { text: `Filhote de ${this.species.nome} quer carinho! (Interagir nele)`, kind: 'info' });
+            }
           }
         }
       }

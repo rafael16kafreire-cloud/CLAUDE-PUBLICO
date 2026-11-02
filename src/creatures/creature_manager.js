@@ -21,6 +21,8 @@ import { aplicarCor, herdarCor, mutarCor, sortearCor } from './cores.js';
 import { sound } from '../audio/audio.js';
 import { settings } from '../core/settings.js';
 
+import { BREEDING as BR, criaDe } from './breeding_config.js';
+import { podeReproduzir, inheritStats as herdarStats, rollMutations, litterSize, cooldownSeconds } from './reproducao.js';
 import { aplicarTemperamentos } from './temperamentos.js';
 aplicarTemperamentos(data.especies);
 export const SPECIES = Object.fromEntries(data.especies.map((s) => [s.id, s]));
@@ -248,7 +250,8 @@ export class CreatureManager {
     }
     const calm = (c) => c.alive && !c.isBaby && !c.species.ambiente && !c.netControlled && !c.neutered
       && (c.state === CSTATE.WANDER || c.state === CSTATE.IDLE || c.state === CSTATE.EAT)
-      && c.age > (c.nextBreed ?? 0);
+      && podeReproduzir(c.species.id) && !c.rider
+      && (c.tamed ? !(c.sex === 'Fêmea' && (c.cooldownAte ?? 0) > Date.now()) : c.age > (c.nextBreed ?? 0)); // domado: só a fêmea tem cooldown (18–48 h)
     const alive = this.list.filter((c) => c.alive && !c.species.ambiente).length;
     if (alive >= this.maxActive + C.extra_filhotes) return null;
     for (const mom of this.list) {
@@ -260,14 +263,14 @@ export class CreatureManager {
       // a barra de acasalamento enche em cria.acasalar_seg e sai o ovo (ou a gestação)
       if (mom.tamed || dad.tamed) {
         if (!mom.tamed || !dad.tamed || mom.gestation > 0 || mom.owner !== dad.owner) continue;
-        mom.mateProgress = Math.min(1, (mom.mateProgress ?? 0) + 15 / BALANCE.cria.acasalar_seg);
+        if ((mom.mateProgress ?? 0) === 0) events.emit(EV.MATING_STARTED, { mae: mom.id, pai: dad.id });
+        mom.mateProgress = Math.min(1, (mom.mateProgress ?? 0) + 15 / BR.MATING_BAR_S);
         mom.mateWith = dad;
         if (mom.mateProgress < 1) continue;
         mom.mateProgress = 0;
+        events.emit(EV.MATING_DONE, { mae: mom.id, pai: dad.id });
         this.breedTamed(mom, dad, players);
-        const wait = () => 60 * (C.intervalo_cria_min[0] + this.rand() * (C.intervalo_cria_min[1] - C.intervalo_cria_min[0]));
-        mom.nextBreed = mom.age + wait();
-        dad.nextBreed = dad.age + wait();
+        mom.cooldownAte = Date.now() + 1000 * cooldownSeconds('Fêmea', this.rand); // só a fêmea; o macho não tem
         return null;
       }
       if (this.rand() > C.chance_cria) continue;
@@ -279,6 +282,7 @@ export class CreatureManager {
       baby.mother = mom;
       baby.home.copy(mom.home);
       baby.setGrowth(0.3);
+      baby.maturation = 0;
       if (mom.tamed) {
         // filhote de domado já nasce domado
         baby.tamed = true;
@@ -296,51 +300,54 @@ export class CreatureManager {
     return null;
   }
 
-  // Atributos do filhote: cada um vem do pai ou da mãe (mais chance do
-  // maior) e às vezes muta (+10%).
+  // Atributos do filhote [OK-GUIA]: cada atributo sorteado sozinho (55% o maior dos pais, 45% o menor).
+  // Mutação: 3 sorteios de 2,5%, só se mãe (lado materno) e pai (lado paterno) têm menos de 20.
+  // Cada mutação: +2 pontos num atributo e cor nova numa região.
   inheritStats(mom, dad) {
-    const B = BALANCE.cria;
-    const st = {};
-    let mut = 0;
-    for (const k of Object.keys(mom.stats)) {
-      const hi = Math.max(mom.stats[k], dad.stats[k]);
-      const lo = Math.min(mom.stats[k], dad.stats[k]);
-      st[k] = this.rand() < B.chance_maior ? hi : lo;
-    }
+    const st = herdarStats(mom.stats, dad.stats, this.rand);
     let cor = herdarCor(mom.cor, dad.cor, this.rand);
     const inc = mom.species.ark_por_nivel ?? {};
     const keys = ['vida', 'forca', 'stamina', 'peso'];
-    const base = (mom.mutations ?? 0) + (dad.mutations ?? 0);
-    for (let i = 0; i < 3; i++) {
-      if (base + mut >= B.mutacao_limite || this.rand() >= B.mutacao) continue;
-      const k = keys[Math.floor(this.rand() * keys.length)];
-      st[k] = Math.round(st[k] * (1 + 2 * (inc[k] || 0.1))); // +2 pontos nesse atributo
-      if (this.rand() < 0.5) cor = mutarCor(cor, this.rand);
-      mut++;
+    const mm = mom.mutM ?? 0;
+    const mp = dad.mutP ?? 0;
+    const m = rollMutations(mm, mp, keys, this.rand);
+    for (const k of m.atributos) {
+      st[k] = Math.round(st[k] * (1 + BR.MUTATION_POINTS * (inc[k] || 0.1))); // +2 pontos nesse atributo
+      cor = mutarCor(cor, this.rand);
     }
-    return { st, mut: base + mut, novas: mut, cor };
+    return { st, mut: (mom.mutations ?? 0) + (dad.mutations ?? 0) + m.total, novas: m.total, mM: mm + m.materna, mP: mp + m.paterna, cor };
   }
 
   // Casal domado: ovo (choca no chão) ou gestação (mamífero).
   breedTamed(mom, dad, players) {
-    const B = BALANCE.cria;
-    const gene = this.inheritStats(mom, dad);
-    const level = Math.max(1, Math.round((mom.level + dad.level) / 2)) + 2 * gene.novas; // cada mutação = +2 níveis
-    gene.mae = mom.name ?? mom.species.nome;
-    gene.pai = dad.name ?? dad.species.nome;
+    if (!podeReproduzir(mom.species.id)) return;
+    const cria = criaDe(mom.species.id);
+    const n = litterSize(this.rand); // 1; gêmeos 10%; trigêmeos 2%
     const name = mom.name ?? mom.species.nome;
-    if (B.mamiferos.includes(mom.species.id)) {
-      mom.gestation = B.gestacao_min * 60;
-      mom.unborn = { gene, level };
-      events.emit(EV.MESSAGE, { text: `${name} está prenhe! O filhote nasce em ${B.gestacao_min} min.`, kind: 'gain' });
+    const ninhada = [];
+    for (let i = 0; i < n; i++) {
+      const gene = this.inheritStats(mom, dad);
+      gene.mae = name;
+      gene.pai = dad.name ?? dad.species.nome;
+      const level = Math.max(1, Math.round((mom.level + dad.level) / 2)) + 2 * gene.novas; // cada mutação = +2 níveis
+      ninhada.push({ gene, level });
+    }
+    if (cria.tipo === 'gestacao') {
+      mom.gestation = cria.hatchS; // gestação do ARK (mamífero)
+      mom.unborn = { ninhada };
+      events.emit(EV.MESSAGE, { text: `${name} está prenhe! ${n > 1 ? `Vêm ${n} filhotes! ` : ''}O tempo é o do ARK.`, kind: 'gain' });
       return;
     }
-    const a = this.rand() * Math.PI * 2;
-    const d = mom.radius + 0.8;
-    const x = mom.pos.x + Math.sin(a) * d;
-    const z = mom.pos.z + Math.cos(a) * d;
-    this.world.addStructure({ type: 'ovo', x, y: this.world.groundAt(x, z, mom.pos.y + 1), z, rot: 0, especie: mom.species.id, nivel: level, gene });
-    events.emit(EV.MESSAGE, { text: `${name} botou um ovo fertilizado! Deixe no quentinho (${B.ovo_temp_c[0]}–${B.ovo_temp_c[1]} °C) para chocar.`, kind: 'gain' });
+    for (const { gene, level } of ninhada) {
+      const a = this.rand() * Math.PI * 2;
+      const d = mom.radius + 0.8 + this.rand() * 0.6;
+      const x = mom.pos.x + Math.sin(a) * d;
+      const z = mom.pos.z + Math.cos(a) * d;
+      this.world.addStructure({ type: 'ovo', x, y: this.world.groundAt(x, z, mom.pos.y + 1), z, rot: 0, especie: mom.species.id, nivel: level, gene });
+      events.emit(EV.EGG_LAID, { especie: mom.species.id });
+    }
+    const [lo, hi] = cria.temp;
+    events.emit(EV.MESSAGE, { text: `${name} botou ${n > 1 ? n + ' ovos' : 'um ovo'}! Mantenha entre ${lo} e ${hi} °C (fogueira por perto) para chocar.`, kind: 'gain' });
   }
 
   // Nasce um filhote domado (do ovo ou da gestação).
@@ -350,16 +357,23 @@ export class CreatureManager {
     if (gene?.st) baby.applyStats(gene.st);
     if (gene && 'cor' in gene) aplicarCor(baby, gene.cor);
     baby.mutations = gene?.mut ?? 0;
+    baby.mutM = gene?.mM ?? 0;
+    baby.mutP = gene?.mP ?? 0;
     baby.parents = gene?.mae ? { mae: gene.mae, pai: gene.pai } : null;
     baby.age = 0;
+    baby.matAge = 0;
+    baby.matureS = criaDe(id).matureS; // maturação do ARK (Rex 92 h 35 min)
+    baby.imprintable = true;
     baby.setGrowth(0.3);
+    baby.maturation = 0;
     baby.tamed = true;
     baby.owner = owner;
     baby.follow = true;
     baby.name = baby.species.nome;
     baby.imprint = 0;
-    baby.careT = 20; // logo pede o primeiro carinho
+    baby.careT = BR.IMPRINT_INTERVAL_S; // primeiro pedido de impressão em ~8 h
     baby._setState(CSTATE.IDLE);
+    events.emit(EV.BABY_BORN, { id: baby.id, especie: id });
     events.emit(EV.MESSAGE, { text: `Nasceu um filhote de ${baby.species.nome}!${gene?.novas ? ` Mutação nova (+${2 * gene.novas} níveis)!` : ''}`, kind: 'gain' });
     return baby;
   }
@@ -369,9 +383,16 @@ export class CreatureManager {
     const u = mom.unborn;
     mom.unborn = null;
     mom.gestation = 0;
-    const a = this.rand() * Math.PI * 2;
-    const d = mom.radius + 1;
-    return this.hatch(mom.species.id, mom.pos.x + Math.sin(a) * d, mom.pos.z + Math.cos(a) * d, u?.level ?? mom.level, u?.gene, mom.owner);
+    mom.cooldownAte = Date.now() + 1000 * cooldownSeconds('Fêmea', this.rand); // cooldown começa no fim da gestação
+    const lista = u?.ninhada ?? [{ gene: u?.gene, level: u?.level ?? mom.level }];
+    let first = null;
+    for (const { gene, level } of lista) {
+      const a = this.rand() * Math.PI * 2;
+      const d = mom.radius + 1;
+      const b = this.hatch(mom.species.id, mom.pos.x + Math.sin(a) * d, mom.pos.z + Math.cos(a) * d, level ?? mom.level, gene, mom.owner);
+      first ??= b;
+    }
+    return first;
   }
 
   // ---------------------------------------------------------

@@ -13,6 +13,8 @@ import { BALANCE } from '../core/balance.js';
 import { events, EV } from '../core/event_bus.js';
 import { Inventory } from '../inventory/inventory.js';
 import creatureData from '../data/creatures/criaturas.json';
+import { criaDe } from '../creatures/breeding_config.js';
+import { eggStep } from '../creatures/reproducao.js';
 
 const STONE_MAT = new THREE.MeshLambertMaterial({ color: PALETA.pedra.clone() });
 const LOG_MAT = new THREE.MeshLambertMaterial({ color: PALETA.marrom.clone() });
@@ -433,6 +435,7 @@ export class Egg extends Structure {
     this.nivel = d.nivel ?? 1;
     this.gene = d.gene ?? null;
     this.progress = d.progress ?? 0; // 0..1
+    this.health = d.health ?? 1;     // saúde do ovo 0..1 (fora da faixa de temperatura cai)
     const sp = creatureData.especies.find((e) => e.id === this.especie);
     const size = 0.25 + Math.min(0.35, (sp?.comprimento_m?.[0] ?? 4) * 0.02);
     const shell = new THREE.Mesh(new THREE.SphereGeometry(size, 12, 9), new THREE.MeshLambertMaterial({ color: '#e8dcc0' }));
@@ -449,21 +452,43 @@ export class Egg extends Structure {
     this.interactRadius = 0.8;
   }
 
+  get faixa() {
+    return criaDe(this.especie).temp;
+  }
+
   get tempOk() {
-    const [lo, hi] = BALANCE.cria.ovo_temp_c;
+    const [lo, hi] = this.faixa;
     const t = this.world.temperatureAt(this.position, false);
     return t >= lo && t <= hi;
   }
 
+  // Avança dt segundos (também usado para o tempo com o jogo fechado).
+  advance(dt) {
+    const e = eggStep({ progress: this.progress, health: this.health }, dt, this.world.temperatureAt(this.position, false), this.especie);
+    if (e.health < this.health - 1e-6) events.emit(EV.EGG_DAMAGED, { id: this.id, health: e.health });
+    this.progress = e.progress;
+    this.health = e.health;
+    return e;
+  }
+
   update(dt) {
     if (this.removed) return;
-    const rate = (this.tempOk ? 1 : 0.25) / (BALANCE.cria.chocar_min * 60);
-    this.progress = Math.min(1, this.progress + rate * dt);
+    this._acc = (this._acc ?? 0) + dt;
+    if (this._acc < 1) return; // atualiza a cada 1 s, não a cada frame
+    const step = this._acc;
+    this._acc = 0;
+    const e = this.advance(step);
     // treme quando está quase chocando
     this.shell.rotation.z = this.progress > 0.85 ? Math.sin(performance.now() * 0.02) * 0.08 : 0;
+    if (e.destroyed && !(this.world.multiplayer && !this.world.multiplayer.isHost)) {
+      events.emit(EV.MESSAGE, { text: `${this.name} morreu (temperatura errada)`, kind: 'warn' });
+      this.world.removeStructure(this);
+      return;
+    }
     // co-op: só quem criou a partida faz o filhote nascer
     if (this.progress >= 1 && !(this.world.multiplayer && !this.world.multiplayer.isHost)) {
       const owner = this.world.creatures?.localPlayer;
+      events.emit(EV.EGG_HATCHED, { especie: this.especie });
       this.world.creatures?.hatch(this.especie, this.position.x, this.position.z, this.nivel, this.gene, owner);
       this.world.removeStructure(this);
     }
@@ -471,7 +496,8 @@ export class Egg extends Structure {
 
   promptText() {
     const t = Math.round(this.world.temperatureAt(this.position, false));
-    return `${this.name}: chocando ${Math.floor(this.progress * 100)}% · ${t} °C${this.tempOk ? '' : ' (frio/calor demais: devagar)'}`;
+    const [lo, hi] = this.faixa;
+    return `${this.name}: chocando ${Math.floor(this.progress * 100)}% · ${t} °C (precisa de ${lo}–${hi} °C)${this.tempOk ? '' : ` · saúde ${Math.round(this.health * 100)}%`}`;
   }
 
   use() {
@@ -479,7 +505,7 @@ export class Egg extends Structure {
   }
 
   toJSON() {
-    return { ...super.toJSON(), especie: this.especie, nivel: this.nivel, gene: this.gene, progress: +this.progress.toFixed(4) };
+    return { ...super.toJSON(), especie: this.especie, nivel: this.nivel, gene: this.gene, progress: +this.progress.toFixed(6), health: +this.health.toFixed(4) };
   }
 }
 

@@ -20,6 +20,9 @@ export const EV = {
   ATTRIBUTE_CHANGED: 'attribute_changed', // { nome, valor, gastos }
   ENGRAM_POINTS_CHANGED: 'engram_points_changed', // { pontos }
   ENGRAM_UNLOCKED: 'engram_unlocked',     // { id }
+  MATING_STARTED: 'mating_started', MATING_DONE: 'mating_done', EGG_LAID: 'egg_laid', EGG_HATCHED: 'egg_hatched',
+  EGG_DAMAGED: 'egg_damaged', BABY_BORN: 'baby_born', MATURATION_STAGE_CHANGED: 'maturation_stage_changed',
+  IMPRINT_REQUEST: 'imprint_request', IMPRINT_DONE: 'imprint_done',
   DAMAGE_NUMBER: 'damage_number',         // { pos, amount, kind }  número de dano flutuando
   SKILLS_CHANGED: 'skills_changed',       // { key } ponto de habilidade gasto
   CREATURE_TAMED: 'creature_tamed',       // { creature }

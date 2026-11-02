@@ -166,5 +166,35 @@ check('/resetprog volta ao começo', s.level === 1 && s.points === 0 && s.engram
   check('neverFlee: herbívoro skittish adulto revida', dr('skittish', 'attacked', { neverFlee: true, herbivoro: true }).state === 'chase');
 }
 
+// 10) Ovos e reprodução (ARK 1x)
+{
+  const R = await import('../src/creatures/reproducao.js');
+  const BC = await import('../src/creatures/breeding_config.js');
+  const mulb = (a) => () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  check('maturação 0,05 bebê / 0,30 juvenil / 0,80 adolescente / 1,0 adulto', R.stageFromMaturation(0.05) === 'baby' && R.stageFromMaturation(0.3) === 'juvenile' && R.stageFromMaturation(0.8) === 'adolescent' && R.stageFromMaturation(1) === 'adult');
+  check('babyFoodPerSec(1,16; 0) = 1,16 e (1,16; 0,5) = 0,58', Math.abs(R.babyFoodPerSec(1.16, 0) - 1.16) < 1e-9 && Math.abs(R.babyFoodPerSec(1.16, 0.5) - 0.58) < 1e-9);
+  const r = mulb(7);
+  check('macho nunca tem cooldown', R.cooldownSeconds('Macho', r) === 0);
+  let okCd = true; for (let i = 0; i < 500; i++) { const c = R.cooldownSeconds('Fêmea', r); if (c < 18 * 3600 || c > 48 * 3600) okCd = false; }
+  check('fêmea tem cooldown entre 18 h e 48 h', okCd);
+  const m = { id: 'trex', sex: 'Macho' }, f = { id: 'trex', sex: 'Fêmea' };
+  check('rei-dodô e titanoboa: canMate = false', !R.canMate({ id: 'reidodo', sex: 'Macho' }, { id: 'reidodo', sex: 'Fêmea' }) && !R.canMate({ id: 'titanoboa', sex: 'Macho' }, { id: 'titanoboa', sex: 'Fêmea' }));
+  check('trex macho + fêmea pode; fêmea em cooldown não; montado não', R.canMate(m, f) && !R.canMate(m, { ...f, cooldownAte: Date.now() + 1e6 }) && !R.canMate({ ...m, montado: true }, f) && !R.canMate(m, { ...m }));
+  check('mutação com pai em 20 do seu lado: bloqueada', (() => { for (let i = 0; i < 2000; i++) { const x = R.rollMutations(0, 20, ['vida'], mulb(i)); if (x.total) return false; const y = R.rollMutations(20, 0, ['vida'], mulb(i)); if (y.total) return false; } return true; })());
+  check('herança: 10.000 sorteios ≈ 55% (±2%) do maior', (() => { const g = mulb(42); let hi = 0; for (let i = 0; i < 10000; i++) if (R.inheritStats({ v: 10 }, { v: 5 }, g).v === 10) hi++; return Math.abs(hi / 10000 - 0.55) < 0.02; })());
+  check('mutação ≈ 7,31% por bebê', (() => { const g = mulb(9); let n = 0; for (let i = 0; i < 40000; i++) if (R.rollMutations(0, 0, ['v'], g).total) n++; return Math.abs(n / 40000 - 0.0731) < 0.008; })());
+  check('gêmeos ≈ 10% e trigêmeos ≈ 2%', (() => { const g = mulb(3); let t2 = 0, t3 = 0; for (let i = 0; i < 40000; i++) { const n = R.litterSize(g); if (n === 2) t2++; if (n === 3) t3++; } return Math.abs(t2 / 40000 - 0.10) < 0.01 && Math.abs(t3 / 40000 - 0.02) < 0.006; })());
+  const cr = BC.criaDe('trex');
+  check('Rex: choca em 4 h 59 min, amadurece em 92 h 35 min, 32–34 °C', cr.hatchS === 17940 && cr.matureS === 333300 && cr.temp[0] === 32 && cr.temp[1] === 34);
+  let egg = { progress: 0, health: 1 };
+  egg = R.eggStep(egg, 1000, 20, 'trex');
+  check('ovo fora da faixa: progresso 0 e saúde cai', egg.progress === 0 && egg.health < 1);
+  const h0 = egg.health;
+  check('ovo no inventário: saúde estável e incubação pausa', (() => { const e2 = R.eggStep(egg, 5000, 20, 'trex', true); return e2.health === h0 && e2.progress === 0; })());
+  check('ovo na faixa por 4 h 59 min (sem multiplicador) = pronto', R.eggStep({ progress: 0, health: 1 }, 17940, 33, 'trex').progress === 1);
+  check('ovo fora da faixa por tempo suficiente é destruído', R.eggStep({ progress: 0.5, health: 1 }, 3600, 40, 'trex').destroyed === true);
+  check('imprint: Rex ≈ 333300 s / 8 h ≈ 11,6 pedidos; ganho = 1/pedidos', Math.abs(R.imprintRequests(333300) - 11.57) < 0.05 && Math.abs(R.imprintGain(333300) * R.imprintRequests(333300) - 1) < 1e-9);
+}
+
 console.log(`\n${ok}/${ok + bad} testes passaram.`);
 process.exit(bad ? 1 : 0);
