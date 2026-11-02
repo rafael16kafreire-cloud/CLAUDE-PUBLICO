@@ -22,7 +22,7 @@ import { sound } from '../audio/audio.js';
 import { settings } from '../core/settings.js';
 
 import { BREEDING as BR, criaDe } from './breeding_config.js';
-import { podeReproduzir, inheritStats as herdarStats, rollMutations, litterSize, cooldownSeconds } from './reproducao.js';
+import { podeReproduzir, inheritStats as herdarStats, rollMutations, litterSize, cooldownSeconds, semSexo, podeBotar } from './reproducao.js';
 import { aplicarTemperamentos } from './temperamentos.js';
 aplicarTemperamentos(data.especies);
 export const SPECIES = Object.fromEntries(data.especies.map((s) => [s.id, s]));
@@ -251,9 +251,18 @@ export class CreatureManager {
     const calm = (c) => c.alive && !c.isBaby && !c.species.ambiente && !c.netControlled && !c.neutered
       && (c.state === CSTATE.WANDER || c.state === CSTATE.IDLE || c.state === CSTATE.EAT)
       && podeReproduzir(c.species.id) && !c.rider
-      && (c.tamed ? !(c.sex === 'Fêmea' && (c.cooldownAte ?? 0) > Date.now()) : c.age > (c.nextBreed ?? 0)); // domado: só a fêmea tem cooldown (18–48 h)
+      && (c.tamed ? !((c.cooldownAte ?? 0) > Date.now()) : c.age > (c.nextBreed ?? 0)); // domado: só a fêmea tem cooldown (18–48 h)
     const alive = this.list.filter((c) => c.alive && !c.species.ambiente).length;
     if (alive >= this.maxActive + C.extra_filhotes) return null;
+    // titanoboa: sem sexo, bota ovo sozinha (sem macho e sem barra de acasalamento)
+    for (const boa of this.list) {
+      if (!semSexo(boa.species.id) || !boa.tamed || !boa.owner || boa.gestation > 0 || !calm(boa)) continue;
+      const ovos = this.world.structures.filter((st) => st.type === 'ovo' && !st.removed && st.especie === boa.species.id).length;
+      if (!podeBotar(boa.species.id, ovos)) continue;
+      this.breedTamed(boa, boa, players);
+      boa.cooldownAte = Date.now() + 1000 * cooldownSeconds('Sem sexo', this.rand);
+      return null;
+    }
     for (const mom of this.list) {
       if (mom.sex !== 'Fêmea' || !calm(mom)) continue;
       const dad = this.list.find((o) => o !== mom && o.species.id === mom.species.id && o.sex === 'Macho'

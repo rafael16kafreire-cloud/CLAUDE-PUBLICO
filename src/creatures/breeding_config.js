@@ -33,5 +33,15 @@ export const CRIA_ESPECIE = Object.freeze({ trex: REX });
 export const MAMIFEROS = Object.freeze(['mamute']);
 export const criaDe = (id) => CRIA_ESPECIE[id] ?? Object.freeze({ ...REX, tipo: MAMIFEROS.includes(id) ? 'gestacao' : 'ovo', conferido: false });
 
-// Estéreis: rei-dodô e titanoboa [OK]; chefes [OK]; piranha e mosassauro [PENDENTE→CUSTOM: aquáticos]
-export const ESTERIL = Object.freeze(new Set(['reidodo', 'titanoboa', 'piranha', 'mosassauro', 'chefe_gelo', 'chefe_mar', 'chefe_pantano', 'chefe_vulcao']));
+// Estéreis: rei-dodô [OK]; chefes [OK]; (titanoboa NÃO: decisão do dono, ver ASEXUADA); piranha e mosassauro [PENDENTE→CUSTOM: aquáticos]
+export const ESTERIL = Object.freeze(new Set(['reidodo', 'piranha', 'mosassauro', 'chefe_gelo', 'chefe_mar', 'chefe_pantano', 'chefe_vulcao']));
+
+// Titanoboa [OK, página da espécie; reproduzir é decisão do dono]: não tem sexo, bota ovo sozinha,
+// sem barra de acasalamento e sem herança de parceiro (o ovo sai com os atributos da própria mãe; mutações valem).
+export const ASEXUADA = Object.freeze(new Set(['titanoboa']));
+// Ovos no chão ao mesmo tempo: 6 na maioria das espécies, 8 na titanoboa [OK]
+export const EGG_LIMIT_DEFAULT = 6;
+export const EGG_LIMIT = Object.freeze({ titanoboa: 8 });
+export const eggLimit = (id) => EGG_LIMIT[id] ?? EGG_LIMIT_DEFAULT;
+// Cooldown entre ovos, incubação, maturação, temperatura e comida do bebê da titanoboa: [PENDENTE]
+// (a página não traz) → [CUSTOM] usa os mesmos valores do Rex e o cooldown de 18–48 h.

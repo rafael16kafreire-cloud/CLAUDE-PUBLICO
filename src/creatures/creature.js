@@ -8,8 +8,11 @@
 //                (revida = ataca de volta; senão foge)
 //   medroso    – fogem quando alguém chega perto
 // =============================================================
+import { habilidadesDe } from './habilidades.js';
+import { gigaFuria } from './habilidades.js';
+import { PASSIVAS } from './habilidades_dados.js';
 import { BREEDING as BR, criaDe } from './breeding_config.js';
-import { stageFromMaturation, imprintGain } from './reproducao.js';
+import { stageFromMaturation, imprintGain, semSexo } from './reproducao.js';
 import { decideReaction, decideTamed, modoDe, ehPerigoso, HERBIVOROS_NUNCA_FOGEM } from './temperamentos.js';
 import * as THREE from 'three';
 import { ClipPlayer } from './clip_player.js';
@@ -233,6 +236,7 @@ export class Creature {
     };
     this.statSeed = seed >>> 0;
     this.sex = r() < 0.5 ? 'Macho' : 'Fêmea';
+    if (semSexo(sp.id)) this.sex = 'Sem sexo';
     const vida = pick('vida', [sp.vida, sp.vida]);
     const forca = pick('forca', [100, 100]);
     const inc = sp.ark_por_nivel;
@@ -1119,7 +1123,8 @@ export class Creature {
     if (this._pendingBite !== undefined && this._pendingBite >= 0) {
       this._pendingBite -= dt;
       if (this._pendingBite < 0 && this.target && this._dist2D(this.target.position) < this._reach(this.target) * 1.4) {
-        this.manager.hit(this, this.target, this.damage);
+        this.manager.hit(this, this.target, this.damage * (this.furiaAte > this.time ? PASSIVAS.giganotossauro.furia.danoMult : 1));
+        events.emit(EV.ABILITY_USED, { dinoId: this.id, abilityId: habilidadesDe(this.species.id)[0]?.id ?? 'ataque', alvoId: this.target?.id ?? null });
       }
     }
 
@@ -1195,7 +1200,8 @@ export class Creature {
       if (d < reach && Math.abs(this.pos.y - (t.y + 1.2)) < 2.2 && this.attackCooldown <= 0 && this.stamina >= custoMerg) {
         this.stamina -= custoMerg;
         this._stamDelay = MV.STAMINA_REGEN_DELAY;
-        this.manager.hit(this, this.target, this.damage);
+        this.manager.hit(this, this.target, this.damage * (this.furiaAte > this.time ? PASSIVAS.giganotossauro.furia.danoMult : 1));
+        events.emit(EV.ABILITY_USED, { dinoId: this.id, abilityId: habilidadesDe(this.species.id)[0]?.id ?? 'ataque', alvoId: this.target?.id ?? null });
         this.attackCooldown = (sp.intervalo_ataque ?? 1.5) * 2;
         this.attackAnim = 1;
       }
@@ -1383,6 +1389,13 @@ export class Creature {
   takeDamage(amount, attacker) {
     if (this.state === CSTATE.SLEEP) this._setState(CSTATE.IDLE); // acorda com o golpe
     if (!this.alive) return;
+    // Giganotossauro (ASE): perder muita vida em pouco tempo liga a fúria (dano x2)
+    if (this.species.id === 'giganotossauro') {
+      this._histDano = (this._histDano ?? []).filter((h) => this.time - h.t < 10);
+      this._histDano.push({ t: this.time, dano: amount });
+      const f = gigaFuria(this._histDano, this.maxHealth, this.time);
+      if (f.ativa && !(this.furiaAte > this.time)) { this.furiaAte = this.time + f.duracaoS; events.emit(EV.MESSAGE, { text: 'O Giganotossauro entrou em fúria!', kind: 'warn' }); }
+    }
     // como no ARK: domado com um par da espécie perto (Mate Boost) leva menos dano
     if (this.mateBoosted) amount *= 1 - BALANCE.cria.par_resistencia;
     if (this.netControlled) {

@@ -178,7 +178,11 @@ check('/resetprog volta ao começo', s.level === 1 && s.points === 0 && s.engram
   let okCd = true; for (let i = 0; i < 500; i++) { const c = R.cooldownSeconds('Fêmea', r); if (c < 18 * 3600 || c > 48 * 3600) okCd = false; }
   check('fêmea tem cooldown entre 18 h e 48 h', okCd);
   const m = { id: 'trex', sex: 'Macho' }, f = { id: 'trex', sex: 'Fêmea' };
-  check('rei-dodô e titanoboa: canMate = false', !R.canMate({ id: 'reidodo', sex: 'Macho' }, { id: 'reidodo', sex: 'Fêmea' }) && !R.canMate({ id: 'titanoboa', sex: 'Macho' }, { id: 'titanoboa', sex: 'Fêmea' }));
+  check('rei-dodô: canMate = false', !R.canMate({ id: 'reidodo', sex: 'Macho' }, { id: 'reidodo', sex: 'Fêmea' }));
+  const boa = { id: 'titanoboa', sex: 'Sem sexo' };
+  check('titanoboa: sem sexo, bota ovo sozinha (canMate sem parceiro)', R.canMate(boa, null) && R.semSexo('titanoboa') && !R.canMate({ ...boa, cooldownAte: Date.now() + 1e6 }, null));
+  check('titanoboa: até 8 ovos; outras espécies 6', R.podeBotar('titanoboa', 7) && !R.podeBotar('titanoboa', 8) && R.podeBotar('trex', 5) && !R.podeBotar('trex', 6));
+  check('titanoboa tem cooldown (sem sexo); macho não', R.cooldownSeconds('Sem sexo', r) >= 18 * 3600 && R.cooldownSeconds('Macho', r) === 0);
   check('trex macho + fêmea pode; fêmea em cooldown não; montado não', R.canMate(m, f) && !R.canMate(m, { ...f, cooldownAte: Date.now() + 1e6 }) && !R.canMate({ ...m, montado: true }, f) && !R.canMate(m, { ...m }));
   check('mutação com pai em 20 do seu lado: bloqueada', (() => { for (let i = 0; i < 2000; i++) { const x = R.rollMutations(0, 20, ['vida'], mulb(i)); if (x.total) return false; const y = R.rollMutations(20, 0, ['vida'], mulb(i)); if (y.total) return false; } return true; })());
   check('herança: 10.000 sorteios ≈ 55% (±2%) do maior', (() => { const g = mulb(42); let hi = 0; for (let i = 0; i < 10000; i++) if (R.inheritStats({ v: 10 }, { v: 5 }, g).v === 10) hi++; return Math.abs(hi / 10000 - 0.55) < 0.02; })());
@@ -194,6 +198,36 @@ check('/resetprog volta ao começo', s.level === 1 && s.points === 0 && s.engram
   check('ovo na faixa por 4 h 59 min (sem multiplicador) = pronto', R.eggStep({ progress: 0, health: 1 }, 17940, 33, 'trex').progress === 1);
   check('ovo fora da faixa por tempo suficiente é destruído', R.eggStep({ progress: 0.5, health: 1 }, 3600, 40, 'trex').destroyed === true);
   check('imprint: Rex ≈ 333300 s / 8 h ≈ 11,6 pedidos; ganho = 1/pedidos', Math.abs(R.imprintRequests(333300) - 11.57) < 0.05 && Math.abs(R.imprintGain(333300) * R.imprintRequests(333300) - 1) < 1e-9);
+}
+
+// 11) Habilidades por espécie
+{
+  const H = await import('../src/creatures/habilidades.js');
+  const D = await import('../src/creatures/habilidades_dados.js');
+  check('Rex: rugido em alvo com peso 250 -> sem efeito', !H.rexRoarAffects(30, { id: 'a', peso: 250, nivel: 5 }, {}, 0));
+  check('Rex: alvo de nível igual ou maior -> sem efeito', !H.rexRoarAffects(30, { id: 'a', peso: 100, nivel: 30 }, {}, 0) && !H.rexRoarAffects(30, { id: 'a', peso: 100, nivel: 40 }, {}, 0));
+  check('Rex: alvo válido assusta; repetido em 6 min não', H.rexRoarAffects(30, { id: 'a', peso: 100, nivel: 5 }, {}, 0) && !H.rexRoarAffects(30, { id: 'a', peso: 100, nivel: 5 }, { a: 0 }, 300) && H.rexRoarAffects(30, { id: 'a', peso: 100, nivel: 5 }, { a: 0 }, 361));
+  check('Rex IA: recarga do rugido 60 s; montado 15 s', H.rexRoarCooldown(false) === 60 && H.rexRoarCooldown(true) === 15);
+  const kt = D.HABILIDADES.kentrossauro.find((a) => a.id === 'golpe_cauda');
+  const e0 = { stamina: 100, agora: 10, recargaAte: {}, alvoTamanho: 'pequeno' };
+  check('Kentrossauro: golpe sem empalar -> cooldown não reinicia', H.usar(kt, e0, { empalou: false }).estado.recargaAte.golpe_cauda === undefined);
+  check('Kentrossauro: empalou -> cooldown reinicia (1,26 s)', Math.abs(H.usar(kt, e0, { empalou: true }).estado.recargaAte.golpe_cauda - 11.26) < 1e-9);
+  const bando = [{ id: 'r1', nivel: 10 }, { id: 'r2', nivel: 25 }, ...Array.from({ length: 8 }, (_, i) => ({ id: 'x' + i, nivel: 5 }))];
+  check('Raptor: só o de maior nível é líder e emite o rugido', H.raptorLider(bando).id === 'r2' && !H.rugidoDeBando(bando, bando[0]).ok && H.rugidoDeBando(bando, bando[1]).ok);
+  const rb = H.rugidoDeBando(bando, bando[1]);
+  check('Raptor: até 6 aliados recebem buff de 45 s', rb.aliados.length === 6 && rb.buffS === 45);
+  check('Stego: placas Endurecida -> Pesada -> Afiada (e volta)', H.proximaPlaca('endurecida') === 'pesada' && H.proximaPlaca('pesada') === 'afiada' && H.proximaPlaca('afiada') === 'endurecida');
+  check('Stego: recarga de alternar 3 s; Endurecida reduz dano em 50%', D.HABILIDADES.estegossauro.find((a) => a.id === 'placas').cooldownS === 3 && H.danoRecebidoPlaca('endurecida', 100) === 50 && H.danoRecebidoPlaca('pesada', 100) === 100);
+  const mord = D.HABILIDADES.trex.find((a) => a.id === 'mordida');
+  const sem = H.usar(mord, { stamina: 4, agora: 0, recargaAte: {} });
+  check('Mordida sem stamina suficiente: falha e não gasta', !sem.ok && sem.estado.stamina === 4);
+  check('Mordida com stamina: gasta 5 e recarga 0,82 s', (() => { const r = H.usar(mord, { stamina: 50, agora: 0, recargaAte: {} }); return r.ok && r.estado.stamina === 45 && Math.abs(r.estado.recargaAte.mordida - 0.82) < 1e-9; })());
+  const cauda = D.HABILIDADES.barionix.find((a) => a.id === 'cauda');
+  check('Barionix: cauda só na água e em alvo médio', !H.podeUsar(cauda, { stamina: 99, agora: 0, agua: false, alvoTamanho: 'medio' }).ok && !H.podeUsar(cauda, { stamina: 99, agora: 0, agua: true, alvoTamanho: 'grande' }).ok && H.podeUsar(cauda, { stamina: 99, agora: 0, agua: true, alvoTamanho: 'medio' }).ok);
+  check('Titanoboa selvagem: torpor x3 empilha; domada: não', H.boaTorpor(30, true, 1).torpor === 90 && H.boaTorpor(30, true, 1).empilhou === true && H.boaTorpor(30, false, 1).torpor === 0 && H.boaTorpor(30, false, 0).torpor === 90);
+  check('Giganotossauro: dano grande em pouco tempo liga fúria (x2)', H.gigaFuria([{ t: 9, dano: 600 }], 2000, 10).danoMult === 2 && H.gigaFuria([{ t: 0, dano: 600 }], 2000, 100).danoMult === 1 && H.gigaFuria([{ t: 9, dano: 50 }], 2000, 10).danoMult === 1);
+  check('dano base conferido: dodo 5, mosassauro 100, rex 62, carnotauro 35', D.HABILIDADES.dodo[0].dano === 5 && D.HABILIDADES.mosassauro[0].dano === 100 && D.HABILIDADES.trex[0].dano === 62 && D.HABILIDADES.carnotauro[0].dano === 35);
+  check('toda espécie do jogo tem habilidade', ['dodo','parassauro','galimimo','paquicefalossauro','triceratops','estegossauro','anquilossauro','sauropelta','braquiossauro','argentinossauro','compsognato','raptor','carnotauro','trex','titanoboa','deinosuchus','espinossauro','piranha','mosassauro','pterodactilo','quetzalcoatlus','mamute','argentavis','reidodo','dilofossauro','iguanodonte','dimetrodonte','kentrossauro','paquirrinossauro','moschops','diplodoco','terizinossauro','barionix','suchomimo','giganotossauro','sarcosuchus','edmontossauro','lystrosaurus','paraceraterio'].every((id) => (D.HABILIDADES[id] ?? []).length > 0));
 }
 
 console.log(`\n${ok}/${ok + bad} testes passaram.`);

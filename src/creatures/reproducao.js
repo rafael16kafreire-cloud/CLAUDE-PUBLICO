@@ -1,5 +1,5 @@
 // Funções puras da reprodução (sem three.js) – testadas em tests/progression.test.mjs.
-import { BREEDING as B, ESTERIL, criaDe } from './breeding_config.js';
+import { BREEDING as B, ESTERIL, ASEXUADA, criaDe, eggLimit } from './breeding_config.js';
 
 export const podeReproduzir = (id) => !ESTERIL.has(id);
 
@@ -15,14 +15,24 @@ export const babyFoodPerSec = (R, mat) => R * (1 - mat);
 
 // Cooldown da fêmea em segundos (macho nunca tem)
 export function cooldownSeconds(sex, rng) {
-  if (sex !== 'Fêmea') return 0;
+  if (sex !== 'Fêmea' && sex !== 'Sem sexo') return 0; // macho nunca; titanoboa (sem sexo) sim
   const [a, b] = B.FEMALE_COOLDOWN_S;
   return a + rng() * (b - a);
 }
 
 // a e b: { id, sex, variante?, montado, sobrecarregado, castrado, cooldownAte (ms), seguir, acasalar }
+export const semSexo = (id) => ASEXUADA.has(id);
+
+// Pode botar ovo? (limite de ovos no chão: 6, titanoboa 8)
+export const podeBotar = (id, ovosNoChao) => podeReproduzir(id) && ovosNoChao < eggLimit(id);
+
 export function canMate(a, b, agora = Date.now()) {
-  if (!a || !b || a.id !== b.id || a.sex === b.sex) return false;
+  if (!a) return false;
+  if (semSexo(a.id)) { // titanoboa: sozinha, sem parceiro
+    if (!podeReproduzir(a.id) || a.montado || a.sobrecarregado || a.castrado || a.seguir || a.acasalar === false) return false;
+    return (a.cooldownAte ?? 0) <= agora;
+  }
+  if (!b || a.id !== b.id || a.sex === b.sex) return false;
   if (!podeReproduzir(a.id)) return false;
   if ((a.variante ?? '') !== (b.variante ?? '')) return false;
   for (const c of [a, b]) {
