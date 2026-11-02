@@ -9,7 +9,7 @@
 //   medroso    – fogem quando alguém chega perto
 // =============================================================
 import { habilidadesDe } from './habilidades.js';
-import { gigaFuria } from './habilidades.js';
+import { gigaFuria, danoRecebidoPlaca } from './habilidades.js';
 import { PASSIVAS } from './habilidades_dados.js';
 import { BREEDING as BR, criaDe } from './breeding_config.js';
 import { stageFromMaturation, imprintGain, semSexo } from './reproducao.js';
@@ -180,6 +180,7 @@ export class Creature {
     this.threat = null;
     this.goal = null;
     this.attackCooldown = 0;
+    this.stunT = 0;            // atordoado/aleijado/com medo: não se mexe
     this.attackAnim = 0;
     this._lunge = 0;
     this.hurtAnim = 0;
@@ -585,6 +586,13 @@ export class Creature {
       return;
     }
     if (this.torpor > 0) this.torpor = Math.max(0, this.torpor - this.stats.torpor * BALANCE.domar.torpor_cai_seg * dt);
+    if (this.stunT > 0) { // atordoado: fica parado até acabar
+      this.stunT -= dt;
+      this.speed = 0;
+      this._animate(dt, ctx, 0);
+      this._sync(dt);
+      return;
+    }
 
     // de vez em quando, um chamado à toa
     if (this.rand() < dt * 0.025) sound.creature(this, this.state === CSTATE.CHASE ? 'rugido' : 'chamado');
@@ -1106,12 +1114,13 @@ export class Creature {
           this._setState(CSTATE.CHASE);
           break;
         }
-        const custoAtq = MV.ATTACK_STAMINA[MV.sizeClass(sp)];
+        const custoAtq = sp.stamina_ataque ?? MV.ATTACK_STAMINA[MV.sizeClass(sp)]; // da tabela de habilidades
         if (this.attackCooldown <= 0 && this.stamina >= custoAtq) {
           this.stamina -= custoAtq; // atacar gasta stamina (sem ela o bicho só persegue)
           this._stamDelay = MV.STAMINA_REGEN_DELAY;
           this.attackCooldown = sp.intervalo_ataque ?? 1.2;
           this.attackAnim = 1;
+          this._golpe = this.manager.escolherGolpeIA(this); // básico ou habilidade extra com efeito
           this._pendingBite = 0.22; // o dano acontece no meio do bote
           sound.creature(this, 'ataque');
         }
@@ -1123,8 +1132,11 @@ export class Creature {
     if (this._pendingBite !== undefined && this._pendingBite >= 0) {
       this._pendingBite -= dt;
       if (this._pendingBite < 0 && this.target && this._dist2D(this.target.position) < this._reach(this.target) * 1.4) {
-        this.manager.hit(this, this.target, this.damage * (this.furiaAte > this.time ? PASSIVAS.giganotossauro.furia.danoMult : 1));
-        events.emit(EV.ABILITY_USED, { dinoId: this.id, abilityId: habilidadesDe(this.species.id)[0]?.id ?? 'ataque', alvoId: this.target?.id ?? null });
+        const gl = this._golpe ?? { ab: this.species.habilidades?.[0], mult: 1 };
+        this.manager.hit(this, this.target, this.damage * gl.mult * (this.furiaAte > this.time ? PASSIVAS.giganotossauro.furia.danoMult : 1));
+        this.manager.efeitosDoGolpe(this, this.target, gl.ab);
+        events.emit(EV.ABILITY_USED, { dinoId: this.id, abilityId: gl.ab?.id ?? 'ataque', alvoId: this.target?.id ?? null });
+        this._golpe = null;
       }
     }
 
@@ -1389,6 +1401,7 @@ export class Creature {
   takeDamage(amount, attacker) {
     if (this.state === CSTATE.SLEEP) this._setState(CSTATE.IDLE); // acorda com o golpe
     if (!this.alive) return;
+    if (this.placa === 'endurecida') amount = danoRecebidoPlaca('endurecida', amount); // Estegossauro: placas endurecidas -50%
     // Giganotossauro (ASE): perder muita vida em pouco tempo liga a fúria (dano x2)
     if (this.species.id === 'giganotossauro') {
       this._histDano = (this._histDano ?? []).filter((h) => this.time - h.t < 10);

@@ -249,6 +249,7 @@ export class Player {
     if (input.wasPressed('ammo') && this._skillTimer <= 0) {
       this._skillTimer = this.world.creatures?.mountSkill(c, this) ?? 1;
     }
+    if (input.wasPressed('skillnext')) this.world.creatures?.nextSkill(c, this); // G: troca a habilidade
     const body = this.world.waterAt(this.position.x, this.position.z);
     this.headUnderwater = !!body && this.position.y + this.eyeHeight < body.level - 0.05;
     this.stats.update(dt, {

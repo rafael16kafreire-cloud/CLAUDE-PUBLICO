@@ -66,7 +66,7 @@ export const HABILIDADES = Object.freeze({
   espinossauro: [bite(40, 0.7, 10), A('garras', 'Garras (bípede)', 60, 12, 1), A('postura', 'Trocar postura', 0, 0, 0, { tipo: 'ativa' })],
   suchomimo: [bite(35), A('cauda', 'Golpe de Cauda', 25, 20, 1.16, { efeitos: ['atordoamento_bary'], req: { agua: true, alvo: ['medio'] } })], // [CUSTOM] ref. barionix
   reidodo: [A('ataque', 'Ataque', 0, 0, 0, { nota: '[CUSTOM] versão doméstica e menos extrema do DodoRex' }), A('sopro_fogo', 'Sopro de Fogo', 0, 0, 0, { tipo: 'ativa', req: { terra: true }, nota: '[CUSTOM] AOE 90°; valores a definir' })],
-  giganotossauro: [bite(480, 0.71), A('pisao', 'Pisão/Cauda', 480, 30, 1.67)], // [PENDENTE] conferir 480
+  giganotossauro: [A('mordida', 'Mordida', 480, 5, 0.71, { efeitos: ['gnashed_giga'] }), A('pisao', 'Pisão/Cauda', 480, 30, 1.67)], // [PENDENTE] conferir 480
   trex: [bite(62, 0.82), A('rugido', 'Rugido', 0, 5, 15, { tipo: 'ativa', efeitos: ['medo_rex'], nota: 'recarga 15 s montado / 60 s IA' })],
   // ---- Voadores ----
   pterodactilo: [bite(18, 0.67, 5, 'Bicada'), A('agarrar', 'Agarrar', 0, 40, 0, { tipo: 'ativa', req: { ar: true } }), A('rolamento', 'Rolamento', 50, 90, 7, { req: { ar: true } })],

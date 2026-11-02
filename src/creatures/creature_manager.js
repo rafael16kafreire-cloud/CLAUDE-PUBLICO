@@ -24,7 +24,10 @@ import { settings } from '../core/settings.js';
 import { BREEDING as BR, criaDe } from './breeding_config.js';
 import { podeReproduzir, inheritStats as herdarStats, rollMutations, litterSize, cooldownSeconds, semSexo, podeBotar } from './reproducao.js';
 import { aplicarTemperamentos } from './temperamentos.js';
+import { aplicarHabilidades, habilidadesDeCavaleiro, rexRoarAffects, rexRoarCooldown, rugidoDeBando, proximaPlaca, boaTorpor, podeUsar } from './habilidades.js';
+import { EFEITOS, PASSIVAS } from './habilidades_dados.js';
 aplicarTemperamentos(data.especies);
+aplicarHabilidades(data.especies);
 export const SPECIES = Object.fromEntries(data.especies.map((s) => [s.id, s]));
 
 export class CreatureManager {
@@ -123,6 +126,7 @@ export class CreatureManager {
       // longe da câmera o bicho nem é desenhado (a névoa já esconde): poupa os modelos pesados
       c.mesh.visible = dCam < (settings.quality?.drawCreatures ?? 110) || c === player.riding || c.rider === player;
     }
+    this._updateDots(dt);
     this._separate();
     if (this.lava) {
       this._updateLava(dt, players);
@@ -827,6 +831,8 @@ export class CreatureManager {
 
   // Uma criatura acertou alguém.
   hit(attacker, target, amount) {
+    if (attacker._intimidadoAte > attacker.time) amount *= 0.75;      // Intimidar do mamute: -25% de dano
+    if (attacker._packBuffAte > attacker.time) amount *= 1 + PASSIVAS.raptor.liderDano; // Rugido de Bando (Pack Mate)
     // montado: quem leva a mordida é a montaria
     if (target === game.player && game.player.riding && game.player.riding !== attacker) target = game.player.riding;
     if (target.isRemote) {
@@ -968,13 +974,223 @@ export class CreatureManager {
         bestD = d;
       }
     }
+    const basica = sp.habilidades?.[0];
     if (best) {
-      this.hit(mount, best, mount.damage);
+      if (basica && (mount.stamina ?? 0) < basica.stamina) { // sem stamina o ataque não executa
+        if (rider === game.player) events.emit(EV.MESSAGE, { text: `${mount.name ?? sp.nome} está sem fôlego.`, kind: 'warn' });
+        mount.attackAnim = 0;
+        return 0.5;
+      }
+      if (basica) { mount.stamina -= basica.stamina; mount._stamDelay = 1.5; }
+      this.hit(mount, best, mount.damage * (mount.furiaAte > mount.time ? PASSIVAS.giganotossauro.furia.danoMult : 1));
+      this.efeitosDoGolpe(mount, best, basica);
+      events.emit(EV.ABILITY_USED, { dinoId: mount.id, abilityId: basica?.id ?? 'ataque', alvoId: best.id ?? null });
       this.defendOwner(rider, best);
     } else {
       this.mountHarvest(mount, rider, head, reach);
     }
     return sp.intervalo_ataque ?? 1.2;
+  }
+
+  // ---- Efeitos de status dos golpes (habilidades.js / habilidades_dados.js) ----
+  // Aplica os efeitos da habilidade `ab` quando o golpe acerta `alvo`.
+  efeitosDoGolpe(atacante, alvo, ab) {
+    if (!ab?.efeitos?.length || !alvo) return;
+    const id = alvo.species ? alvo.id : null;
+    for (const ef of ab.efeitos) {
+      if (typeof ef === 'object') { // { torpor: x } = torpor x dano causado
+        if (alvo.addTorpor) alvo.addTorpor(atacante.damage * ef.torpor, atacante);
+        continue;
+      }
+      const E = EFEITOS[ef];
+      if (!E) continue;
+      if (ef === 'gnashed_giga' && atacante.tamed) continue; // só o selvagem aplica
+      if (E.vidaTotalPct || E.vidaMaxPct) this.addDot(alvo, (E.vidaTotalPct ?? E.vidaMaxPct), E.duracaoS, atacante);
+      if (ef === 'torpor_boa' && alvo.addTorpor) {
+        const n = alvo._boaStacks ?? 0;
+        const r = boaTorpor(atacante.damage, !alvo.tamed, n);
+        if (r.torpor > 0) { alvo.addTorpor(r.torpor, atacante); alvo._boaStacks = n + 1; alvo._boaAte = (atacante.time ?? 0) + r.duracaoS; }
+      }
+      if ((ef === 'aleijado_trike' || ef === 'atordoamento_bary' || ef === 'impalado') && alvo.stunT !== undefined) {
+        const dur = E.duracaoS ?? 5;
+        if (alvo.radius <= 2.5) alvo.stunT = Math.max(alvo.stunT, dur); // só alvos pequenos/médios
+      }
+    }
+  }
+
+  // IA: às vezes usa uma habilidade extra com efeito (cabeçada do carnotauro, cauda do kentrossauro...).
+  // Devolve { ab, mult } do golpe que vai dar.
+  escolherGolpeIA(c) {
+    const sp = c.species;
+    const basica = sp.habilidades?.[0];
+    const ret = { ab: basica, mult: 1 };
+    if (!basica || (sp.habilidades?.length ?? 0) < 2 || this.rand() > 0.35) return ret;
+    const agua = !!this.world.waterAt(c.pos.x, c.pos.z);
+    c._abCd ??= {};
+    const cand = sp.habilidades.slice(1).filter((a) => a.tipo === 'ataque' && a.dano > 0 && !a.staminaPorSeg && a.efeitos.length
+      && (c.stamina ?? 0) >= a.stamina && !((c._abCd[a.id] ?? 0) > c.time) && (!a.requisitos.agua || agua) && (!a.requisitos.terra || !agua) && !a.requisitos.ar);
+    if (!cand.length) return ret;
+    const ab = cand[Math.floor(this.rand() * cand.length)];
+    c.stamina -= Math.max(0, ab.stamina - basica.stamina); // o básico já foi descontado
+    c._abCd[ab.id] = c.time + ab.cooldownS;
+    c.attackCooldown = Math.max(c.attackCooldown, ab.cooldownS);
+    return { ab, mult: ab.dano / (basica.dano || 1) };
+  }
+
+  // Sangramento: % da vida em dur segundos (1 golpe por segundo). Vale em bichos e no jogador.
+  addDot(alvo, pct, dur, from) {
+    const max = alvo.maxHealth ?? alvo.stats?.max?.health ?? 100;
+    this.dots ??= [];
+    const ja = this.dots.find((d) => d.alvo === alvo && d.from === from);
+    if (ja) { ja.t = dur; return; }
+    this.dots.push({ alvo, dps: (max * pct) / dur, t: dur, acc: 0, from });
+  }
+
+  _updateDots(dt) {
+    if (!this.dots?.length) return;
+    for (const d of this.dots) {
+      d.t -= dt;
+      d.acc += dt;
+      if (d.acc >= 1) {
+        const q = d.acc;
+        d.acc = 0;
+        const a = d.alvo;
+        const dano = d.dps * q;
+        if (a === game.player) { if (!a.dead) a.stats.damage(dano, `criatura:${d.from?.species?.nome ?? 'sangramento'}`); }
+        else if (a.alive !== false && a.takeDamage) a.takeDamage(dano, d.from);
+      }
+    }
+    this.dots = this.dots.filter((d) => d.t > 0 && (d.alvo === game.player ? !d.alvo.dead : d.alvo.alive !== false));
+  }
+
+  // Cavaleiro: escolhe e usa a habilidade (Q). Devolve a espera até a próxima.
+  mountSkill(mount, rider) {
+    const dash = BALANCE.montaria.especiais[mount.species.id];
+    const lista = habilidadesDeCavaleiro(mount.species.id);
+    const n = lista.length + (dash ? 1 : 0);
+    if (!n) {
+      if (rider === game.player) events.emit(EV.MESSAGE, { text: `${mount.species.nome} não tem habilidade especial.`, kind: 'info' });
+      return 1;
+    }
+    mount._skillSel = (mount._skillSel ?? 0) % n;
+    const sel = mount._skillSel;
+    // touch (sem tecla para trocar): a escolha avança sozinha a cada uso
+    if (rider === game.player && game.isTouch) mount._skillSel = (sel + 1) % n;
+    if (dash && sel === 0) return this._dashSkill(mount, rider, dash);
+    return this.usarHabilidade(mount, lista[sel - (dash ? 1 : 0)], rider);
+  }
+
+  // Troca a habilidade escolhida (tecla G).
+  nextSkill(mount, rider) {
+    const dash = BALANCE.montaria.especiais[mount.species.id];
+    const lista = habilidadesDeCavaleiro(mount.species.id);
+    const n = lista.length + (dash ? 1 : 0);
+    if (n < 2) return;
+    mount._skillSel = ((mount._skillSel ?? 0) + 1) % n;
+    const ab = dash && mount._skillSel === 0 ? { nome: dash.tipo === 'bote' ? 'Bote' : 'Investida' } : lista[mount._skillSel - (dash ? 1 : 0)];
+    if (rider === game.player) events.emit(EV.MESSAGE, { text: `Habilidade: ${ab.nome}`, kind: 'info' });
+  }
+
+  _dashSkill(mount, rider, E) {
+    if ((mount.stamina ?? 0) < E.stamina) {
+      if (rider === game.player) events.emit(EV.MESSAGE, { text: `${mount.name ?? mount.species.nome} está sem fôlego.`, kind: 'warn' });
+      return 0.5;
+    }
+    mount.stamina -= E.stamina;
+    mount.dash = { t: E.seg, vel: E.vel, dano: E.dano, tipo: E.tipo, rider, acertou: new Set(), passo: 0 };
+    mount.attackAnim = 1;
+    sound.creature(mount, E.tipo === 'bote' ? 'ataque' : 'rugido');
+    return E.espera;
+  }
+
+  // Usa uma habilidade do cavaleiro/IA: stamina, recarga, efeito.
+  usarHabilidade(mount, ab, rider) {
+    if (!ab) return 1;
+    mount._abCd ??= {};
+    const area = this.world.waterAt(mount.pos.x, mount.pos.z);
+    const estado = { stamina: mount.stamina ?? 0, agora: mount.time ?? 0, recargaAte: mount._abCd, agua: !!area, terra: !area, ar: !!mount.flies && mount.pos.y - this.world.heightAt(mount.pos.x, mount.pos.z) > 2, alvoTamanho: 'medio' };
+    const chk = podeUsar(ab, estado);
+    if (!chk.ok) {
+      const motivos = { stamina: 'sem fôlego', recarga: 'ainda recarregando', so_na_agua: 'só funciona na água', so_em_terra: 'só funciona em terra', so_no_ar: 'só funciona no ar' };
+      if (rider === game.player) events.emit(EV.MESSAGE, { text: `${ab.nome}: ${motivos[chk.motivo] ?? 'não dá agora'}.`, kind: 'warn' });
+      return 0.5;
+    }
+    mount.stamina -= ab.stamina;
+    mount._stamDelay = 1.5;
+    mount._abCd[ab.id] = estado.agora + ab.cooldownS;
+    mount.attackAnim = 1;
+    events.emit(EV.ABILITY_USED, { dinoId: mount.id, abilityId: ab.id, alvoId: null });
+    const fx = -Math.sin(mount.yaw);
+    const fz = -Math.cos(mount.yaw);
+    const falar = (t) => rider === game.player && events.emit(EV.MESSAGE, { text: t, kind: 'info' });
+    if (ab.id === 'rugido' && mount.species.id === 'trex') { // medo_rex
+      sound.creature(mount, 'rugido');
+      mount._roarHist ??= {};
+      let n = 0;
+      for (const c of this.list) {
+        if (c === mount || !c.alive || c.tamed || c.pos.distanceTo(mount.pos) > 40) continue;
+        const peso = c.stats?.peso ?? 0;
+        if (!rexRoarAffects(mount.level, { id: c.id, peso, nivel: c.level }, mount._roarHist, mount.time)) continue;
+        mount._roarHist[c.id] = mount.time;
+        c.stunT = EFEITOS.medo_rex.atordoadoS;
+        c._flee?.(mount);
+        n++;
+      }
+      falar(n ? `Rugido! ${n} bicho(s) com medo.` : 'Rugido sem efeito.');
+      return rexRoarCooldown(true);
+    }
+    if (ab.id === 'rugido') { // parassauro/edmontossauro: assusta pequenos e médios
+      sound.creature(mount, 'rugido');
+      for (const c of this.list) {
+        if (c === mount || !c.alive || c.tamed || c.radius > 1.6 || c.pos.distanceTo(mount.pos) > 30) continue;
+        c._flee?.(mount);
+      }
+      return ab.cooldownS;
+    }
+    if (ab.id === 'rugido_bando') { // raptor: só o líder do bando
+      const bando = this.list.filter((c) => c.alive && c.tamed === mount.tamed && c.species.id === 'raptor' && c.pos.distanceTo(mount.pos) < 60).map((c) => ({ id: c.id, nivel: c.level, c }));
+      const eu = bando.find((b) => b.c === mount) ?? { id: mount.id, nivel: mount.level };
+      const r = rugidoDeBando(bando, eu);
+      if (!r.ok) { falar('Só o raptor de maior nível do bando pode rugir pelo bando.'); mount._abCd[ab.id] = 0; mount.stamina += ab.stamina; return 0.5; }
+      for (const b of bando) if (r.aliados.includes(b.id) || b.c === mount) b.c._packBuffAte = (b.c.time ?? 0) + r.buffS;
+      sound.creature(mount, 'rugido');
+      falar(`Rugido de Bando! ${r.aliados.length} aliados mais fortes por ${r.buffS} s.`);
+      return 1;
+    }
+    if (ab.id === 'placas') { // estegossauro
+      mount.placa = proximaPlaca(mount.placa ?? 'endurecida');
+      falar(`Placas: ${{ endurecida: 'Endurecida (-50% de dano)', pesada: 'Pesada (golpe lentifica)', afiada: 'Afiada' }[mount.placa]}`);
+      return ab.cooldownS;
+    }
+    if (ab.id === 'intimidar') { // mamute: alvos perto causam -25% de dano por 15 s
+      sound.creature(mount, 'rugido');
+      for (const c of this.list) if (c !== mount && c.alive && !c.tamed && c.pos.distanceTo(mount.pos) < 25) c._intimidadoAte = (mount.time ?? 0) + 15;
+      return ab.cooldownS;
+    }
+    // habilidade de dano em área frontal (cauda, cabeçada, pisão, mordida especial...)
+    const head = new THREE.Vector3(mount.pos.x + fx * mount.bodyFront * mount.scale, mount.pos.y, mount.pos.z + fz * mount.bodyFront * mount.scale);
+    const reach = (mount.species.alcance_ataque ?? 1.5) * mount.scale + 1.5;
+    let best = null, bestD = reach;
+    const pt = new THREE.Vector3();
+    for (const c of this.list) {
+      if (c === mount || !c.alive || (c.tamed && c.owner === rider)) continue;
+      c.closestBodyPoint(head.x, head.z, pt);
+      const d = Math.hypot(pt.x - head.x, pt.z - head.z) - Math.min(c.radius, 1.2);
+      if (d < bestD) { best = c; bestD = d; }
+    }
+    const basico = mount.species.habilidades?.[0]?.dano || 1;
+    const dano = mount.damage * (ab.dano / basico);
+    sound.creature(mount, 'ataque');
+    if (!best) {
+      // golpe errado: o kentrossauro não reinicia a recarga se não empalar
+      if (ab.nota === 'cooldown só reinicia se empalar') mount._abCd[ab.id] = 0;
+      return 0.4;
+    }
+    this.hit(mount, best, dano);
+    this.efeitosDoGolpe(mount, best, ab);
+    if (ab.nota === 'cooldown só reinicia se empalar' && !ab.efeitos.includes('impalado')) mount._abCd[ab.id] = 0;
+    this.defendOwner(rider, best);
+    return Math.max(0.3, ab.cooldownS);
   }
 
   // Montado, sem bicho na frente: o bicho coleta o que sabe (BALANCE.montaria).
@@ -1041,24 +1257,6 @@ export class CreatureManager {
       if (texto.length && rider === game.player) events.emit(EV.MESSAGE, { text: `${texto.join(', ')} (no ${mount.name ?? mount.species.nome})`, kind: 'gain' });
     }
     return n;
-  }
-
-  // Especial do bicho montado (tecla Q): investida ou bote. Devolve a espera até o próximo.
-  mountSkill(mount, rider) {
-    const E = BALANCE.montaria.especiais[mount.species.id];
-    if (!E) {
-      if (rider === game.player) events.emit(EV.MESSAGE, { text: `${mount.species.nome} não tem habilidade especial.`, kind: 'info' });
-      return 1;
-    }
-    if ((mount.stamina ?? 0) < E.stamina) {
-      if (rider === game.player) events.emit(EV.MESSAGE, { text: `${mount.name ?? mount.species.nome} está sem fôlego.`, kind: 'warn' });
-      return 0.5;
-    }
-    mount.stamina -= E.stamina;
-    mount.dash = { t: E.seg, vel: E.vel, dano: E.dano, tipo: E.tipo, rider, acertou: new Set(), passo: 0 };
-    mount.attackAnim = 1;
-    sound.creature(mount, E.tipo === 'bote' ? 'ataque' : 'rugido');
-    return E.espera;
   }
 
   // Investida/bote em andamento: anda rápido para a frente, acerta bichos e quebra o que estiver no caminho.

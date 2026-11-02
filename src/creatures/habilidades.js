@@ -76,3 +76,23 @@ export function gigaFuria(historicoDano, vidaMax, agora) {
 // ---- Packs ----
 export const kentroPackBoost = (vizinhos) => Math.min(PASSIVAS.kentrossauro.packBoostMax, Math.max(0, vizinhos)) * PASSIVAS.kentrossauro.packBoostPorExtra;
 export const compyPackBoost = (n) => { const extra = Math.min(PASSIVAS.compsognato.packBoostMax, Math.max(0, n - 1)); return { dano: extra * PASSIVAS.compsognato.danoPorExtra, resist: extra * PASSIVAS.compsognato.resistPorExtra }; };
+
+// Põe na espécie o ataque básico da tabela: dano, recarga (= intervalo entre ataques) e stamina.
+// Giganotossauro (480 não confirmado) e espécies sem dano ficam como estão.
+export function aplicarHabilidades(especies) {
+  for (const sp of especies) {
+    const lista = habilidadesDe(sp.id);
+    const basica = lista[0];
+    sp.habilidades = lista;
+    if (!basica || basica.tipo !== 'ataque') continue;
+    sp.stamina_ataque = basica.stamina;
+    if (basica.cooldownS > 0) sp.intervalo_ataque = basica.cooldownS;
+    if (basica.dano > 0 && sp.id !== 'giganotossauro' && sp.id !== 'reidodo') sp.dano = basica.dano;
+  }
+}
+
+// Habilidades que o cavaleiro aciona com Q (ou a habilidade escolhida): as que têm efeito no jogo.
+const IMPLEMENTADAS = new Set(['rugido', 'rugido_bando', 'placas', 'intimidar']);
+export function habilidadesDeCavaleiro(id) {
+  return habilidadesDe(id).slice(1).filter((a) => (a.tipo === 'ataque' && a.dano > 0 && !a.staminaPorSeg) || IMPLEMENTADAS.has(a.id));
+}
