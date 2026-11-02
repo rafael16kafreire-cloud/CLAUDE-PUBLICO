@@ -43,7 +43,8 @@
    "k_doma": 0.5,
    "comida_tipo": "baga",
    "sprint_s": 10.0,
-   "vel_nado": 2.0
+   "vel_nado": 2.0,
+   "revida": true
   },
   {
    "id": "parassauro",
@@ -51,7 +52,7 @@
    "comprimento_m": [9, 10],
    "nome": "Parassauro",
    "dieta": "herbivoro",
-   "temperamento": "medroso",
+   "temperamento": "passivo",
    "vida": 280,
    "dano": 18,
    "vel_andar": 4.0,
@@ -89,7 +90,8 @@
    "k_doma": 1.0,
    "comida_tipo": "baga",
    "sprint_s": 16.0,
-   "vel_nado": 3.0
+   "vel_nado": 3.0,
+   "revida": true
   },
   {
    "id": "galimimo",
@@ -132,7 +134,7 @@
     "forca": 0.05,
     "torpor": 0.06
    },
-   "revida": false,
+   "revida": true,
    "k_doma": 0.8,
    "comida_tipo": "baga",
    "sprint_s": 14.0,
@@ -1769,7 +1771,7 @@
    "comprimento_m": [9, 12],
    "nome": "Edmontossauro",
    "dieta": "herbivoro",
-   "temperamento": "medroso",
+   "temperamento": "passivo",
    "vida": 500,
    "dano": 20,
    "vel_andar": 4.0,
@@ -1807,14 +1809,15 @@
    "k_doma": 1.4,
    "comida_tipo": "baga",
    "sprint_s": 14.0,
-   "vel_nado": 4.0
+   "vel_nado": 4.0,
+   "revida": true
   },
   {
    "id": "lystrosaurus",
    "comprimento_m": [0.8, 1.2],
    "nome": "Lystrosaurus",
    "dieta": "herbivoro",
-   "temperamento": "medroso",
+   "temperamento": "passivo",
    "vida": 120,
    "dano": 10,
    "vel_andar": 2.5,
