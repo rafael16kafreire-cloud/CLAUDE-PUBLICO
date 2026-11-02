@@ -10,6 +10,7 @@ import { ROUPA } from './roupa.js';
 import { settings } from '../core/settings.js';
 import { makeAxes } from './machado_modelo.js';
 import { makePicks, makeSpears } from './picareta_lanca_modelo.js';
+import { makeClub, makeBow } from './clava_arco_modelo.js';
 
 const WOOD = new THREE.MeshLambertMaterial({ color: PALETA.marrom.clone() });
 const STONE = new THREE.MeshLambertMaterial({ color: PALETA.pedra.clone() });
@@ -151,21 +152,7 @@ export function makeTool(kind) {
     g.add(wrap, flame, inner);
     g.userData.flame = flame;
   } else if (kind === 'arco') {
-    // arco curvo: a mão segura o meio; as pontas e a corda vêm para perto
-    // de quem atira (arco em pé, um pouco inclinado)
-    const R = 0.34;
-    const half = Math.PI * 0.38;
-    const arc = new THREE.TorusGeometry(R, 0.016, 5, 16, half * 2);
-    arc.rotateZ(Math.PI - half);
-    arc.translate(R, 0, 0); // meio do arco no punho
-    arc.rotateY(-Math.PI / 2); // pontas para trás (+z)
-    const bow = new THREE.Mesh(arc, WOOD);
-    const tipZ = R * (1 - Math.cos(half));
-    const tipY = R * Math.sin(half);
-    const string = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.003, tipY * 2, 3), ROPE);
-    string.position.z = tipZ;
-    const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.1, 6), ROPE);
-    g.add(bow, string, grip);
+    g.add(makeBow());
   } else if (kind === 'pistola') {
     // cabo na mão, cano apontando para frente
     const metal = new THREE.MeshLambertMaterial({ color: '#4a4e56' });
@@ -184,11 +171,7 @@ export function makeTool(kind) {
     wrap.position.set(0, 0.04, 0.02);
     g.add(tube, wrap);
   } else if (kind === 'clava') {
-    g.add(handle(0.42, 0.025));
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.075, 8, 6), WOOD);
-    head.scale.set(1, 1.6, 1);
-    head.position.y = 0.36;
-    g.add(head);
+    g.add(makeClub());
   }
   return g;
 }
