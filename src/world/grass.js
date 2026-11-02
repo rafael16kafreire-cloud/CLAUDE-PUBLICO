@@ -71,7 +71,7 @@ export class Grass {
       capim: this._mesh(tufo({ alt: 0.55, laminas: 6, seed: 101 }), material, 5200, 'Capim'),
       capim2: this._mesh(tufo({ alt: 0.75, laminas: 5, seed: 102, cores: ['folhaClara', 'capimSeco', 'musgo'] }), material, 4200, 'Capim 2'),
       folha: REALISTA
-        ? this._mesh(makeHostaClump({ n: 10, tam: 0.24, seed: 103, baixo: true, espalha: 0.5 }), matHosta(), 6000, 'Folhagem')
+        ? this._mesh(makeHostaClump({ n: 30, tam: 0.24, seed: 103, baixo: true, espalha: 0.62 }), matHosta(), 6000, 'Folhagem')
         : this._mesh(normaisParaCima(samambaia({ tam: 0.45, seed: 103, folhas: 5 }), 0.6), material, 2600, 'Folhagem'),
       broto: this._mesh(tufo({ alt: 0.35, laminas: 4, seed: 104, cores: ['musgoEscuro', 'musgo'] }), material, 1800, 'Brotos'),
       flor: this._mesh(tufo({ alt: 0.45, laminas: 5, seed: 105, flor: PALETA.neve }), material, 1500, 'Flores'),

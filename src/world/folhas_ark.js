@@ -315,7 +315,7 @@ export function makeHostaClump({ n = 8, tam = 0.7, seed = 1, baixo = false, espa
     M.folha({
       x0: ox + Math.sin(yaw) * 0.04, y0: 0.02, z0: oz + Math.cos(yaw) * 0.04,
       yaw, elev: 0.5 + fora * 0.45 + r() * 0.25, L, W: L * 0.78, queda: 0.7 + r() * 0.5, calha: 0.22,
-      segs: baixo ? (espalha ? [1, 2] : [2, 3]) : [3, 5], cor: [v, v * (0.95 + r() * 0.1), v * 0.9], giro: (r() - 0.5) * 0.6,
+      segs: baixo ? (espalha ? [1, 1] : [2, 3]) : [3, 5], cor: [v, v * (0.95 + r() * 0.1), v * 0.9], giro: (r() - 0.5) * 0.6,
     });
   }
   return M.geometria();
