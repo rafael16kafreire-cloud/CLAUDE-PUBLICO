@@ -10,11 +10,30 @@
 // =============================================================
 import * as THREE from 'three';
 import { materiais, tuboFita, rng, canvasTex, madeiraTex } from './machado_modelo.js';
+import ARCO from './imported/arco.js';
 
 let mats = null;
 function mat() {
   if (mats) return mats;
-  const clava = madeiraTex('#7a5634', 51, [1, 1]);
+  const clava = canvasTex(256, (g, N) => {
+    const r = rng(51);
+    g.fillStyle = '#3a2a20';
+    g.fillRect(0, 0, N, N);
+    for (let i = 0; i < 160; i++) { // casca: sulcos compridos, claros e escuros
+      const x = r() * N;
+      g.strokeStyle = r() < 0.55 ? `rgba(20,12,8,${0.25 + r() * 0.3})` : `rgba(120,98,76,${0.1 + r() * 0.2})`;
+      g.lineWidth = 1 + r() * 2.5;
+      g.beginPath();
+      g.moveTo(x, r() * N * 0.4);
+      g.bezierCurveTo(x + 6, N * 0.4, x - 6, N * 0.7, x + (r() - 0.5) * 10, N);
+      g.stroke();
+    }
+    for (let i = 0; i < 1100; i++) {
+      const v = 30 + r() * 90;
+      g.fillStyle = `rgba(${v + 10},${v},${v - 8},0.25)`;
+      g.fillRect(r() * N, r() * N, 1 + r() * 2, 1 + r() * 6);
+    }
+  }, [1, 1]);
   const arco = madeiraTex('#8a5a30', 53, [1, 3]);
   const sílex = canvasTex(128, (g, N) => {
     const r = rng(7);
@@ -46,16 +65,17 @@ function mat() {
 }
 
 // ------------------------------------------------------------------ CLAVA
+// Clava longa de madeira escura e áspera (casca grossa), fina na pegada com cordão enrolado,
+// engrossando suave até a cabeça comprida e arredondada.
 export function makeClub() {
   const M = materiais();
   const X = mat();
   const g = new THREE.Group();
-  // perfil (raio, altura): cabo fino, pescoço, cabeça bojuda, topo arredondado
   const P = [
-    [0.012, -0.095], [0.026, -0.092], [0.022, -0.08], [0.0195, -0.02], [0.0205, 0.1], [0.022, 0.18],
-    [0.03, 0.235], [0.05, 0.285], [0.067, 0.335], [0.07, 0.385], [0.06, 0.44], [0.04, 0.475], [0.012, 0.495], [0.0, 0.5],
+    [0.004, -0.1], [0.022, -0.098], [0.025, -0.09], [0.0175, -0.075], [0.0165, -0.02], [0.0175, 0.1], [0.0185, 0.17],
+    [0.027, 0.22], [0.04, 0.29], [0.05, 0.37], [0.056, 0.45], [0.056, 0.52], [0.05, 0.58], [0.036, 0.625], [0.014, 0.65], [0.0, 0.655],
   ].map(([r, y]) => new THREE.Vector2(r, y));
-  const geo = new THREE.LatheGeometry(P, 22);
+  const geo = new THREE.LatheGeometry(P, 26);
   const p = geo.attributes.position;
   const rnd = rng(61);
   const cache = new Map();
@@ -64,45 +84,29 @@ export function makeClub() {
     const y = p.getY(i);
     const z = p.getZ(i);
     const a = Math.atan2(z, x);
-    const cab = Math.min(1, Math.max(0, (y - 0.2) / 0.1)); // só a cabeça é irregular
+    const cab = Math.min(1, Math.max(0, (y - 0.15) / 0.2));
     const key = `${a.toFixed(2)},${y.toFixed(2)}`;
-    if (!cache.has(key)) cache.set(key, 1 + (rnd() - 0.5) * 0.16 * cab);
-    const k = cache.get(key) * (1 + 0.13 * cab * Math.sin(a * 3 + y * 22) + 0.07 * cab * Math.sin(a * 5 - y * 31 + 1.7));
-    p.setX(i, x * k + 0.006 * Math.sin(y * 7)); // levemente torto
-    p.setZ(i, z * k);
+    if (!cache.has(key)) cache.set(key, 1 + (rnd() - 0.5) * 0.09 * cab);
+    // casca: sulcos compridos e irregulares + leve curvatura do tronco
+    const k = cache.get(key) * (1 + 0.05 * cab * Math.sin(a * 7 + y * 9) + 0.03 * cab * Math.sin(a * 13 - y * 17));
+    p.setX(i, x * k + 0.012 * Math.sin(y * 4.2));
+    p.setZ(i, z * k + 0.006 * Math.sin(y * 3.1 + 1));
   }
   geo.computeVertexNormals();
-  const tronco = new THREE.Mesh(geo, X.clava);
-  g.add(tronco);
-  // lascas de sílex cravadas na cabeça (pontas para fora)
-  const rs = rng(77);
-  for (let i = 0; i < 11; i++) {
-    const a = rs() * Math.PI * 2;
-    const y = 0.3 + rs() * 0.15;
-    const rr = 0.066 * (y > 0.43 ? 0.7 : 1);
-    const c = new THREE.Mesh(new THREE.ConeGeometry(0.0125 + rs() * 0.006, 0.05 + rs() * 0.02, 4), X.silex);
-    c.position.set(Math.cos(a) * rr, y, Math.sin(a) * rr);
-    c.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(Math.cos(a), 0.3, Math.sin(a)).normalize());
-    c.position.addScaledVector(new THREE.Vector3(Math.cos(a), 0.3, Math.sin(a)).normalize(), 0.012);
-    g.add(c);
-  }
-  // pegada: tiras de couro enroladas
-  for (let i = 0; i < 14; i++) {
-    const y = -0.03 + i * 0.0105;
+  g.add(new THREE.Mesh(geo, X.clava));
+  // cordão escuro enrolado na pegada (voltas apertadas)
+  for (let i = 0; i < 17; i++) {
+    const y = -0.07 + i * 0.0095;
     const pts = [];
     for (let q = 0; q < 20; q++) {
       const a = (q / 20) * Math.PI * 2;
-      pts.push(new THREE.Vector3(Math.cos(a) * 0.0215, y, Math.sin(a) * 0.0215));
+      pts.push(new THREE.Vector3(Math.cos(a) * 0.0182, y, Math.sin(a) * 0.0182));
     }
-    g.add(tuboFita(pts, true, 0.0044, M.tira, [1, 1.5, 1]));
+    g.add(tuboFita(pts, true, 0.0042, M.cordao, [1, 1.5, 1]));
   }
-  // alça de corda no pé do cabo
-  const alca = [];
-  for (let i = 0; i <= 28; i++) {
-    const a = (i / 28) * Math.PI * 2;
-    alca.push(new THREE.Vector3(0.0, -0.085 - 0.07 * (1 - Math.cos(a)) * 0.5 * 1.2, 0.034 + 0.04 * Math.sin(a)));
-  }
-  g.add(tuboFita(alca, true, 0.0035, M.tira, [3, 1, 1]));
+  // sobra do cordão no fim da pegada
+  const sobra = new THREE.CatmullRomCurve3([new THREE.Vector3(0.0185, 0.09, 0), new THREE.Vector3(0.03, 0.075, 0.01), new THREE.Vector3(0.028, 0.045, 0.02)]);
+  g.add(new THREE.Mesh(new THREE.TubeGeometry(sobra, 10, 0.003, 4, false), M.cordao));
   g.traverse((o) => { if (o.isMesh) o.castShadow = false; });
   return g;
 }
@@ -147,70 +151,62 @@ function membro(curve, wf, tf, n = 40) {
   return geo;
 }
 
-export function makeBow() {
-  const M = materiais();
-  const X = mat();
-  const g = new THREE.Group();
-  const H = 0.37; // meia altura do arco
-  const zAt = (y) => {
-    const u = Math.abs(y) / H;
-    // curva em D e ponta invertida (recurva) perto das pontas
-    return 0.2 * u * u - 0.07 * Math.max(0, u - 0.78) ** 2 * 9;
+const b64 = (t, Ctor) => {
+  const bin = atob(t);
+  const u = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+  return new Ctor(u.buffer);
+};
+const carrega = (url, srgb) => {
+  const t = new THREE.TextureLoader().load(url);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.anisotropy = 4;
+  if (srgb) t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+};
+
+// Arco e flecha de verdade: modelo "Bow and Arrow" de Amatsukast (CC BY-NC-SA 4.0, Sketchfab).
+// Arco em pé (Y para cima), meio na mão, corda do lado do arqueiro (+Z); flecha encaixada apontando para -Z.
+let arcoCache = null;
+function arcoDados() {
+  if (arcoCache) return arcoCache;
+  const T = ARCO.tex;
+  const mk = (nome, cor, normal, rough, metal, extra = {}) => {
+    const m = new THREE.MeshStandardMaterial({
+      map: carrega(T[cor], true), normalMap: carrega(T[normal], false),
+      roughnessMap: rough ? carrega(T[rough], false) : null, metalnessMap: metal ? carrega(T[metal], false) : null,
+      roughness: 1, metalness: metal ? 0.3 : 0, ...extra,
+    });
+    m.name = nome;
+    return m;
   };
-  const pts = [];
-  for (let i = 0; i <= 28; i++) {
-    const y = -H + (2 * H * i) / 28;
-    pts.push(new THREE.Vector3(0, y, zAt(y)));
+  const mats = {
+    bow_bow_wood_mt_0: mk('arco_madeira', 'bow_wood_cor', 'bow_wood_normal', 'bow_wood_rough', null),
+    bow_bow_metal_mt_0: mk('arco_metal', 'bow_metal_cor', 'bow_metal_normal', 'bow_metal_rough', 'bow_metal_metal', { metalness: 0.3 }),
+    arrow_arrow_mt_0: mk('flecha', 'arrow_cor', 'arrow_normal', 'arrow_rough', 'arrow_metal', { metalness: 0.15 }),
+    arrow_wing_mt_0: mk('pena', 'wing_cor', 'wing_normal', null, null, { transparent: false, alphaTest: 0.4, side: THREE.DoubleSide }),
+  };
+  const geos = {};
+  for (const [k, m] of Object.entries(ARCO.malhas)) {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(b64(m.p, Float32Array), 3));
+    g.setAttribute('normal', new THREE.BufferAttribute(b64(m.n, Float32Array), 3));
+    g.setAttribute('uv', new THREE.BufferAttribute(b64(m.uv, Float32Array), 2));
+    g.setIndex(new THREE.BufferAttribute(b64(m.i, Uint16Array), 1));
+    g.computeBoundingSphere();
+    geos[k] = g;
   }
-  const curve = new THREE.CatmullRomCurve3(pts);
-  const wf = (t) => 0.0125 * (1 - Math.abs(2 * t - 1) ** 1.6 * 0.58) + 0.005; // mais largo no meio
-  const tf = (t) => 0.0085 * (1 - Math.abs(2 * t - 1) ** 1.3 * 0.45) + 0.003;
-  g.add(new THREE.Mesh(membro(curve, wf, tf), X.arco));
-  // pegada de couro (com sobras) e prateleira da flecha
-  const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.0225, 0.0225, 0.12, 14), M.tira);
-  grip.position.set(0, 0, 0);
-  g.add(grip);
-  for (const dy of [-0.065, -0.035, 0.035, 0.065]) {
-    const r = new THREE.Mesh(new THREE.TorusGeometry(0.0228, 0.0032, 4, 14), M.tira);
-    r.rotation.x = Math.PI / 2;
-    r.position.y = dy;
-    g.add(r);
-  }
-  const prateleira = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.012, 0.03), X.arco);
-  prateleira.position.set(0, 0.075, -0.008);
-  g.add(prateleira);
-  // pontas: entalhe com pontinha de osso/madeira clara
-  const topZ = zAt(H);
-  for (const s of [-1, 1]) {
-    const nock = new THREE.Mesh(new THREE.ConeGeometry(0.0085, 0.03, 8), X.haste);
-    nock.position.set(0, s * (H + 0.012), topZ - 0.006);
-    nock.rotation.x = s > 0 ? -0.35 : Math.PI + 0.35;
-    g.add(nock);
-  }
-  // corda de fibra, de ponta a ponta, com trançado no meio
-  const corda = new THREE.Mesh(new THREE.CylinderGeometry(0.0028, 0.0028, 2 * H, 4), X.corda);
-  corda.position.set(0, 0, topZ - 0.006);
-  g.add(corda);
-  const tr = new THREE.Mesh(new THREE.CylinderGeometry(0.0055, 0.0055, 0.07, 6), X.corda);
-  tr.position.set(0, 0, topZ - 0.006);
-  g.add(tr);
-  // flecha de sílex encaixada na corda, apontando para a frente (-Z)
-  const zb = topZ - 0.006; // atrás (na corda)
-  const compr = 0.62;
-  const haste = new THREE.Mesh(new THREE.CylinderGeometry(0.0042, 0.0042, compr, 6).rotateX(Math.PI / 2), X.haste);
-  haste.position.set(0, 0.0, zb - compr / 2);
-  g.add(haste);
-  const ponta = new THREE.Mesh(new THREE.ConeGeometry(0.0095, 0.05, 4).rotateX(-Math.PI / 2), X.silex);
-  ponta.position.set(0, 0, zb - compr - 0.02);
-  g.add(ponta);
-  for (let k = 0; k < 3; k++) { // penas
-    const pena = new THREE.Mesh(new THREE.PlaneGeometry(0.075, 0.017), k === 0 ? X.penaEscura : X.pena);
-    pena.position.set(0, 0, zb - 0.055);
-    pena.rotation.z = (k * Math.PI * 2) / 3;
-    pena.position.x = Math.sin(pena.rotation.z) * 0.007;
-    pena.position.y = -Math.cos(pena.rotation.z) * 0.007;
-    pena.rotation.set(0, Math.PI / 2, pena.rotation.z);
-    g.add(pena);
+  arcoCache = { mats, geos };
+  return arcoCache;
+}
+
+export function makeBow() {
+  const { mats: MA, geos } = arcoDados();
+  const g = new THREE.Group();
+  for (const k of Object.keys(geos)) {
+    const m = new THREE.Mesh(geos[k], MA[k]);
+    m.frustumCulled = false;
+    g.add(m);
   }
   g.traverse((o) => { if (o.isMesh) o.castShadow = false; });
   return g;

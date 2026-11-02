@@ -69,3 +69,10 @@ Modelos de terceiros usados no jogo. Para CC BY 4.0 é obrigatório manter estes
 | arquivo | crédito |
 |---|---|
 | titanoboa | Snake Titanoboa by Dino Raul — kenchoo — **CC BY-NC 4.0** (só uso não comercial). Os modelos "Dino Raul" eram vendidos na Daz3D; este upload é uma homenagem de outra pessoa, então a liberação não é garantida. Para publicar/vender o jogo, troque este modelo. — https://sketchfab.com/3d-models/snake-titanoboa-by-dino-raul-ce8d56f440ea4259b3e328eb9a1a90ca |
+
+
+## Itens (armas)
+
+| Item | Modelo — autor — licença — link |
+|---|---|
+| arco e flecha (na mão) | Bow and Arrow — Amatsukast — CC BY-NC-SA 4.0 (uso não comercial; obras derivadas sob a mesma licença) — https://sketchfab.com/3d-models/bow-and-arrow-1ce33880149543f9ae7b5848e6e52d66 (convertido para o jogo com tools/models/arco_usd.py) |

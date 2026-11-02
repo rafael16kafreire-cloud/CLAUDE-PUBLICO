@@ -18,6 +18,7 @@ function creditsHtml() {
     vistos.add(c.url);
     rows.push(`<li><b>${esc(c.title)}</b> – ${esc(c.author)} (${esc(c.copyright)}) – ${esc(c.url)}</li>`);
   }
+  rows.push('<li><b>Bow and Arrow (arco e flecha na mão)</b> – Amatsukast (CC BY-NC-SA 4.0) – https://sketchfab.com/3d-models/bow-and-arrow-1ce33880149543f9ae7b5848e6e52d66</li>');
   rows.push('<li><b>Os outros bichos, plantas, pedras, terreno, céu e água</b>: gerados por código no próprio jogo (estilo low-poly).</li>');
   rows.push('<li><b>Sons de passos, coleta e interface</b>: Kenney.nl (CC0).</li>');
   // bibliotecas de efeitos visuais (as licenças pedem manter o aviso)
@@ -36,7 +37,7 @@ const TIPS = [
   'Macho e fêmea domados, parados perto um do outro, têm filhote.',
   'Ovo precisa de calor para chocar: uma fogueira perto ajuda no frio.',
   'Filhote domado pede carinho: cada cuidado deixa ele mais forte.',
-  'Cada bicho usa a sela do seu porte: Pequena, Média ou Grande.',
+  'Cada dino montável tem a sua sela: Sela de T-Rex, Sela de Mamute...',
   'Carne estraga: guarde no baú para durar mais.',
   'Ao subir de nível você ganha pontos para aprender receitas novas.',
   'A luneta deixa ver longe: segure e use Atacar para aproximar.',
