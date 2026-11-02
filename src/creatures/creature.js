@@ -713,7 +713,7 @@ export class Creature {
       return;
     }
 
-    if (temp === 'medroso' && perceived < 16) {
+    if (temp === 'medroso' && !sp.revida && perceived < 16) {
       this._flee(player);
       return;
     }
@@ -914,6 +914,8 @@ export class Creature {
   }
 
   _flee(threat) {
+    // quem revida (todos os herbívoros) nunca foge: encara a ameaça
+    if (this.species.revida && !this.isBaby && threat && threat !== this && this.damage > 0) { this._chase(threat); return; }
     this.threat = threat;
     if (this.state !== CSTATE.FLEE) this._setState(CSTATE.FLEE);
   }
