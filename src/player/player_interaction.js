@@ -123,15 +123,14 @@ export class PlayerInteraction {
     const waterWins = water && (waterD <= Math.hypot(rec?.x - p.x, rec?.z - p.z) || f.y < -0.33);
     if (rec && !waterWins) {
       const res = this.world.vegetation.resourceOf(rec);
-      const first = Object.keys(res.colher)[0];
-      const label = res.rotulo ?? (first === 'banana' ? 'Pegar bananas' : `Colher ${itemName(first)}`);
-      return { kind: 'plant', rec, text: label };
+      // (sem texto embaixo da tela: mira e usa Interagir, como no ARK)
+      return { kind: 'plant', rec, text: null };
     }
     if (water) return this._waterTarget(water);
 
     // 5) Dica do que sai batendo (árvore, pedra, tronco, carcaça)
     const corpse = this.world.creatures?.findCorpse(p, f, 1.6);
-    if (corpse) return { kind: 'hint', key: 'attack', text: `Bater: carne e couro (${corpse.species.nome})` };
+    if (corpse) return { kind: 'hint', key: 'attack', text: null };
     // (sem dica de texto do que sai de árvore, pedra ou planta: como no ARK, só mira e bate)
     return null;
   }

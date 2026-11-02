@@ -404,7 +404,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   await page.keyboard.press('KeyE');
   await frames(page, 4);
   const mejo = await page.evaluate(() => window.__t.count('baga_mejo'));
-  check('Colher: E pega Baga-Mejo do arbusto', mejo > 0 && /Colher/.test(berryPrompt ?? ''), `${berryPrompt} → ${mejo}`);
+  check('Colher: E pega Baga-Mejo do arbusto', mejo > 0 && !berryPrompt, `${berryPrompt} → ${mejo}`);
 
   // Bananeira
   await page.evaluate(() => window.__t.faceRec('bananeira'));

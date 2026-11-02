@@ -81,9 +81,9 @@ const TYPES = {
   capim_bq_d: { hiDist: 22, hiScale: true, hi: () => vegGeometry('capim_bq_d', 0.25, 0.9), lo: () => vegGeometry('capim_bq_d_lo', 0.25, 0.9), loMat: () => vegMaterial('capim_bq_d_lo'), mat: () => vegMaterial('capim_bq_d'), collider: 0, shadow: false, scale: [0.7, 1.3], res: null, maxDist: 90, textured: true },
   margarida_bq: { hiDist: 20, hiScale: true, hi: () => vegGeometry('margarida_bq', 0.3, 0.7), lo: () => vegGeometry('margarida_bq_lo', 0.3, 0.7), loMat: () => vegMaterial('margarida_bq_lo'), mat: () => vegMaterial('margarida_bq'), collider: 0, shadow: false, scale: [0.7, 1.3], res: null, maxDist: 75, textured: true },
   capim: { hi: () => vegGeometry('capim', 0.8), mat: () => vegMaterial('capim'), collider: 0, shadow: false, scale: [0.7, 1.5], res: null, maxDist: 55, textured: true },
-  samambaia_gigante: { foot: 0.3, hi: P.makeTreeFern, lo: P.makeTreeFernLow, imp: true, collider: 0.2, shadow: true, scale: [0.8, 1.3], res: 'samambaia_gigante' },
-  bananeira: { foot: 0.45, hi: P.makeBananaTree, lo: P.makeBananaTreeLow, collider: 0.22, shadow: false, scale: [0.85, 1.25], res: 'bananeira', maxDist: 110 },
-  bananeira_vazia: { foot: 0.45, hi: P.makeBananaTreeEmpty, lo: P.makeBananaTreeEmptyLow, collider: 0.22, shadow: false, scale: [0.85, 1.25], res: 'planta', maxDist: 110 },
+  samambaia_gigante: { foot: 0.3, hi: P.makeTreeFern, lo: P.makeTreeFernLow, imp: true, collider: 0, shadow: true, scale: [0.8, 1.3], res: 'samambaia_gigante' },
+  bananeira: { foot: 0.45, hi: P.makeBananaTree, lo: P.makeBananaTreeLow, collider: 0, shadow: false, scale: [0.85, 1.25], res: 'bananeira', maxDist: 110 },
+  bananeira_vazia: { foot: 0.45, hi: P.makeBananaTreeEmpty, lo: P.makeBananaTreeEmptyLow, collider: 0, shadow: false, scale: [0.85, 1.25], res: 'planta', maxDist: 110 },
   samambaia: { hi: P.makeFern, collider: 0, shadow: false, scale: [0.8, 1.5], res: 'samambaia', maxDist: 34 },
   // chão da selva cheio de plantinhas (só em manchas do mapa; não dá para colher, não tem colisão)
   plantinha: { hi: P.makeFern, collider: 0, shadow: false, scale: [0.9, 1.4], res: null, maxDist: 60 },

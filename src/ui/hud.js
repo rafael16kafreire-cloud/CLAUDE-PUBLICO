@@ -154,11 +154,9 @@ export class Hud {
     events.on(EV.PLAYER_HURT, () => this._hurt());
     // barra de progresso da coleta contínua (pct null = some)
     events.on(EV.COLLECT_PROGRESS, ({ pct }) => {
-      const R = this.refs;
-      R.collect.hidden = pct === null;
-      if (pct === null) return;
-      R.collectFill.style.transform = `scaleX(${pct.toFixed(3)})`;
-      R.collectPct.textContent = `${Math.round(pct * 100)}%`;
+      // (sem barra de carregamento ao coletar/derrubar: o evento continua, mas nada aparece na tela)
+      this.refs.collect.hidden = true;
+      void pct;
     });
   }
 

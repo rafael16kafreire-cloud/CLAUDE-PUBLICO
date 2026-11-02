@@ -640,7 +640,9 @@ export class Creature {
     // bicho grande percebe você chegando: vira, ruge e segue a vida (de novo só depois de um tempo)
     const porte = (this.bodyFront + this.bodyBack) * this.scale;
     this._ruge = Math.max(0, (this._ruge ?? 0) - 0.2);
-    if (porte > 5 && this._ruge <= 0 && this.state !== CSTATE.SLEEP && dPlayer < Math.max(25, porte * 2)
+    // (só carnívoros e agressivos rugem; gigante pacífico como o braquiossauro não empina nem dá pulo)
+    const rugidor = sp.dieta === 'carnivoro' || temp === 'agressivo';
+    if (rugidor && porte > 5 && this._ruge <= 0 && this.state !== CSTATE.SLEEP && dPlayer < Math.max(25, porte * 2)
       && (this.state === CSTATE.WANDER || this.state === CSTATE.IDLE || this.state === CSTATE.EAT)) {
       this._ruge = 20; // ~25 s (o pensar roda 4 vezes por segundo, -0,2 cada)
       this.clipPlayer?.play('rugido');
