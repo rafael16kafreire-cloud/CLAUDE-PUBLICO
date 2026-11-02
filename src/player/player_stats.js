@@ -6,6 +6,7 @@
 import { BALANCE, perSecond } from '../core/balance.js';
 import { events, EV } from '../core/event_bus.js';
 import * as C from '../progression/progression_config.js';
+import * as MV from '../core/movimento_config.js';
 import { PlayerProgression } from '../progression/player_progression.js';
 import { EngramManager } from '../progression/engram_manager.js';
 import { COMBAT_COOLDOWN_S, RESET_POTION_DRINK_S } from '../core/timings.js';
@@ -82,7 +83,7 @@ export class PlayerStats {
       this._staminaDelay -= dt;
     } else {
       // parado enche rápido; andando, mais devagar (como no ARK)
-      const base = ctx.moving ? St.regen_andando_seg : St.regen_parado_seg;
+      const base = this.max.stamina * MV.STAMINA_REGEN_PCT_PER_SEC * (ctx.moving ? 0.5 : 1); // % do máximo por segundo (andando, metade)
       const regen = ctx.swimming ? base * St.regen_na_agua : base;
       this.stamina = Math.min(this.max.stamina, this.stamina + regen * dt);
     }

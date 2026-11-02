@@ -5,6 +5,7 @@
 // - Colher (Interagir): bagas, bananas, fibra.
 // - Comer/usar: itens de comida da barra rápida.
 // =============================================================
+import { OVERWEIGHT_SPEED_MULT } from '../core/movimento_config.js';
 import { BALANCE } from '../core/balance.js';
 import { events, EV } from '../core/event_bus.js';
 import { ITEMS, itemName } from '../items/items.js';
@@ -141,16 +142,13 @@ export class PlayerActions {
   // pesa nada; daí até a carga máxima vai caindo de 100% para 75% da velocidade;
   // passou da carga máxima cai rápido até ~20% (a 150%) e acima disso não anda.
   weightFactor() {
-    const r = this.inv.weight() / this.player.stats.maxWeight;
-    if (r <= 0.5) return 1;
-    if (r <= 1) return 1 - (r - 0.5) * 0.5;
-    if (r <= 1.5) return 0.75 - (r - 1) * 1.1;
-    return 0;
+    // até a carga máxima anda normal; acima dela a velocidade vira OVERWEIGHT_SPEED_MULT (movimento_config.js)
+    return this.inv.weight() > this.player.stats.maxWeight ? OVERWEIGHT_SPEED_MULT : 1;
   }
 
-  // Passou da carga máxima: não dá para correr.
+  // (acima da carga máxima ainda corre, mas na metade da velocidade: ver weightFactor)
   overloaded() {
-    return this.inv.weight() > this.player.stats.maxWeight;
+    return false;
   }
 
   // ---------------------------------------------------------

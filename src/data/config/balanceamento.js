@@ -6,6 +6,7 @@
 //  Depois de mudar, gere o jogo de novo (npm run build).
 // =============================================================
 import { MAX_LEVEL, ATTRIBUTES } from '../../progression/progression_config.js';
+import { STAMINA_BASE, STAMINA_REGEN_DELAY, PLAYER_WALK, PLAYER_RUN, PLAYER_SPRINT_S, PLAYER_SWIM } from '../../core/movimento_config.js';
 
 export default {
   // ---------------------------------------------------------
@@ -43,7 +44,7 @@ export default {
   // Stamina (energia para correr, pular e nadar)
   // ---------------------------------------------------------
   stamina: {
-    gasto_correr_seg: 6.7,     // por segundo correndo (100 de stamina = ~15 s). Andar não gasta nada
+    gasto_correr_seg: STAMINA_BASE / PLAYER_SPRINT_S, // por segundo correndo: 100 de stamina = PLAYER_SPRINT_S s. Andar não gasta nada
     gasto_pulo: 10,            // por pulo (10 pulos)
     gasto_nado_seg: 5,         // por segundo nadando (20 s)
     gasto_nado_rapido_seg: 8,  // por segundo nadando rápido
@@ -51,7 +52,7 @@ export default {
     regen_parado_seg: 10,      // recuperação por segundo parado (enche em 10 s)
     regen_andando_seg: 5,      // recuperação por segundo andando
     regen_na_agua: 0.3,        // boiando parado recupera só 30% disso
-    espera_regen_seg: 1.5,     // espera antes de começar a recuperar
+    espera_regen_seg: STAMINA_REGEN_DELAY, // espera antes de começar a recuperar
     exausto_volta_em: 20,      // ao zerar, fica exausto (sem correr nem pular) até voltar a este valor
   },
 
@@ -68,12 +69,12 @@ export default {
   // Movimento (metros por segundo)
   // ---------------------------------------------------------
   movimento: {
-    andar: 4.2,
-    correr: 7.5,
+    andar: PLAYER_WALK,
+    correr: PLAYER_RUN,
     agachar_intervalo_seg: 0.45, // tempo mínimo entre agachar e levantar
     agachado: 2.0,
     na_agua_rasa: 0.7,         // andando com água pela cintura: 70% da velocidade
-    nadar: 3.0,
+    nadar: PLAYER_SWIM,
     nadar_rapido: 4.8,
     pulo: 8.8,                 // força do pulo (altura ~1,75 m)
     pulo_frente_parado: 2.6,   // m/s para frente ao pular parado

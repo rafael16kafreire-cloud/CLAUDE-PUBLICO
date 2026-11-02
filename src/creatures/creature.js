@@ -22,6 +22,7 @@ import { Inventory } from '../inventory/inventory.js';
 import { aplicarFeridas } from './wounds.js';
 import { ajustarSela, backSpot, buildSaddle, saddleFor, seatShift } from './saddle.js';
 import { events, EV } from '../core/event_bus.js';
+import * as MV from '../core/movimento_config.js';
 
 // O que cada herbívoro come (tipos de vegetação). Bicho alto (pescoço
 // comprido) come folha de árvore; os outros, arbustos e plantas baixas.
@@ -243,7 +244,7 @@ export class Creature {
         vida: Math.round(vida * (1 + inc.vida * pts.vida)),
         forca: Math.round(forca * (1 + inc.forca * pts.forca)),
         peso: Math.round(pick('peso', [sp.carga ?? 20, sp.carga ?? 20]) * (1 + inc.peso * pts.peso)),
-        stamina: Math.round(pick('stamina', [100, 100]) * (1 + inc.stamina * pts.stamina)),
+        stamina: Math.round(MV.STAMINA_BASE * (1 + MV.STAMINA_PER_LEVEL * L)), // movimento_config.js
         velocidade: Math.round(pick('velocidade', [100, 100])),
         torpor: Math.round(pick('torpor', [100, 100]) * (1 + inc.torpor * L)),
       };
@@ -254,7 +255,7 @@ export class Creature {
       vida: Math.round(vida * (1 + 0.06 * L)),
       forca: Math.round(forca * (1 + 0.03 * L)),
       peso: Math.round(pick('peso', [sp.carga ?? 20, sp.carga ?? 20]) * (1 + 0.02 * L)),
-      stamina: Math.round(pick('stamina', [100, 100]) * (1 + 0.04 * L)),
+      stamina: Math.round(MV.STAMINA_BASE * (1 + MV.STAMINA_PER_LEVEL * L)),
       velocidade: Math.round(pick('velocidade', [100, 100])),
       torpor: Math.round(pick('torpor', [100, 100]) * (1 + 0.06 * L)),
     };
@@ -276,7 +277,9 @@ export class Creature {
     this.health = Math.max(1, Math.round(this.maxHealth * ratio));
     this.baseDamage = this.species.dano * this.stats.forca / 100 * imp;
     this.damage = this.baseDamage * (this.growth ?? 1);
-    this.speedMul = this.stats.velocidade / 100;
+    // domado: +TAMED_SPEED_PER_BONUS_LEVEL por nível de bônus da doma, no máximo TAMED_SPEED_BONUS_CAP
+    const bonusVel = this.tamed ? Math.min(MV.TAMED_SPEED_BONUS_CAP, MV.TAMED_SPEED_PER_BONUS_LEVEL * (this.tameBonus ?? 0)) : 0;
+    this.speedMul = (this.stats.velocidade / 100) * (1 + bonusVel);
     this.stamina = this.stats.stamina;
     this.torpor = 0;
     this.tired = false;
@@ -345,6 +348,7 @@ export class Creature {
   }
 
   get walkSpeed() {
+    if (this._wet && this.species.vel_nado) return this.species.vel_nado * this.speedMul; // nadando
     if (this.landed && this.species.vel_chao) return this.species.vel_chao[0] * this.speedMul;
     return this.species.vel_andar * this.speedMul;
   }
@@ -356,6 +360,7 @@ export class Creature {
       const hunter = this.species.dieta === 'carnivoro' && !this.flies && !this.aquatic && this.radius > 0.4;
       return Math.max(this.walkSpeed * 1.2, hunter ? BALANCE.movimento.andar * BALANCE.criaturas.carnivoro_cansado : 0);
     }
+    if (this._wet && this.species.vel_nado) return this.species.vel_nado * this.speedMul;
     if (this.landed && this.species.vel_chao) return this.species.vel_chao[1] * this.speedMul;
     return this.species.vel_correr * this.speedMul;
   }
@@ -494,6 +499,7 @@ export class Creature {
     }
     this.tameBonus = bonus;
     this.tamed = true;
+    this._deriveStats(); // (a velocidade ganha o bônus do domado)
     this.owner = owner;
     this.follow = true;
     this.torpor = 0;
@@ -586,11 +592,23 @@ export class Creature {
       if (this.gestation <= 0) this.manager.birth?.(this);
     }
 
-    // stamina: correr cansa; cansado só anda até recuperar 40%
+    // nadando (bicho de terra na água funda): usa a velocidade de nado (vel_nado)
+    if (this.swims && !this.aquatic) {
+      const w = this.world.waterAt(this.pos.x, this.pos.z);
+      this._wet = !!w && w.level - this.world.heightAt(this.pos.x, this.pos.z) > Math.max(0.6, this.height * 0.45);
+    }
+    // stamina: correr gasta (STAMINA_BASE / sprint_s por segundo), espera STAMINA_REGEN_DELAY e recupera
+    // STAMINA_REGEN_PCT_PER_SEC do máximo por segundo; cansado só anda até recuperar 40%
     if (this.stats && !this.netControlled) {
       const max = this.stats.stamina;
-      if (this.speed > this.walkSpeed * 1.5) this.stamina = Math.max(0, this.stamina - max / BALANCE.criaturas.corrida_seg * dt);
-      else this.stamina = Math.min(max, this.stamina + max / BALANCE.criaturas.recupera_seg * dt);
+      if (this.speed > this.walkSpeed * 1.5) {
+        this.stamina = Math.max(0, this.stamina - (MV.STAMINA_BASE / (this.species.sprint_s ?? MV.SPRINT_SECONDS_DEFAULT)) * dt);
+        this._stamDelay = MV.STAMINA_REGEN_DELAY;
+      } else if (this._stamDelay > 0) {
+        this._stamDelay -= dt;
+      } else {
+        this.stamina = Math.min(max, this.stamina + max * MV.STAMINA_REGEN_PCT_PER_SEC * dt);
+      }
       if (this.stamina <= 0) this.tired = true;
       else if (this.tired && this.stamina > max * 0.4) this.tired = false;
     }
@@ -1049,7 +1067,10 @@ export class Creature {
           this._setState(CSTATE.CHASE);
           break;
         }
-        if (this.attackCooldown <= 0) {
+        const custoAtq = MV.ATTACK_STAMINA[MV.sizeClass(sp)];
+        if (this.attackCooldown <= 0 && this.stamina >= custoAtq) {
+          this.stamina -= custoAtq; // atacar gasta stamina (sem ela o bicho só persegue)
+          this._stamDelay = MV.STAMINA_REGEN_DELAY;
           this.attackCooldown = sp.intervalo_ataque ?? 1.2;
           this.attackAnim = 1;
           this._pendingBite = 0.22; // o dano acontece no meio do bote
@@ -1135,7 +1156,10 @@ export class Creature {
       if (d < 28 && this.attackCooldown <= 0) wanted = t.y + 1.4;
       else if (this.attackCooldown > 0) wanted = ground + this.cruise * 0.6;
       const reach = (sp.alcance_ataque ?? 2) * this.scale + 0.6;
-      if (d < reach && Math.abs(this.pos.y - (t.y + 1.2)) < 2.2 && this.attackCooldown <= 0) {
+      const custoMerg = MV.ATTACK_STAMINA[MV.sizeClass(sp)];
+      if (d < reach && Math.abs(this.pos.y - (t.y + 1.2)) < 2.2 && this.attackCooldown <= 0 && this.stamina >= custoMerg) {
+        this.stamina -= custoMerg;
+        this._stamDelay = MV.STAMINA_REGEN_DELAY;
         this.manager.hit(this, this.target, this.damage);
         this.attackCooldown = (sp.intervalo_ataque ?? 1.5) * 2;
         this.attackAnim = 1;
