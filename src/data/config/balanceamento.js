@@ -363,6 +363,17 @@ export default {
     max_ambiente: 6,           // araras e outros bichos de enfeite (fora do limite)
     // sempre tem estes bichos no pântano quando você está por perto
     moradores_pantano: { deinosuchus: 2, titanoboa: 1 },
+    // Praias com bando: pontos fixos da costa onde sempre vive um grupo (quando você chega perto).
+    // especies = quantos de cada; raio_m = tamanho da área; os pontos são sorteados na costa
+    // (separados uns dos outros) com sempre o mesmo resultado em cada mapa.
+    bandos_praia: [
+      { nome: 'Praia dos Dodôs', especies: { dodo: 14 }, raio_m: 45 },
+      { nome: 'Enseada dos Dodôs', especies: { dodo: 10, lystrosaurus: 4 }, raio_m: 40 },
+      { nome: 'Praia dos Pastores', especies: { galimimo: 6, moschops: 5, dodo: 4 }, raio_m: 55 },
+      { nome: 'Praia dos Lystrosaurus', especies: { lystrosaurus: 8, dodo: 5 }, raio_m: 40 },
+      { nome: 'Praia dos Compsognatos', especies: { compsognato: 8, dodo: 6 }, raio_m: 40 },
+    ],
+    separacao_bandos_m: 700,
     // stamina dos bichos: aguentam correr X s com stamina cheia
     // e recuperam tudo em Y s andando/parados (cansados só andam)
     corrida_seg: 30,

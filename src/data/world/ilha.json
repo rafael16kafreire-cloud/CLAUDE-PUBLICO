@@ -172,7 +172,7 @@
     "passo_m": 4.2,
     "_chances": "Para cada ponto da grade: chance (0 a 1) de nascer cada coisa, por bioma. A soma pode passar de 1 só até onde couber.",
     "biomas": {
-      "praia": { "coqueiro": 0.012, "palma_bl_a": 0.03, "palma_bl_b": 0.03, "palma_bl_c": 0.026, "planta_praia": 0.035, "arbusto_frutas": 0.012, "pedra_musgo": 0.006, "tronco_caido": 0.02, "rochedo_camadas": 0.02, "rochedo_camadas_b": 0.026, "rochedo_camadas_c": 0.012 },
+      "praia": { "coqueiro": 0.03, "palma_bl_a": 0.075, "palma_bl_b": 0.075, "palma_bl_c": 0.065, "planta_praia": 0.06, "capim_praia": 0.03, "arbusto_frutas": 0.012, "pedra_musgo": 0.012, "tronco_caido": 0.03, "rochedo_camadas": 0.02, "rochedo_camadas_b": 0.026, "rochedo_camadas_c": 0.012 },
       "selva": {
         "copa_g_a": 0.009, "copa_g_b": 0.009, "copa_a": 0.01, "copa_b": 0.009, "copa_c": 0.009, "arvore_bl_a": 0.012, "arvore_bl_b": 0.012, "arvore_bl_c": 0.012, "media_a": 0.012, "media_b": 0.012, "acai": 0.024, "pinheiro_vd_a": 0.014, "pinheiro_vd_b": 0.014,
         "samambaia_gigante": 0.05, "bananeira": 0.025, "samambaia": 0.1,

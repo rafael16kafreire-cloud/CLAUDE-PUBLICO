@@ -27,6 +27,7 @@ import * as P from './props.js';
 import { MODELOS_LOWPOLY, materialLowPoly } from './lowpoly_veg.js';
 import { REALISTA } from '../core/estilo_mundo.js';
 import { makeHostaClump, makeFrondeBush, makeBananaArk, matHosta, matFronde, matBanana } from './folhas_ark.js';
+import { makeRockArk, matRochaArk } from './rocha_ark.js';
 import { snowRockGeometry as snowRockGeometryR, snowRockMaterial as snowRockMaterialR } from './snow_models.js';
 import { vegGeometry as vegGeometryR, vegMaterial as vegMaterialR } from './veg_models.js';
 import { makeLayeredRock as makeLayeredRockR, layeredRockMaterial as layeredRockMaterialR } from './rochas.js';
@@ -159,6 +160,15 @@ if (REALISTA) {
   Object.assign(TYPES.arbusto_escura, hosta(9, 0.8, 53));
   Object.assign(TYPES.arbusto_frutas, hosta(9, 0.8, 53));
   Object.assign(TYPES.arbusto, hosta(9, 0.8, 53));
+  // praias com bosques de palmeiras em manchas (só em certos trechos da costa, como no ARK)
+  for (const t of ['coqueiro', 'palma_bl_a', 'palma_bl_b', 'palma_bl_c']) TYPES[t].cluster = 0.46;
+  // pedras anguladas e cinzentas como no ARK (rocha_ark.js)
+  const rocha = (seed, o = {}, col = 0.9, scale = null) => ({ ...(scale ? { scale } : {}), hi: () => makeRockArk({ seed, ...o }), lo: () => makeRockArk({ seed, low: true, ...o }), mat: matRochaArk, loMat: matRochaArk, textured: true, collider: col });
+  Object.assign(TYPES.rochedo_camadas, rocha(1, { achata: 0.85 }, 0.9, [1.2, 3.4]));
+  Object.assign(TYPES.rochedo_camadas_b, rocha(2, { achata: 0.7, esticar: 1.3 }, 0.9, [1.0, 2.8]));
+  Object.assign(TYPES.rochedo_camadas_c, rocha(3, { achata: 0.95, cortes: 13 }, 0.9, [1.6, 4.6]));
+  Object.assign(TYPES.rochedo, rocha(4, { achata: 0.9, cortes: 14 }, 0.9, [1.6, 6]));
+  Object.assign(TYPES.pedra_musgo, rocha(5, { achata: 0.6, esticar: 1.25 }, 0.9));
   Object.assign(TYPES.plantinha, { hi: () => makeHostaClump({ n: 36, tam: 0.26, seed: 71, baixo: true, espalha: 0.7 }), lo: () => makeHostaClump({ n: 24, tam: 0.26, seed: 71, baixo: true, espalha: 0.6 }), mat: matHosta, loMat: matHosta, textured: true }); // plantinha do chão: ~14 cm de altura, como no ARK
   Object.assign(TYPES.samambaia, fronde(7, 0.95, 61));
   Object.assign(TYPES.bananeira, banana(true, 5));

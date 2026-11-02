@@ -157,6 +157,7 @@ export class CreatureManager {
       if (this._swampT <= 0) {
         this._swampT = 4;
         for (const p of alivePlayers) this.ensureSwampResidents(p.position);
+        for (const p of alivePlayers) this.ensureBeachHerds(p.position);
         this.ensureBosses(alivePlayers);
       }
     }
@@ -519,6 +520,62 @@ export class CreatureManager {
       }
       this._chefes[sp.id] = c;
       events.emit(EV.MESSAGE, { text: `${sp.nome} está por perto!`, kind: 'warn' });
+    }
+  }
+
+  // Pontos da costa onde vive cada bando (sorteados uma vez, sempre os mesmos no mesmo mapa)
+  _beachSpots() {
+    if (this._bandos) return this._bandos;
+    const list = BALANCE.criaturas.bandos_praia ?? [];
+    const w = this.world;
+    const r = mulberry32(90210);
+    const half = w.map.half * 0.97;
+    const sep = BALANCE.criaturas.separacao_bandos_m ?? 700;
+    const spots = [];
+    for (const b of list) {
+      let best = null;
+      for (let k = 0; k < 6000 && !best; k++) {
+        const x = (r() * 2 - 1) * half;
+        const z = (r() * 2 - 1) * half;
+        if (w.biomeKeyAt(x, z) !== 'praia' || w.waterAt(x, z)) continue;
+        if (w.heightAt(x, z) < 0.6) continue;
+        // a área toda tem que ser praia seca (sem água, sem mata dentro)
+        let ok = true;
+        for (let a = 0; a < 8 && ok; a++) {
+          const qx = x + Math.cos(a * 0.785) * b.raio_m * 0.6;
+          const qz = z + Math.sin(a * 0.785) * b.raio_m * 0.6;
+          if (w.biomeKeyAt(qx, qz) === 'mar') ok = false;
+        }
+        if (!ok) continue;
+        if (spots.some((s) => Math.hypot(s.x - x, s.z - z) < sep)) continue;
+        best = { x, z };
+      }
+      if (best) spots.push({ ...best, ...b });
+    }
+    this._bandos = spots;
+    return spots;
+  }
+
+  // Bandos da praia: perto de um deles (até 220 m), repõe os bichos que faltam
+  ensureBeachHerds(center) {
+    const D = BALANCE.dificuldade;
+    for (const z of this._beachSpots()) {
+      if (Math.hypot(z.x - center.x, z.z - center.z) > z.raio_m + 220) continue;
+      for (const [id, want] of Object.entries(z.especies)) {
+        if (!SPECIES[id]) continue;
+        const have = this.list.filter((c) => c.alive && c.species.id === id && Math.hypot(c.pos.x - z.x, c.pos.z - z.z) < z.raio_m + 60).length;
+        for (let n = have, tries = 0; n < want && tries < 40; tries++) {
+          const a = this.rand() * Math.PI * 2;
+          const rr = Math.sqrt(this.rand()) * z.raio_m;
+          const x = z.x + Math.sin(a) * rr;
+          const zz = z.z + Math.cos(a) * rr;
+          if (this.world.biomeKeyAt(x, zz) === 'mar' || this.world.waterAt(x, zz)) continue;
+          // não aparece na sua cara
+          if (Math.hypot(x - center.x, zz - center.z) < 40) continue;
+          this.spawn(id, x, zz, 1 + Math.floor(this.rand() * (D.nivel_max_inicio ?? 8)));
+          n++;
+        }
+      }
     }
   }
 
