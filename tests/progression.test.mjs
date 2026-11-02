@@ -139,5 +139,32 @@ check('/unlockall', s.engrams.unlocked.size === ENGRAMS.length);
 runDebugCommand('/resetprog', s);
 check('/resetprog volta ao começo', s.level === 1 && s.points === 0 && s.engramPoints === 8 && s.engrams.unlocked.size === 0);
 
+// 9) IA dos dinos (temperamentos)
+{
+  const T = await import('../src/creatures/temperamentos.js');
+  const { decideReaction: dr, decideTamed: dt } = T;
+  check('oblivious atacado -> flee', dr('oblivious', 'attacked').state === 'flee');
+  check('cowardly domado em neutral, aliado atacado -> não ataca', dt('neutral', 'ally_attacked', { cowardly: true, alvo: 'x' }).state === 'idle');
+  check('cowardly domado nunca revida', dt('aggressive', 'self_attacked', { cowardly: true }).state !== 'chase');
+  check('docile sem provocação -> idle', dr('docile', 'sight').state === 'idle');
+  check('docile provocado -> chase', dr('docile', 'provoked').state === 'chase');
+  check('aggressive vê o jogador -> chase', dr('aggressive', 'sight').state === 'chase');
+  check('compy: 1 jogador perto -> curious', dr('curious', 'sight', { pertoCount: 1 }).state === 'curious');
+  check('compy: 2 ou mais -> chase', dr('curious', 'sight', { pertoCount: 2 }).state === 'chase');
+  const lc = dr('territorial', 'leash');
+  check('territorial fora do LEASH -> aggro_lost e volta', lc.state === 'return' && lc.aggroLost === true);
+  const todos = Object.keys(T.TEMPER).filter((k) => k !== 'boss');
+  check('bebê de qualquer espécie -> flee (exceto passive)', todos.every((t) => dr(t, 'attacked', { baby: true }).state === 'flee') && dr('aggressive', 'attacked', { baby: true, passivoMode: true }).state === 'chase');
+  check('neutral: aliado atacado perto -> ataca', dt('neutral', 'ally_attacked', { alvo: 'x' }).state === 'chase');
+  check('neutral: ninguém atacado -> idle', dt('neutral', 'enemy_near').state === 'idle');
+  check('attack_target: aliado ataca X -> também ataca X', (() => { const r = dt('attack_target', 'ally_attacking', { alvo: 'X' }); return r.state === 'chase' && r.alvo === 'X'; })());
+  check('passive ignora tudo; passive_flee foge', dt('passive', 'self_attacked').state === 'idle' && dt('passive_flee', 'self_attacked').state === 'flee');
+  check('aggressive domado ataca não-aliado perto', dt('aggressive', 'enemy_near', { alvo: 'y' }).state === 'chase');
+  check('dodo oblivious, moschops cowardly, giga extremely_aggressive', T.temperDe('dodo') === 'oblivious' && T.temperDe('moschops') === 'cowardly' && T.temperDe('giganotossauro') === 'extremely_aggressive');
+  check('nocturnally_aggressive: dia idle, noite chase', dr('nocturnally_aggressive', 'sight', { night: false }).state === 'idle' && dr('nocturnally_aggressive', 'sight', { night: true }).state === 'chase');
+  check('forceAggressive faz qualquer um atacar', dr('docile', 'sight', { forced: true }).state === 'chase');
+  check('neverFlee: herbívoro skittish adulto revida', dr('skittish', 'attacked', { neverFlee: true, herbivoro: true }).state === 'chase');
+}
+
 console.log(`\n${ok}/${ok + bad} testes passaram.`);
 process.exit(bad ? 1 : 0);

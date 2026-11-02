@@ -21,6 +21,8 @@ import { aplicarCor, herdarCor, mutarCor, sortearCor } from './cores.js';
 import { sound } from '../audio/audio.js';
 import { settings } from '../core/settings.js';
 
+import { aplicarTemperamentos } from './temperamentos.js';
+aplicarTemperamentos(data.especies);
 export const SPECIES = Object.fromEntries(data.especies.map((s) => [s.id, s]));
 
 export class CreatureManager {
@@ -908,7 +910,7 @@ export class CreatureManager {
   defendOwner(owner, enemy) {
     if (!enemy || enemy === owner || !enemy.alive || enemy.tamed || enemy.knockedOut) return;
     for (const c of this.list) {
-      if (!c.tamed || c.owner !== owner || !c.alive || c.rider || c.damage <= 0 || c.aggression === 'passivo') continue;
+      if (!c.tamed || c.owner !== owner || !c.alive || c.rider || c.damage <= 0 || c.aggression === 'passivo' || c.aggression === 'passivo_foge' || c.species.temperamento_ark === 'cowardly' || c.isBaby) continue;
       if (c.target || c.pos.distanceTo(enemy.pos ?? enemy.position) > 40) continue;
       c._chase(enemy);
     }

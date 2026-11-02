@@ -18,7 +18,7 @@ import { BALANCE } from '../core/balance.js';
 const OPTS = {
   followDist: [['curto', 'Curta'], ['medio', 'Média'], ['longo', 'Longa']],
   targetRange: [['curto', 'Curto'], ['medio', 'Médio'], ['longo', 'Longo']],
-  aggression: [['passivo', 'Passivo'], ['neutro', 'Neutro'], ['agressivo', 'Agressivo']],
+  aggression: [['passivo_foge', 'Passivo (foge)'], ['passivo', 'Passivo'], ['neutro', 'Neutro'], ['alvo', 'Atacar alvo'], ['agressivo', 'Agressivo']],
 };
 
 const ICON = {
@@ -167,7 +167,7 @@ export class CreatureMenu {
     const cur = c[opt] ?? (opt === 'aggression' ? 'neutro' : 'medio');
     const i = list.findIndex(([k]) => k === cur);
     c[opt] = list[(i + 1) % list.length][0];
-    if (opt === 'aggression' && c[opt] === 'passivo') c.target = null;
+    if (opt === 'aggression' && (c[opt] === 'passivo' || c[opt] === 'passivo_foge')) c.target = null;
     this._render();
   }
 

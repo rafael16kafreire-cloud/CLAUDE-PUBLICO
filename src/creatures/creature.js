@@ -8,6 +8,7 @@
 //                (revida = ataca de volta; senão foge)
 //   medroso    – fogem quando alguém chega perto
 // =============================================================
+import { decideReaction, decideTamed, modoDe, ehPerigoso, HERBIVOROS_NUNCA_FOGEM } from './temperamentos.js';
 import * as THREE from 'three';
 import { ClipPlayer } from './clip_player.js';
 import { PASSOS } from './gait_profiles.js';
@@ -914,8 +915,6 @@ export class Creature {
   }
 
   _flee(threat) {
-    // quem revida (todos os herbívoros) nunca foge: encara a ameaça
-    if (this.species.revida && !this.isBaby && threat && threat !== this && this.damage > 0) { this._chase(threat); return; }
     this.threat = threat;
     if (this.state !== CSTATE.FLEE) this._setState(CSTATE.FLEE);
   }
@@ -936,8 +935,9 @@ export class Creature {
   _noticeAttacker(attacker) {
     if (this.state === CSTATE.CHASE || this.state === CSTATE.ATTACK || this.state === CSTATE.FLEE) return;
     const sp = this.species;
-    if (sp.temperamento === 'agressivo' || sp.revida) this._chase(attacker);
-    else this._flee(attacker);
+    const r = decideReaction(sp.temperamento_ark, 'attacked', { baby: this.isBaby, hpFrac: this.health / this.maxHealth, neverFlee: HERBIVOROS_NUNCA_FOGEM, herbivoro: sp.dieta === 'herbivoro' });
+    if (sp.temperamento === 'agressivo' || r.state === 'chase') this._chase(attacker);
+    else if (r.state === 'flee') this._flee(attacker);
   }
 
   // ---------------------------------------------------------
@@ -1377,15 +1377,20 @@ export class Creature {
     if (this.state === CSTATE.KO) return; // desmaiado não reage
     if (this.tamed) {
       // domado: revida quem bateu (menos o dono)
-      if (attacker && attacker !== this.owner && !this.rider && this.damage > 0 && this.aggression !== 'passivo') this._chase(attacker);
+      if (attacker && attacker !== this.owner && !this.rider) {
+        const r = decideTamed(modoDe(this.aggression), 'self_attacked', { baby: this.isBaby, cowardly: sp.temperamento_ark === 'cowardly', alvo: attacker });
+        if (r.state === 'chase' && this.damage > 0) this._chase(attacker);
+        else if (r.state === 'flee') this._flee(attacker);
+      }
       return;
     }
-    if (sp.temperamento === 'agressivo' || sp.revida) {
+    const r = decideReaction(sp.temperamento_ark, 'attacked', { baby: this.isBaby, hpFrac: this.health / this.maxHealth, neverFlee: HERBIVOROS_NUNCA_FOGEM, herbivoro: sp.dieta === 'herbivoro' });
+    if (r.state === 'chase') {
       this._chase(attacker);
-      if (sp.temperamento === 'agressivo') this.manager.alertPack(this, attacker);
-    } else {
+      if (sp.temperamento === 'agressivo' || ehPerigoso(sp.temperamento_ark)) this.manager.alertPack(this, attacker);
+    } else if (r.state === 'flee') {
       this._flee(attacker);
-    }
+    } // 'curious' (diplodoco, naive): chega perto, não foge nem ataca
   }
 
   // ---------------------------------------------------------
