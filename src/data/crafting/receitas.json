@@ -1539,6 +1539,21 @@
     "fibra": 80,
     "madeira": 25
    }
+  },
+  {
+   "id": "pocao_reset",
+   "resultado": "pocao_reset",
+   "quantidade": 1,
+   "tempo": 8,
+   "xp": 6,
+   "categoria": "Cura",
+   "nivel": 25,
+   "engrama": 6,
+   "ingredientes": {
+    "fruta_azul": 10,
+    "baga_stim": 4,
+    "fibra": 10
+   }
   }
  ]
 }

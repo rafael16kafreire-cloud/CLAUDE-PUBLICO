@@ -6,8 +6,19 @@
 import data from '../data/crafting/receitas.json';
 import { events, EV } from '../core/event_bus.js';
 import { itemName } from '../items/items.js';
+import { ENGRAM_BY_ID } from '../progression/engram_manager.js';
 
 export const RECIPES = data.receitas;
+// nível e custo de cada engram vêm do banco de engramas (progression/engram_database.js): a tela lê daqui
+for (const r of RECIPES) {
+  const e = ENGRAM_BY_ID[r.id];
+  if (e) {
+    r.nivel = e.nivel_requerido;
+    r.engrama = e.custo_pontos;
+    r.tier = e.tier;
+    r.pre_requisitos = e.pre_requisitos;
+  }
+}
 export const STATION_NAMES = { bancada: 'Bancada de Trabalho', pilao: 'Pilão', forja: 'Forja' };
 
 export class Crafting {
@@ -104,7 +115,7 @@ export class Crafting {
     } else {
       events.emit(EV.MESSAGE, { text: `Criado: ${itemName(r.resultado)}`, kind: 'gain', icon: r.resultado });
     }
-    this.stats.addXP(r.xp ?? 1);
+    this.stats.prog.gainFromCraft(r);
     if (added > 0) events.emit(EV.CRAFTED, { id: r.resultado });
     events.emit(EV.CRAFT_QUEUE, { queue: this.queue });
   }

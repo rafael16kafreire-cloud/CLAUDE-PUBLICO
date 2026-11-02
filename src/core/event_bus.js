@@ -14,9 +14,12 @@ export const EV = {
   MESSAGE: 'message',                     // { text, kind } aviso lateral na tela
   INTERACT_PROMPT: 'interact_prompt',     // { text } ou null  "Beber água"
   WATER_DRUNK: 'water_drunk',             // { fresh, amount }
-  XP_GAINED: 'xp_gained',                 // { amount }
+  XP_GAINED: 'xp_gained',                 // { amount, source }
   ITEM_SPOILED: 'item_spoiled',           // { id } (comida estragou)
-  LEVEL_UP: 'level_up',                   // { level, points }
+  LEVEL_UP: 'level_up',                   // { level (final), from, levels, points (de atributo), engramPoints }
+  ATTRIBUTE_CHANGED: 'attribute_changed', // { nome, valor, gastos }
+  ENGRAM_POINTS_CHANGED: 'engram_points_changed', // { pontos }
+  ENGRAM_UNLOCKED: 'engram_unlocked',     // { id }
   DAMAGE_NUMBER: 'damage_number',         // { pos, amount, kind }  número de dano flutuando
   SKILLS_CHANGED: 'skills_changed',       // { key } ponto de habilidade gasto
   CREATURE_TAMED: 'creature_tamed',       // { creature }

@@ -163,6 +163,7 @@ export class PlayerActions {
     // 1) criatura viva
     const hit = creatures?.playerAttack(p, forward, t.dano * p.stats.damageMul, t.alcance);
     if (hit) {
+      p.stats.prog.markCombat();
       p.onImpact?.(0.8);
       // soco e clava dão sono (torpor): dá para desmaiar e domar
       const T = BALANCE.domar.torpor_por_dano;
@@ -249,7 +250,7 @@ export class PlayerActions {
     }
     this._give(got);
     // XP por golpe igual ao do ARK: machado 0,3; picareta e mão 0,2 (antes era 1 a 3 por golpe)
-    this.player.stats.addXP(mode === 'machado' ? 0.3 : 0.2);
+    this.player.stats.prog.gainFromResource(Object.keys(got)); // XP por tipo de recurso (progression_config.js)
     veg.consume(rec);
     if (mode !== 'colher') this._wear();
     // coleta tem um tempinho até a próxima (e animação de pegar)
@@ -326,6 +327,21 @@ export class PlayerActions {
       s.agua -= got;
       sound.play('beber');
       events.emit(EV.MESSAGE, { text: `+${Math.round(got)} Sede (cantil: ${Math.round(s.agua)})`, kind: 'gain' });
+      events.emit(EV.INVENTORY_CHANGED, { inventory: this.inv });
+      return true;
+    }
+    // Poção de reset de atributos: devolve todos os pontos gastos (beber leva 2 s, só fora de combate)
+    if (s.id === 'pocao_reset') {
+      const stp = this.player.stats;
+      const why = stp.respecBlock();
+      if (why) {
+        events.emit(EV.MESSAGE, { text: why === 'em combate' ? 'Só dá para usar fora de combate (10 s sem dar nem levar dano).' : why === 'nenhum ponto gasto' ? 'Você não gastou nenhum ponto de atributo.' : 'Você já está bebendo.', kind: 'warn' });
+        return false;
+      }
+      stp.startRespec();
+      this.inv.takeFrom(i, 1);
+      events.emit(EV.WATER_DRUNK, { fresh: true, amount: 0 }); // animação e som de beber
+      events.emit(EV.MESSAGE, { text: 'Bebendo a Poção de Reset…', kind: 'info' });
       events.emit(EV.INVENTORY_CHANGED, { inventory: this.inv });
       return true;
     }

@@ -1992,6 +1992,19 @@
     "cor": "#6a5a4a",
     "cor2": "#a8a090"
    }
+  },
+  {
+   "id": "pocao_reset",
+   "nome": "Poção de Reset",
+   "tipo": "consumivel",
+   "peso": 0.3,
+   "pilha": 5,
+   "descricao": "Devolve todos os pontos de atributo gastos. Beba fora de combate (10 s sem dar nem levar dano).",
+   "icone": {
+    "forma": "pote",
+    "cor": "#8a4fc8",
+    "cor2": "#e8d27a"
+   }
   }
  ]
 }

@@ -152,6 +152,7 @@ function resetPlayerLevel(d) {
   st.points = 0;
   st.engramPoints = 0;
   st.learned = [];
+  delete st.progressao; // formato novo: cai nos valores iniciais ao carregar
   for (const k of Object.keys(st.skills ?? {})) st.skills[k] = 0;
   st.health = 100;
   return true;

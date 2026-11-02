@@ -5,17 +5,20 @@
 //  Tudo depois de "//" é explicação e o jogo ignora.
 //  Depois de mudar, gere o jogo de novo (npm run build).
 // =============================================================
+import { MAX_LEVEL, ATTRIBUTES } from '../../progression/progression_config.js';
+
 export default {
   // ---------------------------------------------------------
   // Atributos máximos do jogador (nível 1)
   // ---------------------------------------------------------
+  // (nível, XP, atributos e engramas ficam em src/progression/progression_config.js)
   jogador: {
-    vida_max: 100,
-    stamina_max: 100,    // igual ao ARK (nível 1)
-    fome_max: 100,       // barra de comida (cheia = sem fome)
-    sede_max: 100,       // barra de água (cheia = sem sede)
-    folego_max: 100,     // ar embaixo d'água
-    peso_max: 100,       // kg que carrega (igual ao ARK; até 150% anda devagar)
+    vida_max: ATTRIBUTES.vida.base,
+    stamina_max: ATTRIBUTES.stamina.base,
+    fome_max: ATTRIBUTES.comida.base,
+    sede_max: ATTRIBUTES.agua.base,
+    folego_max: ATTRIBUTES.oxigenio.base,
+    peso_max: ATTRIBUTES.peso.base,
   },
 
   // ---------------------------------------------------------
@@ -113,42 +116,6 @@ export default {
 
   // ---------------------------------------------------------
   // Níveis e XP
-  // ---------------------------------------------------------
-  // Habilidades: a cada nível ganha pontos para gastar (Inventário →
-  // Habilidades). Quanto cada ponto aumenta:
-  habilidades: {
-    pontos_por_nivel: 1,
-    // valores iguais aos do ARK
-    vida: 10,       // +10 de vida máxima
-    stamina: 10,    // +10 de stamina máxima
-    fome: 10,       // +10 na barra de comida (dura mais)
-    sede: 10,       // +10 na barra de água (dura mais)
-    folego: 20,     // +20 de fôlego (oxigênio) embaixo d'água
-    peso: 10,       // +10 kg que carrega
-    forca: 5,       // +5% de dano corpo a corpo
-    velocidade: 1.5,// +1,5% de velocidade de andar/correr
-    fortitude: 2,   // +2 °C de resistência ao frio e ao calor
-    criacao: 10,    // +10% de velocidade de criação (fila de fabricação)
-  },
-
-  // Engramas (como no ARK): ao subir de nível você ganha pontos para
-  // APRENDER receitas. Cada receita pede um nível mínimo e um custo
-  // (data/crafting/receitas.json: nivel e engrama).
-  engramas: {
-    // pontos de engrama ganhos ao CHEGAR em cada nível (igual ao ARK):
-    // 1º número = nível 2, 2º = nível 3 … até o nível 105.
-    por_nivel: [
-      8, 8, 8, 8, 8, 8, 8, 8, 12, 12, 12, 12, 12, 12,
-      12, 12, 12, 12, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16,
-      20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 24, 24, 24, 24,
-      24, 24, 24, 24, 24, 24, 28, 28, 28, 28, 28, 28, 28, 28,
-      28, 28, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40,
-      40, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50,
-      50, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 70,
-      70, 70, 70, 70, 70, 70,
-    ],
-  },
-
   // Comida estraga com o tempo (minutos por unidade: "estraga_min" em
   // data/items/itens.json). Carne crua estragada vira Carne Estragada.
   estragar: {
@@ -201,23 +168,8 @@ export default {
     impressao_por_cuidado: 0.2, // cada carinho dá 20% de impressão
     bonus_impressao: 0.3,      // 100% de impressão = +30% de vida e dano
   },
-
-  nivel: {
-    max: 105,                  // nível máximo do jogador (igual ao ARK)
-    // XP para passar de cada nível ao próximo (tabela do ARK):
-    // 1º número = do 1 ao 2, 2º = do 2 ao 3 … até chegar no 105.
-    xp_por_nivel: [
-      5, 15, 20, 30, 50, 70, 80, 90, 90, 100, 110, 120,
-      130, 140, 150, 160, 170, 180, 190, 200, 210, 220, 230, 240,
-      250, 260, 270, 280, 290, 300, 310, 320, 330, 340, 350, 360,
-      370, 380, 390, 400, 410, 420, 430, 440, 450, 460, 470, 480,
-      490, 500, 510, 520, 530, 540, 550, 560, 570, 580, 590, 1150,
-      2228, 1370, 1460, 1554, 2037, 2750, 4537, 5218, 6801, 7957, 8952, 9286,
-      12000, 13000, 14000, 15500, 17000, 19000, 21000, 23000, 25070, 27326, 29785, 33508,
-      37697, 42432, 48166, 54702, 60172, 66189, 72807, 80088, 88096, 98000, 112000, 130000,
-      155000, 190000, 240000, 300000, 370000, 450000, 540000, 640000,
-    ],
-  },
+  // Nível máximo (a conta de XP está em progression_config.js)
+  nivel: { max: MAX_LEVEL },
 
   // ---------------------------------------------------------
   // Bichos montados (como no ARK): atacando sem bicho na frente, cada

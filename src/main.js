@@ -54,6 +54,9 @@ import { sound } from './audio/audio.js';
 import { aplicarCor } from './creatures/cores.js';
 import { aplicarLowPoly } from './world/estilo.js';
 import { REALISTA } from './core/estilo_mundo.js';
+import { DEBUG_MODE } from './progression/progression_config.js';
+import { runDebugCommand } from './progression/debug_commands.js';
+import { LEVELUP_TOAST_IN_MS, LEVELUP_TOAST_HOLD_MS, LEVELUP_TOAST_OUT_MS, LEVELUP_PARTICLES_S, LEVELUP_VIBRATE_MS } from './core/timings.js';
 
 // Ponte com o app Android (existe só dentro do APK).
 const androidApp = typeof window !== 'undefined' ? window.IlhaAndroid : undefined;
@@ -1086,25 +1089,37 @@ function boot(hotData = {}) {
   });
   events.on(EV.PLAYER_HURT, () => sound.play('dor'));
   events.on(EV.PLAYER_DIED, () => sound.play('morte'));
-  events.on(EV.LEVEL_UP, ({ level }) => {
+  events.on(EV.LEVEL_UP, ({ level, points, engramPoints }) => {
+    // um aviso só, mesmo subindo vários níveis de uma vez (level = o nível final). Não cura o jogador.
     sound.play('nivel');
-    // brilho dourado subindo em volta do jogador
+    if (navigator.vibrate) navigator.vibrate(LEVELUP_VIBRATE_MS);
+    // partículas douradas em volta do jogador por LEVELUP_PARTICLES_S segundos
     if (ctx) {
-      const p0 = ctx.player.position;
-      for (let i = 0; i < 3; i++) ctx.world.effects.burst(new THREE.Vector3(p0.x, p0.y + 0.4 + i * 0.5, p0.z), 'ouro', 10, 2.2);
+      const t0 = performance.now();
+      const tick = () => {
+        const dt = (performance.now() - t0) / 1000;
+        if (dt > LEVELUP_PARTICLES_S || !ctx) return;
+        const p0 = ctx.player.position;
+        ctx.world.effects.burst(new THREE.Vector3(p0.x, p0.y + 0.4 + dt * 0.8, p0.z), 'ouro', 4, 2.2);
+        setTimeout(tick, 120);
+      };
+      tick();
       document.body.classList.remove('level-flash');
       void document.body.offsetWidth;
       document.body.classList.add('level-flash');
     }
-    // aviso de nível novo no topo da tela: pontos de habilidade e os pontos de engrama exatos do ARK
-    const ep = ctx?.player.stats.engramsForLevel(level) ?? 0;
-    const sp = BALANCE.habilidades.pontos_por_nivel;
     const toast = document.createElement('div');
     toast.className = 'levelup-toast';
-    toast.innerHTML = `<b>NÍVEL ${level}</b><span>+${sp} ponto de habilidade</span><span>+${ep} pontos de engrama</span>`;
+    toast.style.transition = `opacity ${LEVELUP_TOAST_IN_MS}ms ease-out`;
+    toast.style.opacity = '0';
+    toast.innerHTML = `<b>NÍVEL ${level}!</b><span>+${points} ponto${points === 1 ? '' : 's'} de atributo</span><span>+${engramPoints} pontos de engram</span>`;
     ui.appendChild(toast);
-    setTimeout(() => toast.classList.add('out'), 4200);
-    setTimeout(() => toast.remove(), 4800);
+    requestAnimationFrame(() => { toast.style.opacity = '1'; });
+    setTimeout(() => {
+      toast.style.transition = `opacity ${LEVELUP_TOAST_OUT_MS}ms ease-in`;
+      toast.style.opacity = '0';
+    }, LEVELUP_TOAST_IN_MS + LEVELUP_TOAST_HOLD_MS);
+    setTimeout(() => toast.remove(), LEVELUP_TOAST_IN_MS + LEVELUP_TOAST_HOLD_MS + LEVELUP_TOAST_OUT_MS);
   });
   events.on(EV.PLACED, ({ structure }) => {
     sound.play('colocar', structure.position);
@@ -1354,6 +1369,8 @@ function boot(hotData = {}) {
   } catch { /* ok */ }
 
   // Acesso para testes automáticos e depuração.
+  // comandos de teste da progressão (DEBUG_MODE em progression_config.js): ilhaCmd('/xp 500')
+  if (DEBUG_MODE) window.ilhaCmd = (t) => runDebugCommand(t, ctx.player.stats);
   window.__ilha = {
     photo: null,
     game,

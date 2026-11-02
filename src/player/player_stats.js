@@ -5,16 +5,22 @@
 // =============================================================
 import { BALANCE, perSecond } from '../core/balance.js';
 import { events, EV } from '../core/event_bus.js';
+import * as C from '../progression/progression_config.js';
+import { PlayerProgression } from '../progression/player_progression.js';
+import { EngramManager } from '../progression/engram_manager.js';
+import { COMBAT_COOLDOWN_S, RESET_POTION_DRINK_S } from '../core/timings.js';
 
 export class PlayerStats {
   constructor() {
-    const J = BALANCE.jogador;
+    // progressão (nível, XP, pontos, atributos) e engramas: ver src/progression/
+    this.prog = new PlayerProgression();
+    this.engrams = new EngramManager(this.prog);
     this.max = {
-      health: J.vida_max,
-      stamina: J.stamina_max,
-      food: J.fome_max,
-      water: J.sede_max,
-      oxygen: J.folego_max,
+      health: this.prog.getStat('vida'),
+      stamina: this.prog.getStat('stamina'),
+      food: this.prog.getStat('comida'),
+      water: this.prog.getStat('agua'),
+      oxygen: this.prog.getStat('oxigenio'),
     };
     this.health = this.max.health;
     this.stamina = this.max.stamina;
@@ -22,14 +28,6 @@ export class PlayerStats {
     this.water = this.max.water;
     this.oxygen = this.max.oxygen;
     this.temperature = BALANCE.temperatura.base_c;
-
-    this.level = 1;
-    this.xp = 0;
-    this.points = 0; // pontos para gastar ao subir de nível (Inventário → Habilidades)
-    // engramas: pontos para aprender receitas e as já aprendidas
-    this.engramPoints = 0;
-    this.learned = new Set();
-    this.skills = { vida: 0, stamina: 0, fome: 0, sede: 0, folego: 0, peso: 0, forca: 0, velocidade: 0, fortitude: 0, criacao: 0 };
 
     this.dead = false;
     this.sick = null; // enjoo: { dps, left }
@@ -39,6 +37,18 @@ export class PlayerStats {
     this._staminaDelay = 0;
   }
 
+  // ---- nomes que a tela e o resto do jogo já usam (apontam para a progressão nova)
+  get level() { return this.prog.level; }
+  set level(v) { this.prog.level = v; }
+  get xp() { return this.prog.xp; }
+  set xp(v) { this.prog.xp = v; }
+  get points() { return this.prog.attrPoints; }
+  set points(v) { this.prog.attrPoints = v; }
+  get engramPoints() { return this.prog.engramPoints; }
+  set engramPoints(v) { this.prog.engramPoints = v; }
+  get skills() { return this.prog.spent; }
+  get learned() { return this.engrams.unlocked; }
+
   // ctx: { running, swimming, swimFast, moving, headUnderwater, ambientTemp }
   update(dt, ctx) {
     if (this.dead) return;
@@ -46,14 +56,20 @@ export class PlayerStats {
     const St = BALANCE.stamina;
     const F = BALANCE.folego;
 
+    // ---- Poção de reset: beber leva RESET_POTION_DRINK_S segundos, depois devolve os pontos
+    if (this.prog.respecT > 0) {
+      this.prog.respecT -= dt;
+      if (this.prog.respecT <= 0) this.finishRespec();
+    }
+
     // ---- Fome e sede caem com o tempo (mais rápido correndo/nadando)
     let mult = 1;
     if (ctx.running) mult = S.mult_correndo;
     else if (ctx.swimming) mult = S.mult_nadando;
     // (gasta como se a barra fosse a do nível 1: barra maior = dura mais)
-    const J = BALANCE.jogador;
-    this.food = Math.max(0, this.food - perSecond(J.fome_max, S.fome_duracao_min) * mult * dt);
-    this.water = Math.max(0, this.water - perSecond(J.sede_max, S.sede_duracao_min) * mult * dt);
+    const A = C.ATTRIBUTES;
+    this.food = Math.max(0, this.food - perSecond(A.comida.base, S.fome_duracao_min) * mult * dt);
+    this.water = Math.max(0, this.water - perSecond(A.agua.base, S.sede_duracao_min) * mult * dt);
 
     // ---- Stamina
     let drain = 0;
@@ -76,7 +92,7 @@ export class PlayerStats {
 
     // ---- Fôlego (só cai com a cabeça embaixo d'água)
     if (ctx.headUnderwater) {
-      this.oxygen = Math.max(0, this.oxygen - (J.folego_max / F.duracao_seg) * dt);
+      this.oxygen = Math.max(0, this.oxygen - C.OXYGEN_DRAIN_PER_SECOND * dt); // oxigênio = segundos de ar
     } else {
       this.oxygen = Math.min(this.max.oxygen, this.oxygen + F.regen_seg * dt);
     }
@@ -120,7 +136,7 @@ export class PlayerStats {
     // ---- Frio: fome mais rápida; congelando perde vida
     const TT = BALANCE.temperatura;
     if (this.temperature < TT.fome_frio_abaixo_c) {
-      this.food = Math.max(0, this.food - perSecond(BALANCE.jogador.fome_max, S.fome_duracao_min) * (TT.fome_frio_mult - 1) * dt);
+      this.food = Math.max(0, this.food - perSecond(C.ATTRIBUTES.comida.base, S.fome_duracao_min) * (TT.fome_frio_mult - 1) * dt);
     }
     if (this.temperature < TT.congelando_c) {
       this.damage(TT.dano_frio_seg * dt * (1 + (TT.congelando_c - this.temperature) / 10), 'frio');
@@ -138,6 +154,7 @@ export class PlayerStats {
 
   damage(amount, cause = 'ferimento') {
     if (this.dead) return;
+    if (cause !== 'comida' && cause !== 'sede' && cause !== 'fome' && cause !== 'afogamento' && cause !== 'frio') this.prog.markCombat(); // levou dano de bicho/arma: está em combate
     this.health -= amount;
     if (this.health <= 0) {
       this.health = 0;
@@ -154,126 +171,122 @@ export class PlayerStats {
     return this.water - before;
   }
 
-  // ---- XP e níveis
+  // ---- XP e níveis (a conta está em progression/player_progression.js)
   xpToNext() {
-    const N = BALANCE.nivel;
-    const T = N.xp_por_nivel;
-    return T[Math.min(this.level - 1, T.length - 1)];
+    return this.prog.xpToNext();
   }
 
-  addXP(amount) {
-    const N = BALANCE.nivel;
-    if (this.level >= N.max) return;
-    this.xp += amount;
-    events.emit(EV.XP_GAINED, { amount });
-    while (this.level < N.max && this.xp >= this.xpToNext()) {
-      this.xp -= this.xpToNext();
-      this.level += 1;
-      this.points += BALANCE.habilidades.pontos_por_nivel;
-      this.engramPoints += this.engramsForLevel(this.level);
-      events.emit(EV.LEVEL_UP, { level: this.level, points: this.points });
-    }
-    if (this.level >= N.max) this.xp = 0;
+  addXP(amount, source = '?') {
+    return this.prog.addXp(amount, source);
   }
 
-  // ---- Engramas (receitas aprendidas com pontos)
+  // ---- Engramas (receitas aprendidas com pontos): engram_manager.js
   engramsForLevel(level) {
-    const T = BALANCE.engramas.por_nivel;
-    return T[Math.min(Math.max(level - 2, 0), T.length - 1)];
+    return C.engramPointsForLevel(level);
   }
 
-  // Receita já sabida? (custo 0 = sabe desde o começo)
+  // Receita já sabida? (receita fora do banco de engramas = livre)
   knows(recipe) {
-    // engrama_id: receitas diferentes do mesmo item (ex.: a mesma
-    // receita feita com materiais diferentes) se aprendem juntas
-    return !recipe.engrama || this.learned.has(recipe.engrama_id ?? recipe.id);
+    return this.engrams.canCraft(recipe.id);
   }
 
   // Dá para aprender agora? Devolve o motivo se não der.
   learnBlock(recipe) {
-    if (this.knows(recipe)) return 'já sabe';
-    if (this.level < (recipe.nivel ?? 1)) return `precisa do nível ${recipe.nivel}`;
-    if (this.engramPoints < recipe.engrama) return `faltam ${recipe.engrama - this.engramPoints} pontos`;
-    return null;
+    return this.engrams.unlockBlock(recipe.id);
   }
 
   learn(recipe) {
-    if (this.learnBlock(recipe)) return false;
-    this.engramPoints -= recipe.engrama;
-    this.learned.add(recipe.engrama_id ?? recipe.id);
+    if (!this.engrams.unlock(recipe.id)) return false;
     events.emit(EV.SKILLS_CHANGED, { key: 'engrama' });
     return true;
   }
 
-  // ---- Habilidades (pontos ganhos ao subir de nível)
-  // Peso que carrega sem ficar lento.
+  // ---- Atributos: SEMPRE pelo get_stat (progression.getStat)
+  getStat(nome) {
+    return this.prog.getStat(nome);
+  }
+
+  // Peso que carrega sem ficar lento (kg).
   get maxWeight() {
-    return BALANCE.jogador.peso_max + this.skills.peso * BALANCE.habilidades.peso;
+    return this.getStat('peso');
   }
 
-  // Multiplicador da velocidade de andar/correr (habilidade Velocidade).
+  // Multiplicador da velocidade de andar/correr.
   get speedMul() {
-    return 1 + (this.skills.velocidade * BALANCE.habilidades.velocidade) / 100;
+    return this.getStat('velocidade') / 100;
   }
 
-  // Graus a mais de resistência ao frio (habilidade Fortitude).
+  // Graus a mais de resistência ao frio (atributo Fortitude).
   get fortitudeC() {
-    return this.skills.fortitude * BALANCE.habilidades.fortitude;
+    return this.getStat('fortitude');
   }
 
-  // Velocidade da fila de fabricação (habilidade Velocidade de criação).
+  // Velocidade da fila de fabricação.
   get craftSpeed() {
-    return 1 + (this.skills.criacao * BALANCE.habilidades.criacao) / 100;
+    return this.getStat('criacao') / 100;
   }
 
   // Multiplicador do dano corpo a corpo.
   get damageMul() {
-    return 1 + (this.skills.forca * BALANCE.habilidades.forca) / 100;
+    return this.getStat('dano') / 100;
   }
 
-  // Valor de cada habilidade agora (para a tela).
+  // Valor de cada atributo agora (para a tela).
   skillValue(key) {
-    const H = BALANCE.habilidades;
-    switch (key) {
-      case 'vida': return this.max.health;
-      case 'stamina': return this.max.stamina;
-      case 'fome': return this.max.food;
-      case 'sede': return this.max.water;
-      case 'folego': return this.max.oxygen;
-      case 'peso': return this.maxWeight;
-      case 'forca': return 100 + this.skills.forca * H.forca;
-      case 'velocidade': return 100 + this.skills.velocidade * H.velocidade;
-      case 'fortitude': return this.skills.fortitude * H.fortitude;
-      case 'criacao': return 100 + this.skills.criacao * H.criacao;
-      default: return 0;
-    }
+    return this.getStat(key);
+  }
+
+  // Motivo de não dar para gastar o ponto (ou null)
+  spendBlock(key) {
+    return this.prog.spendBlock(key);
   }
 
   spendPoint(key) {
-    if (this.points <= 0 || !(key in this.skills)) return false;
-    this.points -= 1;
-    this.skills[key] += 1;
+    if (this.prog.spendBlock(key)) return false;
     const before = { ...this.max };
+    this.prog.spendPoint(key);
     this._applySkills();
-    // o que aumentou já vem cheio
+    // Vida/Stamina/Comida/Água: o máximo sobe e o atual ganha só a diferença
     this.health += this.max.health - before.health;
     this.stamina += this.max.stamina - before.stamina;
     this.food += this.max.food - before.food;
     this.water += this.max.water - before.water;
-    this.oxygen += this.max.oxygen - before.oxygen;
     events.emit(EV.SKILLS_CHANGED, { key });
     return true;
   }
 
   _applySkills() {
-    const J = BALANCE.jogador;
-    const H = BALANCE.habilidades;
-    const s = this.skills;
-    this.max.health = J.vida_max + s.vida * H.vida;
-    this.max.stamina = J.stamina_max + s.stamina * H.stamina;
-    this.max.food = J.fome_max + s.fome * H.fome;
-    this.max.water = J.sede_max + s.sede * H.sede;
-    this.max.oxygen = J.folego_max + s.folego * H.folego;
+    this.max.health = this.getStat('vida');
+    this.max.stamina = this.getStat('stamina');
+    this.max.food = this.getStat('comida');
+    this.max.water = this.getStat('agua');
+    this.max.oxygen = this.getStat('oxigenio');
+  }
+
+  // ---- Poção de reset de atributos (só fora de combate; beber leva 2 s)
+  respecBlock() {
+    if (this.prog.respecT > 0) return 'já está bebendo';
+    if (this.prog.totalSpent() <= 0) return 'nenhum ponto gasto';
+    if (this.prog.inCombat(COMBAT_COOLDOWN_S)) return 'em combate';
+    return null;
+  }
+
+  startRespec() {
+    if (this.respecBlock()) return false;
+    this.prog.respecT = RESET_POTION_DRINK_S;
+    return true;
+  }
+
+  finishRespec() {
+    const devolvidos = this.prog.respec();
+    events.emit(EV.MESSAGE, { text: `Atributos resetados: +${devolvidos} pontos para gastar.`, kind: 'gain' });
+    this._applySkills();
+    this.health = Math.min(this.health, this.max.health);
+    this.stamina = Math.min(this.stamina, this.max.stamina);
+    this.food = Math.min(this.food, this.max.food);
+    this.water = Math.min(this.water, this.max.water);
+    this.oxygen = Math.min(this.oxygen, this.max.oxygen);
+    events.emit(EV.SKILLS_CHANGED, { key: 'reset' });
   }
 
   // Ao renascer: tudo cheio, fome/sede conforme o balanceamento.
@@ -291,29 +304,50 @@ export class PlayerStats {
     this.deathCause = null;
   }
 
-  // Para salvar/carregar (usado de verdade na Fase 12).
+  // Para salvar/carregar. Os campos antigos (level, xp, points, engramPoints, learned, skills) continuam
+  // para o resto do jogo; "progressao" é o formato novo (versao_progressao: 1).
   toJSON() {
-    const { health, stamina, food, water, oxygen, temperature, level, xp, points, engramPoints } = this;
-    return { health, stamina, food, water, oxygen, temperature, level, xp, points, engramPoints, learned: [...this.learned], skills: { ...this.skills } };
+    const { health, stamina, food, water, oxygen, temperature } = this;
+    return {
+      health, stamina, food, water, oxygen, temperature,
+      level: this.level, xp: this.xp, points: this.points, engramPoints: this.engramPoints,
+      learned: [...this.engrams.unlocked], skills: { ...this.skills },
+      progressao: { ...this.prog.toJSON(), engrams: this.engrams.toJSON() },
+    };
   }
 
   fromJSON(data) {
     if (!data) return;
-    for (const key of ['health', 'stamina', 'food', 'water', 'oxygen', 'temperature', 'level', 'xp', 'points']) {
+    for (const key of ['health', 'stamina', 'food', 'water', 'oxygen', 'temperature']) {
       if (typeof data[key] === 'number') this[key] = data[key];
     }
-    if (Array.isArray(data.learned)) {
-      this.learned = new Set(data.learned);
-      if (typeof data.engramPoints === 'number') this.engramPoints = data.engramPoints;
+    if (data.progressao && this.prog.fromJSON(data.progressao)) {
+      this.engrams.fromJSON(data.progressao.engrams);
     } else {
-      // jogo salvo de antes dos engramas: ganha os pontos de todos os
-      // níveis que já tinha (aprende o que quiser na tela de Criar)
-      this.engramPoints = 0;
-      for (let l = 2; l <= this.level; l++) this.engramPoints += this.engramsForLevel(l);
+      // save antigo (sem versao_progressao): migra sem quebrar
+      this.prog.migrateLegacy({ level: data.level, skills: data.skills });
+      this.engrams.migrateLegacy(data.learned);
     }
-    if (data.skills) {
-      for (const k of Object.keys(this.skills)) if (typeof data.skills[k] === 'number') this.skills[k] = data.skills[k];
-      this._applySkills();
-    }
+    // recalcula os máximos pelo get_stat e mantém o atual dentro do máximo
+    this._applySkills();
+    this.health = Math.min(this.health, this.max.health);
+    this.stamina = Math.min(this.stamina, this.max.stamina);
+    this.food = Math.min(this.food, this.max.food);
+    this.water = Math.min(this.water, this.max.water);
+    this.oxygen = Math.min(this.oxygen, this.max.oxygen);
+  }
+
+  // Zera toda a progressão (comando /resetprog)
+  resetProgression() {
+    this.prog.resetAll();
+    this.engrams.resetAll();
+    this._applySkills();
+    this.health = Math.min(this.health, this.max.health);
+    this.stamina = Math.min(this.stamina, this.max.stamina);
+    this.food = Math.min(this.food, this.max.food);
+    this.water = Math.min(this.water, this.max.water);
+    this.oxygen = Math.min(this.oxygen, this.max.oxygen);
+    events.emit(EV.SKILLS_CHANGED, { key: 'reset' });
+    events.emit(EV.ENGRAM_POINTS_CHANGED, { pontos: this.prog.engramPoints });
   }
 }

@@ -510,10 +510,10 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   // ---- Sistemas do ARK: engramas, comida estraga, arco, baú, roupa, cantil
   const eng = await page.evaluate(() => {
     const c = window.__ilha.ctx; const st = c.player.stats;
-    const arco = { id: 'arco', nivel: 6, engrama: 8 };
+    const arco = { id: 'arco', nivel: 12, engrama: 5 }; // (nível e custo vêm do banco de engramas)
     const r = { locked: c.crafting.locked(arco), craft: c.crafting.craft(arco, 1), lvl: st.level };
-    // sobe até o nível 6 e aprende
-    while (st.level < 6) st.addXP(st.xpToNext() - st.xp);
+    // sobe até o nível 12 e aprende
+    while (st.level < 12) st.addXP(st.xpToNext() - st.xp);
     r.pts = st.engramPoints;
     r.learned = st.learn(arco);
     r.lockedAfter = c.crafting.locked(arco);

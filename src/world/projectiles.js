@@ -83,7 +83,7 @@ export class Projectiles {
           w.creatures?.defendOwner(p.owner, c);
           w.effects?.burst(p.pos.clone(), 'sangue', 5, 2);
           sound.play('carne', p.pos);
-          p.owner?.stats?.addXP(A.xp_acerto);
+          p.owner?.stats?.prog?.markCombat?.();
           p.owner?.onArrowHit?.(c);
           this._remove(p);
           done = true;

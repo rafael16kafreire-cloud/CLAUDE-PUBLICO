@@ -7,6 +7,7 @@
   "scripts": {
     "build": "node build.mjs",
     "test": "node tests/smoke.test.mjs",
+    "test:prog": "node tests/progression.test.mjs",
     "apk": "bash android/build-apk.sh",
     "icons": "node tools/make_icons.mjs",
     "pc": "bash pc/build-pc.sh"

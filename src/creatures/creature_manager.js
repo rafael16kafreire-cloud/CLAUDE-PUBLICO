@@ -839,12 +839,17 @@ export class CreatureManager {
       events.emit(EV.MESSAGE, { text: `${c.name ?? c.species.nome} (domado) morreu${c.oldAge ? ' de velhice' : ''}.`, kind: 'warn' });
     }
     if (attacker?.isRemote) {
-      this.net?.sendKill(attacker, c, +(c.species.xp * (1 + 0.1 * (c.level - 1))).toFixed(1));
+      this.net?.sendKill(attacker, c, +game.player.stats.prog.killXpPreview(c).toFixed(1));
     } else if (attacker === game.player) {
-      const xp = +(c.species.xp * (1 + 0.1 * (c.level - 1))).toFixed(1);
-      game.player.stats.addXP(xp);
+      const xp = +game.player.stats.prog.gainFromKill(c).toFixed(1);
+      game.player.stats.prog.markCombat();
       events.emit(EV.MESSAGE, { text: `${c.species.nome} abatido! +${xp} XP`, kind: 'gain' });
     } else if (attacker && attacker.state !== undefined) {
+      // bicho domado do jogador abateu: o jogador recebe metade do XP
+      if (attacker.tamed && attacker.owner === game.player) {
+        const xp = +game.player.stats.prog.gainFromKill(c, true).toFixed(1);
+        events.emit(EV.MESSAGE, { text: `${attacker.name ?? attacker.species.nome} abateu ${c.species.nome}. +${xp} XP`, kind: 'gain' });
+      }
       // predador come a presa
       attacker.target = null;
       attacker._setState(CSTATE.EAT);
@@ -994,7 +999,6 @@ export class CreatureManager {
         if (add < q) events.emit(EV.MESSAGE, { text: `Inventário de ${mount.name ?? mount.species.nome} cheio!`, kind: 'warn' });
       }
       if (texto.length && rider === game.player) events.emit(EV.MESSAGE, { text: `${texto.join(', ')} (no ${mount.name ?? mount.species.nome})`, kind: 'gain' });
-      rider?.stats?.addXP?.(0.2 * n);
     }
     return n;
   }
@@ -1145,8 +1149,7 @@ export class CreatureManager {
 
   onTamed(c, owner) {
     if (owner === game.player) {
-      const xp = +(c.species.xp * (1 + 0.1 * (c.level - 1)) * 1.5).toFixed(1);
-      owner.stats.addXP(xp);
+      const xp = +owner.stats.prog.gainFromTame(c).toFixed(1);
       events.emit(EV.MESSAGE, { text: `${c.species.nome} domado! +${xp} XP`, kind: 'gain' });
       events.emit(EV.CREATURE_TAMED, { creature: c });
     }
