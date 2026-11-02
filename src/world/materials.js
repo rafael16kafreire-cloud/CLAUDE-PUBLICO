@@ -10,6 +10,13 @@
 // =============================================================
 import * as THREE from 'three';
 import { PALETA, mistura } from '../core/paleta.js';
+import { TERRA_COR, TERRA_RELEVO, TERRA_MEDIA } from './textures/terra.js';
+import { FOLHAGEM_COR } from './textures/veg_modelos.js';
+import { NEVE_COR, NEVE_RELEVO } from './textures/neve.js';
+import { ROCHA_NEVADA } from './textures/neve_modelos.js';
+import { TERRA_COR_HD, TERRA_RELEVO_HD, NEVE_COR_HD, NEVE_RELEVO_HD } from './textures/hd.js';
+import { hdTextures } from '../core/settings.js';
+import { REALISTA } from '../core/estilo_mundo.js';
 
 // cor da paleta como constante GLSL (vec3 linear)
 const glsl = (c) => `vec3(${c.r.toFixed(4)}, ${c.g.toFixed(4)}, ${c.b.toFixed(4)})`;
@@ -108,6 +115,147 @@ export function detailTexture() {
 // ----------------------------------------------------------
 
 // ----------------------------------------------------------
+// TERRENO REALISTA: textura de terra, folhagem rasteira, rocha, neve e areia (estilo ARK)
+// ----------------------------------------------------------
+function loadTiled(url, srgb) {
+  const tex = new THREE.TextureLoader().load(url);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.anisotropy = 4;
+  if (srgb) tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+export function makeTerrainMaterialRealista() {
+  const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
+  // Textura de terra (arquivo Soft Dirt): cor + relevo. A cor do bioma
+  // continua mandando no brilho/tom; a terra dá os grãos, raízes e torrões.
+  const hd = hdTextures();
+  const dirtMap = loadTiled(hd ? TERRA_COR_HD : TERRA_COR, true);
+  const dirtNormal = loadTiled(hd ? TERRA_RELEVO_HD : TERRA_RELEVO, false);
+  const avg = new THREE.Color().setRGB(...TERRA_MEDIA, THREE.SRGBColorSpace);
+  // neve (arquivo Snow Material) para a Lapônia
+  const snowMap = loadTiled(hd ? NEVE_COR_HD : NEVE_COR, true);
+  const snowNormal = loadTiled(hd ? NEVE_RELEVO_HD : NEVE_RELEVO, false);
+  // rocha nevada (arquivo Snowy Rock PBR Material) nos paredões
+  const rockMap = loadTiled(ROCHA_NEVADA, true);
+  // folhagem rasteira no chão da floresta (arquivo Grass)
+  const leafMap = loadTiled(FOLHAGEM_COR, true);
+  rockMap.wrapS = THREE.MirroredRepeatWrapping;
+  rockMap.wrapT = THREE.MirroredRepeatWrapping;
+  mat.onBeforeCompile = (shader) => {
+    shader.uniforms.detailMap = { value: detailTexture() };
+    shader.uniforms.dirtMap = { value: dirtMap };
+    shader.uniforms.dirtNormal = { value: dirtNormal };
+    shader.uniforms.dirtAvg = { value: new THREE.Vector3(avg.r, avg.g, avg.b) };
+    shader.uniforms.snowMap = { value: snowMap };
+    shader.uniforms.snowNormal = { value: snowNormal };
+    shader.uniforms.rockMap = { value: rockMap };
+    shader.uniforms.leafMap = { value: leafMap };
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nattribute float aDirt;\nvarying float vDirt;\nattribute float aSnow;\nvarying float vSnow;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvDirt = aDirt;\nvSnow = aSnow;');
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nvarying float vDirt;\nuniform sampler2D detailMap;\nuniform sampler2D dirtMap;\nuniform sampler2D dirtNormal;\nuniform vec3 dirtAvg;\nvarying float vSnow;\nuniform sampler2D snowMap;\nuniform sampler2D snowNormal;\nuniform sampler2D rockMap;\nuniform sampler2D leafMap;')
+      .replace('#include <color_fragment>', `#include <color_fragment>
+        float dNear = texture2D(detailMap, vWPos.xz * 0.23).r;
+        float dFar = texture2D(detailMap, vWPos.xz * 0.019).r;
+        float dMid = texture2D(detailMap, vWPos.zx * 0.071).r;
+        float detail = dNear * 0.45 + dMid * 0.25 + dFar * 0.3;
+        // manchinhas de folhas secas e terra
+        float spots = smoothstep(0.55, 0.75, texture2D(detailMap, vWPos.xz * 0.43 + 0.37).r);
+        diffuseColor.rgb *= mix(0.7, 1.28, detail);
+        diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(1.25, 1.0, 0.7), spots * 0.35);
+        if (vDirt > 0.01) {
+          // 1 repetição a cada ~2,8 m, girada numa segunda escala para não "quadricular"
+          vec2 uvA = vWPos.xz * 0.36;
+          vec2 uvB = vec2(vWPos.z, -vWPos.x) * 0.11 + 0.31;
+          vec3 dA = texture2D(dirtMap, uvA).rgb;
+          vec3 dB = texture2D(dirtMap, uvB).rgb;
+          vec3 dc = mix(dA, dB, 0.35 * dFar);
+          // relevo falso: o normal map clareia o lado virado para o sol
+          vec3 nm = texture2D(dirtNormal, uvA).xyz * 2.0 - 1.0;
+          float relief = 1.0 + dot(nm.xy, vec2(0.55, -0.45)) * 0.55;
+          // padrão da terra com o brilho/tom do bioma
+          float lumB = dot(diffuseColor.rgb, vec3(0.333));
+          vec3 hueB = diffuseColor.rgb / max(lumB, 0.001);
+          vec3 hueD = dirtAvg / dot(dirtAvg, vec3(0.333));
+          vec3 pattern = dc / dirtAvg;
+          vec3 soil = lumB * pattern * mix(hueD, hueB, 0.45) * relief;
+          diffuseColor.rgb = mix(diffuseColor.rgb, soil, clamp(vDirt, 0.0, 1.0) * 0.9);
+          // floresta: manchas de folhagem rasteira (textura Grass) por cima da terra
+          if (vDirt > 0.9) {
+            float patchN = texture2D(detailMap, vWPos.xz * 0.006 + 0.13).r * 0.6 + dMid * 0.4;
+            float leafK = smoothstep(0.42, 0.62, patchN);
+            vec3 lc = texture2D(leafMap, vWPos.xz * 0.28).rgb * 0.65 + texture2D(leafMap, vWPos.zx * 0.083 + 0.4).rgb * 0.35;
+            diffuseColor.rgb = mix(diffuseColor.rgb, lc * 0.85 * relief, leafK * 0.85);
+            // folhas secas coloridas no chão da mata (laranja, ferrugem e rosa), como no ARK
+            float lt = texture2D(detailMap, vWPos.xz * 0.9).r;
+            float lt2 = texture2D(detailMap, vWPos.xz * 0.33 + 0.3).r;
+            vec3 litter = mix(vec3(0.55, 0.24, 0.13), vec3(0.74, 0.5, 0.2), lt2);
+            litter = mix(litter, vec3(0.6, 0.26, 0.36), step(0.78, lt) * 0.7);
+            float lk = smoothstep(0.55, 0.7, lt) * (1.0 - leafK * 0.75) * (1.0 - smoothstep(14.0, 40.0, length(vViewPosition)) * 0.6);
+            diffuseColor.rgb = mix(diffuseColor.rgb, litter * relief * 0.9, lk * 0.55);
+          }
+        }
+        if (vDirt < -0.01) {
+          // rocha da montanha: textura "por três lados" (funciona em paredão
+          // vertical), com camadas, rachaduras e lascas
+          vec3 fn = normalize(cross(dFdx(vWPos), dFdy(vWPos)));
+          vec3 bw = pow(abs(fn), vec3(4.0));
+          bw /= (bw.x + bw.y + bw.z);
+          float r1 = texture2D(detailMap, vWPos.zy * 0.09).r * bw.x + texture2D(detailMap, vWPos.xz * 0.09).r * bw.y + texture2D(detailMap, vWPos.xy * 0.09).r * bw.z;
+          float f1 = texture2D(detailMap, vWPos.zy * 0.55).r * bw.x + texture2D(detailMap, vWPos.xz * 0.55).r * bw.y + texture2D(detailMap, vWPos.xy * 0.55).r * bw.z;
+          float big = texture2D(detailMap, vWPos.xz * 0.012 + vec2(0.0, vWPos.y * 0.01)).r;
+          // camadas horizontais (estratos) bem marcadas nos paredões
+          float strata = smoothstep(0.35, 0.65, 0.5 + 0.5 * sin(vWPos.y * 0.9 + r1 * 4.0 + big * 6.0));
+          float vert = 1.0 - bw.y; // quanto é parede
+          float rockK = mix(0.55, 1.4, r1) * mix(0.8, 1.15, f1) * mix(0.75, 1.15, big) * mix(1.0, mix(0.72, 1.12, strata), vert);
+          diffuseColor.rgb *= rockK;
+          // textura de rocha nevada do arquivo, projetada pelos três lados
+          vec3 rt = texture2D(rockMap, vWPos.zy * 0.05).rgb * bw.x + texture2D(rockMap, vWPos.xz * 0.05).rgb * bw.y + texture2D(rockMap, vWPos.xy * 0.05).rgb * bw.z;
+          diffuseColor.rgb = mix(diffuseColor.rgb, rt * mix(0.75, 1.1, r1), 0.55);
+          // líquen/ferrugem em manchas
+          diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(1.15, 1.0, 0.82), smoothstep(0.62, 0.8, f1) * 0.4);
+        }
+        if (vSnow > 0.01) {
+          // neve: textura do arquivo em duas escalas + relevo falso
+          vec2 su = vWPos.xz * 0.21;
+          vec3 sc = texture2D(snowMap, su).rgb * 0.6 + texture2D(snowMap, vWPos.zx * 0.047 + 0.5).rgb * 0.4;
+          vec3 sn = texture2D(snowNormal, su).xyz * 2.0 - 1.0;
+          float srel = 1.0 + dot(sn.xy, vec2(0.5, -0.4)) * 0.35;
+          vec3 snowCol = sc * 1.32 * srel;
+          // borda da neve mais suja, sem corte reto
+          float k = smoothstep(0.15, 0.75, vSnow + (dNear - 0.5) * 0.35);
+          diffuseColor.rgb = mix(diffuseColor.rgb, snowCol, k);
+        }
+        // areia: ondulações do vento/maré, grão fino e faixa molhada perto da água.
+        // sandGrad alimenta o relevo (mais abaixo, em normal_fragment_maps).
+        float sandK = (1.0 - smoothstep(0.0, 0.35, abs(vDirt))) * (1.0 - smoothstep(0.0, 0.3, vSnow));
+        float sandNear = 1.0 - smoothstep(22.0, 75.0, length(vViewPosition));
+        vec2 sandGrad = vec2(0.0);
+        if (sandK > 0.01) {
+          vec2 sp = vWPos.xz;
+          float sw = texture2D(detailMap, sp * 0.05).r;
+          float sw2 = texture2D(detailMap, sp * 0.21).r;
+          float a1 = dot(sp, vec2(0.83, 0.56)) * 4.2 + sw * 9.0;
+          float a2 = dot(sp, vec2(-0.5, 0.86)) * 11.0 + sw2 * 7.0;
+          float ripple = sin(a1) * 0.6 + sin(a2) * 0.4;
+          float grain = texture2D(detailMap, sp * 1.9).r;
+          float wet = 1.0 - smoothstep(0.1, 0.75, vWPos.y);
+          diffuseColor.rgb *= 1.0 + sandK * sandNear * (ripple * 0.12 + (grain - 0.5) * 0.3);
+          diffuseColor.rgb *= mix(1.0, 0.7, wet * sandK);
+          diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(0.95, 0.97, 1.05), wet * sandK * 0.5);
+          sandGrad = (cos(a1) * 0.6 * 4.2 * vec2(0.83, 0.56) + cos(a2) * 0.4 * 11.0 * vec2(-0.5, 0.86)) * 0.11 * sandNear;
+        }`)
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+        normal = normalize(normal + (viewMatrix * vec4(-sandGrad.x, 0.0, -sandGrad.y, 0.0)).xyz * sandK);`);
+  };
+  return mat;
+}
+
+
+// ----------------------------------------------------------
 // TERRENO LOW-POLY (estilo Valheim)
 // - Faces planas (flatShading): cada triângulo tem uma luz só.
 // - Uma cor por face: o vértice "dono" do triângulo pinta a face toda
@@ -116,6 +264,7 @@ export function detailTexture() {
 // As cores vêm de island_generator.js (_colorFor), que usa a paleta (core/paleta.js).
 // ----------------------------------------------------------
 export function makeTerrainMaterial() {
+  if (REALISTA) return makeTerrainMaterialRealista();
   const mat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.uSnowCol = { value: PALETA.neve.clone() };

@@ -331,7 +331,7 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   });
   console.log('   Selva + criaturas: draw calls', info.calls, 'triângulos', info.tris);
   check('Desempenho: menos de 200 desenhos por quadro (selva + 15 animais)', info.calls < 200, JSON.stringify(info));
-  check('Desempenho: menos de 700 mil triângulos (qualidade média)', info.tris < 700000, `${info.tris}`);
+  check('Desempenho: menos de 2,4 milhões de triângulos (qualidade média, mata fechada + 15 animais)', info.tris < 2400000, `${info.tris}`);
   await page.evaluate(() => window.__ilha.ctx.creatures.clear());
   await page.keyboard.press('F3');
 
@@ -403,8 +403,8 @@ const frames = (page, n = 30) => page.evaluate((count) => new Promise((res) => {
   await page.screenshot({ path: `${SHOTS}/07b-pc-colher-bagas.png` });
   await page.keyboard.press('KeyE');
   await frames(page, 4);
-  const mejo = await page.evaluate(() => window.__t.count('baga_mejo'));
-  check('Colher: E pega Baga-Mejo do arbusto', mejo > 0 && !berryPrompt, `${berryPrompt} → ${mejo}`);
+  const mejo = await page.evaluate(() => ['baga_stim', 'baga_amar', 'baga_mejo', 'baga_escura', 'fruta_rubra', 'fruta_azul', 'fibra'].reduce((a, i) => a + window.__t.count(i), 0));
+  check('Colher: E pega a mistura de bagas e fibra do arbusto', mejo > 0 && !berryPrompt, `${berryPrompt} → ${mejo}`);
 
   // Bananeira
   await page.evaluate(() => window.__t.faceRec('bananeira'));

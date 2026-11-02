@@ -173,7 +173,7 @@
   },
   {
    "id": "baga_mejo",
-   "nome": "Baga-Mejo",
+   "nome": "Mejoberry",
    "tipo": "comida",
    "peso": 0.05,
    "pilha": 100,
@@ -192,7 +192,7 @@
   },
   {
    "id": "baga_escura",
-   "nome": "Baga-Escura",
+   "nome": "Narcoberry",
    "tipo": "comida",
    "peso": 0.05,
    "pilha": 100,
@@ -210,7 +210,7 @@
   },
   {
    "id": "fruta_rubra",
-   "nome": "Fruta Rubra",
+   "nome": "Tintoberry",
    "tipo": "comida",
    "peso": 0.1,
    "pilha": 60,
@@ -228,7 +228,7 @@
   },
   {
    "id": "fruta_azul",
-   "nome": "Fruta Azul",
+   "nome": "Azulberry",
    "tipo": "comida",
    "peso": 0.1,
    "pilha": 60,
@@ -243,6 +243,55 @@
     "forma": "fruta",
     "cor": "#3f72b8",
     "cor2": "#4a7a2e"
+   }
+  },
+  {
+   "id": "semente_tintoberry",
+   "nome": "Semente de Tintoberry",
+   "tipo": "recurso",
+   "peso": 0.01,
+   "pilha": 100,
+   "descricao": "Semente da Tintoberry (para plantar em canteiros, em breve).",
+   "icone": {
+    "forma": "baga",
+    "cor": "#c23a2e",
+    "cor2": "#7a1e18"
+   }
+  },
+  {
+   "id": "baga_amar",
+   "nome": "Amarberry",
+   "tipo": "comida",
+   "peso": 0.05,
+   "pilha": 100,
+   "descricao": "Baga amarela e suculenta: mata um pouco a fome e a sede.",
+   "comida": {
+    "fome": 3,
+    "sede": 7,
+    "estraga_min": 12
+   },
+   "icone": {
+    "forma": "baga",
+    "cor": "#e6b422",
+    "cor2": "#a87a10"
+   }
+  },
+  {
+   "id": "baga_stim",
+   "nome": "Stimberry",
+   "tipo": "comida",
+   "peso": 0.05,
+   "pilha": 100,
+   "descricao": "Baga branca e estimulante: devolve um pouco de stamina.",
+   "comida": {
+    "fome": 2,
+    "stamina": 20,
+    "estraga_min": 12
+   },
+   "icone": {
+    "forma": "baga",
+    "cor": "#e8e2d0",
+    "cor2": "#a89f86"
    }
   },
   {

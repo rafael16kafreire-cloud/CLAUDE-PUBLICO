@@ -9,6 +9,7 @@
 // =============================================================
 import * as THREE from 'three';
 import { PALETA, mistura } from '../core/paleta.js';
+import { REALISTA } from '../core/estilo_mundo.js';
 import { createNoise2D, fbm } from '../core/noise.js';
 import { clamp, lerp, smoothstep, mulberry32 } from '../core/math.js';
 import { ALPES_N, ALPES_ALTURAS } from './textures/alpes.js';
@@ -97,6 +98,32 @@ const COLORS = {
   ash: mistura('pedraEscura', 'terraEscura', 0.5),
   ember: PALETA.ferrugem,
 };
+
+const CR = (hex) => new THREE.Color(hex);
+const COLORS_R = {
+  sand: CR('#c9b384'),
+  wetSand: CR('#9c8a62'),
+  seaShallow: CR('#a99a6e'),
+  seaDeep: CR('#3d5b55'),
+  soil: CR('#4a3a27'),
+  litter: CR('#6b4f31'),
+  moss: CR('#3d5427'),
+  darkSoil: CR('#2f2a1d'),
+  mud: CR('#3b3725'),
+  swampMoss: CR('#455327'),
+  igapo: CR('#3a3f25'),
+  rock: CR('#5f6164'),
+  rockDark: CR('#3e3f42'),
+  tundra: CR('#6f6a5c'),
+  serraRock: CR('#7a7064'),
+  serraDark: CR('#4f4840'),
+  serraGrass: CR('#5e6a3a'),
+  plainsGrass: CR('#4a7428'),
+  plainsDry: CR('#76843a'),
+  ash: CR('#35302d'),
+  ember: CR('#6a2e1c'),
+};
+
 
 export class IslandMap {
   constructor(layout, seed) {
@@ -457,7 +484,8 @@ export class IslandMap {
         if (biome === BIOME.SNOW) this.snow[idx] = this._snowAmount(x, z, h, normalY);
         // serras e cordilheira: neve nas partes altas e planas, pedra nos paredões (o vulcão fica de pedra escura)
         else if (biome === BIOME.HIGHLAND && this.volcanoWeight(x, z) < 0.08) this.snow[idx] = this._snowAmount(x, z, h, normalY) * smoothstep(8, 28, h);
-        this._colorFor(c, biome, x, z, h, normalY);
+        if (REALISTA) this._colorForR(c, biome, x, z, h, normalY);
+        else this._colorFor(c, biome, x, z, h, normalY);
         this.colors[idx * 3] = c.r;
         this.colors[idx * 3 + 1] = c.g;
         this.colors[idx * 3 + 2] = c.b;
@@ -626,6 +654,58 @@ export class IslandMap {
     const gm = this.lap.grande_montanha;
     const mask = sampleMirror(this.mtnS, MONTANHA_N, x / gm.largura_m + this.mtnU0, z / gm.largura_m + this.mtnV0);
     return lerp(bySlope, Math.min(bySlope + 0.3, mask), wM * 0.85);
+  }
+
+  _colorForR(out, biome, x, z, h, normalY) {
+    const n1 = this.nDetail(x * 0.05, z * 0.05);
+    const n2 = this.nDetail(x * 0.013 + 50, z * 0.013);
+    switch (biome) {
+      case BIOME.SEA:
+        out.copy(COLORS_R.seaShallow).lerp(COLORS_R.seaDeep, smoothstep(0, 14, -h));
+        break;
+      case BIOME.BEACH:
+        out.copy(COLORS_R.wetSand).lerp(COLORS_R.sand, smoothstep(0.2, 1.4, h));
+        break;
+      case BIOME.JUNGLE:
+        // terra, folhas secas e musgo misturados
+        out.copy(COLORS_R.soil).lerp(COLORS_R.litter, clamp(n2 * 0.9 + 0.45, 0, 1));
+        out.lerp(COLORS_R.moss, clamp(n1 * 0.8 + 0.25, 0, 0.8));
+        out.lerp(COLORS_R.darkSoil, smoothstep(0.85, 0.6, normalY) * 0.6);
+        break;
+      case BIOME.IGAPO:
+        out.copy(COLORS_R.igapo).lerp(COLORS_R.litter, clamp(n2 * 0.6 + 0.2, 0, 0.6));
+        break;
+      case BIOME.SNOW:
+        // rocha (a neve é pintada por cima no shader do terreno)
+        out.copy(COLORS_R.rock).lerp(COLORS_R.rockDark, clamp(n2 * 0.8 + 0.4, 0, 1));
+        // camadas de rocha (estratos) nos paredões
+        out.multiplyScalar(0.82 + 0.3 * (0.5 + 0.5 * Math.sin(h * 0.55 + n1 * 3)));
+        out.lerp(COLORS_R.tundra, smoothstep(30, 8, h) * 0.6);
+        break;
+      case BIOME.HIGHLAND:
+        // pedra nos paredões, veios escuros; a neve vem do shader (aSnow) nas partes mais altas e menos íngremes
+        out.copy(COLORS_R.serraRock).lerp(COLORS_R.serraDark, clamp(n2 * 0.8 + 0.4, 0, 1));
+        out.multiplyScalar(0.85 + 0.25 * (0.5 + 0.5 * Math.sin(h * 0.7 + n1 * 3)));
+        // Vulcão: cinza escura e basalto, com veios avermelhados perto da cratera
+        {
+          const vw = this.volcanoWeight(x, z);
+          if (vw > 0) {
+            out.lerp(COLORS_R.ash, smoothstep(0.05, 0.4, vw) * 0.85);
+            out.lerp(COLORS_R.ember, smoothstep(0.82, 1, vw) * (0.3 + 0.4 * (0.5 + 0.5 * n1)));
+          }
+        }
+        break;
+      case BIOME.PLAINS:
+        out.copy(COLORS_R.plainsGrass).lerp(COLORS_R.plainsDry, clamp(n2 * 0.9 + 0.4, 0, 1));
+        out.lerp(COLORS_R.soil, clamp(n1 * 0.6, 0, 0.35));
+        break;
+      case BIOME.SWAMP:
+        out.copy(COLORS_R.swampMoss).lerp(COLORS_R.mud, smoothstep(this.swamp.level + 0.8, this.swamp.level, h));
+        break;
+      default:
+        out.copy(COLORS_R.soil);
+    }
+    out.multiplyScalar(1 + n1 * 0.06);
   }
 
   // Cor do chão em cada vértice: bioma + ALTURA + INCLINAÇÃO, sempre com cores da paleta.

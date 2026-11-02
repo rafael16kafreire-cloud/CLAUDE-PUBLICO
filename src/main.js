@@ -53,6 +53,7 @@ import { Multiplayer } from './net/multiplayer.js';
 import { sound } from './audio/audio.js';
 import { aplicarCor } from './creatures/cores.js';
 import { aplicarLowPoly } from './world/estilo.js';
+import { REALISTA } from './core/estilo_mundo.js';
 
 // Ponte com o app Android (existe só dentro do APK).
 const androidApp = typeof window !== 'undefined' ? window.IlhaAndroid : undefined;
@@ -1168,7 +1169,7 @@ function boot(hotData = {}) {
     estiloT -= dt;
     if (estiloT <= 0) {
       estiloT = 1;
-      aplicarLowPoly(scene);
+      if (!REALISTA) aplicarLowPoly(scene);
     }
     const { world, player, camCtl, interaction, hud, minimap, inspect, buildGhost, touch, debug, creatures, hands, damageNumbers, crafting, invScreen, actions } = ctx;
     const look = input.consumeLook();

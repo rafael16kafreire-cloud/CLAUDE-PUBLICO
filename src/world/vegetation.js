@@ -25,14 +25,19 @@ import { foliageTexture, addPlantDetail } from './foliage_texture.js';
 import recursos from '../data/world/recursos.json';
 import * as P from './props.js';
 import { MODELOS_LOWPOLY, materialLowPoly } from './lowpoly_veg.js';
-// ETAPA 2: os modelos antigos (com textura) saíram; tudo vem de lowpoly_veg.js (veja MODELOS_LOWPOLY
-// abaixo da tabela). Os nomes antigos ficam só para a tabela continuar legível.
-const vegGeometry = () => null;
-const vegMaterial = () => null;
-const snowRockGeometry = null;
-const snowRockMaterial = null;
-const makeLayeredRock = () => null;
-const layeredRockMaterial = null;
+import { REALISTA } from '../core/estilo_mundo.js';
+import { makeHostaClump, makeFrondeBush, makeBananaArk, matHosta, matFronde, matBanana } from './folhas_ark.js';
+import { snowRockGeometry as snowRockGeometryR, snowRockMaterial as snowRockMaterialR } from './snow_models.js';
+import { vegGeometry as vegGeometryR, vegMaterial as vegMaterialR } from './veg_models.js';
+import { makeLayeredRock as makeLayeredRockR, layeredRockMaterial as layeredRockMaterialR } from './rochas.js';
+// No estilo realista os modelos têm textura (veg_models.js); no low-poly eles vêm de lowpoly_veg.js
+// (veja MODELOS_LOWPOLY abaixo da tabela) e os nomes antigos ficam só para a tabela continuar legível.
+const vegGeometry = REALISTA ? vegGeometryR : () => null;
+const vegMaterial = REALISTA ? vegMaterialR : () => null;
+const snowRockGeometry = REALISTA ? snowRockGeometryR : null;
+const snowRockMaterial = REALISTA ? snowRockMaterialR : null;
+const makeLayeredRock = REALISTA ? makeLayeredRockR : () => null;
+const layeredRockMaterial = REALISTA ? layeredRockMaterialR : null;
 
 const ROOTS = P.sumaumaRootColliders();
 
@@ -132,7 +137,7 @@ const TYPES = {
 // face + vento) e sem "foto" de longe: o modelo médio é leve o bastante para
 // ir até a neblina. Nome, colisão e recurso de cada tipo continuam os mesmos.
 // =============================================================
-for (const [t, m] of Object.entries(MODELOS_LOWPOLY(ROOTS))) {
+for (const [t, m] of Object.entries(REALISTA ? {} : MODELOS_LOWPOLY(ROOTS))) {
   const d = TYPES[t];
   if (!d) continue;
   d.hi = m.hi;
@@ -142,6 +147,22 @@ for (const [t, m] of Object.entries(MODELOS_LOWPOLY(ROOTS))) {
   delete d.imp;
   d.textured = true; // cor já vem pintada: a instância só varia o brilho
   if (m.collider) d.collider = m.collider;
+}
+
+// ESTILO REALISTA (como no ARK): arbustos e plantinhas do chão com folhas largas e nervuradas,
+// samambaia/palminha com folíolos e bananeira de folhas grandes e rasgadas (folhas_ark.js).
+if (REALISTA) {
+  const hosta = (n, tam, seed) => ({ hi: () => makeHostaClump({ n, tam, seed }), lo: () => makeHostaClump({ n: Math.max(4, n - 3), tam, seed, baixo: true }), mat: matHosta, loMat: matHosta, textured: true });
+  const fronde = (n, tam, seed) => ({ hi: () => makeFrondeBush({ n, tam, seed }), lo: () => makeFrondeBush({ n: Math.max(4, n - 2), tam, seed, baixo: true }), mat: matFronde, loMat: matFronde, textured: true });
+  const banana = (cacho, seed) => ({ hi: () => makeBananaArk({ cacho, seed, tam: 1.5 }), lo: () => makeBananaArk({ cacho, seed, tam: 1.5, n: 6, baixo: true }), mat: matBanana, loMat: matBanana, textured: true });
+  Object.assign(TYPES.arbusto_mejo, hosta(9, 0.8, 53));
+  Object.assign(TYPES.arbusto_escura, hosta(9, 0.8, 53));
+  Object.assign(TYPES.arbusto_frutas, hosta(9, 0.8, 53));
+  Object.assign(TYPES.arbusto, hosta(9, 0.8, 53));
+  Object.assign(TYPES.plantinha, hosta(5, 0.42, 71));
+  Object.assign(TYPES.samambaia, fronde(7, 0.95, 61));
+  Object.assign(TYPES.bananeira, banana(true, 5));
+  Object.assign(TYPES.bananeira_vazia, banana(false, 5));
 }
 
 // altura do topo de cada modelo de pedra (unidades do modelo, antes da escala)
@@ -367,7 +388,7 @@ export class Vegetation {
             rec.r = def.collider * Math.max(s.x, s.z) * (def.rock ? 1.0 : 1);
             // altura de verdade do modelo (medida): antes a colisão usava ~0,95 do tamanho, e em
             // encosta os pés ficavam acima disso e o jogador atravessava a pedra por dentro
-            rec.top = y + s.y * (ROCK_TOP[type] ?? 1.4) * 0.98;
+            rec.top = y + s.y * (REALISTA ? 0.95 : (ROCK_TOP[type] ?? 1.4) * 0.98);
           }
           this.maxCollider = Math.max(this.maxCollider ?? 0, rec.r);
         }

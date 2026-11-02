@@ -6,6 +6,11 @@
 // =============================================================
 import * as THREE from 'three';
 import { makeTerrainMaterial } from './materials.js';
+import { REALISTA } from '../core/estilo_mundo.js';
+
+// terra de verdade (textura de terra no shader): floresta toda, igapó e pântano um pouco menos;
+// praia e mar nada; -1 = rocha de montanha (Lapônia). (índices = BIOME: mar, praia, floresta, igapó, pântano, neve, serra, campos)
+const DIRT_BY_BIOME = [0, 0, 1, 0.8, 0.6, -1, -1, 0.35];
 
 // Os pedaços NÃO são montados todos de uma vez: updateTerrain() monta os que estão
 // perto do jogador e descarta (libera a memória) os que ficaram longe. Ao andar,
@@ -82,6 +87,7 @@ function buildChunkGeometry(map, i0, j0, size) {
   const positions = new Float32Array(vx * vz * 3);
   const colors = new Float32Array(vx * vz * 3);
   const snow = new Float32Array(vx * vz); // quanto de neve (Lapônia)
+  const dirt = new Float32Array(vx * vz); // quanto de textura de terra (por bioma)
 
   for (let j = 0; j < vz; j++) {
     for (let i = 0; i < vx; i++) {
@@ -96,6 +102,7 @@ function buildChunkGeometry(map, i0, j0, size) {
       colors[dst + 1] = map.colors[src * 3 + 1];
       colors[dst + 2] = map.colors[src * 3 + 2];
       snow[j * vx + i] = map.snow[src];
+      dirt[j * vx + i] = REALISTA ? (DIRT_BY_BIOME[map.biomes[src]] ?? 0) : 0;
     }
   }
 
@@ -118,6 +125,7 @@ function buildChunkGeometry(map, i0, j0, size) {
   geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   geom.setAttribute('color', new THREE.BufferAttribute(colors, 3));
   geom.setAttribute('aSnow', new THREE.BufferAttribute(snow, 1));
+  geom.setAttribute('aDirt', new THREE.BufferAttribute(dirt, 1));
   geom.setIndex(new THREE.BufferAttribute(index, 1));
   geom.computeVertexNormals();
   geom.computeBoundingSphere();
