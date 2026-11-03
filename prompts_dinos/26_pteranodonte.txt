@@ -1,0 +1,23 @@
+Crie no Blender um animal voador **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com penugem curta, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+
+ESPÉCIE: Pteranodonte. Réptil voador de 7 m de envergadura. Crista longa apontando para trás da cabeça, bico comprido e pontudo sem dentes, asas de membrana, corpo pequeno. Cores: corpo cinza-claro, asas marrom com bordas escuras, crista vermelha e amarela.
+
+MALHA: entre 6.000 e 9.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
+
+TEXTURA: uma textura pintada (Base Color) de 512×512, salva em JPG, com todos os detalhes da espécie bem visíveis nesse tamanho (escamas, padrão de cor, barriga mais clara, olhos e dentes). Normal Map opcional com metade desse tamanho. Material único (Principled BSDF), sem transparência. UV aberta sem sobreposição, aproveitando bem a textura.
+
+POSIÇÃO: em pose neutra, pousado de pé, pés tocando Z = 0, asas fechadas, olhando para -Y, em tamanho real (metros). Aplique Ctrl+A → All Transforms antes de exportar.
+
+ESQUELETO (Armature): ossos de quadril (raiz), coluna (2), pescoço (3), cabeça, bico/mandíbula, asas (ombro, braço, antebraço, dedo longo da asa), pernas (coxa, canela, pé) e cauda curta (2). Skinning com pesos limpos, sem a malha rasgar ou afundar ao dobrar.
+
+ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
+- `parado`: pousado, respira, mexe a cabeça (loop).
+- `andar`: anda no chão apoiado nas patas e nos punhos das asas (loop).
+- `voar`: bate as asas em voo (loop).
+- `planar`: asas abertas, quase paradas, ajustes leves (loop).
+- `decolar`: salta do chão batendo as asas (sem loop).
+- `atacar`: mergulho com bicada (sem loop).
+- `dormir`: pousado, asas fechadas, cabeça baixa (loop).
+- `morrer`: cai e fica deitado (sem loop).
+
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: pteranodonte.glb

@@ -1,0 +1,12 @@
+{
+ "nome": "iguanodonte",
+ "base": "../modelos/parassauro.glb",
+ "saida": "../modelos/iguanodonte.glb",
+ "escala": 0.9,
+ "cor": [
+  0.7,
+  1.0,
+  0.8
+ ],
+ "variante_de": "parassauro"
+}

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Ícone original da Ilha Primordial: ilha, montanha com neve, sol e um dinossauro de pescoço longo -->
+  <defs>
+    <linearGradient id="ceu" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="512">
+      <stop offset="0" stop-color="#2d6f8e"/>
+      <stop offset="0.75" stop-color="#9fd0d8"/>
+    </linearGradient>
+  </defs>
+  <rect x="-200" y="-200" width="912" height="560" fill="url(#ceu)"/>
+  <circle cx="372" cy="150" r="48" fill="#ffd27a"/>
+  <rect x="-200" y="352" width="912" height="400" fill="#1f5f78"/>
+  <ellipse cx="256" cy="372" rx="226" ry="44" fill="#e2cd8f"/>
+  <!-- montanha -->
+  <polygon points="96,350 218,132 340,350" fill="#8b867a"/>
+  <polygon points="218,132 340,350 262,350" fill="#6d6a62"/>
+  <polygon points="218,132 186,190 204,180 220,198 236,178 252,192" fill="#eef1f3"/>
+  <!-- morro verde -->
+  <ellipse cx="270" cy="356" rx="196" ry="30" fill="#4a7a36"/>
+  <!-- árvores -->
+  <polygon points="118,352 136,300 154,352" fill="#2f5f37"/>
+  <polygon points="146,352 160,312 174,352" fill="#356a3c"/>
+  <!-- dinossauro (saurópode) -->
+  <g fill="#1b2420">
+    <path d="M300 312c38-6 74 6 98 30 10 10 26 18 44 20-26 6-50 0-66-8l-8 26h-16l-4-22c-16 4-32 4-48 0l-6 22h-16l-2-28c-12-10-12-28 24-40z"/>
+    <path d="M300 318c-26-10-38-46-46-78-4-14-12-24-26-24-12 0-22 6-28 14 10 2 18 4 22 10 8 14 6 50 26 88z"/>
+  </g>
+  <circle cx="226" cy="224" r="3" fill="#e2cd8f"/>
+</svg>

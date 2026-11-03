@@ -1,0 +1,12 @@
+{
+ "nome": "paquirrinossauro",
+ "base": "../modelos/triceratops.glb",
+ "saida": "../modelos/paquirrinossauro.glb",
+ "escala": 0.75,
+ "cor": [
+  0.8,
+  0.72,
+  0.62
+ ],
+ "variante_de": "triceratops"
+}

@@ -1,0 +1,13 @@
+{
+ "nome": "terizinossauro",
+ "titulo": "Terizinossauro",
+ "modelo": "../teste/terizinossauro_parado.glb",
+ "comprimento": 9.5,
+ "tipo": "bipede",
+ "ataque": "mordida",
+ "rugido": "cima",
+ "cabeca": 0.08,
+ "braco": 0.2,
+ "fonte": "Therizinosaurus — Julian Johnson-Mortimer (FreddyFoxFreddy) — CC BY 4.0 — https://sketchfab.com/3d-models/therizinosaurus-1fa8b9e2dd4b40c9b8ffcaead0bd8e66",
+ "preparo": "REMOVER=\"babys,icosphere\""
+}

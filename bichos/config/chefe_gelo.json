@@ -1,0 +1,1 @@
+{ "nome": "chefe_gelo", "variante_de": "mamute", "base": "../modelos/mamute.glb", "saida": "../modelos/chefe_gelo.glb", "escala": 1.9, "efeito": "gelo" }

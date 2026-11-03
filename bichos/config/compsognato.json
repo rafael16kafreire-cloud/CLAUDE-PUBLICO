@@ -1,0 +1,12 @@
+{
+ "nome": "compsognato",
+ "base": "../modelos/raptor.glb",
+ "saida": "../modelos/compsognato.glb",
+ "escala": 0.31,
+ "cor": [
+  0.8,
+  1.35,
+  0.55
+ ],
+ "variante_de": "raptor"
+}

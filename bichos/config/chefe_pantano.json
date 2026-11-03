@@ -1,0 +1,1 @@
+{ "nome": "chefe_pantano", "variante_de": "sarcosuchus", "base": "../modelos/sarcosuchus.glb", "saida": "../modelos/chefe_pantano.glb", "escala": 1.7, "efeito": "musgo" }

@@ -1,0 +1,4 @@
+{ "nome": "pteranodonte", "entrada": "../originais/pteranodonte_oscar.glb", "saida": "../modelos/pteranodonte.glb", "comprimento": 3.7,
+  "osso_cabeca": "head.15_15", "osso_cauda": "pelvis.91_91",
+  "animacoes": { "parado": "standing", "andar": "walking", "voar": "flying", "planar": { "de": "flying", "velocidade": 0.35 } },
+  "fonte": "Pteranodon (Animated) — oscar.lopez.riviello (Chistodrako) — CC BY 4.0 — https://sketchfab.com/3d-models/pteranodon-animated-7d7683df41d1405283f160e81a5dff1b" }

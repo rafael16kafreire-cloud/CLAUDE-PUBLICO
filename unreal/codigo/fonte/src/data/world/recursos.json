@@ -1,0 +1,953 @@
+{
+ "_explicacao": "efeito = pedacinhos que voam ao bater (pedra, madeira, folha, cristal, obsidiana, agua). so_machado = só dá para tirar algo com machado (com a mão você se machuca). infinita = nunca acaba. O que cada planta/pedra dá quando você bate (mao = sem ferramenta, machado, picareta, lanca, clava) ou colhe com Interagir (colher). Valores = [mínimo, máximo] por golpe. capacidade = quantos golpes até acabar. esvazia = vira outro tipo quando acaba (ex.: bananeira sem bananas). Planta de colher que acaba (arbustos) afunda no chão em 0,5 s e some. Recursos voltam depois de 'reaparece_min' minutos, se você não estiver perto.",
+ "reaparece_min": 8,
+ "tipos": {
+  "arvore_mole": {
+   "nome": "Árvore fina",
+   "capacidade": 14,
+   "xp": 1,
+   "soco_dano": 0.05,
+   "mao": {
+    "madeira": [
+     1,
+     1
+    ],
+    "palha": [
+     1,
+     1
+    ]
+   },
+   "machado": {
+    "madeira": [
+     2,
+     4
+    ],
+    "palha": [
+     0,
+     1
+    ]
+   },
+   "picareta": {
+    "palha": [
+     3,
+     5
+    ],
+    "madeira": [
+     0,
+     1
+    ]
+   },
+   "lanca": {
+    "palha": [
+     1,
+     2
+    ]
+   },
+   "clava": {
+    "palha": [
+     1,
+     3
+    ]
+   }
+  },
+  "arvore": {
+   "nome": "Árvore",
+   "capacidade": 18,
+   "xp": 1,
+   "so_machado": true,
+   "mao": {},
+   "machado": {
+    "madeira": [
+     3,
+     5
+    ],
+    "palha": [
+     0,
+     1
+    ]
+   },
+   "picareta": {
+    "palha": [
+     2,
+     4
+    ],
+    "madeira": [
+     0,
+     1
+    ]
+   },
+   "lanca": {
+    "palha": [
+     1,
+     2
+    ]
+   },
+   "clava": {
+    "palha": [
+     1,
+     3
+    ]
+   }
+  },
+  "arvore_gigante": {
+   "nome": "Sumaúma",
+   "capacidade": 60,
+   "xp": 1,
+   "so_machado": true,
+   "infinita": true,
+   "mao": {},
+   "machado": {
+    "madeira": [
+     4,
+     7
+    ],
+    "palha": [
+     0,
+     2
+    ]
+   },
+   "picareta": {
+    "palha": [
+     5,
+     8
+    ],
+    "madeira": [
+     0,
+     1
+    ]
+   },
+   "lanca": {
+    "palha": [
+     1,
+     2
+    ]
+   },
+   "clava": {
+    "palha": [
+     1,
+     3
+    ]
+   }
+  },
+  "palmeira": {
+   "nome": "Palmeira",
+   "capacidade": 10,
+   "xp": 1,
+   "mao": {
+    "palha": [
+     1,
+     3
+    ],
+    "fibra": [
+     0,
+     1
+    ]
+   },
+   "machado": {
+    "madeira": [
+     2,
+     3
+    ],
+    "palha": [
+     1,
+     2
+    ]
+   },
+   "picareta": {
+    "palha": [
+     3,
+     5
+    ]
+   },
+   "lanca": {
+    "palha": [
+     1,
+     2
+    ]
+   },
+   "clava": {
+    "palha": [
+     1,
+     2
+    ]
+   }
+  },
+  "tronco": {
+   "nome": "Tronco caído",
+   "capacidade": 12,
+   "xp": 1,
+   "mao": {
+    "madeira": [
+     1,
+     1
+    ],
+    "palha": [
+     0,
+     1
+    ]
+   },
+   "machado": {
+    "madeira": [
+     3,
+     5
+    ]
+   },
+   "picareta": {
+    "madeira": [
+     1,
+     2
+    ],
+    "palha": [
+     1,
+     2
+    ]
+   },
+   "lanca": {
+    "madeira": [
+     0,
+     1
+    ]
+   },
+   "clava": {
+    "madeira": [
+     1,
+     1
+    ]
+   }
+  },
+  "pedrinhas": {
+   "nome": "Pedrinhas",
+   "capacidade": 1,
+   "xp": 1,
+   "rotulo": "Pegar pedras",
+   "mao": {
+    "pedra": [
+     1,
+     2
+    ]
+   },
+   "colher": {
+    "pedra": [
+     2,
+     3
+    ],
+    "silex": [
+     0,
+     1
+    ]
+   }
+  },
+  "gravetos": {
+   "nome": "Gravetos",
+   "capacidade": 1,
+   "xp": 1,
+   "rotulo": "Pegar gravetos",
+   "mao": {
+    "graveto": [
+     1,
+     2
+    ]
+   },
+   "colher": {
+    "graveto": [
+     2,
+     3
+    ]
+   }
+  },
+  "rochedo": {
+   "efeito": "pedra",
+   "nome": "Rochedo",
+   "capacidade": 80,
+   "xp": 1,
+   "infinita": true,
+   "so_ferramenta": true,
+   "mao": {},
+   "machado": {
+    "pedra": [
+     2,
+     4
+    ],
+    "silex": [
+     0,
+     1
+    ]
+   },
+   "picareta": {
+    "pedra": [
+     2,
+     3
+    ],
+    "silex": [
+     1,
+     3
+    ]
+   },
+   "lanca": {
+    "pedra": [
+     0,
+     1
+    ]
+   },
+   "clava": {
+    "pedra": [
+     1,
+     1
+    ]
+   }
+  },
+  "ferro": {
+   "efeito": "pedra",
+   "nome": "Minério de ferro",
+   "capacidade": 18,
+   "xp": 2,
+   "so_ferramenta": true,
+   "mao": {},
+   "machado": {
+    "pedra": [
+     1,
+     2
+    ],
+    "minerio_ferro": [
+     0,
+     1
+    ]
+   },
+   "picareta": {
+    "minerio_ferro": [
+     2,
+     3
+    ],
+    "pedra": [
+     0,
+     2
+    ]
+   },
+   "lanca": {
+    "pedra": [
+     0,
+     1
+    ]
+   },
+   "clava": {
+    "pedra": [
+     1,
+     1
+    ]
+   }
+  },
+  "metal": {
+   "efeito": "pedra",
+   "nome": "Rocha de metal",
+   "capacidade": 24,
+   "xp": 3,
+   "so_ferramenta": true,
+   "mao": {},
+   "machado": {
+    "pedra": [
+     1,
+     2
+    ],
+    "minerio_ferro": [
+     0,
+     1
+    ]
+   },
+   "picareta": {
+    "minerio_ferro": [
+     3,
+     5
+    ],
+    "pedra": [
+     0,
+     1
+    ]
+   },
+   "lanca": {
+    "pedra": [
+     0,
+     1
+    ]
+   },
+   "clava": {
+    "pedra": [
+     1,
+     1
+    ]
+   }
+  },
+  "obsidiana": {
+   "efeito": "obsidiana",
+   "nome": "Obsidiana",
+   "capacidade": 16,
+   "xp": 3,
+   "so_ferramenta": true,
+   "mao": {},
+   "machado": {
+    "pedra": [
+     1,
+     2
+    ],
+    "obsidiana": [
+     0,
+     1
+    ]
+   },
+   "picareta": {
+    "obsidiana": [
+     2,
+     3
+    ],
+    "pedra": [
+     0,
+     1
+    ]
+   },
+   "lanca": {
+    "pedra": [
+     0,
+     1
+    ]
+   },
+   "clava": {
+    "pedra": [
+     0,
+     1
+    ]
+   }
+  },
+  "cristal": {
+   "efeito": "cristal",
+   "nome": "Cristal",
+   "capacidade": 14,
+   "xp": 3,
+   "so_ferramenta": true,
+   "mao": {},
+   "machado": {
+    "cristal": [
+     0,
+     1
+    ],
+    "pedra": [
+     0,
+     1
+    ]
+   },
+   "picareta": {
+    "cristal": [
+     2,
+     3
+    ]
+   },
+   "lanca": {
+    "cristal": [
+     0,
+     1
+    ]
+   },
+   "clava": {
+    "pedra": [
+     0,
+     1
+    ]
+   }
+  },
+  "petroleo": {
+   "efeito": "obsidiana",
+   "nome": "Rocha de petróleo",
+   "capacidade": 14,
+   "xp": 3,
+   "so_ferramenta": true,
+   "mao": {},
+   "machado": {
+    "pedra": [
+     1,
+     2
+    ],
+    "petroleo": [
+     0,
+     1
+    ]
+   },
+   "picareta": {
+    "petroleo": [
+     2,
+     3
+    ],
+    "pedra": [
+     0,
+     1
+    ]
+   },
+   "lanca": {
+    "pedra": [
+     0,
+     1
+    ]
+   },
+   "clava": {
+    "pedra": [
+     0,
+     1
+    ]
+   }
+  },
+  "concha": {
+   "efeito": "agua",
+   "nome": "Concha do fundo do mar",
+   "capacidade": 2,
+   "xp": 2,
+   "rotulo": "Pegar pérolas",
+   "mao": {
+    "perola_silica": [
+     1,
+     2
+    ]
+   },
+   "colher": {
+    "perola_silica": [
+     2,
+     4
+    ]
+   }
+  },
+  "pedra": {
+   "efeito": "pedra",
+   "nome": "Pedra",
+   "capacidade": 20,
+   "xp": 1,
+   "so_ferramenta": true,
+   "mao": {},
+   "machado": {
+    "pedra": [
+     2,
+     4
+    ],
+    "silex": [
+     0,
+     1
+    ]
+   },
+   "picareta": {
+    "pedra": [
+     1,
+     2
+    ],
+    "silex": [
+     2,
+     4
+    ]
+   },
+   "lanca": {
+    "pedra": [
+     0,
+     1
+    ]
+   },
+   "clava": {
+    "pedra": [
+     1,
+     1
+    ]
+   }
+  },
+  "samambaia": {
+   "nome": "Samambaia",
+   "capacidade": 4,
+   "xp": 1,
+   "mao": {
+    "fibra": [
+     1,
+     1
+    ]
+   },
+   "colher": {
+    "fibra": [
+     1,
+     2
+    ]
+   }
+  },
+  "samambaia_gigante": {
+   "nome": "Samambaia gigante",
+   "capacidade": 6,
+   "xp": 1,
+   "mao": {
+    "fibra": [
+     1,
+     1
+    ],
+    "palha": [
+     0,
+     1
+    ]
+   },
+   "machado": {
+    "madeira": [
+     1,
+     2
+    ],
+    "fibra": [
+     1,
+     1
+    ]
+   },
+   "colher": {
+    "fibra": [
+     1,
+     3
+    ]
+   }
+  },
+  "arbusto": {
+   "nome": "Arbusto",
+   "capacidade": 3,
+   "xp": 1,
+   "mao": {
+    "baga_stim": [
+     0,
+     1
+    ],
+    "fibra": [
+     4,
+     8
+    ],
+    "baga_amar": [
+     0,
+     1
+    ],
+    "baga_mejo": [
+     0,
+     1
+    ],
+    "baga_escura": [
+     0,
+     1
+    ],
+    "fruta_rubra": [
+     0,
+     1
+    ],
+    "fruta_azul": [
+     0,
+     1
+    ]
+   },
+   "colher": {
+    "baga_stim": [
+     1,
+     2
+    ],
+    "fibra": [
+     12,
+     16
+    ],
+    "baga_amar": [
+     0,
+     1
+    ],
+    "baga_mejo": [
+     0,
+     1
+    ],
+    "baga_escura": [
+     1,
+     3
+    ],
+    "fruta_rubra": [
+     1,
+     3
+    ],
+    "fruta_azul": [
+     1,
+     2
+    ],
+    "semente_tintoberry": [
+     0,
+     1
+    ]
+   }
+  },
+  "baga_mejo": {
+   "nome": "Arbusto de Baga-Mejo",
+   "capacidade": 3,
+   "xp": 1,
+   "mao": {
+    "baga_stim": [
+     0,
+     1
+    ],
+    "fibra": [
+     4,
+     8
+    ],
+    "baga_amar": [
+     0,
+     1
+    ],
+    "baga_mejo": [
+     0,
+     1
+    ],
+    "baga_escura": [
+     0,
+     1
+    ],
+    "fruta_rubra": [
+     0,
+     1
+    ],
+    "fruta_azul": [
+     0,
+     1
+    ]
+   },
+   "colher": {
+    "baga_stim": [
+     1,
+     2
+    ],
+    "fibra": [
+     12,
+     16
+    ],
+    "baga_amar": [
+     0,
+     1
+    ],
+    "baga_mejo": [
+     0,
+     1
+    ],
+    "baga_escura": [
+     1,
+     3
+    ],
+    "fruta_rubra": [
+     1,
+     3
+    ],
+    "fruta_azul": [
+     1,
+     2
+    ],
+    "semente_tintoberry": [
+     0,
+     1
+    ]
+   }
+  },
+  "baga_escura": {
+   "nome": "Arbusto de Baga-Escura",
+   "capacidade": 3,
+   "xp": 1,
+   "mao": {
+    "baga_stim": [
+     0,
+     1
+    ],
+    "fibra": [
+     4,
+     8
+    ],
+    "baga_amar": [
+     0,
+     1
+    ],
+    "baga_mejo": [
+     0,
+     1
+    ],
+    "baga_escura": [
+     0,
+     1
+    ],
+    "fruta_rubra": [
+     0,
+     1
+    ],
+    "fruta_azul": [
+     0,
+     1
+    ]
+   },
+   "colher": {
+    "baga_stim": [
+     1,
+     2
+    ],
+    "fibra": [
+     12,
+     16
+    ],
+    "baga_amar": [
+     0,
+     1
+    ],
+    "baga_mejo": [
+     0,
+     1
+    ],
+    "baga_escura": [
+     1,
+     3
+    ],
+    "fruta_rubra": [
+     1,
+     3
+    ],
+    "fruta_azul": [
+     1,
+     2
+    ],
+    "semente_tintoberry": [
+     0,
+     1
+    ]
+   }
+  },
+  "frutas": {
+   "nome": "Arbusto de frutas",
+   "capacidade": 3,
+   "xp": 1,
+   "mao": {
+    "baga_stim": [
+     0,
+     1
+    ],
+    "fibra": [
+     4,
+     8
+    ],
+    "baga_amar": [
+     0,
+     1
+    ],
+    "baga_mejo": [
+     0,
+     1
+    ],
+    "baga_escura": [
+     0,
+     1
+    ],
+    "fruta_rubra": [
+     0,
+     1
+    ],
+    "fruta_azul": [
+     0,
+     1
+    ]
+   },
+   "colher": {
+    "baga_stim": [
+     1,
+     2
+    ],
+    "fibra": [
+     12,
+     16
+    ],
+    "baga_amar": [
+     0,
+     1
+    ],
+    "baga_mejo": [
+     0,
+     1
+    ],
+    "baga_escura": [
+     1,
+     3
+    ],
+    "fruta_rubra": [
+     1,
+     3
+    ],
+    "fruta_azul": [
+     1,
+     2
+    ],
+    "semente_tintoberry": [
+     0,
+     1
+    ]
+   }
+  },
+  "bananeira": {
+   "nome": "Bananeira",
+   "capacidade": 2,
+   "xp": 2,
+   "esvazia": "bananeira_vazia",
+   "mao": {
+    "banana": [
+     1,
+     2
+    ],
+    "fibra": [
+     0,
+     1
+    ]
+   },
+   "colher": {
+    "banana": [
+     2,
+     3
+    ]
+   }
+  },
+  "planta": {
+   "nome": "Bananeira",
+   "capacidade": 4,
+   "xp": 1,
+   "mao": {
+    "fibra": [
+     1,
+     1
+    ]
+   },
+   "machado": {
+    "fibra": [
+     1,
+     2
+    ],
+    "palha": [
+     1,
+     2
+    ]
+   },
+   "colher": {
+    "fibra": [
+     1,
+     2
+    ]
+   }
+  },
+  "junco": {
+   "nome": "Junco",
+   "capacidade": 3,
+   "xp": 1,
+   "mao": {
+    "fibra": [
+     1,
+     1
+    ],
+    "palha": [
+     0,
+     1
+    ]
+   },
+   "colher": {
+    "fibra": [
+     1,
+     2
+    ],
+    "palha": [
+     1,
+     2
+    ]
+   }
+  }
+ }
+}

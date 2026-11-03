@@ -1,0 +1,44 @@
+id,nome,dieta,temperamento_ark,comprimento_m,biomas,vida,stamina,peso,torpor,dano,vel_andar_ms,vel_correr_ms,vel_nado_ms,pode_domar,pode_montar,k_doma,comida_tipo,comida_preferida,imune_torpor,estéril,incubacao_s,maturacao_s,temp_ovo_c,tempos_conferidos,habilidade_especial,habilidades
+dodo,Dodô,herbivoro,oblivious,0.9|1,praia|selva|igapo|campos,40,100,50,20,5,0.65,1.365,3,true,,0.5,baga,baga_mejo,,false,17940,333300,32|34,false,,mordida
+parassauro,Parassauro,herbivoro,skittish,9|10,selva|igapo|neve|campos,280,450,480,140,18,4,11,3,true,true,1,baga,baga_mejo,,false,17940,333300,32|34,false,rugido,mordida|scan|rugido
+galimimo,Galimimo,herbivoro,skittish,5.5|6.5,selva|praia|neve|campos,150,300,270,75,12,11,23.05,6,true,true,0.8,baga,baga_mejo,,false,17940,333300,32|34,false,,mordida|pulo
+paquicefalossauro,Paquicefalossauro,herbivoro,reactive,4|4.6,selva|neve|serra,260,150,150,130,30,4,10,2.5,true,true,1,baga,baga_mejo,,false,17940,333300,32|34,false,dash,cabecada|ram|pulo
+triceratops,Triceratops,herbivoro,docile,8|9,selva|igapo|neve|campos,300,150,365,150,25,3.5,9,2.5,true,true,1.2,baga,baga_mejo,,false,17940,333300,32|34,false,dash,cabecada|carga
+estegossauro,Estegossauro,herbivoro,docile,8.5|9.2,selva|neve|campos,450,300,500,225,35,3,7.5,2,true,true,1.4,baga,baga_mejo,,false,17940,333300,32|34,false,placas,golpe_cauda|empalar|placas
+anquilossauro,Anquilossauro,herbivoro,docile,6.5|8,selva|praia|neve|serra,700,175,250,420,50,1.2,2.64,3,true,true,1.6,baga,baga_mejo,,false,17940,333300,32|34,false,,golpe_cauda|mordida
+sauropelta,Sauropelta,herbivoro,docile,5|6,selva|igapo,550,260,323,275,35,3,7.5,2,true,true,1.5,baga,baga_mejo,,false,17940,333300,32|34,false,,golpe_cauda|mordida
+braquiossauro,Braquiossauro,herbivoro,docile,20|22,selva|igapo|campos,2070,240,1600,2000,60,1.5,6.075,3,true,true,3,baga,baga_mejo,,false,17940,333300,32|34,false,,golpe_cauda
+argentinossauro,Argentinossauro,herbivoro,docile,30|35,selva|campos,3500,2000,50000,875,60,3,6,3,true,true,3.5,baga,baga_mejo,,false,17940,333300,32|34,false,,golpe_cauda
+compsognato,Compsognato,carnivoro,curious,0.9|1.2,selva|praia|neve|serra,50,100,25,25,4,1.2,3.36,2,true,,0.4,carne,carne_crua,,false,17940,333300,32|34,false,dash,mordida
+raptor,Raptor,carnivoro,aggressive,3|3.4,selva|igapo|neve|campos|serra,200,150,140,180,25,4.8,9.936,3,true,true,1,carne,carne_crua,,false,17940,333300,32|34,false,dash,mordida|bote|rugido_bando|pulo
+carnotauro,Carnotauro,carnivoro,aggressive,7.5|8,selva|neve|campos,420,300,300,350,35,4.25,8.925,3,true,true,1.8,carne,carne_crua,,false,17940,333300,32|34,false,cabecada,mordida|cabecada
+trex,T-Rex,carnivoro,aggressive,11.5|12.4,selva|neve|campos,1100,420,500,1550,62,4,12,2.5,true,true,2.5,carne,carne_crua,,false,17940,333300,32|34,true,rugido,mordida|rugido
+titanoboa,Titanoboa,carnivoro,patient,12|14,pantano|igapo,500,150,150,250,40,3,8,8,,true,1.6,carne,carne_crua,,false,17940,333300,32|34,false,,mordida
+deinosuchus,Deinosuchus,carnivoro,patient,10|12,pantano|igapo,1000,300,600,1350,70,2,8.925,7,true,true,2.2,carne,carne_crua,,false,17940,333300,32|34,false,cauda,mordida|giga_mordida|cauda
+espinossauro,Espinossauro,carnivoro,aggressive,14|18,pantano|igapo,900,350,350,450,65,4,10,8,true,true,2.2,carne,carne_crua,,false,17940,333300,32|34,false,garras,mordida|garras|postura
+piranha,Piranha-gigante,carnivoro,aggressive,,pantano,80,120,15,40,15,10,16,,,,0.6,carne,carne_crua,,true,17940,333300,32|34,false,,mordida
+mosassauro,Mosassauro,carnivoro,aggressive,12|15,mar,2500,400,1300,625,120,9,14,,,,3.2,carne,carne_crua,,true,17940,333300,32|34,false,,mordida
+pterodactilo,Pteranodonte,carnivoro,skittish,,praia|selva|pantano|neve|serra,350,150,120,175,25,18,26,,true,true,1.4,carne,carne_crua,,false,17940,333300,32|34,false,,mordida|agarrar|rolamento
+quetzalcoatlus,Quetzalcoatlus,carnivoro,skittish,,selva|praia|neve,900,800,800,450,40,14,20,,true,true,2.2,carne,carne_crua,,false,17940,333300,32|34,false,,bicada|agarrar
+mamute,Mamute-lanoso,herbivoro,docile,9|10.5,neve,1100,330,500,550,60,3.5,9,3,true,true,2.2,baga,baga_mejo,,false,17940,333300,32|34,false,pisao,balanco|agarrar|intimidar|pisao
+argentavis,Argentavis,carnivoro,territorial,,selva|praia|neve|serra,365,400,400,600,25,7.275,13.5,6,true,true,1.6,carne,carne_crua,,false,17940,333300,32|34,false,,garra|agarrar_garras|agarrar_bico
+reidodo,Rei-dodô,carnivoro,aggressive,9|10.5,selva,800,380,425,400,60,13,28.6,2.5,true,true,2.3,carne,carne_crua,,true,17940,333300,32|34,false,,ataque|sopro_fogo
+dilofossauro,Dilofossauro,carnivoro,aggressive,3|3.5,selva|igapo|campos|pantano,130,100,45,75,10,1.2,3.6,3,true,false,0.8,carne,carne_crua,,false,17940,333300,32|34,false,dash,mordida|cuspe
+iguanodonte,Iguanodonte,herbivoro,reactive,8|9,selva|campos|serra,400,250,450,200,25,3.5,9,2.5,true,false,1.2,baga,baga_mejo,,false,17940,333300,32|34,false,,golpe|postura|pulo
+dimetrodonte,Dimetrodonte,carnivoro,reactive,3.2|3.8,pantano|igapo|campos|praia,350,200,180,175,35,1.1,2.53,2.5,true,false,1.3,carne,carne_crua,,false,17940,333300,32|34,false,,mordida
+kentrossauro,Kentrossauro,herbivoro,short_tempered,3.6|4.2,selva|campos|serra,250,160,160,125,20,3.5,9,2.5,true,false,1,baga,baga_mejo,,false,17940,333300,32|34,false,golpe_cauda,mordida|golpe_cauda
+paquirrinossauro,Paquirrinossauro,herbivoro,evasive,6|6.8,campos|serra|selva,500,200,380,250,45,3,8,2.5,true,false,1.5,baga,baga_mejo,,false,17940,333300,32|34,false,dash,cabecada|feromonio_calmante|feromonio_furia
+moschops,Moschops,herbivoro,cowardly,2.6|3,campos|selva|praia|pantano,180,180,120,90,15,3,7,3,true,false,0.8,baga,baga_mejo,,false,17940,333300,32|34,false,,mordida|mordida_perfurante|mordida_baixa
+diplodoco,Diplodoco,herbivoro,naive,24|27,campos|selva,1500,240,1600,375,30,3,13.5,4,true,false,2.5,baga,baga_mejo,,false,17940,333300,32|34,false,,empurrao
+terizinossauro,Terizinossauro,herbivoro,neutral,9|10,selva|campos|serra,700,300,520,350,60,3,8,2.5,true,true,2,baga,baga_mejo,,false,17940,333300,32|34,false,mordida,garra|delicado|mordida
+barionix,Barionix,carnivoro,territorial,7.5|10,pantano|igapo,440,325,325,400,35,4,14.7,4.5,true,true,1.6,carne,carne_crua,,false,17940,333300,32|34,false,cauda,mordida|cauda|pulo
+suchomimo,Suchomimo,carnivoro,aggressive,9|11,pantano|praia,650,325,325,325,55,4,11,6,true,true,2,carne,carne_crua,,false,17940,333300,32|34,false,cauda,mordida|cauda
+giganotossauro,Giganotossauro,carnivoro,extremely_aggressive,12|13,serra|campos,1400,400,700,350,100,4,11,2.5,true,true,3,carne,carne_crua,,false,17940,333300,32|34,false,pisao,mordida|pisao
+sarcosuchus,Sarcosuchus,carnivoro,patient,9|11,pantano,600,450,300,300,50,3,8,9,true,true,1.8,carne,carne_crua,,false,17940,333300,32|34,false,rolamento,mordida|mordida_surpresa|rolamento|pulo
+edmontossauro,Edmontossauro,herbivoro,skittish,9|12,campos|selva,500,450,480,250,20,4,11,4,true,true,1.4,baga,baga_mejo,,false,17940,333300,32|34,false,rugido,mordida|scan|rugido
+lystrosaurus,Lystrosaurus,herbivoro,loyal,0.8|1.2,selva|campos|praia,120,100,90,60,10,2.5,5.5,2.5,true,false,0.6,baga,baga_mejo,,false,17940,333300,32|34,false,,mordida
+paraceraterio,Paraceratério,herbivoro,docile,7|8,campos,900,300,850,450,35,4,11,3,true,true,1.8,baga,baga_mejo,,false,17940,333300,32|34,false,,pisada
+chefe_gelo,Mamute de Gelo (chefe),herbivoro,boss,13|14,neve,15000,2000,500,8000,150,3,8,3,false,false,,,baga_mejo,true,true,17940,333300,32|34,false,,
+chefe_mar,Rei do Abismo (chefe),carnivoro,boss,20|22,mar,20000,2000,1300,9000,180,8,13,,false,false,,,carne_crua,true,true,17940,333300,32|34,false,,
+chefe_pantano,Senhor do Pântano (chefe),carnivoro,boss,15|16,pantano,18000,2000,300,7000,160,3.5,9,6,false,false,,,carne_crua,true,true,17940,333300,32|34,false,,
+chefe_vulcao,Dragão do Vulcão (chefe),carnivoro,boss,16|18,serra,25000,3000,400,12000,200,12,20,,false,false,,,carne_crua,true,true,17940,333300,32|34,false,,

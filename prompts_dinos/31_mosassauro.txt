@@ -1,0 +1,20 @@
+Crie no Blender um animal marinho **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com escamas finas, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+
+ESPÉCIE: Mosassauro. Réptil marinho gigante de 14 m. Corpo de lagarto alongado, cabeça grande com dentes cônicos, 4 nadadeiras, cauda com nadadeira em forma de meia-lua. Cores: azul-acinzentado escuro nas costas, barriga branca, listras finas.
+
+MALHA: entre 12.000 e 16.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
+
+TEXTURA: uma textura pintada (Base Color) de 1024×1024, salva em JPG, com todos os detalhes da espécie bem visíveis nesse tamanho (escamas, padrão de cor, barriga mais clara, olhos e dentes). Normal Map opcional com metade desse tamanho. Material único (Principled BSDF), sem transparência. UV aberta sem sobreposição, aproveitando bem a textura.
+
+POSIÇÃO: em pose neutra, na horizontal como se estivesse nadando, centro do corpo em Z = 0, olhando para -Y, em tamanho real (metros). Aplique Ctrl+A → All Transforms antes de exportar.
+
+ESQUELETO (Armature): ossos de quadril (raiz), coluna (4), pescoço (2), cabeça, mandíbula, cauda (6 a 8) e as 4 nadadeiras (2 ossos cada). Skinning com pesos limpos, sem a malha rasgar ou afundar ao dobrar.
+
+ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
+- `parado`: flutua parado, nadadeiras/cauda se mexendo de leve (loop).
+- `nadar`: nadando devagar (loop).
+- `nadar_rapido`: nadando rápido (loop).
+- `atacar`: mordida com a boca escancarada (sem loop).
+- `morrer`: vira de barriga para cima (sem loop).
+
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: mosassauro.glb

@@ -1,0 +1,231 @@
+// =============================================================
+// PERSONAGEM LOW-POLY (estilo Valheim): sobrevivente com túnica de couro, capa de pele nos
+// ombros, barba e botas, feito de formas simples facetadas nas cores da paleta (core/paleta.js).
+// (Antes era o "quadradinho" com textura de pixel; a opção do menu continua com o mesmo nome.)
+// Cada parte é um bloco com articulação de verdade: cintura, ombros, cotovelos, quadris e joelhos,
+// então as animações (andar, correr, pular, machadada, mineração, lança, soco) dobram nos lugares certos.
+// As poses vêm das mesmas contas do PlayerModel (_computePose); aqui só se aplicam nas juntas.
+// =============================================================
+import * as THREE from 'three';
+import { PlayerModel } from './player_model.js';
+import { makeTool } from './player_hands.js';
+import { PALETA } from '../core/paleta.js';
+import { ROUPA } from './roupa.js';
+
+const mat = (c) => new THREE.MeshLambertMaterial({ color: c, flatShading: true });
+
+// "bloco" low-poly: cilindro de poucos lados (w = largura, d = profundidade), com afunilamento
+function box(w, h, d, material, x = 0, y = 0, z = 0, lados = 6, afunila = 0.9) {
+  const g = new THREE.CylinderGeometry(0.5 * afunila, 0.5, 1, lados, 1);
+  g.rotateY(Math.PI / lados);
+  g.scale(w, h, d);
+  const m = new THREE.Mesh(g, material);
+  m.position.set(x, y, z);
+  m.castShadow = true;
+  return m;
+}
+// bloco reto (olhos, cinto, botas)
+function cubo(w, h, d, material, x = 0, y = 0, z = 0) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
+  m.position.set(x, y, z);
+  m.castShadow = true;
+  return m;
+}
+
+export class BlockyModel {
+  constructor() {
+    const SKIN = mat(ROUPA.pele());
+    const SHIRT = mat(ROUPA.tunica());
+    const SLEEVE = mat(ROUPA.tunica().multiplyScalar(0.9));
+    const PANTS = mat(ROUPA.calca());
+    const BOOT = mat(ROUPA.bota());
+    const HAIR = mat(ROUPA.cabelo());
+    const FUR = mat(ROUPA.pelo());
+    const DARK = mat(PALETA.ceuNoite.clone());
+    const BELT = mat(ROUPA.cinto());
+
+    this.root = new THREE.Group();
+    this.root.name = 'Jogador';
+    this.model = new THREE.Group(); // tamanho do boneco (um pouco menor que 1,9 m)
+    this.model.scale.setScalar(0.96);
+    this.model.rotation.y = Math.PI; // o jogo olha para o outro lado: gira o boneco todo
+    this.root.add(this.model);
+
+    // quadril (gira e desce nos agachamentos) — a 0,9 m do chão
+    this.body = new THREE.Group();
+    this.body.position.y = 0.9;
+    this.model.add(this.body);
+    this.body.add(box(0.46, 0.18, 0.27, PANTS, 0, -0.02, 0, 7, 0.95));
+
+    // pernas: coxa (quadril) + canela (joelho) + pé
+    const leg = (x) => {
+      const hip = new THREE.Group();
+      hip.position.set(x, -0.08, 0);
+      hip.add(box(0.2, 0.42, 0.21, PANTS, 0, -0.21, 0, 6, 0.85));
+      const knee = new THREE.Group();
+      knee.position.set(0, -0.42, 0);
+      knee.add(box(0.17, 0.22, 0.18, PANTS, 0, -0.1, 0, 6, 0.9));
+      knee.add(box(0.19, 0.2, 0.2, BOOT, 0, -0.29, 0, 6, 1.1)); // cano da bota
+      knee.add(cubo(0.19, 0.09, 0.3, BOOT, 0, -0.41, 0.045)); // pé
+      hip.add(knee);
+      this.body.add(hip);
+      return { hip, knee };
+    };
+    // de frente (para +z) a direita do personagem fica no lado -x
+    const lL = leg(0.11);
+    const lR = leg(-0.11);
+    this.legL = lL.hip; this.kneeL = lL.knee;
+    this.legR = lR.hip; this.kneeR = lR.knee;
+
+    // coluna (cintura): tronco, cabeça e braços giram juntos
+    this.spine = new THREE.Group();
+    this.spine.position.y = 0.06;
+    this.body.add(this.spine);
+    this.spine.add(box(0.48, 0.58, 0.27, SHIRT, 0, 0.3, 0, 7, 1.12)); // túnica: ombros mais largos
+    this.spine.add(box(0.5, 0.07, 0.29, BELT, 0, 0.04, 0, 7, 1)); // cinto
+    this.spine.add(cubo(0.08, 0.06, 0.03, mat(PALETA.pedraClara.clone()), 0, 0.04, 0.15)); // fivela
+    {
+      // capa de pele sobre os ombros (cone baixo e largo)
+      const g = new THREE.ConeGeometry(0.4, 0.2, 7, 1, true);
+      g.scale(1, 1, 0.68);
+      const capa = new THREE.Mesh(g, FUR);
+      capa.material.side = THREE.DoubleSide;
+      capa.position.set(0, 0.6, -0.01);
+      capa.castShadow = true;
+      this.spine.add(capa);
+    }
+
+    // cabeça
+    this.head = new THREE.Group();
+    this.head.position.y = 0.62;
+    this.head.add(box(0.14, 0.08, 0.14, SKIN, 0, 0.03, 0)); // pescoço
+    {
+      const cab = new THREE.Mesh(new THREE.IcosahedronGeometry(0.17, 0), SKIN);
+      cab.scale.set(0.95, 1.05, 1);
+      cab.position.y = 0.21;
+      cab.castShadow = true;
+      this.head.add(cab);
+      // cabelo: calota facetada por cima e atrás
+      const cabelo = new THREE.Mesh(new THREE.DodecahedronGeometry(0.175, 0), HAIR);
+      cabelo.scale.set(1.02, 0.7, 1.05);
+      cabelo.position.set(0, 0.3, -0.03);
+      cabelo.castShadow = true;
+      this.head.add(cabelo);
+      // barba: cone para baixo na frente do queixo
+      const bg = new THREE.ConeGeometry(0.12, 0.2, 6);
+      bg.rotateX(Math.PI);
+      const barba = new THREE.Mesh(bg, HAIR);
+      barba.scale.set(1, 1, 0.7);
+      barba.position.set(0, 0.09, 0.09);
+      this.head.add(barba);
+    }
+    for (const sx of [-1, 1]) this.head.add(cubo(0.035, 0.035, 0.02, DARK, sx * 0.065, 0.23, 0.15)); // olhos
+    this.head.add(box(0.05, 0.06, 0.05, SKIN, 0, 0.18, 0.16, 4, 0.7)); // nariz
+    this.spine.add(this.head);
+
+    // braços: ombro + cotovelo + mão
+    const arm = (x) => {
+      const sh = new THREE.Group();
+      sh.position.set(x, 0.54, 0);
+      sh.add(box(0.17, 0.3, 0.17, SLEEVE, 0, -0.14, 0, 6, 1.05));
+      const el = new THREE.Group();
+      el.position.set(0, -0.29, 0);
+      el.add(box(0.14, 0.2, 0.14, SKIN, 0, -0.09, 0, 6, 1.05));
+      el.add(box(0.15, 0.06, 0.15, FUR, 0, -0.02, 0, 6, 1)); // munhequeira de couro
+      const mao = new THREE.Mesh(new THREE.DodecahedronGeometry(0.075, 0), SKIN);
+      mao.position.y = -0.23;
+      mao.castShadow = true;
+      el.add(mao);
+      sh.add(el);
+      this.spine.add(sh);
+      return { sh, el };
+    };
+    const aL = arm(0.33);
+    const aR = arm(-0.33);
+    this.armL = aL.sh; this.elbowL = aL.el;
+    this.armR = aR.sh; this.elbowR = aR.el;
+
+    this._phase = 0;
+    this._swing = 0;
+    this.toolKind = 'mao';
+  }
+
+  // ferramenta na mão direita (na ponta do antebraço)
+  // Qual machado aparece na mão (pedra, sílex ou metal)
+  setVariant(id) {
+    this._toolMesh?.children[0]?.userData?.setVariant?.(id);
+  }
+
+  setTool(kind) {
+    kind = kind ?? 'mao';
+    if (kind === this.toolKind) return;
+    this.toolKind = kind;
+    if (this._toolMesh) {
+      this.elbowR.remove(this._toolMesh);
+      this._toolMesh = null;
+    }
+    if (kind === 'mao') return;
+    const t = makeTool(kind);
+    t.traverse((o) => {
+      if (o.isMesh) o.castShadow = true;
+    });
+    t.position.set(0, -0.26, 0.03);
+    t.rotation.x = kind === 'arco' ? 0.2 : kind === 'pistola' || kind === 'luneta' ? Math.PI / 2 : kind === 'lanca' ? 1.8 : 1.1;
+    if (kind === 'arco') t.rotation.z = -0.35;
+    t.scale.setScalar(1.25);
+    this.elbowR.add(t);
+    this._toolMesh = t;
+  }
+
+  update(dt, s) {
+    this.root.position.copy(s.position);
+    this.root.rotation.y = s.facing;
+    this.root.visible = s.visible;
+    const b = this.body;
+    this._deadT = s.dead ? (this._deadT ?? 0) + dt : 0;
+    if (s.dead) {
+      const k = Math.min(1, this._deadT / 0.9);
+      const e = k * k;
+      b.rotation.set(0, 0, (Math.PI / 2) * e);
+      b.position.set(0.9 * e, 0.9 - 0.75 * e, 0);
+      this.spine.rotation.set(0, 0, 0);
+      this.armL.rotation.set(0, 0, -0.6 * e);
+      this.armR.rotation.set(0, 0, 0.6 * e);
+      return;
+    }
+    const L = this._computePose(dt, s);
+    if (!L) {
+      // nadando: deitado, braçadas e pernadas
+      const sw = Math.sin(this._phase);
+      b.rotation.set(1.15, 0, 0, 'YXZ');
+      b.position.set(0, 0.95, 0.1);
+      this.armL.rotation.set(-2.6 + sw * 0.8, 0, -0.3);
+      this.armR.rotation.set(-2.6 - sw * 0.8, 0, 0.3);
+      this.legL.rotation.set(sw * 0.4, 0, 0);
+      this.legR.rotation.set(-sw * 0.4, 0, 0);
+      this.kneeL.rotation.x = 0.3 + 0.25 * Math.max(0, sw);
+      this.kneeR.rotation.x = 0.3 + 0.25 * Math.max(0, -sw);
+      this.elbowL.rotation.x = this.elbowR.rotation.x = -0.25;
+      this.spine.rotation.set(0, 0, 0);
+      this.head.rotation.set(-0.9, 0, 0);
+      return;
+    }
+    // juntas de verdade: coxa/ombro giram; joelho dobra a canela para trás, cotovelo o antebraço para a frente
+    this.legL.rotation.set(L.legL, 0, 0);
+    this.legR.rotation.set(L.legR, 0, 0);
+    this.kneeL.rotation.x = L.kneeL;
+    this.kneeR.rotation.x = L.kneeR;
+    this.armL.rotation.set(L.axL, 0, -L.azL);
+    this.armR.rotation.set(L.axR, 0, -L.azR);
+    this.elbowL.rotation.x = -L.elbL;
+    this.elbowR.rotation.x = -L.elbR;
+    b.position.set(0, 0.9 + L.dip, 0);
+    b.rotation.set(0, L.pelvis, 0, 'YXZ');
+    this.spine.rotation.set(L.lean, L.twist, L.side, 'YXZ');
+    this.head.rotation.set(L.headX, -L.twist * 0.5, 0);
+  }
+}
+
+BlockyModel.prototype.swing = PlayerModel.prototype.swing;
+BlockyModel.prototype.gather = PlayerModel.prototype.gather;
+BlockyModel.prototype._computePose = PlayerModel.prototype._computePose;

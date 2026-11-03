@@ -1,0 +1,18 @@
+{
+ "nome": "moschops",
+ "titulo": "Moschops",
+ "modelo": "../teste/moschops_parado.glb",
+ "comprimento": 2.7,
+ "tipo": "quadrupede",
+ "ataque": "investida",
+ "cabeca": 0.12,
+ "fonte": "Remodelado a partir de: Dimetrodon — cp4096 — CC BY 4.0 — https://sketchfab.com/3d-models/dimetrodon-3ac7c6aada5e4c03849f9544bbc1afed (vela removida, corpo, cauda e cabeça alterados)",
+ "ajuste": {
+  "zPeTras": -0.45,
+  "zPeFrente": 0.65,
+  "xPeTras": 0.24,
+  "xPeFrente": 0.24,
+  "yQuadril": 0.55
+ },
+ "preparo": "DEFORMAR=blender/moschops.py blender -b -P blender/preparar.py -- dime_cp.glb teste/moschops_parado.glb 30000; depois node animar.mjs config/moschops.json e node variante.mjs config/moschops_cor.json"
+}

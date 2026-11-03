@@ -1,0 +1,12 @@
+{
+ "nome": "kentrossauro",
+ "base": "../modelos/estegossauro.glb",
+ "saida": "../modelos/kentrossauro.glb",
+ "escala": 0.44,
+ "cor": [
+  1.1,
+  1.15,
+  0.8
+ ],
+ "variante_de": "estegossauro"
+}

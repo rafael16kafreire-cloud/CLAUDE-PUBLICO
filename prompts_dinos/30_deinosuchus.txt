@@ -1,0 +1,22 @@
+Crie no Blender um animal semiaquático **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com escamas grossas e placas (osteodermos) nas costas, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+
+ESPÉCIE: Deinosuchus. Crocodilo gigante de 11 m. Focinho largo com dentes enormes, olhos no alto da cabeça, fileiras de placas nas costas, cauda alta e achatada. Cores: verde-acinzentado escuro com faixas mais escuras, barriga amarelada.
+
+MALHA: entre 9.000 e 13.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
+
+TEXTURA: uma textura pintada (Base Color) de 1024×1024, salva em JPG, com todos os detalhes da espécie bem visíveis nesse tamanho (escamas, padrão de cor, barriga mais clara, olhos e dentes). Normal Map opcional com metade desse tamanho. Material único (Principled BSDF), sem transparência. UV aberta sem sobreposição, aproveitando bem a textura.
+
+POSIÇÃO: em pose neutra, de pé, pés tocando Z = 0, olhando para -Y, em tamanho real (metros). Aplique Ctrl+A → All Transforms antes de exportar.
+
+ESQUELETO (Armature): ossos de quadril (raiz), coluna (3), pescoço (2), cabeça, mandíbula, cauda (8) e as 4 pernas curtas (coxa, canela, pé). Skinning com pesos limpos, sem a malha rasgar ou afundar ao dobrar.
+
+ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
+- `parado`: deitado de barriga no chão, respira, mexe a cauda (loop).
+- `andar`: anda com as pernas abertas para os lados (loop).
+- `correr`: corrida rápida levantando a barriga (loop).
+- `nadar`: nada com a cauda, pernas encostadas no corpo (loop).
+- `atacar`: bote com a boca escancarada e giro mortal (sem loop).
+- `dormir`: deitado com a boca entreaberta (loop).
+- `morrer`: vira de barriga para cima (sem loop).
+
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: deinosuchus.glb

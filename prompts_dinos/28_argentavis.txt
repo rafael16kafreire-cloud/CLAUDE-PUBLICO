@@ -1,0 +1,23 @@
+Crie no Blender um animal voador **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com penas, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+
+ESPÉCIE: Argentavis. Ave de rapina gigante de 7 m de envergadura, parecida com um condor. Bico curvo forte, garras grandes nos pés, cabeça e pescoço com pouca pena. Cores: penas marrom-escuro, colar de penas brancas no pescoço, cabeça cinza-avermelhada.
+
+MALHA: entre 6.000 e 9.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
+
+TEXTURA: uma textura pintada (Base Color) de 512×512, salva em JPG, com todos os detalhes da espécie bem visíveis nesse tamanho (escamas, padrão de cor, barriga mais clara, olhos e dentes). Normal Map opcional com metade desse tamanho. Material único (Principled BSDF), sem transparência. UV aberta sem sobreposição, aproveitando bem a textura.
+
+POSIÇÃO: em pose neutra, pousado de pé, pés tocando Z = 0, asas fechadas, olhando para -Y, em tamanho real (metros). Aplique Ctrl+A → All Transforms antes de exportar.
+
+ESQUELETO (Armature): ossos de quadril (raiz), coluna (2), pescoço (3), cabeça, bico, asas (ombro, braço, ponta) e pernas (coxa, canela, pé, dedos). Penas da ponta das asas em ossos para abrir/fechar. Skinning com pesos limpos, sem a malha rasgar ou afundar ao dobrar.
+
+ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
+- `parado`: pousado, respira, mexe a cabeça (loop).
+- `andar`: anda no chão apoiado nas patas (loop).
+- `voar`: bate as asas em voo (loop).
+- `planar`: asas abertas, quase paradas, ajustes leves (loop).
+- `decolar`: salta do chão batendo as asas (sem loop).
+- `atacar`: ataque com as garras dos pés (sem loop).
+- `dormir`: pousado, asas fechadas, cabeça baixa (loop).
+- `morrer`: cai e fica deitado (sem loop).
+
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: argentavis.glb

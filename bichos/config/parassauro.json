@@ -1,0 +1,18 @@
+{
+ "nome": "parassauro",
+ "titulo": "Parassauro",
+ "modelo": "../teste/parassauro_parado.glb",
+ "comprimento": 9.5,
+ "rot": [
+  0,
+  -90,
+  0
+ ],
+ "tipo": "bipede",
+ "ataque": "mordida",
+ "rugido": "cima",
+ "cabeca": 0.1,
+ "braco": 0.08,
+ "fonte": "Parasaurolophus — htqj — CC BY 4.0 — https://sketchfab.com/3d-models/parasaurolophus-0f25fa4a55ba48c88adef066161f5e83",
+ "preparo": "REMOVER=\"object_9,object_11,icosphere\""
+}

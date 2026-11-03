@@ -1,0 +1,2 @@
+{ "nome": "galimimo", "titulo": "Galimimo", "modelo": "../teste/galimimo_parado.glb", "comprimento": 6, "tipo": "bipede", "ataque": "salto", "rugido": "cima", "cabeca": 0.05, "braco": 0.1,
+  "fonte": "Blender | Gallimimus — SkinnyDoesModels (Skinny) — CC BY 4.0 — https://sketchfab.com/3d-models/blender-gallimimus-4993970ad48f41af813e65f202acaf41" }

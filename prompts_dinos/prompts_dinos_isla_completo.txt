@@ -1,0 +1,891 @@
+PROMPTS DOS BICHOS DO JOGO ISLA – um por vez na IA do Blender (cada um já está completo).
+Ordem sugerida: raptor, trex, triceratops, estegossauro, parassauro, carnotauro, braquiossauro, pteranodonte, dodo, mamute, depois o resto.
+
+======================================================================
+1. RAPTOR (VELOCIRAPTOR)  (arquivo: raptor.glb)
+======================================================================
+Crie no Blender um animal terrestre **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com escamas e penas curtas, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+
+ESPÉCIE: Raptor (Velociraptor). Bípede ágil e magro, 3,2 m de comprimento e 1 m de altura no quadril. Cabeça longa e estreita com dentes serrilhados, olhos amarelos com pupila em fenda, pescoço em S, braços médios com 3 garras, garra grande em foice levantada no 2º dedo de cada pé, cauda reta e rígida, penas curtas na nuca, braços e ponta da cauda. Cores: costas marrom-avermelhado com listras pretas transversais, barriga creme, pontas das penas laranja.
+
+MALHA: entre 6.000 e 9.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
+
+TEXTURA: uma textura pintada (Base Color) de 512×512, salva em JPG, com todos os detalhes da espécie bem visíveis nesse tamanho (escamas, padrão de cor, barriga mais clara, olhos e dentes). Normal Map opcional com metade desse tamanho. Material único (Principled BSDF), sem transparência. UV aberta sem sobreposição, aproveitando bem a textura.
+
+POSIÇÃO: em pose neutra, de pé, pés tocando Z = 0, olhando para -Y, em tamanho real (metros). Aplique Ctrl+A → All Transforms antes de exportar.
+
+ESQUELETO (Armature): ossos de quadril (raiz), coluna (3), pescoço (3), cabeça, mandíbula, cauda (6 a 8), braços (ombro, antebraço, mão) e pernas (coxa, canela, pé, dedos). Skinning com pesos limpos, sem a malha rasgar ou afundar ao dobrar.
+
+ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
+- `parado`: respira, mexe a cabeça olhando em volta, a cauda balança de leve (loop).
+- `andar`: ciclo de passos, pés plantados no chão sem escorregar (loop).
+- `correr`: ciclo de corrida, corpo inclinado para frente (loop).
+- `atacar`: salto com as garras dos pés e mordida (sem loop).
+- `rugir`: abre a boca, levanta a cabeça e chama (sem loop).
+- `comer`: abaixa a cabeça e arranca pedaços de carne do chão (loop).
+- `dormir`: deitado no chão, respirando devagar (loop).
+- `morrer`: cambaleia e cai de lado (sem loop, termina deitado).
+
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: raptor.glb
+
+======================================================================
+2. T-REX (TIRANOSSAURO)  (arquivo: trex.glb)
+======================================================================
+Crie no Blender um animal terrestre **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com escamas grossas e placas nas costas, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+
+ESPÉCIE: T-Rex (Tiranossauro). Bípede enorme e musculoso, 12 m de comprimento e 4 m no quadril. Crânio gigante com dentes grossos em forma de banana, sobrancelhas ósseas, pescoço grosso em S, bracinhos curtos de 2 dedos, pernas enormes, cauda grossa. Cores: verde-oliva escuro nas costas com faixas marrons, laterais mais claras, barriga bege, dentes amarelados.
+
+MALHA: entre 12.000 e 16.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
+
+TEXTURA: uma textura pintada (Base Color) de 1024×1024, salva em JPG, com todos os detalhes da espécie bem visíveis nesse tamanho (escamas, padrão de cor, barriga mais clara, olhos e dentes). Normal Map opcional com metade desse tamanho. Material único (Principled BSDF), sem transparência. UV aberta sem sobreposição, aproveitando bem a textura.
+
+POSIÇÃO: em pose neutra, de pé, pés tocando Z = 0, olhando para -Y, em tamanho real (metros). Aplique Ctrl+A → All Transforms antes de exportar.
+
+ESQUELETO (Armature): ossos de quadril (raiz), coluna (3), pescoço (3), cabeça, mandíbula, cauda (6 a 8), braços (ombro, antebraço, mão) e pernas (coxa, canela, pé, dedos). Skinning com pesos limpos, sem a malha rasgar ou afundar ao dobrar.
+
+ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
+- `parado`: respira, mexe a cabeça olhando em volta, a cauda balança de leve (loop).
+- `andar`: ciclo de passos, pés plantados no chão sem escorregar (loop).
+- `correr`: ciclo de corrida, corpo inclinado para frente (loop).
+- `atacar`: mordida forte lateral baixando a cabeça (sem loop).
+- `rugir`: abre a boca, levanta a cabeça e chama (sem loop).
+- `comer`: abaixa a cabeça e arranca pedaços de carne do chão (loop).
+- `dormir`: deitado no chão, respirando devagar (loop).
+- `morrer`: cambaleia e cai de lado (sem loop, termina deitado).
+- O `rugir` deve ser bem expressivo: abaixa o corpo, abre a boca inteira e balança a cabeça.
+
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: trex.glb
+
+======================================================================
+3. CARNOTAURO  (arquivo: carnotauro.glb)
+======================================================================
+Crie no Blender um animal terrestre **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com escamas com fileiras de escamas em cone, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+
+ESPÉCIE: Carnotauro. Bípede rápido e musculoso, 7,8 m de comprimento. Cabeça curta e alta com 2 chifres grossos acima dos olhos, braços minúsculos, pernas longas, fileiras de escamas em cone nas costas e laterais. Cores: vermelho-tijolo com faixas escuras nas costas, barriga bege.
+
+MALHA: entre 9.000 e 13.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
+
+TEXTURA: uma textura pintada (Base Color) de 1024×1024, salva em JPG, com todos os detalhes da espécie bem visíveis nesse tamanho (escamas, padrão de cor, barriga mais clara, olhos e dentes). Normal Map opcional com metade desse tamanho. Material único (Principled BSDF), sem transparência. UV aberta sem sobreposição, aproveitando bem a textura.
+
+POSIÇÃO: em pose neutra, de pé, pés tocando Z = 0, olhando para -Y, em tamanho real (metros). Aplique Ctrl+A → All Transforms antes de exportar.
+
+ESQUELETO (Armature): ossos de quadril (raiz), coluna (3), pescoço (3), cabeça, mandíbula, cauda (6 a 8), braços (ombro, antebraço, mão) e pernas (coxa, canela, pé, dedos). Skinning com pesos limpos, sem a malha rasgar ou afundar ao dobrar.
+
+ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
+- `parado`: respira, mexe a cabeça olhando em volta, a cauda balança de leve (loop).
+- `andar`: ciclo de passos, pés plantados no chão sem escorregar (loop).
+- `correr`: ciclo de corrida, corpo inclinado para frente (loop).
+- `atacar`: arrancada e mordida (sem loop).
+- `rugir`: abre a boca, levanta a cabeça e chama (sem loop).
+- `comer`: abaixa a cabeça e arranca pedaços de carne do chão (loop).
+- `dormir`: deitado no chão, respirando devagar (loop).
+- `morrer`: cambaleia e cai de lado (sem loop, termina deitado).
+- No `rugir` ele balança a cabeça de um lado para o outro.
+
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: carnotauro.glb
+
+======================================================================
+4. ESPINOSSAURO  (arquivo: espinossauro.glb)
+======================================================================
+Crie no Blender um animal terrestre **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com escamas, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+
+ESPÉCIE: Espinossauro. Grande predador de 16 m. Focinho longo e estreito de crocodilo com dentes cônicos, VELA alta nas costas sustentada por espinhos, braços fortes com garra grande no polegar, cauda alta como remo. Anda nas 2 patas e pode apoiar as 4. Cores: corpo verde-acinzentado, vela vermelha e laranja com listras escuras, barriga clara.
+
+MALHA: entre 12.000 e 16.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
+
+TEXTURA: uma textura pintada (Base Color) de 1024×1024, salva em JPG, com todos os detalhes da espécie bem visíveis nesse tamanho (escamas, padrão de cor, barriga mais clara, olhos e dentes). Normal Map opcional com metade desse tamanho. Material único (Principled BSDF), sem transparência. UV aberta sem sobreposição, aproveitando bem a textura.
+
+POSIÇÃO: em pose neutra, de pé, pés tocando Z = 0, olhando para -Y, em tamanho real (metros). Aplique Ctrl+A → All Transforms antes de exportar.
+
+ESQUELETO (Armature): ossos de quadril (raiz), coluna (3), pescoço (3), cabeça, mandíbula, cauda (6 a 8), braços (ombro, antebraço, mão) e pernas (coxa, canela, pé, dedos). Skinning com pesos limpos, sem a malha rasgar ou afundar ao dobrar.
+
+ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
+- `parado`: respira, mexe a cabeça olhando em volta, a cauda balança de leve (loop).
+- `andar`: ciclo de passos, pés plantados no chão sem escorregar (loop).
+- `correr`: ciclo de corrida, corpo inclinado para frente (loop).
+- `atacar`: mordida com o focinho e golpe com a garra do braço (sem loop).
+- `rugir`: abre a boca, levanta a cabeça e chama (sem loop).
+- `comer`: abaixa a cabeça e arranca pedaços de carne do chão (loop).
+- `dormir`: deitado no chão, respirando devagar (loop).
+- `morrer`: cambaleia e cai de lado (sem loop, termina deitado).
+- `nadar`: nadando com a cauda (loop).
+
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: espinossauro.glb
+
+======================================================================
+5. DILOFOSSAURO  (arquivo: dilofossauro.glb)
+======================================================================
+Crie no Blender um animal terrestre **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com escamas, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+
+ESPÉCIE: Dilofossauro. Bípede esguio, 3,3 m de comprimento. Duas cristas finas e arredondadas no alto da cabeça, focinho fino, colar de pele dobrável em volta do pescoço (franja) que abre quando ameaça. Cores: verde-amarelado com manchas escuras, cristas vermelhas, franja amarela com bordas vermelhas e pretas.
+
+MALHA: entre 4.000 e 6.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
+
+TEXTURA: uma textura pintada (Base Color) de 512×512, salva em JPG, com todos os detalhes da espécie bem visíveis nesse tamanho (escamas, padrão de cor, barriga mais clara, olhos e dentes). Normal Map opcional com metade desse tamanho. Material único (Principled BSDF), sem transparência. UV aberta sem sobreposição, aproveitando bem a textura.
+
+POSIÇÃO: em pose neutra, de pé, pés tocando Z = 0, olhando para -Y, em tamanho real (metros). Aplique Ctrl+A → All Transforms antes de exportar.
+
+ESQUELETO (Armature): ossos de quadril (raiz), coluna (3), pescoço (3), cabeça, mandíbula, cauda (6 a 8), braços (ombro, antebraço, mão) e pernas (coxa, canela, pé, dedos). Ossos extras para abrir a franja do pescoço. Skinning com pesos limpos, sem a malha rasgar ou afundar ao dobrar.
+
+ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
+- `parado`: respira, mexe a cabeça olhando em volta, a cauda balança de leve (loop).
+- `andar`: ciclo de passos, pés plantados no chão sem escorregar (loop).
+- `correr`: ciclo de corrida, corpo inclinado para frente (loop).
+- `atacar`: abre a franja e cospe veneno (cabeça para frente) (sem loop).
+- `rugir`: abre a boca, levanta a cabeça e chama (sem loop).
+- `comer`: abaixa a cabeça e arranca pedaços de carne do chão (loop).
+- `dormir`: deitado no chão, respirando devagar (loop).
+- `morrer`: cambaleia e cai de lado (sem loop, termina deitado).
+
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: dilofossauro.glb
+
+======================================================================
+6. COMPSOGNATO  (arquivo: compsognato.glb)
+======================================================================
+Crie no Blender um animal terrestre **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com escamas finas e penugem, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+
+ESPÉCIE: Compsognato. Bípede pequenininho, 1 m de comprimento, do tamanho de uma galinha. Cabeça pequena com olhos grandes, pescoço fino, bracinhos com 2 dedos, pernas finas, cauda longa. Cores: verde-oliva com listras escuras nas costas, barriga creme.
+
+MALHA: entre 4.000 e 6.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
+
+TEXTURA: uma textura pintada (Base Color) de 256×256, salva em JPG, com todos os detalhes da espécie bem visíveis nesse tamanho (escamas, padrão de cor, barriga mais clara, olhos e dentes). Normal Map opcional com metade desse tamanho. Material único (Principled BSDF), sem transparência. UV aberta sem sobreposição, aproveitando bem a textura.
+
+POSIÇÃO: em pose neutra, de pé, pés tocando Z = 0, olhando para -Y, em tamanho real (metros). Aplique Ctrl+A → All Transforms antes de exportar.
+
+ESQUELETO (Armature): ossos de quadril (raiz), coluna (3), pescoço (3), cabeça, mandíbula, cauda (6 a 8), braços (ombro, antebraço, mão) e pernas (coxa, canela, pé, dedos). Skinning com pesos limpos, sem a malha rasgar ou afundar ao dobrar.
+
+ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
+- `parado`: respira, mexe a cabeça olhando em volta, a cauda balança de leve (loop).
+- `andar`: ciclo de passos, pés plantados no chão sem escorregar (loop).
+- `correr`: ciclo de corrida, corpo inclinado para frente (loop).
+- `atacar`: pulinho com mordida (sem loop).
+- `rugir`: abre a boca, levanta a cabeça e chama (sem loop).
+- `comer`: abaixa a cabeça e arranca pedaços de carne do chão (loop).
+- `dormir`: deitado no chão, respirando devagar (loop).
+- `morrer`: cambaleia e cai de lado (sem loop, termina deitado).
+
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: compsognato.glb
+
+======================================================================
+7. GALIMIMO  (arquivo: galimimo.glb)
+======================================================================
+Crie no Blender um animal terrestre **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com penas curtas, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+
+ESPÉCIE: Galimimo. Parecido com um avestruz, 6 m de comprimento. Bípede de pernas muito longas, bico sem dentes, pescoço longo, braços finos com garras, cauda longa. Penas curtas no corpo. Cores: cinza-amarronzado nas costas, barriga branca, faixa escura no pescoço.
+
+MALHA: entre 6.000 e 9.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
+
+TEXTURA: uma textura pintada (Base Color) de 512×512, salva em JPG, com todos os detalhes da espécie bem visíveis nesse tamanho (escamas, padrão de cor, barriga mais clara, olhos e dentes). Normal Map opcional com metade desse tamanho. Material único (Principled BSDF), sem transparência. UV aberta sem sobreposição, aproveitando bem a textura.
+
+POSIÇÃO: em pose neutra, de pé, pés tocando Z = 0, olhando para -Y, em tamanho real (metros). Aplique Ctrl+A → All Transforms antes de exportar.
+
+ESQUELETO (Armature): ossos de quadril (raiz), coluna (3), pescoço (3), cabeça, mandíbula, cauda (6 a 8), braços (ombro, antebraço, mão) e pernas (coxa, canela, pé, dedos). Skinning com pesos limpos, sem a malha rasgar ou afundar ao dobrar.
+
+ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
+- `parado`: respira, mexe a cabeça olhando em volta, a cauda balança de leve (loop).
+- `andar`: ciclo de passos, pés plantados no chão sem escorregar (loop).
+- `correr`: ciclo de corrida, corpo inclinado para frente (loop).
+- `atacar`: chute com as pernas (sem loop).
+- `rugir`: abre a boca, levanta a cabeça e chama (sem loop).
+- `comer`: abaixa a cabeça e arranca plantas do chão (loop).
+- `dormir`: deitado no chão, respirando devagar (loop).
+- `morrer`: cambaleia e cai de lado (sem loop, termina deitado).
+
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: galimimo.glb
+
+======================================================================
+8. TERIZINOSSAURO  (arquivo: terizinossauro.glb)
+======================================================================
+Crie no Blender um animal terrestre **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com penas, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+
+ESPÉCIE: Terizinossauro. Grande bípede de 9,5 m, coberto de penas. Barriga grande, pescoço longo, cabeça pequena com bico, braços longos com 3 GARRAS ENORMES em forma de foice (quase 1 m cada). Cores: penas marrom-avermelhado com pontas mais escuras, rosto com penas brancas.
+
+MALHA: entre 9.000 e 13.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
+
+TEXTURA: uma textura pintada (Base Color) de 1024×1024, salva em JPG, com todos os detalhes da espécie bem visíveis nesse tamanho (escamas, padrão de cor, barriga mais clara, olhos e dentes). Normal Map opcional com metade desse tamanho. Material único (Principled BSDF), sem transparência. UV aberta sem sobreposição, aproveitando bem a textura.
+
+POSIÇÃO: em pose neutra, de pé, pés tocando Z = 0, olhando para -Y, em tamanho real (metros). Aplique Ctrl+A → All Transforms antes de exportar.
+
+ESQUELETO (Armature): ossos de quadril (raiz), coluna (3), pescoço (3), cabeça, mandíbula, cauda (6 a 8), braços (ombro, antebraço, mão) e pernas (coxa, canela, pé, dedos). Ossos nos dedos das garras. Skinning com pesos limpos, sem a malha rasgar ou afundar ao dobrar.
+
+ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
+- `parado`: respira, mexe a cabeça olhando em volta, a cauda balança de leve (loop).
+- `andar`: ciclo de passos, pés plantados no chão sem escorregar (loop).
+- `correr`: ciclo de corrida, corpo inclinado para frente (loop).
+- `atacar`: golpes cruzados com as garras dos braços (sem loop).
+- `rugir`: abre a boca, levanta a cabeça e chama (sem loop).
+- `comer`: usa as garras para puxar galhos e come as folhas (loop).
+- `dormir`: deitado no chão, respirando devagar (loop).
+- `morrer`: cambaleia e cai de lado (sem loop, termina deitado).
+
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: terizinossauro.glb
+
+======================================================================
+9. PAQUICEFALOSSAURO  (arquivo: paquicefalossauro.glb)
+======================================================================
+Crie no Blender um animal terrestre **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com escamas, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+
+ESPÉCIE: Paquicefalossauro. Bípede de 4,3 m. Cabeça com uma CÚPULA óssea grossa e arredondada em cima, cercada por pequenos espetos e calombos, bico curto. Cores: marrom-claro com listras escuras nas costas, cúpula amarelada.
+
+MALHA: entre 4.000 e 6.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
+
+TEXTURA: uma textura pintada (Base Color) de 512×512, salva em JPG, com todos os detalhes da espécie bem visíveis nesse tamanho (escamas, padrão de cor, barriga mais clara, olhos e dentes). Normal Map opcional com metade desse tamanho. Material único (Principled BSDF), sem transparência. UV aberta sem sobreposição, aproveitando bem a textura.
+
+POSIÇÃO: em pose neutra, de pé, pés tocando Z = 0, olhando para -Y, em tamanho real (metros). Aplique Ctrl+A → All Transforms antes de exportar.
+
+ESQUELETO (Armature): ossos de quadril (raiz), coluna (3), pescoço (3), cabeça, mandíbula, cauda (6 a 8), braços (ombro, antebraço, mão) e pernas (coxa, canela, pé, dedos). Skinning com pesos limpos, sem a malha rasgar ou afundar ao dobrar.
+
+ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
+- `parado`: respira, mexe a cabeça olhando em volta, a cauda balança de leve (loop).
+- `andar`: ciclo de passos, pés plantados no chão sem escorregar (loop).
+- `correr`: ciclo de corrida, corpo inclinado para frente (loop).
+- `atacar`: corrida e cabeçada com a cúpula (sem loop).
+- `rugir`: abre a boca, levanta a cabeça e chama (sem loop).
+- `comer`: abaixa a cabeça e arranca plantas do chão (loop).
+- `dormir`: deitado no chão, respirando devagar (loop).
+- `morrer`: cambaleia e cai de lado (sem loop, termina deitado).
+
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: paquicefalossauro.glb
+
+======================================================================
+10. IGUANODONTE  (arquivo: iguanodonte.glb)
+======================================================================
+Crie no Blender um animal terrestre **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com escamas, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+
+ESPÉCIE: Iguanodonte. Herbívoro de 8,5 m que anda nas 4 patas e corre nas 2. Focinho longo com bico, polegar com espinho grande em forma de cone. Cores: verde-acinzentado com manchas mais claras, barriga creme.
+
+MALHA: entre 9.000 e 13.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
+
+TEXTURA: uma textura pintada (Base Color) de 1024×1024, salva em JPG, com todos os detalhes da espécie bem visíveis nesse tamanho (escamas, padrão de cor, barriga mais clara, olhos e dentes). Normal Map opcional com metade desse tamanho. Material único (Principled BSDF), sem transparência. UV aberta sem sobreposição, aproveitando bem a textura.
+
+POSIÇÃO: em pose neutra, de pé, pés tocando Z = 0, olhando para -Y, em tamanho real (metros). Aplique Ctrl+A → All Transforms antes de exportar.
+
+ESQUELETO (Armature): ossos de quadril (raiz), coluna (3), pescoço (2 a 4), cabeça, mandíbula, cauda (5 a 8) e as 4 pernas (coxa/ombro, canela/antebraço, pé, dedos). Skinning com pesos limpos, sem a malha rasgar ou afundar ao dobrar.
+
+ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
+- `parado`: respira, mexe a cabeça olhando em volta, a cauda balança de leve (loop).
+- `andar`: ciclo de passos, pés plantados no chão sem escorregar (loop).
+- `correr`: ciclo de corrida, corpo inclinado para frente (loop).
+- `atacar`: golpe com o espinho do polegar (sem loop).
+- `rugir`: abre a boca, levanta a cabeça e chama (sem loop).
+- `comer`: abaixa a cabeça e arranca plantas do chão (loop).
+- `dormir`: deitado no chão, respirando devagar (loop).
+- `morrer`: cambaleia e cai de lado (sem loop, termina deitado).
+
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: iguanodonte.glb
+
+======================================================================
+11. PARASSAURO  (arquivo: parassauro.glb)
+======================================================================
+Crie no Blender um animal terrestre **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com escamas, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+
+ESPÉCIE: Parassauro. Hadrossauro de 9,5 m que anda nas 4 patas e corre nas 2. Bico achatado de pato e CRISTA longa e curva para trás saindo da cabeça. Cores: verde-claro nas costas com pintas brancas, barriga creme, crista vermelha e amarela.
+
+MALHA: entre 9.000 e 13.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
+
+TEXTURA: uma textura pintada (Base Color) de 1024×1024, salva em JPG, com todos os detalhes da espécie bem visíveis nesse tamanho (escamas, padrão de cor, barriga mais clara, olhos e dentes). Normal Map opcional com metade desse tamanho. Material único (Principled BSDF), sem transparência. UV aberta sem sobreposição, aproveitando bem a textura.
+
+POSIÇÃO: em pose neutra, de pé, pés tocando Z = 0, olhando para -Y, em tamanho real (metros). Aplique Ctrl+A → All Transforms antes de exportar.
+
+ESQUELETO (Armature): ossos de quadril (raiz), coluna (3), pescoço (2 a 4), cabeça, mandíbula, cauda (5 a 8) e as 4 pernas (coxa/ombro, canela/antebraço, pé, dedos). Skinning com pesos limpos, sem a malha rasgar ou afundar ao dobrar.
+
+ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
+- `parado`: respira, mexe a cabeça olhando em volta, a cauda balança de leve (loop).
+- `andar`: ciclo de passos, pés plantados no chão sem escorregar (loop).
+- `correr`: ciclo de corrida, corpo inclinado para frente (loop).
+- `atacar`: empinar e dar coice com as patas (sem loop).
+- `rugir`: abre a boca, levanta a cabeça e chama (sem loop).
+- `comer`: abaixa a cabeça e arranca plantas do chão (loop).
+- `dormir`: deitado no chão, respirando devagar (loop).
+- `morrer`: cambaleia e cai de lado (sem loop, termina deitado).
+- `chamar`: levanta a cabeça e sopra pela crista (sem loop).
+
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: parassauro.glb
+
+======================================================================
+12. TRICERATOPS  (arquivo: triceratops.glb)
+======================================================================
+Crie no Blender um animal terrestre **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com escamas grossas e arredondadas, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+
+ESPÉCIE: Triceratops. Quadrúpede robusto de 8,5 m e 3 m de altura. Escudo ósseo grande atrás da cabeça com bordas onduladas, 2 chifres longos na testa, 1 chifre curto no nariz, bico de papagaio. Cores: corpo cinza-esverdeado, escudo vermelho-alaranjado com manchas escuras em forma de olho, chifres cor de osso.
+
+MALHA: entre 9.000 e 13.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
+
+TEXTURA: uma textura pintada (Base Color) de 1024×1024, salva em JPG, com todos os detalhes da espécie bem visíveis nesse tamanho (escamas, padrão de cor, barriga mais clara, olhos e dentes). Normal Map opcional com metade desse tamanho. Material único (Principled BSDF), sem transparência. UV aberta sem sobreposição, aproveitando bem a textura.
+
+POSIÇÃO: em pose neutra, de pé, pés tocando Z = 0, olhando para -Y, em tamanho real (metros). Aplique Ctrl+A → All Transforms antes de exportar.
+
+ESQUELETO (Armature): ossos de quadril (raiz), coluna (3), pescoço (2 a 4), cabeça, mandíbula, cauda (5 a 8) e as 4 pernas (coxa/ombro, canela/antebraço, pé, dedos). Skinning com pesos limpos, sem a malha rasgar ou afundar ao dobrar.
+
+ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
+- `parado`: respira, mexe a cabeça olhando em volta, a cauda balança de leve (loop).
+- `andar`: ciclo de passos, pés plantados no chão sem escorregar (loop).
+- `correr`: ciclo de corrida, corpo inclinado para frente (loop).
+- `atacar`: abaixa a cabeça e dá uma chifrada (sem loop).
+- `rugir`: abre a boca, levanta a cabeça e chama (sem loop).
+- `comer`: abaixa a cabeça e arranca plantas do chão (loop).
+- `dormir`: deitado no chão, respirando devagar (loop).
+- `morrer`: cambaleia e cai de lado (sem loop, termina deitado).
+
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: triceratops.glb
+
+======================================================================
+13. PAQUIRRINOSSAURO  (arquivo: paquirrinossauro.glb)
+======================================================================
+Crie no Blender um animal terrestre **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com escamas grossas, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+
+ESPÉCIE: Paquirrinossauro. Parente do triceratops, 6,4 m. Em vez de chifre no nariz tem uma CALOMBO ósseo grosso e achatado, escudo curto com 2 chifres curvos para fora no topo. Cores: marrom-acinzentado com faixas escuras, escudo com bordas brancas.
+
+MALHA: entre 9.000 e 13.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
+
+TEXTURA: uma textura pintada (Base Color) de 1024×1024, salva em JPG, com todos os detalhes da espécie bem visíveis nesse tamanho (escamas, padrão de cor, barriga mais clara, olhos e dentes). Normal Map opcional com metade desse tamanho. Material único (Principled BSDF), sem transparência. UV aberta sem sobreposição, aproveitando bem a textura.
+
+POSIÇÃO: em pose neutra, de pé, pés tocando Z = 0, olhando para -Y, em tamanho real (metros). Aplique Ctrl+A → All Transforms antes de exportar.
+
+ESQUELETO (Armature): ossos de quadril (raiz), coluna (3), pescoço (2 a 4), cabeça, mandíbula, cauda (5 a 8) e as 4 pernas (coxa/ombro, canela/antebraço, pé, dedos). Skinning com pesos limpos, sem a malha rasgar ou afundar ao dobrar.
+
+ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
+- `parado`: respira, mexe a cabeça olhando em volta, a cauda balança de leve (loop).
+- `andar`: ciclo de passos, pés plantados no chão sem escorregar (loop).
+- `correr`: ciclo de corrida, corpo inclinado para frente (loop).
+- `atacar`: cabeçada com o calombo do nariz (sem loop).
+- `rugir`: abre a boca, levanta a cabeça e chama (sem loop).
+- `comer`: abaixa a cabeça e arranca plantas do chão (loop).
+- `dormir`: deitado no chão, respirando devagar (loop).
+- `morrer`: cambaleia e cai de lado (sem loop, termina deitado).
+
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: paquirrinossauro.glb
+
+======================================================================
+14. ESTEGOSSAURO  (arquivo: estegossauro.glb)
+======================================================================
+Crie no Blender um animal terrestre **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com escamas, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+
+ESPÉCIE: Estegossauro. Quadrúpede de 9 m, patas de trás bem mais altas, costas em arco e cabeça pequena perto do chão. Duas fileiras alternadas de PLACAS grandes nas costas e 4 espetos na cauda. Cores: verde-amarelado com manchas marrons, placas laranja-avermelhado com veias escuras.
+
+MALHA: entre 9.000 e 13.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
+
+TEXTURA: uma textura pintada (Base Color) de 1024×1024, salva em JPG, com todos os detalhes da espécie bem visíveis nesse tamanho (escamas, padrão de cor, barriga mais clara, olhos e dentes). Normal Map opcional com metade desse tamanho. Material único (Principled BSDF), sem transparência. UV aberta sem sobreposição, aproveitando bem a textura.
+
+POSIÇÃO: em pose neutra, de pé, pés tocando Z = 0, olhando para -Y, em tamanho real (metros). Aplique Ctrl+A → All Transforms antes de exportar.
+
+ESQUELETO (Armature): ossos de quadril (raiz), coluna (3), pescoço (2 a 4), cabeça, mandíbula, cauda (5 a 8) e as 4 pernas (coxa/ombro, canela/antebraço, pé, dedos). Skinning com pesos limpos, sem a malha rasgar ou afundar ao dobrar.
+
+ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
+- `parado`: respira, mexe a cabeça olhando em volta, a cauda balança de leve (loop).
+- `andar`: ciclo de passos, pés plantados no chão sem escorregar (loop).
+- `correr`: ciclo de corrida, corpo inclinado para frente (loop).
+- `atacar`: gira e bate com a cauda de espetos (sem loop).
+- `rugir`: abre a boca, levanta a cabeça e chama (sem loop).
+- `comer`: abaixa a cabeça e arranca plantas do chão (loop).
+- `dormir`: deitado no chão, respirando devagar (loop).
+- `morrer`: cambaleia e cai de lado (sem loop, termina deitado).
+
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: estegossauro.glb
+
+======================================================================
+15. KENTROSSAURO  (arquivo: kentrossauro.glb)
+======================================================================
+Crie no Blender um animal terrestre **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com escamas, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+
+ESPÉCIE: Kentrossauro. Parente pequeno do estegossauro, 4 m. Placas estreitas no pescoço e começo das costas que viram ESPINHOS longos no quadril e na cauda, mais 1 espinho em cada ombro. Cores: cinza-esverdeado com listras escuras, placas e espinhos cor de osso.
+
+MALHA: entre 6.000 e 9.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
+
+TEXTURA: uma textura pintada (Base Color) de 512×512, salva em JPG, com todos os detalhes da espécie bem visíveis nesse tamanho (escamas, padrão de cor, barriga mais clara, olhos e dentes). Normal Map opcional com metade desse tamanho. Material único (Principled BSDF), sem transparência. UV aberta sem sobreposição, aproveitando bem a textura.
+
+POSIÇÃO: em pose neutra, de pé, pés tocando Z = 0, olhando para -Y, em tamanho real (metros). Aplique Ctrl+A → All Transforms antes de exportar.
+
+ESQUELETO (Armature): ossos de quadril (raiz), coluna (3), pescoço (2 a 4), cabeça, mandíbula, cauda (5 a 8) e as 4 pernas (coxa/ombro, canela/antebraço, pé, dedos). Skinning com pesos limpos, sem a malha rasgar ou afundar ao dobrar.
+
+ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
+- `parado`: respira, mexe a cabeça olhando em volta, a cauda balança de leve (loop).
+- `andar`: ciclo de passos, pés plantados no chão sem escorregar (loop).
+- `correr`: ciclo de corrida, corpo inclinado para frente (loop).
+- `atacar`: gira e bate com a cauda de espinhos (sem loop).
+- `rugir`: abre a boca, levanta a cabeça e chama (sem loop).
+- `comer`: abaixa a cabeça e arranca plantas do chão (loop).
+- `dormir`: deitado no chão, respirando devagar (loop).
+- `morrer`: cambaleia e cai de lado (sem loop, termina deitado).
+
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: kentrossauro.glb
+
+======================================================================
+16. ANQUILOSSAURO  (arquivo: anquilossauro.glb)
+======================================================================
+Crie no Blender um animal terrestre **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com placas de couraça (armadura), dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+
+ESPÉCIE: Anquilossauro. Quadrúpede baixo e largo de 7 m, coberto de placas ósseas com espetos laterais. Cabeça larga e triangular com chifrinhos atrás, CLAVA óssea grande na ponta da cauda. Cores: marrom-acinzentado, placas mais claras com bordas escuras, barriga creme.
+
+MALHA: entre 9.000 e 13.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
+
+TEXTURA: uma textura pintada (Base Color) de 1024×1024, salva em JPG, com todos os detalhes da espécie bem visíveis nesse tamanho (escamas, padrão de cor, barriga mais clara, olhos e dentes). Normal Map opcional com metade desse tamanho. Material único (Principled BSDF), sem transparência. UV aberta sem sobreposição, aproveitando bem a textura.
+
+POSIÇÃO: em pose neutra, de pé, pés tocando Z = 0, olhando para -Y, em tamanho real (metros). Aplique Ctrl+A → All Transforms antes de exportar.
+
+ESQUELETO (Armature): ossos de quadril (raiz), coluna (3), pescoço (2 a 4), cabeça, mandíbula, cauda (5 a 8) e as 4 pernas (coxa/ombro, canela/antebraço, pé, dedos). Skinning com pesos limpos, sem a malha rasgar ou afundar ao dobrar.
+
+ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
+- `parado`: respira, mexe a cabeça olhando em volta, a cauda balança de leve (loop).
+- `andar`: ciclo de passos, pés plantados no chão sem escorregar (loop).
+- `correr`: ciclo de corrida, corpo inclinado para frente (loop).
+- `atacar`: gira e bate com a clava da cauda (sem loop).
+- `rugir`: abre a boca, levanta a cabeça e chama (sem loop).
+- `comer`: abaixa a cabeça e arranca plantas do chão (loop).
+- `dormir`: deitado no chão, respirando devagar (loop).
+- `morrer`: cambaleia e cai de lado (sem loop, termina deitado).
+
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: anquilossauro.glb
+
+======================================================================
+17. SAUROPELTA  (arquivo: sauropelta.glb)
+======================================================================
+Crie no Blender um animal terrestre **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com placas de couraça, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+
+ESPÉCIE: Sauropelta. Quadrúpede blindado de 5,5 m, parecido com o anquilossauro mas SEM clava na cauda: tem espinhos longos saindo do pescoço e dos ombros e cauda longa. Cores: verde-oliva com placas cor de areia, espinhos escuros.
+
+MALHA: entre 6.000 e 9.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
+
+TEXTURA: uma textura pintada (Base Color) de 512×512, salva em JPG, com todos os detalhes da espécie bem visíveis nesse tamanho (escamas, padrão de cor, barriga mais clara, olhos e dentes). Normal Map opcional com metade desse tamanho. Material único (Principled BSDF), sem transparência. UV aberta sem sobreposição, aproveitando bem a textura.
+
+POSIÇÃO: em pose neutra, de pé, pés tocando Z = 0, olhando para -Y, em tamanho real (metros). Aplique Ctrl+A → All Transforms antes de exportar.
+
+ESQUELETO (Armature): ossos de quadril (raiz), coluna (3), pescoço (2 a 4), cabeça, mandíbula, cauda (5 a 8) e as 4 pernas (coxa/ombro, canela/antebraço, pé, dedos). Skinning com pesos limpos, sem a malha rasgar ou afundar ao dobrar.
+
+ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
+- `parado`: respira, mexe a cabeça olhando em volta, a cauda balança de leve (loop).
+- `andar`: ciclo de passos, pés plantados no chão sem escorregar (loop).
+- `correr`: ciclo de corrida, corpo inclinado para frente (loop).
+- `atacar`: investida com os espinhos dos ombros (sem loop).
+- `rugir`: abre a boca, levanta a cabeça e chama (sem loop).
+- `comer`: abaixa a cabeça e arranca plantas do chão (loop).
+- `dormir`: deitado no chão, respirando devagar (loop).
+- `morrer`: cambaleia e cai de lado (sem loop, termina deitado).
+
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: sauropelta.glb
+
+======================================================================
+18. BRAQUIOSSAURO  (arquivo: braquiossauro.glb)
+======================================================================
+Crie no Blender um animal terrestre **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com escamas grandes e rugosas, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+
+ESPÉCIE: Braquiossauro. Saurópode gigante de 21 m e 13 m de altura. Pescoço muito longo e ERGUIDO, patas da frente mais altas que as de trás, cabeça pequena com crista nasal arredondada, cauda longa e grossa. Cores: cinza-azulado nas costas com faixas escuras no pescoço, barriga cinza-claro.
+
+MALHA: entre 12.000 e 16.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
+
+TEXTURA: uma textura pintada (Base Color) de 1024×1024, salva em JPG, com todos os detalhes da espécie bem visíveis nesse tamanho (escamas, padrão de cor, barriga mais clara, olhos e dentes). Normal Map opcional com metade desse tamanho. Material único (Principled BSDF), sem transparência. UV aberta sem sobreposição, aproveitando bem a textura.
+
+POSIÇÃO: em pose neutra, de pé, pés tocando Z = 0, olhando para -Y, em tamanho real (metros). Aplique Ctrl+A → All Transforms antes de exportar.
+
+ESQUELETO (Armature): ossos de quadril (raiz), coluna (3), pescoço LONGO (6 a 8), cabeça, mandíbula, cauda LONGA (8 a 10) e as 4 pernas (coxa/ombro, canela/antebraço, pé). Skinning com pesos limpos, sem a malha rasgar ou afundar ao dobrar.
+
+ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
+- `parado`: respira, mexe a cabeça olhando em volta, a cauda balança de leve (loop).
+- `andar`: ciclo de passos, pés plantados no chão sem escorregar (loop).
+- `correr`: ciclo de corrida, corpo inclinado para frente (loop).
+- `atacar`: empinar e pisar (sem loop).
+- `rugir`: abre a boca, levanta a cabeça e chama (sem loop).
+- `comer`: estica o pescoço para cima e come as folhas do alto das árvores (loop).
+- `dormir`: deitado no chão, respirando devagar (loop).
+- `morrer`: cambaleia e cai de lado (sem loop, termina deitado).
+
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: braquiossauro.glb
+
+======================================================================
+19. DIPLODOCO  (arquivo: diplodoco.glb)
+======================================================================
+Crie no Blender um animal terrestre **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com escamas rugosas, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+
+ESPÉCIE: Diplodoco. Saurópode longo de 25 m, pescoço comprido mais na HORIZONTAL, cauda muito longa e fina como chicote, patas da frente mais baixas, fileira de espinhos pequenos nas costas. Cores: verde-acinzentado com listras transversais escuras, barriga clara.
+
+MALHA: entre 12.000 e 16.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
+
+TEXTURA: uma textura pintada (Base Color) de 1024×1024, salva em JPG, com todos os detalhes da espécie bem visíveis nesse tamanho (escamas, padrão de cor, barriga mais clara, olhos e dentes). Normal Map opcional com metade desse tamanho. Material único (Principled BSDF), sem transparência. UV aberta sem sobreposição, aproveitando bem a textura.
+
+POSIÇÃO: em pose neutra, de pé, pés tocando Z = 0, olhando para -Y, em tamanho real (metros). Aplique Ctrl+A → All Transforms antes de exportar.
+
+ESQUELETO (Armature): ossos de quadril (raiz), coluna (3), pescoço LONGO (6 a 8), cabeça, mandíbula, cauda LONGA (8 a 10) e as 4 pernas (coxa/ombro, canela/antebraço, pé). Skinning com pesos limpos, sem a malha rasgar ou afundar ao dobrar.
+
+ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
+- `parado`: respira, mexe a cabeça olhando em volta, a cauda balança de leve (loop).
+- `andar`: ciclo de passos, pés plantados no chão sem escorregar (loop).
+- `correr`: ciclo de corrida, corpo inclinado para frente (loop).
+- `atacar`: chicotada com a cauda (sem loop).
+- `rugir`: abre a boca, levanta a cabeça e chama (sem loop).
+- `comer`: abaixa a cabeça e arranca plantas do chão (loop).
+- `dormir`: deitado no chão, respirando devagar (loop).
+- `morrer`: cambaleia e cai de lado (sem loop, termina deitado).
+
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: diplodoco.glb
+
+======================================================================
+20. ARGENTINOSSAURO  (arquivo: argentinossauro.glb)
+======================================================================
+Crie no Blender um animal terrestre **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com escamas grandes e couro grosso, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+
+ESPÉCIE: Argentinossauro. O maior de todos: saurópode colossal de 32 m. Corpo muito volumoso, pescoço longo, cauda longa, patas como colunas. Cores: marrom-acinzentado com manchas mais escuras, barriga clara.
+
+MALHA: entre 12.000 e 16.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
+
+TEXTURA: uma textura pintada (Base Color) de 1024×1024, salva em JPG, com todos os detalhes da espécie bem visíveis nesse tamanho (escamas, padrão de cor, barriga mais clara, olhos e dentes). Normal Map opcional com metade desse tamanho. Material único (Principled BSDF), sem transparência. UV aberta sem sobreposição, aproveitando bem a textura.
+
+POSIÇÃO: em pose neutra, de pé, pés tocando Z = 0, olhando para -Y, em tamanho real (metros). Aplique Ctrl+A → All Transforms antes de exportar.
+
+ESQUELETO (Armature): ossos de quadril (raiz), coluna (3), pescoço LONGO (6 a 8), cabeça, mandíbula, cauda LONGA (8 a 10) e as 4 pernas (coxa/ombro, canela/antebraço, pé). Skinning com pesos limpos, sem a malha rasgar ou afundar ao dobrar.
+
+ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
+- `parado`: respira, mexe a cabeça olhando em volta, a cauda balança de leve (loop).
+- `andar`: ciclo de passos, pés plantados no chão sem escorregar (loop).
+- `correr`: ciclo de corrida, corpo inclinado para frente (loop).
+- `atacar`: empinar e pisar (sem loop).
+- `rugir`: abre a boca, levanta a cabeça e chama (sem loop).
+- `comer`: abaixa a cabeça e arranca plantas do chão (loop).
+- `dormir`: deitado no chão, respirando devagar (loop).
+- `morrer`: cambaleia e cai de lado (sem loop, termina deitado).
+
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: argentinossauro.glb
+
+======================================================================
+21. DIMETRODONTE  (arquivo: dimetrodonte.glb)
+======================================================================
+Crie no Blender um animal terrestre **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com escamas, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+
+ESPÉCIE: Dimetrodonte. Réptil antigo de 3,5 m, quadrúpede com pernas abertas para os lados (anda como lagarto). VELA alta nas costas sustentada por espinhos, cabeça alta com dentes de tamanhos diferentes. Cores: corpo marrom-avermelhado, vela laranja com listras escuras.
+
+MALHA: entre 6.000 e 9.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
+
+TEXTURA: uma textura pintada (Base Color) de 512×512, salva em JPG, com todos os detalhes da espécie bem visíveis nesse tamanho (escamas, padrão de cor, barriga mais clara, olhos e dentes). Normal Map opcional com metade desse tamanho. Material único (Principled BSDF), sem transparência. UV aberta sem sobreposição, aproveitando bem a textura.
+
+POSIÇÃO: em pose neutra, de pé, pés tocando Z = 0, olhando para -Y, em tamanho real (metros). Aplique Ctrl+A → All Transforms antes de exportar.
+
+ESQUELETO (Armature): ossos de quadril (raiz), coluna (3), pescoço (2), cabeça, mandíbula, cauda (8) e as 4 pernas curtas (coxa, canela, pé). Skinning com pesos limpos, sem a malha rasgar ou afundar ao dobrar.
+
+ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
+- `parado`: respira, mexe a cabeça olhando em volta, a cauda balança de leve (loop).
+- `andar`: ciclo de passos, pés plantados no chão sem escorregar (loop).
+- `correr`: ciclo de corrida, corpo inclinado para frente (loop).
+- `atacar`: mordida (sem loop).
+- `rugir`: abre a boca, levanta a cabeça e chama (sem loop).
+- `comer`: abaixa a cabeça e arranca pedaços de carne do chão (loop).
+- `dormir`: deitado no chão, respirando devagar (loop).
+- `morrer`: cambaleia e cai de lado (sem loop, termina deitado).
+
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: dimetrodonte.glb
+
+======================================================================
+22. MOSCHOPS  (arquivo: moschops.glb)
+======================================================================
+Crie no Blender um animal terrestre **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com pele grossa e enrugada, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+
+ESPÉCIE: Moschops. Animal pré-histórico de 2,8 m, quadrúpede baixo, robusto e com cabeça curta e grossa (testa óssea para cabeçadas), pernas da frente abertas. Cores: marrom-acinzentado com manchas mais claras no dorso.
+
+MALHA: entre 4.000 e 6.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
+
+TEXTURA: uma textura pintada (Base Color) de 512×512, salva em JPG, com todos os detalhes da espécie bem visíveis nesse tamanho (escamas, padrão de cor, barriga mais clara, olhos e dentes). Normal Map opcional com metade desse tamanho. Material único (Principled BSDF), sem transparência. UV aberta sem sobreposição, aproveitando bem a textura.
+
+POSIÇÃO: em pose neutra, de pé, pés tocando Z = 0, olhando para -Y, em tamanho real (metros). Aplique Ctrl+A → All Transforms antes de exportar.
+
+ESQUELETO (Armature): ossos de quadril (raiz), coluna (3), pescoço (2 a 4), cabeça, mandíbula, cauda (5 a 8) e as 4 pernas (coxa/ombro, canela/antebraço, pé, dedos). Skinning com pesos limpos, sem a malha rasgar ou afundar ao dobrar.
+
+ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
+- `parado`: respira, mexe a cabeça olhando em volta, a cauda balança de leve (loop).
+- `andar`: ciclo de passos, pés plantados no chão sem escorregar (loop).
+- `correr`: ciclo de corrida, corpo inclinado para frente (loop).
+- `atacar`: cabeçada (sem loop).
+- `rugir`: abre a boca, levanta a cabeça e chama (sem loop).
+- `comer`: abaixa a cabeça e arranca plantas do chão (loop).
+- `dormir`: deitado no chão, respirando devagar (loop).
+- `morrer`: cambaleia e cai de lado (sem loop, termina deitado).
+
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: moschops.glb
+
+======================================================================
+23. MAMUTE-LANOSO  (arquivo: mamute.glb)
+======================================================================
+Crie no Blender um animal terrestre **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com PELO longo e desgrenhado, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+
+ESPÉCIE: Mamute-lanoso. Mamífero gigante de 10 m. Pelo longo, presas enormes e curvas, tromba, corcova na cabeça, orelhas pequenas. Cores: pelo marrom-escuro com pontas avermelhadas, presas cor de marfim.
+
+MALHA: entre 9.000 e 13.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
+
+TEXTURA: uma textura pintada (Base Color) de 1024×1024, salva em JPG, com todos os detalhes da espécie bem visíveis nesse tamanho (escamas, padrão de cor, barriga mais clara, olhos e dentes). Normal Map opcional com metade desse tamanho. Material único (Principled BSDF), sem transparência. UV aberta sem sobreposição, aproveitando bem a textura.
+
+POSIÇÃO: em pose neutra, de pé, pés tocando Z = 0, olhando para -Y, em tamanho real (metros). Aplique Ctrl+A → All Transforms antes de exportar.
+
+ESQUELETO (Armature): ossos de quadril (raiz), coluna (3), pescoço (2 a 4), cabeça, mandíbula, cauda (5 a 8) e as 4 pernas (coxa/ombro, canela/antebraço, pé, dedos). Ossos na tromba (4). Skinning com pesos limpos, sem a malha rasgar ou afundar ao dobrar.
+
+ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
+- `parado`: respira, mexe a cabeça olhando em volta, a cauda balança de leve (loop).
+- `andar`: ciclo de passos, pés plantados no chão sem escorregar (loop).
+- `correr`: ciclo de corrida, corpo inclinado para frente (loop).
+- `atacar`: golpe com as presas e a tromba (sem loop).
+- `rugir`: abre a boca, levanta a cabeça e chama (sem loop).
+- `comer`: pega plantas com a tromba e leva à boca (loop).
+- `dormir`: deitado no chão, respirando devagar (loop).
+- `morrer`: cambaleia e cai de lado (sem loop, termina deitado).
+
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: mamute.glb
+
+======================================================================
+24. DODÔ  (arquivo: dodo.glb)
+======================================================================
+Crie no Blender um animal terrestre **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com penas fofas, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+
+ESPÉCIE: Dodô. Ave gorda de 1 m que não voa. Bico grande, curvo e amarelado, asinhas curtas, pernas grossas amarelas. Cores: penas cinza-azulado, cabeça mais clara, rabinho de penas brancas.
+
+MALHA: entre 4.000 e 6.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
+
+TEXTURA: uma textura pintada (Base Color) de 256×256, salva em JPG, com todos os detalhes da espécie bem visíveis nesse tamanho (escamas, padrão de cor, barriga mais clara, olhos e dentes). Normal Map opcional com metade desse tamanho. Material único (Principled BSDF), sem transparência. UV aberta sem sobreposição, aproveitando bem a textura.
+
+POSIÇÃO: em pose neutra, de pé, pés tocando Z = 0, olhando para -Y, em tamanho real (metros). Aplique Ctrl+A → All Transforms antes de exportar.
+
+ESQUELETO (Armature): ossos de quadril (raiz), coluna (2), pescoço (3), cabeça, bico, asas (ombro, braço, ponta) e pernas (coxa, canela, pé, dedos). Skinning com pesos limpos, sem a malha rasgar ou afundar ao dobrar.
+
+ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
+- `parado`: respira, mexe a cabeça olhando em volta, a cauda balança de leve (loop).
+- `andar`: ciclo de passos, pés plantados no chão sem escorregar (loop).
+- `correr`: ciclo de corrida, corpo inclinado para frente (loop).
+- `atacar`: bicada (sem loop).
+- `rugir`: abre a boca, levanta a cabeça e chama (sem loop).
+- `comer`: bica o chão (loop).
+- `dormir`: deitado no chão, respirando devagar (loop).
+- `morrer`: cambaleia e cai de lado (sem loop, termina deitado).
+
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: dodo.glb
+
+======================================================================
+25. REI-DODÔ  (arquivo: reidodo.glb)
+======================================================================
+Crie no Blender um animal terrestre **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com penas, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+
+ESPÉCIE: Rei-dodô. Dodô GIGANTE e monstruoso de 10 m, chefe: corpo enorme, bico gigante com bordas serrilhadas, olhos vermelhos, penas eriçadas, garras grandes nos pés. Cores: penas cinza-escuro, bico amarelo com manchas vermelhas.
+
+MALHA: entre 12.000 e 16.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
+
+TEXTURA: uma textura pintada (Base Color) de 1024×1024, salva em JPG, com todos os detalhes da espécie bem visíveis nesse tamanho (escamas, padrão de cor, barriga mais clara, olhos e dentes). Normal Map opcional com metade desse tamanho. Material único (Principled BSDF), sem transparência. UV aberta sem sobreposição, aproveitando bem a textura.
+
+POSIÇÃO: em pose neutra, de pé, pés tocando Z = 0, olhando para -Y, em tamanho real (metros). Aplique Ctrl+A → All Transforms antes de exportar.
+
+ESQUELETO (Armature): ossos de quadril (raiz), coluna (2), pescoço (3), cabeça, bico, asas (ombro, braço, ponta) e pernas (coxa, canela, pé, dedos). Skinning com pesos limpos, sem a malha rasgar ou afundar ao dobrar.
+
+ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
+- `parado`: respira, mexe a cabeça olhando em volta, a cauda balança de leve (loop).
+- `andar`: ciclo de passos, pés plantados no chão sem escorregar (loop).
+- `correr`: ciclo de corrida, corpo inclinado para frente (loop).
+- `atacar`: bicada esmagadora e pisada (sem loop).
+- `rugir`: abre a boca, levanta a cabeça e chama (sem loop).
+- `comer`: abaixa a cabeça e arranca pedaços de carne do chão (loop).
+- `dormir`: deitado no chão, respirando devagar (loop).
+- `morrer`: cambaleia e cai de lado (sem loop, termina deitado).
+
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: reidodo.glb
+
+======================================================================
+26. PTERANODONTE  (arquivo: pterodactilo.glb)
+======================================================================
+Crie no Blender um animal voador **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com pele com penugem curta, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+
+ESPÉCIE: Pteranodonte. Réptil voador de 7 m de envergadura. Crista longa apontando para trás da cabeça, bico comprido e pontudo sem dentes, asas de membrana, corpo pequeno. Cores: corpo cinza-claro, asas marrom com bordas escuras, crista vermelha e amarela.
+
+MALHA: entre 6.000 e 9.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
+
+TEXTURA: uma textura pintada (Base Color) de 512×512, salva em JPG, com todos os detalhes da espécie bem visíveis nesse tamanho (escamas, padrão de cor, barriga mais clara, olhos e dentes). Normal Map opcional com metade desse tamanho. Material único (Principled BSDF), sem transparência. UV aberta sem sobreposição, aproveitando bem a textura.
+
+POSIÇÃO: em pose neutra, pousado de pé, pés tocando Z = 0, asas fechadas, olhando para -Y, em tamanho real (metros). Aplique Ctrl+A → All Transforms antes de exportar.
+
+ESQUELETO (Armature): ossos de quadril (raiz), coluna (2), pescoço (3), cabeça, bico/mandíbula, asas (ombro, braço, antebraço, dedo longo da asa), pernas (coxa, canela, pé) e cauda curta (2). Skinning com pesos limpos, sem a malha rasgar ou afundar ao dobrar.
+
+ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
+- `parado`: pousado, respira, mexe a cabeça (loop).
+- `andar`: anda no chão apoiado nas patas e nos punhos das asas (loop).
+- `voar`: bate as asas em voo (loop).
+- `planar`: asas abertas, quase paradas, ajustes leves (loop).
+- `decolar`: salta do chão batendo as asas (sem loop).
+- `atacar`: mergulho com bicada (sem loop).
+- `dormir`: pousado, asas fechadas, cabeça baixa (loop).
+- `morrer`: cai e fica deitado (sem loop).
+
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: pterodactilo.glb
+
+======================================================================
+27. QUETZALCOATLUS  (arquivo: quetzalcoatlus.glb)
+======================================================================
+Crie no Blender um animal voador **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com pele com penugem curta, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+
+ESPÉCIE: Quetzalcoatlus. Réptil voador GIGANTE de 11 m de envergadura, do tamanho de uma girafa no chão. Bico enorme e reto, pescoço longo, crista pequena, asas de membrana. Cores: corpo branco-acinzentado, asas cinza com pontas escuras, bico amarelado.
+
+MALHA: entre 9.000 e 13.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
+
+TEXTURA: uma textura pintada (Base Color) de 1024×1024, salva em JPG, com todos os detalhes da espécie bem visíveis nesse tamanho (escamas, padrão de cor, barriga mais clara, olhos e dentes). Normal Map opcional com metade desse tamanho. Material único (Principled BSDF), sem transparência. UV aberta sem sobreposição, aproveitando bem a textura.
+
+POSIÇÃO: em pose neutra, pousado de pé, pés tocando Z = 0, asas fechadas, olhando para -Y, em tamanho real (metros). Aplique Ctrl+A → All Transforms antes de exportar.
+
+ESQUELETO (Armature): ossos de quadril (raiz), coluna (2), pescoço (3), cabeça, bico/mandíbula, asas (ombro, braço, antebraço, dedo longo da asa), pernas (coxa, canela, pé) e cauda curta (2). Skinning com pesos limpos, sem a malha rasgar ou afundar ao dobrar.
+
+ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
+- `parado`: pousado, respira, mexe a cabeça (loop).
+- `andar`: anda no chão apoiado nas patas e nos punhos das asas (como uma girafa de 4 patas) (loop).
+- `voar`: bate as asas em voo (loop).
+- `planar`: asas abertas, quase paradas, ajustes leves (loop).
+- `decolar`: salta do chão batendo as asas (sem loop).
+- `atacar`: bicada de cima para baixo / agarrar com os pés (sem loop).
+- `dormir`: pousado, asas fechadas, cabeça baixa (loop).
+- `morrer`: cai e fica deitado (sem loop).
+
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: quetzalcoatlus.glb
+
+======================================================================
+28. ARGENTAVIS  (arquivo: argentavis.glb)
+======================================================================
+Crie no Blender um animal voador **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com penas, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+
+ESPÉCIE: Argentavis. Ave de rapina gigante de 7 m de envergadura, parecida com um condor. Bico curvo forte, garras grandes nos pés, cabeça e pescoço com pouca pena. Cores: penas marrom-escuro, colar de penas brancas no pescoço, cabeça cinza-avermelhada.
+
+MALHA: entre 6.000 e 9.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
+
+TEXTURA: uma textura pintada (Base Color) de 512×512, salva em JPG, com todos os detalhes da espécie bem visíveis nesse tamanho (escamas, padrão de cor, barriga mais clara, olhos e dentes). Normal Map opcional com metade desse tamanho. Material único (Principled BSDF), sem transparência. UV aberta sem sobreposição, aproveitando bem a textura.
+
+POSIÇÃO: em pose neutra, pousado de pé, pés tocando Z = 0, asas fechadas, olhando para -Y, em tamanho real (metros). Aplique Ctrl+A → All Transforms antes de exportar.
+
+ESQUELETO (Armature): ossos de quadril (raiz), coluna (2), pescoço (3), cabeça, bico, asas (ombro, braço, ponta) e pernas (coxa, canela, pé, dedos). Penas da ponta das asas em ossos para abrir/fechar. Skinning com pesos limpos, sem a malha rasgar ou afundar ao dobrar.
+
+ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
+- `parado`: pousado, respira, mexe a cabeça (loop).
+- `andar`: anda no chão apoiado nas patas (loop).
+- `voar`: bate as asas em voo (loop).
+- `planar`: asas abertas, quase paradas, ajustes leves (loop).
+- `decolar`: salta do chão batendo as asas (sem loop).
+- `atacar`: ataque com as garras dos pés (sem loop).
+- `dormir`: pousado, asas fechadas, cabeça baixa (loop).
+- `morrer`: cai e fica deitado (sem loop).
+
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: argentavis.glb
+
+======================================================================
+29. TITANOBOA  (arquivo: titanoboa.glb)
+======================================================================
+Crie no Blender um animal rastejante **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com escamas, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+
+ESPÉCIE: Titanoboa. Cobra gigante de 13 m e quase 1 m de grossura. Cabeça larga e triangular, olhos amarelos. Cores: verde-oliva com manchas pretas grandes ao longo do corpo, barriga amarelada.
+
+MALHA: entre 9.000 e 13.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
+
+TEXTURA: uma textura pintada (Base Color) de 1024×1024, salva em JPG, com todos os detalhes da espécie bem visíveis nesse tamanho (escamas, padrão de cor, barriga mais clara, olhos e dentes). Normal Map opcional com metade desse tamanho. Material único (Principled BSDF), sem transparência. UV aberta sem sobreposição, aproveitando bem a textura.
+
+POSIÇÃO: em pose neutra, esticada no chão, barriga em Z = 0, olhando para -Y, em tamanho real (metros). Aplique Ctrl+A → All Transforms antes de exportar.
+
+ESQUELETO (Armature): uma corrente de 16 a 20 ossos da cabeça à ponta da cauda, mais a mandíbula. Skinning com pesos limpos, sem a malha rasgar ou afundar ao dobrar.
+
+ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
+- `parado`: enrolada, cabeça erguida mexendo a língua (loop).
+- `andar`: rastejando em ondas laterais (loop).
+- `correr`: rastejando rápido (loop).
+- `nadar`: nadando em ondas na água (loop).
+- `atacar`: bote rápido com a boca aberta (sem loop).
+- `dormir`: enrolada, cabeça apoiada (loop).
+- `morrer`: estica e vira de barriga para cima (sem loop).
+
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: titanoboa.glb
+
+======================================================================
+30. DEINOSUCHUS  (arquivo: deinosuchus.glb)
+======================================================================
+Crie no Blender um animal semiaquático **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com escamas grossas e placas (osteodermos) nas costas, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+
+ESPÉCIE: Deinosuchus. Crocodilo gigante de 11 m. Focinho largo com dentes enormes, olhos no alto da cabeça, fileiras de placas nas costas, cauda alta e achatada. Cores: verde-acinzentado escuro com faixas mais escuras, barriga amarelada.
+
+MALHA: entre 9.000 e 13.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
+
+TEXTURA: uma textura pintada (Base Color) de 1024×1024, salva em JPG, com todos os detalhes da espécie bem visíveis nesse tamanho (escamas, padrão de cor, barriga mais clara, olhos e dentes). Normal Map opcional com metade desse tamanho. Material único (Principled BSDF), sem transparência. UV aberta sem sobreposição, aproveitando bem a textura.
+
+POSIÇÃO: em pose neutra, de pé, pés tocando Z = 0, olhando para -Y, em tamanho real (metros). Aplique Ctrl+A → All Transforms antes de exportar.
+
+ESQUELETO (Armature): ossos de quadril (raiz), coluna (3), pescoço (2), cabeça, mandíbula, cauda (8) e as 4 pernas curtas (coxa, canela, pé). Skinning com pesos limpos, sem a malha rasgar ou afundar ao dobrar.
+
+ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
+- `parado`: deitado de barriga no chão, respira, mexe a cauda (loop).
+- `andar`: anda com as pernas abertas para os lados (loop).
+- `correr`: corrida rápida levantando a barriga (loop).
+- `nadar`: nada com a cauda, pernas encostadas no corpo (loop).
+- `atacar`: bote com a boca escancarada e giro mortal (sem loop).
+- `dormir`: deitado com a boca entreaberta (loop).
+- `morrer`: vira de barriga para cima (sem loop).
+
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: deinosuchus.glb
+
+======================================================================
+31. MOSASSAURO  (arquivo: mosassauro.glb)
+======================================================================
+Crie no Blender um animal marinho **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com escamas finas, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+
+ESPÉCIE: Mosassauro. Réptil marinho gigante de 14 m. Corpo de lagarto alongado, cabeça grande com dentes cônicos, 4 nadadeiras, cauda com nadadeira em forma de meia-lua. Cores: azul-acinzentado escuro nas costas, barriga branca, listras finas.
+
+MALHA: entre 12.000 e 16.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
+
+TEXTURA: uma textura pintada (Base Color) de 1024×1024, salva em JPG, com todos os detalhes da espécie bem visíveis nesse tamanho (escamas, padrão de cor, barriga mais clara, olhos e dentes). Normal Map opcional com metade desse tamanho. Material único (Principled BSDF), sem transparência. UV aberta sem sobreposição, aproveitando bem a textura.
+
+POSIÇÃO: em pose neutra, na horizontal como se estivesse nadando, centro do corpo em Z = 0, olhando para -Y, em tamanho real (metros). Aplique Ctrl+A → All Transforms antes de exportar.
+
+ESQUELETO (Armature): ossos de quadril (raiz), coluna (4), pescoço (2), cabeça, mandíbula, cauda (6 a 8) e as 4 nadadeiras (2 ossos cada). Skinning com pesos limpos, sem a malha rasgar ou afundar ao dobrar.
+
+ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
+- `parado`: flutua parado, nadadeiras/cauda se mexendo de leve (loop).
+- `nadar`: nadando devagar (loop).
+- `nadar_rapido`: nadando rápido (loop).
+- `atacar`: mordida com a boca escancarada (sem loop).
+- `morrer`: vira de barriga para cima (sem loop).
+
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: mosassauro.glb
+
+======================================================================
+32. PIRANHA-GIGANTE  (arquivo: piranha.glb)
+======================================================================
+Crie no Blender um animal marinho **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com escamas, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+
+ESPÉCIE: Piranha-gigante. Peixe de 0,4 m, corpo alto e achatado de lado, mandíbula de baixo saliente com dentes triangulares. Cores: costas cinza-esverdeado, barriga e garganta vermelhas, pintas prateadas.
+
+MALHA: entre 1.000 e 2.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
+
+TEXTURA: uma textura pintada (Base Color) de 256×256, salva em JPG, com todos os detalhes da espécie bem visíveis nesse tamanho (escamas, padrão de cor, barriga mais clara, olhos e dentes). Normal Map opcional com metade desse tamanho. Material único (Principled BSDF), sem transparência. UV aberta sem sobreposição, aproveitando bem a textura.
+
+POSIÇÃO: em pose neutra, na horizontal como se estivesse nadando, centro do corpo em Z = 0, olhando para -Y, em tamanho real (metros). Aplique Ctrl+A → All Transforms antes de exportar.
+
+ESQUELETO (Armature): ossos de corpo (3 a 5 ao longo do eixo), cabeça, mandíbula, nadadeiras (peitorais, e cauda com 2 ossos). Skinning com pesos limpos, sem a malha rasgar ou afundar ao dobrar.
+
+ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
+- `parado`: flutua parado, nadadeiras/cauda se mexendo de leve (loop).
+- `nadar`: nadando devagar (loop).
+- `nadar_rapido`: nadando rápido (loop).
+- `atacar`: mordidas rápidas (sem loop).
+- `morrer`: vira de barriga para cima (sem loop).
+
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: piranha.glb
+
+======================================================================
+33. CHEFÃO DO VULCÃO (DRAGÃO DE LAVA)  (arquivo: chefe_vulcao.glb)
+======================================================================
+Crie no Blender um animal terrestre **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com placas de rocha vulcânica, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+
+ESPÉCIE: Chefão do vulcão (Dragão de lava). Dragão de lava quadrúpede de 20 m, o chefe do jogo. Placas de rocha vulcânica escura pelo corpo com RACHADURAS brilhando laranja de lava, chifres curvos, asas pequenas e rasgadas, cauda com espinhos. Cores: rocha quase preta, rachaduras laranja e amarelas (emissivas: use Emission na textura).
+
+MALHA: entre 12.000 e 16.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
+
+TEXTURA: uma textura pintada (Base Color) de 1024×1024, salva em JPG, com todos os detalhes da espécie bem visíveis nesse tamanho (escamas, padrão de cor, barriga mais clara, olhos e dentes). Normal Map opcional com metade desse tamanho. Material único (Principled BSDF), sem transparência. UV aberta sem sobreposição, aproveitando bem a textura.
+
+POSIÇÃO: em pose neutra, de pé, pés tocando Z = 0, olhando para -Y, em tamanho real (metros). Aplique Ctrl+A → All Transforms antes de exportar.
+
+ESQUELETO (Armature): ossos de quadril (raiz), coluna (3), pescoço (2 a 4), cabeça, mandíbula, cauda (5 a 8) e as 4 pernas (coxa/ombro, canela/antebraço, pé, dedos). Ossos nas asas (2 cada). Skinning com pesos limpos, sem a malha rasgar ou afundar ao dobrar.
+
+ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
+- `parado`: respira, mexe a cabeça olhando em volta, a cauda balança de leve (loop).
+- `andar`: ciclo de passos, pés plantados no chão sem escorregar (loop).
+- `correr`: ciclo de corrida, corpo inclinado para frente (loop).
+- `atacar`: mordida (sem loop).
+- `rugir`: abre a boca, levanta a cabeça e chama (sem loop).
+- `comer`: abaixa a cabeça e arranca pedaços de carne do chão (loop).
+- `dormir`: deitado no chão, respirando devagar (loop).
+- `morrer`: cambaleia e cai de lado (sem loop, termina deitado).
+- `cuspir_fogo`: abre a boca e lança fogo para frente (sem loop).
+- `pisar_chao`: empina e bate as patas, tremendo o chão (sem loop).
+
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: chefe_vulcao.glb

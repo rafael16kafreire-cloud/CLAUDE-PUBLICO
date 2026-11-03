@@ -1,0 +1,13 @@
+{
+ "nome": "giganotossauro",
+ "titulo": "Giganotossauro",
+ "modelo": "../teste/giga_parado.glb",
+ "comprimento": 13,
+ "tipo": "bipede",
+ "ataque": "mordida",
+ "rugido": "cima",
+ "cabeca": 0.13,
+ "braco": 0.03,
+ "fonte": "Giger walk (Giganotosaurus) — PusztaiAndras (PAndras) — CC BY 4.0 — https://sketchfab.com/3d-models/giger-walk-a4eca4b015f5407e90120836ff77e661",
+ "preparo": "node congelar.mjs originais/giga_pandras.glb teste/giga_parado.glb \"Allosaur_rig|Action.001\" 1.2; node animar.mjs config/giganotossauro.json"
+}

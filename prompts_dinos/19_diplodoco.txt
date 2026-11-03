@@ -1,0 +1,23 @@
+Crie no Blender um animal terrestre **realista estilizado para jogo de sobrevivência para celular**, com qualidade e proporções parecidas com os bichos de jogos como ARK: anatomia correta, músculos marcados, pele com escamas rugosas, dobras e padrão de cor da espécie. O design deve ser original (não copie modelo de nenhum jogo).
+
+ESPÉCIE: Diplodoco. Saurópode longo de 25 m, pescoço comprido mais na HORIZONTAL, cauda muito longa e fina como chicote, patas da frente mais baixas, fileira de espinhos pequenos nas costas. Cores: verde-acinzentado com listras transversais escuras, barriga clara.
+
+MALHA: entre 12.000 e 16.000 triângulos. Topologia limpa nas juntas para dobrar sem amassar.
+
+TEXTURA: uma textura pintada (Base Color) de 1024×1024, salva em JPG, com todos os detalhes da espécie bem visíveis nesse tamanho (escamas, padrão de cor, barriga mais clara, olhos e dentes). Normal Map opcional com metade desse tamanho. Material único (Principled BSDF), sem transparência. UV aberta sem sobreposição, aproveitando bem a textura.
+
+POSIÇÃO: em pose neutra, de pé, pés tocando Z = 0, olhando para -Y, em tamanho real (metros). Aplique Ctrl+A → All Transforms antes de exportar.
+
+ESQUELETO (Armature): ossos de quadril (raiz), coluna (3), pescoço LONGO (6 a 8), cabeça, mandíbula, cauda LONGA (8 a 10) e as 4 pernas (coxa/ombro, canela/antebraço, pé). Skinning com pesos limpos, sem a malha rasgar ou afundar ao dobrar.
+
+ANIMAÇÕES (cada uma como uma Action separada, com estes nomes exatos):
+- `parado`: respira, mexe a cabeça olhando em volta, a cauda balança de leve (loop).
+- `andar`: ciclo de passos, pés plantados no chão sem escorregar (loop).
+- `correr`: ciclo de corrida, corpo inclinado para frente (loop).
+- `atacar`: chicotada com a cauda (sem loop).
+- `rugir`: abre a boca, levanta a cabeça e chama (sem loop).
+- `comer`: abaixa a cabeça e arranca plantas do chão (loop).
+- `dormir`: deitado no chão, respirando devagar (loop).
+- `morrer`: cambaleia e cai de lado (sem loop, termina deitado).
+
+EXPORTAR: File → Export → glTF 2.0 (.glb), marcando Apply Modifiers, Animation, Skinning e a textura embutida no arquivo. Nome do arquivo: diplodoco.glb
